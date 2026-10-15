@@ -150,7 +150,7 @@ or provenance-published. Exit codes:
 
 ## Local verification
 
-From `swarm/packages/api`:
+From `packages/api`:
 
 ```sh
 npm run test:receipts

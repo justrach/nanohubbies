@@ -29,7 +29,8 @@
 Developed on Node 24 (the scripts run TypeScript directly). No Cloudflare account is needed for local development.
 
 ```sh
-cd swarm
+git clone https://github.com/justrach/nanohubbies.git
+cd nanohubbies
 npm install
 npm run dev     # API on http://localhost:8787, dashboard on http://localhost:3000
 ```

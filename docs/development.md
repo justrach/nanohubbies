@@ -145,7 +145,7 @@ snapshot, not a full Git mirror. Setup shows retained/excluded counts and any
 incomplete GitHub context. Upstream history and issue comment threads are not
 copied. Issue and PR metadata are bounded snapshots taken at import time.
 
-Validate with `npm run test:import` in `swarm/packages/api`. For a real local
+Validate with `npm run test:import` in `packages/api`. For a real local
 corpus, `node scripts/smoke-import.ts /path/to/repository` streams its HEAD
 archive, seeds isolated Worker storage, clones it back, compares every retained
 file and runs `git fsck`. It never modifies the source repository or a user's

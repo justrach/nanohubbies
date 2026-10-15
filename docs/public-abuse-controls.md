@@ -80,7 +80,7 @@ Localhost retains unrestricted development by default. Set
 `ABUSE_PROTECTION=1` to exercise public limits locally. Setting this to `0`
 does not disable protections on a public hostname.
 
-From `swarm/packages/api`, run `npm run test:abuse`. It uses a disposable local
+From `packages/api`, run `npm run test:abuse`. It uses a disposable local
 Workers runtime and SQLite/R2 state, intercepts every outbound request, and
 checks concurrent admission, import-before-download refusal, successful import,
 owner deletion, rate separation and expiry, restarts, additive schema migration,
