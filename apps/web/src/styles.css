@@ -1,0 +1,166 @@
+@import "tailwindcss";
+@import "./design-system.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-line: var(--line);
+  --color-wash: var(--wash);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-good-text: var(--good-text);
+  --font-sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tables and axis ticks align digits; big standalone numbers do not. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Issue bodies are GitHub markdown; the reset strips its defaults, so the
+   few elements issues use get them back here, in the panel's own type scale. */
+.md > * + * {
+  margin-top: 0.6em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  color: var(--ink);
+  font-weight: 600;
+  margin-top: 1em;
+}
+.md a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+}
+.md code {
+  font-size: 0.92em;
+  background: var(--wash);
+  border-radius: 4px;
+  padding: 0.05em 0.3em;
+}
+.md pre {
+  overflow: auto;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6em 0.75em;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md blockquote {
+  border-left: 2px solid var(--axis);
+  padding-left: 0.75em;
+  color: var(--muted);
+}
+.md table {
+  font-size: 0.92em;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 0.2em 0.5em;
+}
+.md img {
+  max-width: 100%;
+}
+.md h1 {
+  font-size: 1.3em;
+}
+.md h2 {
+  font-size: 1.15em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+.md h3 {
+  font-size: 1.02em;
+}
+.md li + li,
+.md li > ul,
+.md li > ol {
+  margin-top: 0.3em;
+}
+.md strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.md hr {
+  border-color: var(--line);
+}
+.md details > summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+
+/* A README or a markdown file read on its own, sized as a git host sizes it. */
+.md.readme h1 {
+  font-size: 1.85em;
+  margin-top: 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+.md.readme h2 {
+  font-size: 1.4em;
+  margin-top: 1.4em;
+}
+.md.readme h3 {
+  font-size: 1.15em;
+  margin-top: 1.2em;
+}
+.md.readme > :first-child {
+  margin-top: 0;
+}
+
+/* Small controls share the same clear keyboard treatment across every route. */
+body { margin: 0; text-rendering: optimizeLegibility; }
+button, input, select, textarea { font-family: inherit; }
+button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+/* A field drawn by its container (an icon, the input, a button) shows focus on that container. */
+.field-shell:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.field-shell input:focus-visible { outline: none; }
+::selection { background: var(--brand-soft); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,83 @@
+// The deployable Worker: the Next.js pages (built by `opennextjs-cloudflare
+// build` into .open-next) and the API from packages/api, on one origin.
+// `npm run preview` runs it locally on 8787. Keep the bindings the same as
+// packages/api/wrangler.jsonc, which runs the API alone for `npm run dev`.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "nanohub-swarm",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // The deployed version's ID, which /api/agent-help reports.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "durable_objects": {
+    "bindings": [
+      // One per trunk: the only writer of that trunk.
+      { "name": "SEQUENCER", "class_name": "Sequencer" },
+      // One per agent per trunk: its current life (a snapshot plus what it read).
+      { "name": "AGENT", "class_name": "Agent" },
+      // One per trunk: presence, tallies, the channel, and the live feed.
+      { "name": "ROOM", "class_name": "Room" },
+      // Shards of scripted agents for swarm runs.
+      { "name": "DRIVER", "class_name": "Driver" },
+      // The list of trunks.
+      { "name": "HUB", "class_name": "Hub" },
+      { "name": "IMPORT_JOB", "class_name": "ImportJob" },
+      // One per signed-in person: their provider tokens, refreshed one at a time.
+      { "name": "ACCOUNT", "class_name": "Account" },
+      // A few per trunk, between its agents and its sequencer: batches changes.
+      { "name": "LANE", "class_name": "Lane" },
+      // One per trunk, beside its sequencer: writes landed objects to R2 as packs.
+      { "name": "PACKER", "class_name": "Packer" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Sequencer", "Agent", "Room", "Driver", "Hub"] },
+    { "tag": "v2", "new_sqlite_classes": ["Account"] },
+    { "tag": "v3", "new_sqlite_classes": ["Lane"] },
+    { "tag": "v4", "new_sqlite_classes": ["Packer"] },
+    { "tag": "v5", "new_sqlite_classes": ["ImportJob"] }
+  ],
+  // Git objects, content-addressed and never overwritten. The same bucket
+  // also holds OpenNext's incremental cache (open-next.config.ts), under its
+  // own prefix: what repository pages read at a commit.
+  "r2_buckets": [
+    { "binding": "OBJECTS", "bucket_name": "nanohub-swarm-objects" },
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "nanohub-swarm-objects" }
+  ],
+  "vars": { "NEXT_INC_CACHE_R2_PREFIX": "next-cache" },
+  // Sign-in's tables (Better Auth), made on first use. To deploy, make the
+  // database with `wrangler d1 create` and put its id here.
+  "kv_namespaces": [{ "binding": "BROWSE_CACHE", "id": "00000000000000000000000000000000" }],
+  "d1_databases": [{ "binding": "AUTH_DB", "database_name": "nanohub-swarm-auth", "database_id": "00000000-0000-0000-0000-000000000000" }],
+  "dev": { "port": 8787 },
+  "env": {
+    // The same Worker, also mirroring every trunk to a Cloudflare Artifacts
+    // repo; it needs a Cloudflare account with Artifacts.
+    "artifacts": {
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "durable_objects": {
+        "bindings": [
+          { "name": "SEQUENCER", "class_name": "Sequencer" },
+          { "name": "AGENT", "class_name": "Agent" },
+          { "name": "ROOM", "class_name": "Room" },
+          { "name": "DRIVER", "class_name": "Driver" },
+          { "name": "HUB", "class_name": "Hub" },
+      { "name": "IMPORT_JOB", "class_name": "ImportJob" },
+          { "name": "ACCOUNT", "class_name": "Account" },
+          { "name": "LANE", "class_name": "Lane" },
+          { "name": "PACKER", "class_name": "Packer" }
+        ]
+      },
+      "r2_buckets": [
+        { "binding": "OBJECTS", "bucket_name": "nanohub-swarm-objects" },
+        { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "nanohub-swarm-objects" }
+      ],
+      "vars": { "NEXT_INC_CACHE_R2_PREFIX": "next-cache" },
+      "kv_namespaces": [{ "binding": "BROWSE_CACHE", "id": "00000000000000000000000000000000" }],
+  "d1_databases": [{ "binding": "AUTH_DB", "database_name": "nanohub-swarm-auth", "database_id": "00000000-0000-0000-0000-000000000000" }],
+      "artifacts": [{ "binding": "ARTIFACTS", "namespace": "nanohub-swarm-dev", "remote": true }]
+    }
+  }
+}

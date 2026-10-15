@@ -1,0 +1,213 @@
+.workspace-shell {
+  min-height: 100vh;
+}
+.workspace-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: 208px;
+  padding: 0 12px 14px;
+  background: color-mix(in srgb, var(--page) 65%, var(--surface));
+  border-right: 1px solid var(--line);
+}
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 56px;
+  padding-inline: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.workspace-global-links {
+  display: grid;
+  gap: 2px;
+  margin: 14px 0 18px;
+}
+.workspace-global-links a,
+.workspace-sidebar nav a,
+.workspace-mobile-nav nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.workspace-global-links a:hover,
+.workspace-sidebar nav a:hover,
+.workspace-mobile-nav nav a:hover {
+  background: var(--wash);
+  color: var(--ink);
+}
+.workspace-sidebar nav a[aria-current],
+.workspace-mobile-nav nav a[aria-current] {
+  background: var(--wash);
+  color: var(--ink);
+  font-weight: 500;
+}
+.workspace-sidebar nav svg,
+.workspace-mobile-nav nav svg,
+.workspace-global-links svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.workspace-sidebar nav small,
+.workspace-mobile-nav nav small {
+  margin-left: auto;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.workspace-nav-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 0 10px;
+  margin-bottom: 8px;
+}
+.workspace-switcher {
+  position: relative;
+  margin-bottom: 14px;
+}
+.workspace-switcher summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  cursor: pointer;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.workspace-switcher summary > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.workspace-switcher > div {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px #0002;
+}
+.workspace-switcher a {
+  display: block;
+  padding: 9px;
+  font-size: 11px;
+  border-radius: 5px;
+}
+.workspace-switcher a:hover {
+  background: var(--wash);
+}
+.workspace-sidebar nav {
+  display: grid;
+  gap: 2px;
+  overflow-y: auto;
+}
+.workspace-sidebar-footer {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding: 20px 10px 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+.workspace-sidebar-footer a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-content {
+  min-width: 0;
+  margin-left: 208px;
+}
+.workspace-content .repo-topbar {
+  max-width: none;
+}
+.workspace-mobile-nav {
+  display: none;
+}
+.workspace-content .repo-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+@media (max-width: 1023px) {
+  .workspace-sidebar {
+    display: none;
+  }
+  .workspace-content {
+    margin-left: 0;
+  }
+  .workspace-mobile-nav {
+    display: block;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .workspace-mobile-nav > summary {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .workspace-mobile-nav > summary > span {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .workspace-mobile-nav > div {
+    padding: 0 16px 20px;
+    border-top: 1px solid var(--line);
+  }
+  .workspace-mobile-nav .workspace-sidebar-footer {
+    display: none;
+  }
+}
+
+.workspace-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.workspace-more > summary::-webkit-details-marker { display: none; }
+.workspace-more[open] > summary svg { transform: rotate(180deg); }
+.workspace-sidebar nav { gap: 4px; }
+.workspace-sidebar nav a { font-size: 13px; }
+.workspace-content .repo-chrome { background: var(--page); }
+/* A followed link's page on its way (NavigationPending). */
+.navigation-pending {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  pointer-events: none;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+.navigation-pending[data-on] {
+  opacity: 1;
+  transform: scaleX(0.85);
+  transition: transform 8s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 0.15s;
+}

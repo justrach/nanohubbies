@@ -1,0 +1,241 @@
+.review {
+  min-width: 0;
+  margin-top: 20px;
+}
+.controls,
+.fileBar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.controls select,
+.fileBar select {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  background: var(--page);
+  color: var(--ink);
+  font-size: 12px;
+  max-width: 100%;
+  min-width: 0;
+}
+.controls a {
+  font-size: 11px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.subject {
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.fileBar {
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.fileBar select {
+  flex: 1;
+  font-family: var(--font-mono);
+}
+.fileBar span {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.hint {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.empty {
+  padding: 32px 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.empty h3 {
+  font-weight: 500;
+  color: var(--ink);
+}
+.error {
+  margin: 12px 0;
+  color: var(--critical);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.hunk {
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.hunk > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--wash);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.hunk > header code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hunk > header button {
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.code {
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 24px;
+  background: var(--page);
+}
+.codeRow {
+  display: grid;
+  grid-template-columns: 70px 20px minmax(max-content, 1fr);
+  min-width: 100%;
+  width: max-content;
+}
+.codeRow > button {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+  gap: 4px;
+  padding-right: 8px;
+}
+.codeRow > button:enabled:hover {
+  background: var(--brand-soft);
+  color: var(--ink);
+}
+.codeRow > button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.codeRow > code {
+  white-space: pre;
+  padding-right: 16px;
+}
+.add {
+  background: color-mix(in srgb, var(--good) 9%, transparent);
+}
+.del {
+  background: color-mix(in srgb, var(--critical) 9%, transparent);
+}
+.selected {
+  background: var(--brand-soft);
+  box-shadow: inset 2px 0 var(--brand);
+}
+.composer,
+.thread {
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.composer label {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+.composer textarea,
+.thread textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--page);
+  padding: 10px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.composer textarea:focus-visible,
+.thread textarea:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.composer footer,
+.thread footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.thread > header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+.thread > header button {
+  margin-left: auto;
+  color: var(--ink-2);
+}
+.message {
+  margin-top: 12px;
+}
+.message > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+}
+.message strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.message time {
+  color: var(--muted);
+}
+.message p {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+}
+.reply {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.thread form {
+  margin-top: 12px;
+}
+.more {
+  width: 100%;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .controls,
+  .fileBar {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .fileBar select {
+    flex-basis: 100%;
+  }
+  .hunk > header {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,78 @@
+// The API on its own, for `npm run dev`: it answers on 8787 while `next dev`
+// serves the pages on 3000 and forwards /api and /git here. Anything else that
+// lands here (a sign-in coming back, say) is sent on to APP_ORIGIN. Deployed,
+// apps/web's Worker serves both from one origin; keep the bindings below the
+// same as its wrangler.jsonc.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "nanohub-swarm",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // The deployed version's ID, which /api/agent-help reports.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "vars": { "APP_ORIGIN": "http://localhost:3000" },
+  "durable_objects": {
+    "bindings": [
+      // One per trunk: the only writer of that trunk.
+      { "name": "SEQUENCER", "class_name": "Sequencer" },
+      // One per agent per trunk: its current life (a snapshot plus what it read).
+      { "name": "AGENT", "class_name": "Agent" },
+      // One per trunk: presence, tallies, the channel, and the live feed.
+      { "name": "ROOM", "class_name": "Room" },
+      // Shards of scripted agents for swarm runs.
+      { "name": "DRIVER", "class_name": "Driver" },
+      // The list of trunks.
+      { "name": "HUB", "class_name": "Hub" },
+      { "name": "IMPORT_JOB", "class_name": "ImportJob" },
+      // One per signed-in person: their provider tokens, refreshed one at a time.
+      { "name": "ACCOUNT", "class_name": "Account" },
+      // A few per trunk, between its agents and its sequencer: batches changes.
+      { "name": "LANE", "class_name": "Lane" },
+      // One per trunk, beside its sequencer: writes landed objects to R2 as packs.
+      { "name": "PACKER", "class_name": "Packer" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Sequencer", "Agent", "Room", "Driver", "Hub"] },
+    { "tag": "v2", "new_sqlite_classes": ["Account"] },
+    { "tag": "v3", "new_sqlite_classes": ["Lane"] },
+    { "tag": "v4", "new_sqlite_classes": ["Packer"] },
+    { "tag": "v5", "new_sqlite_classes": ["ImportJob"] }
+  ],
+  // Git objects, content-addressed and never overwritten.
+  "r2_buckets": [{ "binding": "OBJECTS", "bucket_name": "nanohub-swarm-objects" }],
+  // Sign-in's tables (Better Auth), made on first use. Only used when
+  // BETTER_AUTH_SECRET is set; without it, the app offers the development
+  // login. To deploy, make the database with `wrangler d1 create` and put its
+  // id here.
+  "kv_namespaces": [{ "binding": "BROWSE_CACHE", "id": "00000000000000000000000000000000" }],
+  "d1_databases": [{ "binding": "AUTH_DB", "database_name": "nanohub-swarm-auth", "database_id": "00000000-0000-0000-0000-000000000000" }],
+  "dev": { "port": 8787 },
+  "env": {
+    // The same Worker, also mirroring every trunk to a Cloudflare Artifacts
+    // repo. Artifacts bindings always reach the real service, even in local
+    // dev, so this needs a Cloudflare account with Artifacts:
+    //   npx wrangler dev --env artifacts
+    "artifacts": {
+      "vars": { "APP_ORIGIN": "http://localhost:3000" },
+      "durable_objects": {
+        "bindings": [
+          { "name": "SEQUENCER", "class_name": "Sequencer" },
+          { "name": "AGENT", "class_name": "Agent" },
+          { "name": "ROOM", "class_name": "Room" },
+          { "name": "DRIVER", "class_name": "Driver" },
+          { "name": "HUB", "class_name": "Hub" },
+      { "name": "IMPORT_JOB", "class_name": "ImportJob" },
+          { "name": "ACCOUNT", "class_name": "Account" },
+          { "name": "LANE", "class_name": "Lane" },
+          { "name": "PACKER", "class_name": "Packer" }
+        ]
+      },
+      "r2_buckets": [{ "binding": "OBJECTS", "bucket_name": "nanohub-swarm-objects" }],
+      "kv_namespaces": [{ "binding": "BROWSE_CACHE", "id": "00000000000000000000000000000000" }],
+  "d1_databases": [{ "binding": "AUTH_DB", "database_name": "nanohub-swarm-auth", "database_id": "00000000-0000-0000-0000-000000000000" }],
+      "artifacts": [{ "binding": "ARTIFACTS", "namespace": "nanohub-swarm-dev", "remote": true }]
+    }
+  }
+}

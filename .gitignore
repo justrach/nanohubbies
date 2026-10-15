@@ -1,0 +1,17 @@
+node_modules/
+.wrangler/
+.turbo/
+.next/
+.open-next/
+next-env.d.ts
+worker-configuration.d.ts
+*.tsbuildinfo
+.dev.vars
+.env
+.env.*
+apps/web/public/bench.json
+apps/web/public/climb.json
+apps/web/public/runtimes.json
+
+# The production deployment names account resources; it stays local.
+apps/web/wrangler.deploy.jsonc

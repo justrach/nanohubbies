@@ -1,0 +1,98 @@
+/* Compact repository chrome, shared by source and review pages. */
+.repo-topbar {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.repo-chrome {
+  background: var(--surface);
+}
+.repo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 10px 20px 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+.repo-meta code {
+  font-family: var(--font-mono);
+}
+.repo-nav {
+  max-width: 1280px;
+  margin-inline: auto;
+}
+.repo-tab[aria-current="page"] {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.repo-tab[aria-current="page"] svg {
+  color: var(--brand);
+}
+.repo-code > .grid > aside {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+  align-self: start;
+}
+.repo-file-toolbar {
+  padding-bottom: 3px;
+}
+.pull-review > header {
+  background: var(--surface);
+}
+.pull-review-header {
+  padding-block: 26px 20px;
+}
+.pull-review-header h1 {
+  font-size: clamp(24px, 3vw, 30px);
+  letter-spacing: -.035em;
+}
+.pull-review-summary {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.pull-review-tabs {
+  border-bottom: 1px solid var(--line);
+}
+.pull-review-tabs > div {
+  margin-bottom: -1px;
+}
+@media (max-width: 1023px) {
+  .repo-code > .grid > aside {
+    padding-left: 0;
+    padding-top: 20px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+@media (max-width: 640px) {
+  .repo-topbar {
+    gap: 8px;
+  }
+}
+.repo-primary-nav a {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.repo-primary-nav a:hover,
+.repo-primary-nav a[aria-current="page"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 640px) {
+  .repo-primary-nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
+    padding-top: 8px;
+    padding-bottom: 2px;
+    border-top: 1px solid var(--line);
+  }
+  .repo-topbar > div:last-child {
+    margin-left: auto;
+  }
+}

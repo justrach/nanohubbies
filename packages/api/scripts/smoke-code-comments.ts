@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";
+import { BASE, signIn } from "./client.ts";
+
+// Run against the existing local shop fixture; no production data is written.
+if (!new URL(BASE).hostname.match(/^(localhost|127\.0\.0\.1)$/)) throw new Error("Use a local server for the code-review smoke test");
+const cookie = await signIn("stack-owner");
+const other = await signIn("code-review-outsider");
+const get = async (path: string, auth = cookie) => fetch(`${BASE}/api/trunks/shop${path}`, { headers: { cookie: auth } });
+const issue = await (await get("/issues/2")).json() as { work: { version: number | null }[] };
+const version = issue.work.find((w) => w.version)?.version;
+assert.ok(version);
+const change = await (await get(`/commit/${version}`)).json() as { commit: string; files: { path: string; patch: string | null }[] };
+const file = change.files.find((f) => f.patch);
+assert.ok(file?.patch);
+const header = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/m.exec(file.patch);
+assert.ok(header);
+const line = Number(header[1]);
+const body = { id: crypto.randomUUID(), commit: change.commit, path: file.path, side: "RIGHT", startLine: line, line, body: "Local API smoke: inspect this line before changing the helper." };
+const send = (data: unknown, headers: Record<string, string> = {}, method = "POST") => fetch(`${BASE}/api/trunks/shop/commit/${version}/comments`, { method, headers: { cookie, "content-type": "application/json", ...headers }, body: JSON.stringify(data) });
+assert.equal((await send({ ...body, commit: "0".repeat(40) })).status, 409);
+assert.equal((await send({ ...body, line: 999999 })).status, 400);
+assert.equal((await send({ ...body, path: "not-in-the-diff.ts" })).status, 400);
+assert.equal((await send({ ...body, side: "BOTH" })).status, 400);
+assert.equal((await send(body, { origin: "https://unrelated.example" })).status, 403);
+assert.ok([401, 404].includes((await send(body, { cookie: "" })).status));
+const created = await send(body);
+assert.equal(created.status, 200, await created.clone().text());
+assert.equal((await send(body, { cookie: other })).status, 400);
+const retry = await send(body);
+assert.equal(retry.status, 200);
+const list = await retry.json() as { comments: { id: string; author: { name: string } }[] };
+assert.equal(list.comments.filter((c) => c.id === body.id).length, 1);
+assert.equal(list.comments.find((c) => c.id === body.id)?.author.name, "stack-owner");
+const read = await (await get(`/commit/${version}/comments`)).json() as { comments: { id: string }[] };
+assert.ok(read.comments.some((c) => c.id === body.id));
+assert.equal((await send({ id: body.id, commit: body.commit, resolved: true }, {}, "PATCH")).status, 200);
+console.log("PASS: pinned revision, valid anchors, authentication, same-origin, retry deduplication, persistence and resolution");

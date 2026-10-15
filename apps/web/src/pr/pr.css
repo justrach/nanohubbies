@@ -1,0 +1,213 @@
+/* Pull request pages: diff rows and syntax colours. Light first, then dark;
+   each is its own set of steps, not one flipped. */
+:root {
+  --diff-add: #e6ffec;
+  --diff-add-num: #ccffd8;
+  --diff-add-word: #abf2bc;
+  --diff-del: #ffebe9;
+  --diff-del-num: #ffd7d5;
+  --diff-del-word: #ffcecb;
+  --syn-keyword: #cf222e;
+  --syn-string: #0a3069;
+  --syn-number: #0550ae;
+  --syn-function: #8250df;
+  --syn-type: #953800;
+  --syn-comment: #6e7781;
+  --syn-tag: #116329;
+}
+
+:root[data-theme="dark"] {
+  --diff-add: rgba(46, 160, 67, 0.12);
+  --diff-add-num: rgba(46, 160, 67, 0.2);
+  --diff-add-word: rgba(46, 160, 67, 0.4);
+  --diff-del: rgba(248, 81, 73, 0.12);
+  --diff-del-num: rgba(248, 81, 73, 0.2);
+  --diff-del-word: rgba(248, 81, 73, 0.4);
+  --syn-keyword: #ff7b72;
+  --syn-string: #a5d6ff;
+  --syn-number: #79c0ff;
+  --syn-function: #d2a8ff;
+  --syn-type: #ffa657;
+  --syn-comment: #8b949e;
+  --syn-tag: #7ee787;
+}
+
+.diff {
+  --code-inset: 7.75rem;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+/* A file that is all new, or all gone, has one side: line numbers and code. */
+.diff.one-side {
+  --code-inset: 4.25rem;
+}
+.diff.one-side .row {
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+}
+.diff.one-side .row > .sign,
+.diff.added .row > .ln:first-child,
+.diff.removed .row > .ln:nth-child(2) {
+  display: none;
+}
+.diff.one-side .code {
+  padding-left: 0.75rem;
+}
+/* Suggested changes have no line numbers of their own. */
+.diff.compact .row {
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+}
+.diff.compact .row > .ln {
+  display: none;
+}
+.diff .row {
+  display: grid;
+  grid-template-columns: 3.25rem 3.25rem 1.25rem minmax(0, 1fr);
+}
+.diff .ln {
+  padding: 0 0.5rem;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.diff .sign {
+  color: var(--muted);
+  text-align: center;
+  user-select: none;
+}
+/* Long lines wrap: reading a change should not need a sideways scroll. */
+.diff .code {
+  padding-right: 1rem;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.diff .row.add {
+  background: var(--diff-add);
+}
+.diff .row.add .ln {
+  background: var(--diff-add-num);
+}
+.diff .row.del {
+  background: var(--diff-del);
+}
+.diff .row.del .ln {
+  background: var(--diff-del-num);
+}
+.diff .row.add .w {
+  border-radius: 3px;
+  background: var(--diff-add-word);
+}
+.diff .row.del .w {
+  border-radius: 3px;
+  background: var(--diff-del-word);
+}
+/* A new file reads as code, not as a wall of green: its rows keep only a
+   green edge. */
+.diff.quiet .row.add,
+.diff.quiet .row.add .ln {
+  background: none;
+}
+.diff.quiet .row.add {
+  box-shadow: inset 2px 0 0 var(--diff-add-word);
+}
+.diff .row.meta .code {
+  color: var(--muted);
+  font-style: italic;
+}
+.diff .gap {
+  padding: 4px 0 4px var(--code-inset);
+  background: var(--wash);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.syn .t-comment,
+.syn .t-prolog,
+.syn .t-doctype,
+.syn .t-cdata {
+  color: var(--syn-comment);
+  font-style: italic;
+}
+.syn .t-keyword,
+.syn .t-atrule,
+.syn .t-important,
+.syn .t-deleted {
+  color: var(--syn-keyword);
+}
+.syn .t-string,
+.syn .t-char,
+.syn .t-template-string,
+.syn .t-attr-value,
+.syn .t-regex,
+.syn .t-url {
+  color: var(--syn-string);
+}
+.syn .t-number,
+.syn .t-boolean,
+.syn .t-constant,
+.syn .t-symbol,
+.syn .t-property,
+.syn .t-attr-name {
+  color: var(--syn-number);
+}
+.syn .t-function,
+.syn .t-macro,
+.syn .t-lifetime-annotation,
+.syn .t-decorator {
+  color: var(--syn-function);
+}
+.syn .t-class-name,
+.syn .t-builtin,
+.syn .t-namespace {
+  color: var(--syn-type);
+}
+.syn .t-tag,
+.syn .t-selector,
+.syn .t-inserted {
+  color: var(--syn-tag);
+}
+.syn .t-punctuation,
+.syn .t-operator {
+  color: var(--ink-2);
+}
+
+/* Fenced code in descriptions and comments. */
+.md pre.syn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* A file at a version: numbered lines that wrap, each one an anchor that
+   lights up when linked to. */
+.file {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+.file .line {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  scroll-margin-top: 8rem;
+}
+.file .ln {
+  padding-right: 1rem;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.file .ln:hover {
+  color: var(--ink);
+}
+.file .code {
+  padding-right: 1rem;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.file .line:target {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+}

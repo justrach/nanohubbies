@@ -1,0 +1,115 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.trigger:hover {
+  background: var(--wash);
+  color: var(--ink);
+}
+.meter {
+  display: flex;
+  gap: 2px;
+}
+.meter i {
+  display: block;
+  width: 13px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.meter i[data-done="true"] {
+  background: var(--brand);
+}
+.dialog {
+  margin: 0 0 0 auto;
+  width: min(470px, 100%);
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100vw;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: -12px 0 60px #0002;
+}
+.dialog::backdrop {
+  background: #0007;
+}
+.panel {
+  min-height: 100%;
+}
+.panel header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.panel header h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.panel header p {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.panel header button {
+  border-radius: 6px;
+  padding: 4px;
+  color: var(--muted);
+}
+.panel header button:hover {
+  background: var(--wash);
+}
+.panel ol > li {
+  display: flex;
+  align-items: start;
+  gap: 14px;
+  padding: 28px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.panel li h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 3px 0 10px;
+}
+.panel li p {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.note {
+  padding: 22px 24px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+@media (max-width: 600px) {
+  .meter {
+    display: none;
+  }
+  .trigger {
+    font-size: 10px;
+    padding-inline: 6px;
+  }
+}

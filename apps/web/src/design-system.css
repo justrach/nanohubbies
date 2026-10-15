@@ -1,0 +1,77 @@
+/* Neutral surfaces; blue identifies actions and the primary chart series. */
+:root {
+  color-scheme: light;
+  --page: #f8f9fb;
+  --surface: #ffffff;
+  --ink: #1b2029;
+  --ink-2: #525252;
+  --muted: #737373;
+  --grid: #e5e5e5;
+  --axis: #b8b8b8;
+  --line: rgba(0, 0, 0, 0.1);
+  --wash: rgba(0, 0, 0, 0.035);
+  /* categorical: 1 swarm / working, 2 direct push, 3 merge queue */
+  --series-1: #2463eb;
+  --series-2: #b77939;
+  --series-3: #2995a0;
+  /* status: fixed, always with an icon and a label */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --good-text: #197148;
+  --brand: #2463eb;
+  --brand-soft: #e9efff;
+  --shadow-panel: 0 1px 2px rgb(18 28 45 / 3%);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #121419;
+  --surface: #1b1d22;
+  --ink: #fafafa;
+  --ink-2: #b8b8b8;
+  --muted: #999999;
+  --grid: #2d2d2d;
+  --axis: #505050;
+  --line: rgba(255, 255, 255, 0.12);
+  --wash: rgba(255, 255, 255, 0.04);
+  --series-1: #72a8ff;
+  --series-2: #d49c62;
+  --series-3: #56b7bc;
+  --good-text: #73d696;
+  --brand: #72a8ff;
+  --brand-soft: #202b42;
+  --shadow-panel: none;
+}
+
+/* Shared geometry, type and interaction tokens. Keep dense workspaces compact. */
+:root {
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-small: 6px;
+  --space-unit: 4px;
+  --text-label: 12px;
+  --text-body: 14px;
+  --text-title: 24px;
+  --tracking-heading: -0.035em;
+  --duration-fast: 140ms;
+  --action: #245de0;
+  --action-ink: #ffffff;
+  --hero-ink: #f6f8ff;
+  --hero-muted: #dce5f7;
+}
+:root[data-theme="dark"] {
+  --action: #83adff;
+  --action-ink: #111c30;
+}
+.brand-lockup { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); }
+.brand-wordmark { font-size: 15px; font-weight: 650; letter-spacing: -0.04em; }
+.brand-mark { flex-shrink: 0; border-radius: 22%; }
+.nh-button { transition-duration: var(--duration-fast); border-radius: var(--radius-control); }
+.nh-button-primary { background: var(--action); border-color: var(--action); color: var(--action-ink); }
+.nh-button-primary:hover { background: color-mix(in srgb, var(--action) 92%, var(--ink)); }
+.nh-button-primary:active { background: color-mix(in srgb, var(--action) 85%, var(--ink)); }
+.nh-card { border-radius: var(--radius-panel); box-shadow: var(--shadow-panel); }
+[data-slot="text-field-input"] input { border-radius: var(--radius-control); }
+[data-slot="text-field-input"] input:focus-visible { border-color: var(--brand); }

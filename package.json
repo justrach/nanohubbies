@@ -1,0 +1,16 @@
+{
+  "name": "nanohub-swarm",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.6.1",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "preview": "npm run preview -w @swarm/web"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.6"
+  }
+}

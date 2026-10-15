@@ -1,0 +1,38 @@
+{
+  "name": "@swarm/api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./connect": "./src/connect.ts",
+    "./releases": "./src/releases/types.ts",
+    "./review": "./src/review/types.ts"
+  },
+  "scripts": {
+    "dev": "wrangler dev --persist-to ../../.wrangler/state",
+    "check": "wrangler types && tsc --noEmit",
+    "demo:conflict": "node scripts/demo-conflict.ts",
+    "test:receipts": "node scripts/smoke-receipts.ts",
+    "test:import": "node --experimental-transform-types --test scripts/import-archive.test.mjs",
+    "test:auth": "node --test scripts/auth-dashboard.test.mjs",
+    "test:teams": "node scripts/smoke-team.ts",
+    "test:room": "node scripts/smoke-room.ts",
+    "test:backlog": "node scripts/smoke-backlog.ts",
+    "test:abuse": "node scripts/smoke-abuse.ts",
+    "test:releases": "node scripts/smoke-releases.ts",
+    "test:cli": "node scripts/smoke-cli.ts",
+    "test:browse": "node scripts/smoke-browse.ts"
+  },
+  "dependencies": {
+    "@better-auth/kysely-adapter": "^1.7.6",
+    "acorn": "^8.18.0",
+    "better-auth": "^1.7.6",
+    "kysely": "^0.29.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "esbuild": "^0.28.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.151.0"
+  }
+}
