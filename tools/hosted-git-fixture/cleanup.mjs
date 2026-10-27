@@ -16,7 +16,13 @@ export async function cleanupFixture(record, ops) {
   // Observe actual existence, including operations whose acknowledgement was lost.
   // Failure to observe is never treated as absence.
   const observed = {};
-  for (const kind of ["api", "gate", "bucket", "database"]) {
+  for (const kind of [
+    "api",
+    "gate",
+    "bucket",
+    "database",
+    ...(ops.extraKinds ?? []),
+  ]) {
     if (
       !(await attempt("observed" + kind, async () => {
         observed[kind] = await ops.exists(kind);
@@ -56,6 +62,11 @@ export async function cleanupFixture(record, ops) {
     }
     record.apiWorkerDeleted = true;
   }
+  if (
+    ops.cleanupVault &&
+    !(await attempt("vaultResourcesDeleted", () => ops.cleanupVault(observed)))
+  )
+    return unfinished();
   if (observed.bucket) {
     if (!(await attempt("bucketEmptied", ops.purge))) return unfinished();
     if (

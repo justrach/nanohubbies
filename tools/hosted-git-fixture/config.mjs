@@ -17,12 +17,17 @@ export function fixturePlan({
   deadline,
   databaseId = "00000000-0000-0000-0000-000000000000",
   purpose = "git-import",
+  storeId = "0".repeat(32),
 }) {
   if (
-    !["git-import", "storage-recovery", "repository-recovery"].includes(
-      purpose,
-    ) ||
+    ![
+      "git-import",
+      "storage-recovery",
+      "repository-recovery",
+      "vault-recovery",
+    ].includes(purpose) ||
     !/^[a-f0-9]{32}$/.test(accountId) ||
+    !/^[a-f0-9]{32}$/.test(storeId) ||
     !/^[a-z0-9]{8,12}-[a-f0-9]{10}$/.test(runId) ||
     !Number.isSafeInteger(deadline) ||
     deadline <= 0 ||
@@ -32,11 +37,13 @@ export function fixturePlan({
   )
     throw Error("Invalid isolated fixture identity");
   const prefix =
-      (purpose === "repository-recovery"
-        ? "nh-repo-recovery-"
-        : purpose === "storage-recovery"
-          ? "nh-recovery-live-"
-          : "nh-git-live-") + runId,
+      (purpose === "vault-recovery"
+        ? "nh-vault-recovery-"
+        : purpose === "repository-recovery"
+          ? "nh-repo-recovery-"
+          : purpose === "storage-recovery"
+            ? "nh-recovery-live-"
+            : "nh-git-live-") + runId,
     apiName = prefix + "-app",
     gateName = prefix + "-gate",
     bucket = prefix + "-objects",
@@ -62,6 +69,13 @@ export function fixturePlan({
     bucket,
     database,
     databaseId,
+    ...(purpose === "vault-recovery"
+      ? {
+          storeId,
+          vaultName: prefix + "-vault",
+          providerSecretName: prefix + "-value",
+        }
+      : {}),
     api: {
       ...common,
       name: apiName,
@@ -77,7 +91,7 @@ export function fixturePlan({
         HOSTED_FIXTURE_EXPIRES: String(deadline),
         ...(purpose !== "git-import" ? { NANOHUB_RECOVERY_HOLD: "1" } : {}),
       },
-      ...(purpose === "repository-recovery"
+      ...(["repository-recovery", "vault-recovery"].includes(purpose)
         ? {
             vars: {
               DEV_LOGIN: "0",
@@ -86,6 +100,17 @@ export function fixturePlan({
               HOSTED_REPO_RECOVERY: "1",
               HOSTED_REPO_PHASE: "seed",
             },
+          }
+        : {}),
+      ...(purpose === "vault-recovery"
+        ? {
+            services: [
+              {
+                binding: "VAULT",
+                service: prefix + "-vault",
+                entrypoint: "VaultRecoveryService",
+              },
+            ],
           }
         : {}),
       assets: {
@@ -118,6 +143,54 @@ export function fixturePlan({
       services: [{ binding: "TARGET", service: apiName }],
       r2_buckets: [{ binding: "OBJECTS", bucket_name: bucket }],
     },
+    ...(purpose === "vault-recovery"
+      ? {
+          vault: {
+            ...common,
+            name: prefix + "-vault",
+            main: resolve(root, "tools/hosted-recovery-fixture/vault.ts"),
+            workers_dev: false,
+            preview_urls: false,
+            vars: {
+              HOSTED_FIXTURE_EXPIRES: String(deadline),
+              HOSTED_REPO_RECOVERY: "1",
+              CLOUDFLARE_SECRET_SCOPES: JSON.stringify({
+                FIXTURE_SECRET: {
+                  repository: "hosted-recovery",
+                  environment: "staging",
+                  name: "DEPLOY_TOKEN",
+                },
+              }),
+            },
+            durable_objects: {
+              bindings: [{ name: "VAULTS", class_name: "Vault" }],
+            },
+            migrations: [
+              { tag: "fixture-vault-v1", new_sqlite_classes: ["Vault"] },
+            ],
+            r2_buckets: [{ binding: "OBJECTS", bucket_name: bucket }],
+            secrets_store_secrets: [
+              {
+                binding: "FIXTURE_SECRET",
+                store_id: storeId,
+                secret_name: prefix + "-value",
+              },
+            ],
+          },
+          vaultRetired: {
+            ...common,
+            name: prefix + "-vault",
+            main: resolve(root, "tools/hosted-git-fixture/retired.ts"),
+            workers_dev: false,
+            preview_urls: false,
+            durable_objects: { bindings: [] },
+            migrations: [
+              { tag: "fixture-vault-v1", new_sqlite_classes: ["Vault"] },
+              { tag: "fixture-vault-retired", deleted_classes: ["Vault"] },
+            ],
+          },
+        }
+      : {}),
     retired: {
       ...common,
       name: apiName,
@@ -158,9 +231,10 @@ export function assertFixtureBindings(metadata, plan, kind) {
           "HOSTED_BACKEND_KEY",
           "SESSION_SECRET",
           ...(plan.purpose !== "git-import" ? ["NANOHUB_RECOVERY_HOLD"] : []),
-          ...(plan.purpose === "repository-recovery"
+          ...(["repository-recovery", "vault-recovery"].includes(plan.purpose)
             ? ["HOSTED_REPO_RECOVERY", "HOSTED_REPO_PHASE"]
             : []),
+          ...(plan.purpose === "vault-recovery" ? ["VAULT"] : []),
           ...classes.map(([name]) => name),
         ]
       : [
@@ -191,13 +265,21 @@ export function assertFixtureBindings(metadata, plan, kind) {
         "Recovery fixture must hold normal requests throughout the drill",
       );
     if (
-      plan.purpose === "repository-recovery" &&
+      ["repository-recovery", "vault-recovery"].includes(plan.purpose) &&
       (bindings.find((b) => b.name === "HOSTED_REPO_RECOVERY")?.text !== "1" ||
         bindings.find((b) => b.name === "HOSTED_REPO_PHASE")?.text !==
           plan.api.vars.HOSTED_REPO_PHASE)
     )
       throw Error("Recovery phase metadata mismatch");
-    if (services.length)
+    if (plan.purpose === "vault-recovery") {
+      if (
+        services.length !== 1 ||
+        services[0].name !== "VAULT" ||
+        services[0].service !== plan.vaultName ||
+        services[0].entrypoint !== "VaultRecoveryService"
+      )
+        throw Error("Recovery API must target only its own vault");
+    } else if (services.length)
       throw Error("Fixture API must have no external service bindings");
     const database = bindings.find((binding) => binding.name === "AUTH_DB");
     if ((database?.database_id ?? database?.id) !== plan.databaseId)

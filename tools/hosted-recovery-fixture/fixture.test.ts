@@ -4,6 +4,11 @@ import { recoveryObject } from "./objects";
 import { control } from "./control";
 import { repositoryRoute } from "./repository-control";
 import {
+  metadataRows,
+  ownedSecret,
+  assertVaultBindings,
+} from "./vault-lifecycle.mjs";
+import {
   fixturePlan,
   classes,
   assertFixtureBindings,
@@ -510,4 +515,138 @@ test("real object constructor registers its binding and opaque ID behind the inp
   ]);
   new WrappedRegistry(state, env);
   assert.equal(rows.length, 1);
+});
+
+test("provider metadata parsing requires explicit table headers and never interprets permission errors as absence", () => {
+  const row =
+    "│ Name │ ID │ Scopes │\n│ test-entry │ " + "a".repeat(32) + " │ workers │";
+  assert.deepEqual(metadataRows({ code: 0, stdout: row, stderr: "" }), [
+    { Name: "test-entry", ID: "a".repeat(32), Scopes: "workers" },
+  ]);
+  assert.deepEqual(
+    metadataRows(
+      { code: 1, stdout: "", stderr: "List request returned no secrets." },
+      true,
+    ),
+    [],
+  );
+  for (const result of [
+    { code: 1, stdout: "", stderr: "Authentication failed [code:10000]" },
+    { code: 0, stdout: "an unrelated id " + "a".repeat(32), stderr: "" },
+    {
+      code: 1,
+      stdout: "List request returned no secrets.",
+      stderr: "unauthorized",
+    },
+  ])
+    assert.throws(() => metadataRows(result, true));
+});
+test("cleanup refuses provider entries not requested by this run or whose ID changed", () => {
+  const plan = { providerSecretName: "nh-vault-recovery-owned-value" },
+    rows = [{ Name: plan.providerSecretName, ID: "a".repeat(32) }];
+  assert.throws(() => ownedSecret(rows, plan, {}), /unowned/);
+  assert.throws(
+    () =>
+      ownedSecret(rows, plan, {
+        providerSecretRequested: true,
+        providerSecretId: "b".repeat(32),
+      }),
+    /identity changed/,
+  );
+  assert.equal(
+    ownedSecret(rows, plan, {
+      providerSecretRequested: true,
+      providerSecretId: "a".repeat(32),
+    }),
+    rows[0],
+  );
+  assert.equal(
+    ownedSecret([{ Name: "other-user-entry", ID: "b".repeat(32) }], plan, {
+      providerSecretRequested: true,
+    }),
+    undefined,
+  );
+});
+test("vault recovery plan permits only its generated service, bucket and synthetic provider reference", () => {
+  const plan = fixturePlan({
+    root: "/fixture/source",
+    accountId: "a".repeat(32),
+    runId: "mabcdefgh-0123456789",
+    deadline: 1900000000000,
+    purpose: "vault-recovery",
+    storeId: "b".repeat(32),
+  });
+  assert.equal(plan.api.services[0].service, plan.vaultName);
+  assert.equal(plan.vault.workers_dev, false);
+  assert.equal(plan.vault.preview_urls, false);
+  assert.deepEqual(plan.vaultRetired.migrations[1].deleted_classes, ["Vault"]);
+  const bindings = [
+    { name: "OBJECTS", type: "r2_bucket", bucket_name: plan.bucket },
+    { name: "VAULTS", class_name: "Vault", type: "durable_object_namespace" },
+    {
+      name: "FIXTURE_SECRET",
+      type: "secrets_store_secret",
+      store_id: plan.storeId,
+      secret_name: plan.providerSecretName,
+    },
+    { name: "HOSTED_FIXTURE_EXPIRES", text: String(plan.deadline) },
+    { name: "HOSTED_REPO_RECOVERY", text: "1" },
+    { name: "HOSTED_BACKEND_KEY", type: "secret_text" },
+    {
+      name: "CLOUDFLARE_SECRET_SCOPES",
+      text: plan.vault.vars.CLOUDFLARE_SECRET_SCOPES,
+    },
+  ];
+  const metadata = (values: any[]) => ({
+    resources: {
+      bindings: values,
+      script_runtime: { limits: { subrequests: 50000 } },
+    },
+  });
+  assertVaultBindings(metadata(bindings), plan);
+  for (const field of ["store_id", "secret_name"])
+    assert.throws(() =>
+      assertVaultBindings(
+        metadata(
+          bindings.map((b) =>
+            b.name === "FIXTURE_SECRET" ? { ...b, [field]: "foreign" } : b,
+          ),
+        ),
+        plan,
+      ),
+    );
+  assert.throws(() =>
+    assertVaultBindings(
+      metadata([
+        ...bindings,
+        { name: "PRODUCTION", type: "service", service: "nanohub-vault" },
+      ]),
+      plan,
+    ),
+  );
+});
+test("suspending a cleanup alarm requires authority and returns its prior schedule without touching SQL", async () => {
+  let alarm: number | null = 123;
+  const object = new Wrapped(
+    {
+      storage: {
+        async getAlarm() {
+          return alarm;
+        },
+        async deleteAlarm() {
+          alarm = null;
+        },
+      },
+    },
+    env,
+  );
+  await assert.rejects(
+    () => object.fixtureRecoverySuspendAlarm("wrong"),
+    /denied/,
+  );
+  assert.equal(alarm, 123);
+  assert.deepEqual(await object.fixtureRecoverySuspendAlarm(key), {
+    previousAlarm: 123,
+  });
+  assert.equal(alarm, null);
 });

@@ -101,12 +101,20 @@ export function recoveryObject<T extends Constructor>(
         throw Error("Unexpected provider recovery bookmark");
       return { id: this.#state.id.toString(), bookmark: point };
     }
+    async fixtureRecoverySuspendAlarm(key: string) {
+      this.#authorize(key);
+      const previousAlarm = await this.#state.storage.getAlarm();
+      await this.#state.storage.deleteAlarm();
+      return { previousAlarm };
+    }
     async fixtureRecoveryInspect(key: string) {
       this.#authorize(key);
       const tables = this.#state.storage.sql
         .exec<{
           name: string;
-        }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__cf_kv' AND name NOT GLOB '_cf_*' ORDER BY name")
+        }>(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__cf_kv' AND name NOT GLOB '_cf_*' ORDER BY name",
+        )
         .toArray();
       const names = new Set(tables.map((row) => row.name));
       const pending = names.has("pending")

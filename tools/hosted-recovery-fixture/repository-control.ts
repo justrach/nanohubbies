@@ -147,6 +147,19 @@ export async function repositoryRoute(
       ...(result.truncated ? { cursor: result.cursor } : {}),
     });
   }
+  if (input.op === "vault-recovery") {
+    const vault = (env as any).VAULT;
+    if (typeof vault?.recovery !== "function")
+      return json({ error: "Fixture vault unavailable" }, 400);
+    return json(
+      await vault.recovery(
+        env.HOSTED_BACKEND_KEY,
+        input.operation,
+        input.id,
+        input.bookmark,
+      ),
+    );
+  }
   if (["object-get", "object-put", "object-delete"].includes(input.op)) {
     if (
       typeof input.key !== "string" ||

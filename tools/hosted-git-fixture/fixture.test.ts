@@ -411,3 +411,56 @@ test("missing deployed Worker without namespace retirement proof cannot be decla
   assert.ok(!f.events.includes("purge"));
   assert.ok(!f.events.includes("remove-keys"));
 });
+
+test("optional vault cleanup runs after the application stops and before any shared bucket purge", async () => {
+  const f = lifecycle({
+    api: true,
+    gate: true,
+    bucket: true,
+    database: true,
+    vault: true,
+    providerSecret: true,
+  });
+  const ops: any = f.ops;
+  ops.extraKinds = ["vault", "providerSecret"];
+  ops.cleanupVault = async () => {
+    f.events.push("retire-vault-and-delete-owned-secret");
+    f.state.vault = false;
+    f.state.providerSecret = false;
+  };
+  await cleanupFixture(f.record, ops);
+  assert.equal(f.record.cleanupNeeded, false);
+  assert.ok(
+    f.events.indexOf("delete:api") <
+      f.events.indexOf("retire-vault-and-delete-owned-secret"),
+  );
+  assert.ok(
+    f.events.indexOf("retire-vault-and-delete-owned-secret") <
+      f.events.indexOf("purge"),
+  );
+});
+test("vault cleanup or observation failure retains keys and prevents bucket deletion", async () => {
+  for (const failure of ["observe:vault", "vault-cleanup"]) {
+    const f = lifecycle(
+      {
+        api: true,
+        gate: true,
+        bucket: true,
+        database: true,
+        vault: true,
+        providerSecret: true,
+      },
+      failure,
+    );
+    const ops: any = f.ops;
+    ops.extraKinds = ["vault", "providerSecret"];
+    ops.cleanupVault = async () => {
+      throw Error("Injected vault cleanup failure");
+    };
+    await cleanupFixture(f.record, ops);
+    assert.equal(f.record.cleanupNeeded, true);
+    assert.equal(f.state.bucket, true);
+    assert.ok(!f.events.includes("remove-keys"));
+    assert.ok(!f.events.includes("purge"));
+  }
+});

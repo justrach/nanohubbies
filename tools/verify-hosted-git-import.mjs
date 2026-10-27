@@ -23,6 +23,13 @@ import { cleanupFixture } from "./hosted-git-fixture/cleanup.mjs";
 import { gitProxy } from "./hosted-git-fixture/proxy.mjs";
 import { bucketExists } from "./hosted-git-fixture/observations.mjs";
 import { startTrace } from "./hosted-git-fixture/trace.mjs";
+import {
+  metadataRows,
+  listProviderSecrets,
+  ownedSecret,
+  assertVaultBindings,
+  syntheticValue,
+} from "./hosted-recovery-fixture/vault-lifecycle.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -45,7 +52,12 @@ export async function verifyHostedGitImport(
       "Set NANOHUB_LIVE_CLOUDFLARE=1 for explicitly isolated hosted acceptance",
     );
   assert.ok(
-    ["git-import", "storage-recovery", "repository-recovery"].includes(purpose),
+    [
+      "git-import",
+      "storage-recovery",
+      "repository-recovery",
+      "vault-recovery",
+    ].includes(purpose),
   );
   let saved, previous;
   if (cleanupDirectory) {
@@ -61,9 +73,12 @@ export async function verifyHostedGitImport(
     assert.equal(saved.root, root);
     purpose = saved.purpose ?? "git-import";
     assert.ok(
-      ["git-import", "storage-recovery", "repository-recovery"].includes(
-        purpose,
-      ),
+      [
+        "git-import",
+        "storage-recovery",
+        "repository-recovery",
+        "vault-recovery",
+      ].includes(purpose),
     );
     artifactBase = dirname(cleanupDirectory);
   } else {
@@ -126,6 +141,7 @@ export async function verifyHostedGitImport(
       runId,
       deadline,
       databaseId: previous?.databaseId,
+      storeId: previous?.storeId,
       purpose,
     }),
     gateOrigin = previous?.gateOrigin ?? "",
@@ -140,18 +156,23 @@ export async function verifyHostedGitImport(
     startedAt: new Date().toISOString(),
     runId,
     accountId,
-    scope:
-      purpose === "repository-recovery"
-        ? "isolated hosted repository DO/D1/R2 loss/restore; real Git and policy checks; independent current revocations; normal traffic held"
-        : purpose === "storage-recovery"
-          ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
-          : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
+    scope: ["repository-recovery", "vault-recovery"].includes(purpose)
+      ? "isolated hosted repository DO/D1/R2 loss/restore; real Git and policy checks; independent current revocations; normal traffic held"
+      : purpose === "storage-recovery"
+        ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
+        : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
     productionResourcesUsed: false,
     resources: {
       apiName: plan.apiName,
       gateName: plan.gateName,
       bucket: plan.bucket,
       database: plan.database,
+      ...(plan.vaultName
+        ? {
+            vaultName: plan.vaultName,
+            providerSecretName: plan.providerSecretName,
+          }
+        : {}),
     },
     cleanupNeeded: true,
     steps: [],
@@ -161,6 +182,12 @@ export async function verifyHostedGitImport(
     gateName: plan.gateName,
     bucket: plan.bucket,
     database: plan.database,
+    ...(plan.vaultName
+      ? {
+          vaultName: plan.vaultName,
+          providerSecretName: plan.providerSecretName,
+        }
+      : {}),
   });
   assert.equal(record.accountId, accountId);
   assert.equal(record.runId, runId);
@@ -191,6 +218,8 @@ export async function verifyHostedGitImport(
     gate: join(directory, "gate.json"),
     retired: join(directory, "retired.json"),
     purge: join(directory, "purge.json"),
+    vault: join(directory, "vault.json"),
+    vaultRetired: join(directory, "vault-retired.json"),
   };
   if (!cleanupDirectory)
     await atomic(join(directory, "manifest.json"), {
@@ -208,6 +237,10 @@ export async function verifyHostedGitImport(
     await atomic(configPaths.gate, plan.gate);
     await atomic(configPaths.retired, plan.retired);
     await atomic(configPaths.purge, purgeConfiguration(plan));
+    if (plan.vault) {
+      await atomic(configPaths.vault, plan.vault);
+      await atomic(configPaths.vaultRetired, plan.vaultRetired);
+    }
   };
   await saveConfigs();
   const wrangler = async (
@@ -439,6 +472,11 @@ export async function verifyHostedGitImport(
         ["deploy", "--dry-run", "--outdir", join(directory, "dry-gate")],
         configPaths.gate,
       );
+      if (plan.vault)
+        await wrangler(
+          ["deploy", "--dry-run", "--outdir", join(directory, "dry-vault")],
+          configPaths.vault,
+        );
       record.d1Requested = true;
       await persist();
       const database = await wrangler([
@@ -468,6 +506,89 @@ export async function verifyHostedGitImport(
         ["r2", "bucket", "create", plan.bucket, "--update-config=false"],
         configPaths.gate,
       );
+      if (plan.vault) {
+        const stores = metadataRows(
+          await wrangler(
+            ["secrets-store", "store", "list", "--remote", "--per-page", "100"],
+            configPaths.purge,
+          ),
+        );
+        assert.equal(
+          stores.length,
+          1,
+          "Use the existing account store without creating or deleting it",
+        );
+        assert.equal(stores[0].AccountID, accountId);
+        record.storeId = stores[0].ID;
+        await persist();
+        plan = fixturePlan({
+          root,
+          accountId,
+          runId,
+          deadline,
+          databaseId,
+          purpose,
+          storeId: record.storeId,
+        });
+        await saveConfigs();
+        const original = await listProviderSecrets(
+          plan,
+          wrangler,
+          configPaths.purge,
+        );
+        assert.ok(!original.some((x) => x.Name === plan.providerSecretName));
+        record.otherProviderSecretIds = original.map(({ ID, Name }) => ({
+          id: ID,
+          name: Name,
+        }));
+        record.providerSecretRequested = true;
+        await persist();
+        const created = await wrangler(
+          [
+            "secrets-store",
+            "secret",
+            "create",
+            plan.storeId,
+            "--name",
+            plan.providerSecretName,
+            "--scopes",
+            "workers",
+            "--value",
+            syntheticValue(plan, "A"),
+            "--remote",
+          ],
+          configPaths.purge,
+        );
+        const id = /Created secret! \(ID: ([a-f0-9]{32})\)/.exec(
+          created.stdout,
+        )?.[1];
+        assert.ok(id, "Owned provider secret creation must be acknowledged");
+        record.providerSecretId = id;
+        await persist();
+        assert.equal(
+          ownedSecret(
+            await listProviderSecrets(plan, wrangler, configPaths.purge),
+            plan,
+            record,
+          )?.ID,
+          id,
+        );
+        record.vaultRequested = true;
+        await persist();
+        const deployed = await deploy(configPaths.vault);
+        record.vaultVersion = deployed.version;
+        await persist();
+        const path = join(directory, "vault-secrets.json");
+        await atomic(path, { HOSTED_BACKEND_KEY: keys.backend });
+        await wrangler(["secret", "bulk", path], configPaths.vault);
+        await rm(path);
+        record.vaultVersion = await currentVersion(configPaths.vault);
+        const meta = await metadata(record.vaultVersion, configPaths.vault);
+        assertVaultBindings(meta, plan);
+        await atomic(join(directory, "vault-version.json"), meta);
+        record.vaultBindingsIsolated = true;
+        await persist();
+      }
       record.apiRequested = true;
       await persist();
       const apiDeploy = await deploy(configPaths.api);
@@ -511,7 +632,7 @@ export async function verifyHostedGitImport(
       );
       const health = await (await call("/__fixture/health")).json();
       assert.equal(health.fixture, "private-hosted-git");
-      if (purpose === "repository-recovery") {
+      if (["repository-recovery", "vault-recovery"].includes(purpose)) {
         const { runRepositoryRecoveryProbe } =
           await import("./hosted-recovery-fixture/repository-probe.mjs");
         const setPhase = async (phase) => {
@@ -541,6 +662,42 @@ export async function verifyHostedGitImport(
           setPhase,
           origin: gateOrigin,
           controlKey: keys.control,
+          rotateProviderSecret: plan.vault
+            ? async () => {
+                assert.equal(
+                  ownedSecret(
+                    await listProviderSecrets(
+                      plan,
+                      wrangler,
+                      configPaths.purge,
+                    ),
+                    plan,
+                    record,
+                  )?.ID,
+                  record.providerSecretId,
+                );
+                await wrangler(
+                  [
+                    "secrets-store",
+                    "secret",
+                    "update",
+                    plan.storeId,
+                    "--secret-id",
+                    record.providerSecretId,
+                    "--value",
+                    syntheticValue(plan, "B"),
+                    "--remote",
+                  ],
+                  configPaths.purge,
+                );
+                assert.equal(
+                  await currentVersion(configPaths.vault),
+                  record.vaultVersion,
+                );
+                record.vaultRotationWithoutRedeploy = true;
+                await persist();
+              }
+            : undefined,
         });
         record.acceptancePassed = true;
       } else if (purpose === "storage-recovery") {
@@ -717,10 +874,14 @@ export async function verifyHostedGitImport(
         () => {},
       );
     const exists = async (kind) => {
-      if (kind === "api" || kind === "gate") {
+      if (kind === "api" || kind === "gate" || kind === "vault") {
         const result = await wrangler(
           ["versions", "list", "--json"],
-          kind === "api" ? configPaths.retired : configPaths.purge,
+          kind === "api"
+            ? configPaths.retired
+            : kind === "vault"
+              ? configPaths.vaultRetired
+              : configPaths.purge,
           { allowFailure: true },
         );
         if (result.code) {
@@ -730,6 +891,14 @@ export async function verifyHostedGitImport(
         assert.ok(Array.isArray(JSON.parse(result.stdout)));
         return true;
       }
+      if (kind === "providerSecret")
+        return record.storeId
+          ? !!ownedSecret(
+              await listProviderSecrets(plan, wrangler, configPaths.purge),
+              plan,
+              record,
+            )
+          : false;
       if (kind === "bucket")
         return bucketExists(
           await wrangler(
@@ -748,6 +917,83 @@ export async function verifyHostedGitImport(
     await cleanupFixture(record, {
       persist,
       exists,
+      ...(plan.vault
+        ? {
+            extraKinds: ["vault", "providerSecret"],
+            cleanupVault: async (observed) => {
+              if (observed.vault) {
+                await deploy(configPaths.vaultRetired);
+                const retired = await metadata(
+                  await currentVersion(configPaths.vaultRetired),
+                  configPaths.vaultRetired,
+                );
+                assert.equal(
+                  retired.resources.script_runtime.migration_tag,
+                  "fixture-vault-retired",
+                );
+                assert.ok(
+                  !retired.resources.bindings.some(
+                    (x) =>
+                      x.type === "durable_object_namespace" ||
+                      x.type === "secrets_store_secret",
+                  ),
+                );
+                await atomic(
+                  join(directory, "retired-vault-version.json"),
+                  retired,
+                );
+                record.vaultNamespacesRetired = true;
+                await persist();
+                await wrangler(
+                  ["delete", plan.vaultName, "--force"],
+                  configPaths.vaultRetired,
+                );
+                assert.equal(await exists("vault"), false);
+              } else if (record.vaultVersion && !record.vaultNamespacesRetired)
+                throw Error("Vault missing without namespace retirement proof");
+              record.vaultWorkerDeleted = true;
+              await persist();
+              if (observed.providerSecret) {
+                const target = ownedSecret(
+                  await listProviderSecrets(plan, wrangler, configPaths.purge),
+                  plan,
+                  record,
+                );
+                assert.ok(target);
+                await wrangler(
+                  [
+                    "secrets-store",
+                    "secret",
+                    "delete",
+                    plan.storeId,
+                    "--secret-id",
+                    target.ID,
+                    "--remote",
+                  ],
+                  configPaths.purge,
+                );
+              }
+              assert.equal(await exists("providerSecret"), false);
+              record.providerSecretDeleted = true;
+              if (record.storeId) {
+                const remaining = await listProviderSecrets(
+                  plan,
+                  wrangler,
+                  configPaths.purge,
+                );
+                for (const entry of record.otherProviderSecretIds ?? [])
+                  assert.ok(
+                    remaining.some(
+                      (x) => x.ID === entry.id && x.Name === entry.name,
+                    ),
+                    "An existing provider secret is missing",
+                  );
+                record.existingProviderEntriesRetained = true;
+              }
+              await persist();
+            },
+          }
+        : {}),
       closeGate: async () => {
         record.gateRequested = true;
         await persist();
@@ -850,6 +1096,7 @@ export async function verifyHostedGitImport(
           "api-secrets.json",
           "gate-secrets.json",
           "repository-private-grants.json",
+          "vault-secrets.json",
         ])
           await rm(join(directory, file), { force: true });
       },

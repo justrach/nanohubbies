@@ -227,3 +227,42 @@ draining, current-authority acquisition, Vault/workload-grant integration and
 safe public reopening remain part of the complete hosted gate. A passed drill
 may establish only its explicitly recorded scope. Interrupted cleanup uses the
 same command with `--cleanup /absolute/private-artifacts/<run-id>`.
+
+### Vault-inclusive hosted drill
+
+The vault extension runs the repository acceptance with a separate disposable
+Vault Worker and its real Secrets Store binding:
+
+```sh
+NANOHUB_LIVE_CLOUDFLARE=1 bun tools/verify-hosted-vault-recovery.mjs /absolute/account-config.jsonc /absolute/private-artifacts
+```
+
+Cloudflare currently permits one Secrets Store per account. The harness discovers
+that existing store, creates one uniquely named synthetic test entry, and never
+creates or deletes the account store. All mutation/deletion targets are checked
+against the generated name and observed entry ID. Other entries are observed as
+metadata only. No actual application credential is copied into the test value.
+
+The separate fixture Vault exposes the real application service methods plus
+operator-key-gated recovery RPCs. Its DO instances join the constructor inventory
+and native bookmark checkpoints. An active workload grant has an expiry cleanup
+alarm; freezing deliberately records and suspends that Vault-only cleanup alarm
+before taking the checkpoint. Other classes must still have no alarms, sockets,
+unpublished objects or active import. Verification reads reschedule expiry and
+revocation must remove the final alarm. Actual idle runtime eviction remains
+under Cloudflare's control.
+
+The acceptance requires secret rotation without redeploying the Vault, revoked
+workload access after the current restore, and an older restored grant resolving
+the latest provider value rather than rolling the value back. Reconciliation
+must revoke that grant again across restart. Disconnect/reconnect must retain
+the provider value, and a complete return to the current repository checkpoint
+must pass again. Retained R2 bytes and D1 state are checked for absence of both
+synthetic value revisions. DO PITR stays in Cloudflare; no provider-value export
+or custom plaintext Vault backup is introduced.
+
+Cleanup first removes the application service caller, explicitly retires/deletes
+the fixture Vault and then deletes only its synthetic provider entry before R2
+purge. A Vault observation/cleanup failure keeps the keys and prevents bucket
+deletion. Resume with the same script's `--cleanup` option. Production Vault,
+main Worker and existing provider entries remain separate from the fixture.

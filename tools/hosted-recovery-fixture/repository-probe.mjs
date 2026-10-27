@@ -11,6 +11,7 @@ import {
 import { classes } from "../hosted-git-fixture/config.mjs";
 import { gitProxy } from "../hosted-git-fixture/proxy.mjs";
 import { verifyRetainedBytes } from "./probe.mjs";
+import { syntheticValue } from "./vault-lifecycle.mjs";
 
 const exec = promisify(execFile),
   hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -27,8 +28,10 @@ export async function runRepositoryRecoveryProbe({
   setPhase,
   origin,
   controlKey,
+  rotateProviderSecret,
 }) {
-  assert.equal(plan.purpose, "repository-recovery");
+  assert.ok(["repository-recovery", "vault-recovery"].includes(plan.purpose));
+  const allClasses = plan.vault ? [...classes, ["VAULTS", "Vault"]] : classes;
   const trunk = "hosted-recovery",
     base = "/api/trunks/" + trunk,
     archived = "/api/trunks/hosted-archived";
@@ -95,12 +98,19 @@ export async function runRepositoryRecoveryProbe({
     await call("/__fixture/repository", { method: "POST", body });
   const jsonControl = async (body) => (await control(body)).json();
   const object = async (target, op, more = {}) =>
-    (
-      await call("/__fixture/recovery", {
-        method: "POST",
-        body: { ...target, op, ...more },
-      })
-    ).json();
+    target.binding === "VAULTS"
+      ? jsonControl({
+          op: "vault-recovery",
+          operation: op,
+          id: target.id,
+          ...more,
+        })
+      : (
+          await call("/__fixture/recovery", {
+            method: "POST",
+            body: { ...target, op, ...more },
+          })
+        ).json();
   const bearer = (value) => ({ authorization: "Bearer " + value.token });
   const basic = (value) => ({
     authorization:
@@ -202,7 +212,7 @@ export async function runRepositoryRecoveryProbe({
     for (const item of await objects(true)) {
       const response = await control({ op: "object-get", key: item.key });
       const entry = await response.json();
-      assert.ok(classes.some(([binding]) => binding === entry.binding));
+      assert.ok(allClasses.some(([binding]) => binding === entry.binding));
       assert.match(entry.id, /^[a-f0-9]{64}$/);
       assert.equal(
         item.key,
@@ -232,9 +242,20 @@ export async function runRepositoryRecoveryProbe({
     await held();
     await request(base + "/branches", { expected: 503 });
     const entries = await inventory();
-    assert.equal(new Set(entries.map((x) => x.binding)).size, 9);
+    assert.equal(
+      new Set(entries.map((x) => x.binding)).size,
+      allClasses.length,
+    );
     const points = [];
     for (const entry of entries) {
+      if (entry.binding === "VAULTS") {
+        const suspended = await object(entry, "suspend-alarm");
+        result.vaultSuspendedCleanupAlarms ??= [];
+        result.vaultSuspendedCleanupAlarms.push({
+          label,
+          previousAlarm: suspended.previousAlarm,
+        });
+      }
       const state = await object(entry, "inspect");
       assert.equal(state.alarm, null, "No pending alarm at checkpoint");
       assert.equal(state.webSockets, 0, "No open socket at checkpoint");
@@ -264,6 +285,13 @@ export async function runRepositoryRecoveryProbe({
         ).arrayBuffer(),
       );
       assert.equal(bytes.length, item.size);
+      if (plan.vault)
+        for (const revision of ["A", "B"])
+          assert.equal(
+            bytes.includes(Buffer.from(syntheticValue(plan, revision))),
+            false,
+            "Provider values must remain outside retained R2 data",
+          );
       const file = hash(Buffer.from(item.key)) + ".bin";
       await writeFile(join(retained, file), bytes, { mode: 0o600 });
       files.push({ ...item, sha256: hash(bytes), bytes: bytes.length, file });
@@ -273,6 +301,14 @@ export async function runRepositoryRecoveryProbe({
       entries,
       "Inventory stays stable while frozen",
     );
+    if (plan.vault) {
+      for (const revision of ["A", "B"])
+        assert.equal(
+          JSON.stringify(database).includes(syntheticValue(plan, revision)),
+          false,
+        );
+      result.providerValuesAbsentFromApplicationBackup = true;
+    }
     const captured = { label, points, d1Bookmark, database, files, retained };
     await writeFile(
       join(directory, label + ".json"),
@@ -282,7 +318,7 @@ export async function runRepositoryRecoveryProbe({
     result.checkpoints.push({
       label,
       durableObjects: points.length,
-      classes: 9,
+      classes: allClasses.length,
       r2Objects: files.length,
       r2Bytes: files.reduce((n, x) => n + x.bytes, 0),
     });
@@ -393,6 +429,35 @@ export async function runRepositoryRecoveryProbe({
         ),
         file,
       );
+  };
+  const freshProviderRead = async (revision) => {
+    const grant = await api("POST", base + "/secrets", {
+      names: ["DEPLOY_TOKEN"],
+      ttlSeconds: 3600,
+    });
+    try {
+      let matched = false;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const payload = await api(
+          "POST",
+          base + "/secrets/read",
+          {},
+          bearer(grant),
+        );
+        if (payload.values.DEPLOY_TOKEN === syntheticValue(plan, revision)) {
+          matched = true;
+          break;
+        }
+        await wait(2000);
+      }
+      assert.equal(
+        matched,
+        true,
+        "Current Cloudflare binding must resolve the expected synthetic revision",
+      );
+    } finally {
+      await api("DELETE", base + "/secrets", { grantId: grant.id });
+    }
   };
   try {
     await stage("repository-seed");
@@ -575,6 +640,36 @@ export async function runRepositoryRecoveryProbe({
           { binding, name: "unused-" + binding.toLowerCase() },
           "inspect",
         );
+    if (plan.vault) {
+      const connected = await api("PUT", base + "/secrets", {
+        name: "DEPLOY_TOKEN",
+        binding: "FIXTURE_SECRET",
+      });
+      assert.equal(connected.version, 1);
+      credentials.workload = await api("POST", base + "/secrets", {
+        names: ["DEPLOY_TOKEN"],
+        ttlSeconds: 3600,
+      });
+      await savePrivate();
+      const initial = await api(
+        "POST",
+        base + "/secrets/read",
+        {},
+        bearer(credentials.workload),
+      );
+      assert.equal(initial.values.DEPLOY_TOKEN, syntheticValue(plan, "A"));
+      await request(base + "/secrets/read?environment=production", {
+        method: "POST",
+        body: {},
+        principal: bearer(credentials.workload),
+        expected: 403,
+      });
+      const metadata = await api("GET", base + "/secrets");
+      assert.equal(metadata.valueCustody, "cloudflare");
+      assert.equal(metadata.legacyValuesAwaitingMigration, 0);
+      assert.ok(metadata.nextCleanupAt);
+      result.vaultSeededThroughApplication = true;
+    }
     const old = await snapshot("before-revocations");
     await stage("revoke-current-authority");
     await setPhase("reconcile");
@@ -587,6 +682,7 @@ export async function runRepositoryRecoveryProbe({
       cli: credentials.cli.id,
       runner: credentials.runner.id,
       providerAccounts: ["owner", "writer"],
+      ...(plan.vault ? { workload: credentials.workload.id } : {}),
     };
     await writeFile(
       join(directory, "latest-authority.json"),
@@ -604,6 +700,8 @@ export async function runRepositoryRecoveryProbe({
         userId: ledger.removedCollaborator,
         role: null,
       });
+      if (ledger.workload)
+        await api("DELETE", base + "/secrets", { grantId: ledger.workload });
       for (const role of ledger.providerAccounts)
         await jsonControl({ op: "account-forget", role });
     };
@@ -630,6 +728,13 @@ export async function runRepositoryRecoveryProbe({
         principal: bearer(credentials.agent),
         expected: 401,
       });
+      if (plan.vault)
+        await request(base + "/secrets/read", {
+          method: "POST",
+          body: {},
+          principal: bearer(credentials.workload),
+          expected: 403,
+        });
       for (const role of ["owner", "writer"])
         assert.deepEqual(await jsonControl({ op: "account-proof", role }), {
           sha256: null,
@@ -637,6 +742,12 @@ export async function runRepositoryRecoveryProbe({
     };
     await revoke(ledger);
     await denied();
+    if (plan.vault) {
+      await rotateProviderSecret();
+      await freshProviderRead("B");
+      result.providerRotationWithoutVaultRedeploy = true;
+      assert.equal((await api("GET", base + "/secrets")).nextCleanupAt, null);
+    }
     const paths = [
       "/repository",
       "/branches",
@@ -647,6 +758,7 @@ export async function runRepositoryRecoveryProbe({
       "/issues",
       "/contributions",
       "/ci/runners",
+      ...(plan.vault ? ["/secrets"] : []),
     ];
     const metadata = await Promise.all(
         paths.map((path) => api("GET", base + path)),
@@ -700,6 +812,10 @@ export async function runRepositoryRecoveryProbe({
     });
     await request(base + "/branches", { principal: null, expected: 404 });
     result.exactMetadataReviewsAndArchive = true;
+    if (plan.vault) {
+      await freshProviderRead("B");
+      result.currentRestoreRetainsLatestProviderValue = true;
+    }
     const fresh = await api("POST", base + "/git-tokens", {
       label: "Post-recovery verification",
     });
@@ -758,6 +874,16 @@ export async function runRepositoryRecoveryProbe({
         (await jsonControl({ op: "account-proof", role })).sha256,
         /^[a-f0-9]{64}$/,
       );
+    if (plan.vault) {
+      const restored = await api(
+        "POST",
+        base + "/secrets/read",
+        {},
+        bearer(credentials.workload),
+      );
+      assert.equal(restored.values.DEPLOY_TOKEN, syntheticValue(plan, "B"));
+      result.olderWorkloadGrantRevivesButValueRemainsCurrent = true;
+    }
     mcp = new Client({
       name: "Isolated rollback authority probe",
       version: "1",
@@ -802,6 +928,35 @@ export async function runRepositoryRecoveryProbe({
       (await api("GET", base + "/repository")).refs,
       metadata[0].refs,
     );
+    if (plan.vault) {
+      await freshProviderRead("B");
+      const disconnected = await api("DELETE", base + "/secrets", {
+        name: "DEPLOY_TOKEN",
+      });
+      assert.equal(disconnected.valueRetainedByCloudflare, true);
+      assert.equal((await api("GET", base + "/secrets")).secrets.length, 0);
+      await api("PUT", base + "/secrets", {
+        name: "DEPLOY_TOKEN",
+        binding: "FIXTURE_SECRET",
+      });
+      await freshProviderRead("B");
+      result.disconnectReconnectRetainsProviderValue = true;
+      await stage("return-to-current-repository-checkpoint");
+      await restore(current);
+      await denied();
+      assert.deepEqual(
+        await Promise.all(paths.map((path) => api("GET", base + path))),
+        metadata,
+      );
+      await freshProviderRead("B");
+      const idle = await api("GET", base + "/secrets");
+      assert.equal(idle.nextCleanupAt, null);
+      assert.equal(idle.grants.length, 0);
+      assert.equal(idle.secrets.length, 1);
+      result.fullRepositoryReturnPathVerified = true;
+      result.idleVaultHasNoAlarm = true;
+      result.workloadRevocationDeniedAfterRestart = true;
+    }
     await setPhase("frozen");
     await held();
     await request(base + "/branches", { expected: 503 });

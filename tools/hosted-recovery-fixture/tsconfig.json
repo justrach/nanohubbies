@@ -1,4 +1,10 @@
 {
   "extends": "../hosted-git-fixture/tsconfig.json",
-  "include": ["app.ts", "objects.ts", "control.ts", "repository-control.ts"]
+  "include": [
+    "app.ts",
+    "objects.ts",
+    "control.ts",
+    "repository-control.ts",
+    "vault.ts"
+  ]
 }
