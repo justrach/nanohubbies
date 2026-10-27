@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T16:04:08.864Z",
+  "repositories": [
+    "https://github.com/justrach/meld2.git",
+    "https://github.com/yourmeld/meld2.git"
+  ],
+  "gitReadAccess": true,
+  "connectorReadAccess": false,
+  "observedRefsIdentical": true,
+  "main": "ece0aea60555145cbadba1c1515af151ca628ad0",
+  "staging": "e176463b63253fb513af5ccf339070169e370323",
+  "sourceFiles": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "e0e979b90330f7c04a59cf23aabbd69b08ecc6ab49f2cf95931b6f5a1174246b"
+    },
+    {
+      "path": "docs/staging-pipeline.md",
+      "sha256": "358d6f38abd5bf257f40dbe1486aea87412a2b97680541619a244d2ac61393f6"
+    },
+    {
+      "path": "tools/staging/policy.mjs",
+      "sha256": "63642ff649319213c5275e257cfa6b8307dcded695ea61312a84ee39b5df0df7"
+    },
+    {
+      "path": "tools/staging/controller.mjs",
+      "sha256": "44556d5b367188c1b68127c5f2903804feb26944519d2492ab0e7e3cdabf5f09"
+    },
+    {
+      "path": "tools/staging/bootstrap.mjs",
+      "sha256": "1bbb9b6fbc11abf23fc253ef612a43116407398f10ef2a6deaca1e57aed330bf"
+    },
+    {
+      "path": "tools/staging/admin.mjs",
+      "sha256": "6b38f15ec933c2ed6ed544268ad88c4efdfc1f31997004204236ac1bf0324740"
+    },
+    {
+      "path": "package.json",
+      "sha256": "c0401444861c760358fed2a4b65c49bb3e6bcdfb7a3001d989d7b94dca0149c4"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "d64c55335486ab707e47f6e1ebef66a4d6ce359ed638a9e768b7550f4fcb5143"
+    }
+  ],
+  "controller": {
+    "origin": "https://meld-staging-ci.phedayatnia.workers.dev",
+    "healthStatus": 200,
+    "reportedContexts": [
+      "Codegraff / CI",
+      "Codegraff / staging"
+    ],
+    "productionDeploys": false
+  },
+  "stagingObservation": {
+    "origin": "https://staging.meld.space",
+    "versionStatus": 200,
+    "buildId": "e176463",
+    "matchesStagingHeadPrefix": true
+  },
+  "completeHistoryImport": false,
+  "nanohubSourceUsed": false,
+  "newCiJobDispatched": false,
+  "newDeploymentPerformed": false,
+  "refsChanged": false,
+  "credentialsIssued": false,
+  "secretsOrBindingsChanged": false,
+  "originalWorktreesChanged": false
+}

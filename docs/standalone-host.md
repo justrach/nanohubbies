@@ -94,6 +94,18 @@ Delivery is at least once. An expired lease can be reclaimed with a higher attem
 
 Copy `tools/meld-ci.example.json` to a trusted path outside the candidate checkout. It selects `tools/meld-staging-adapter.mjs`, which reuses the **existing** [Meld staging controller and runbook](https://github.com/yourmeld/meld2/blob/main/docs/staging-pipeline.md). The GitHub-hosted Actions workflow is retired. Current Codegraff jobs run the frozen Bun 1.4.2 install, pipeline regression checks, workspace `bun run check` (pinned tsrs), `bun run test`, React browser tests and the OpenNext production bundle. The old local `candidate/` prototype and historical Actions commands are not the current CI contract.
 
+Read-only discovery on 2026-10-28 JST located the committed runbook and controller
+source through existing Git credentials. The connected GitHub API returns 404,
+but Git reads of both `yourmeld/meld2` and `justrach/meld2` succeed and expose the
+same observed main/staging heads. The controller's committed policy still names
+`yourmeld/meld2`; do not change the adapter target based on the alternate remote
+name. The public controller health endpoint responds, and staging's short build
+ID matches the observed staging head. The [discovery receipt](evidence/meld-source-discovery.json)
+pins the source/configuration hashes and precise observation. This closes the
+missing-runbook lookup, without establishing a Nanohub-source run, full-history
+import, new deployment, real-service acceptance or cutover. No Meld refs,
+credentials, runtime secrets or bindings were changed.
+
 ```sh
 node --env-file=/absolute/private/staging-pipeline.env tools/ci-runner.mjs /etc/nanohub-ci/meld.json
 ```
