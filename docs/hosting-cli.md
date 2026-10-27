@@ -570,6 +570,9 @@ or `env export` first.
 
 ## Runner registrations
 
+CLI **0.4.11** adds these commands. The [release evidence](evidence/cli-runners-validation.md)
+records isolated mutation acceptance and the read-only production rollout checks.
+
 Runner administration requires the explicit **`runners:write`** permission and
 current repository **owner** access. Repository admins cannot delegate it.
 Ordinary login defaults and existing credentials gain no runner permission.

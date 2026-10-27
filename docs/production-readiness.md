@@ -10,7 +10,7 @@ pending the original migration and CI/staging acceptance.
 | --- | --- | --- |
 | Native Git hosting | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; clone/fsck; [parity contract](github-parity.md) | Complete the intended application's private-copy migration and compare every committed asset/ref before cutover |
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md) | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract |
-| Native CLI | Published 0.4.10; source and bundled Git/API administration tests, including revision-checked [deployment environment administration](evidence/cli-environments-validation.md); immutable download hashes | Broader command parity remains open, including runner administration; public release operations need the checks below |
+| Native CLI | Published 0.4.11; source and bundled Git/API administration tests, including revision-checked [deployment environment administration](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes | Broader command parity remains open; public release operations need the checks below |
 | Cloudflare-owned secrets | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md) | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups |
 | Codegraff Actions | Real disposable cloud job through the dispatcher; [retained private full image and separate fresh-VM acceptance](evidence/private-toolchain-registry-validation.md) passes every offline project gate using per-job temporary Cloudflare pull access; both VMs are confirmed destroyed | A sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation |
 | Staging and application cutover | Exact candidate/version/approval/acceptance contracts and negative tests | Live intended-application staging job, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted |
@@ -18,12 +18,12 @@ pending the original migration and CI/staging acceptance.
 | Traffic and operations | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence |
 | Source and releases | Changes are committed locally and selected builds are deployed; source has not been pushed to GitHub | Source review/push and an automated repeatable release/rollback workflow |
 
-Current local acceptance passes 286 API unit tests, 218 repository unit cases
+Current local acceptance passes 292 API unit tests, 223 repository unit cases
 and the full real Worker/Git acceptance chain, plus pinned
 tsrs. The separate fresh Linux VM passes frozen offline install, all API and
-repository gates, 42 CLI cases, access/vault, hosting/pool, production build and
+repository gates, 47 CLI cases, access/vault, 37 hosting/pool cases, production build and
 tsrs. The exact source, additional local assertions and limits are in the
-[environment CLI evidence](evidence/cli-environments-validation.md). The
+[runner CLI evidence](evidence/cli-runners-validation.md). The
 [private registry evidence](evidence/private-toolchain-registry-validation.md)
 records retained image distribution and its earlier full-project run.
 Hosted reads prove
@@ -31,7 +31,7 @@ the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
 
-The current main Worker is `0fc3b30a-50a2-4cff-acf5-5d972db04320`, with normal
+The current main Worker is `3730337d-2922-4317-8fa2-62ee31b4f62f`, with normal
 traffic enabled and the request hold available but off. The request hold's first
 corrected rollout was `1450c429-a969-483e-8383-c05d9ed8467c`. A first rollout exposed a static-asset delivery
 regression and was rolled back. The corrected Worker explicitly delegates
@@ -47,7 +47,12 @@ See the [precise evidence](evidence/recovery-hold-validation.md).
 The later environment CLI rollout also passes 15 exact asset checks, unchanged
 27-binding metadata and nine exact canary state comparisons. It verifies public
 CLI execution/help and production permission discovery without creating a
-production credential or editing a production environment.
+production credential or editing a production environment. The later runner
+CLI rollout repeats 15 exact asset checks, 27 unchanged bindings and all nine
+canary comparisons. It verifies the explicit owner-only scope is offered and
+unchecked, without issuing a production runner credential or claiming hosted
+callback acceptance. The configured Nanohub account key still lacks sandbox
+scope; isolated cloud acceptance uses a separate existing CI credential.
 
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security

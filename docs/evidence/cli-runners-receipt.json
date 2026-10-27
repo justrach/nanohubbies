@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-27T15:59:44.305Z",
+  "implementationCommit": "e69b9fe2d8de5b4890f870ee6a906e55d3abfff7",
+  "cli": {
+    "format": 1,
+    "version": "0.4.11",
+    "path": "/nh/releases/0.4.11/nh.mjs",
+    "bytes": 61139,
+    "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+  },
+  "mainWorkerVersion": "3730337d-2922-4317-8fa2-62ee31b4f62f",
+  "previousMainWorkerVersion": "0fc3b30a-50a2-4cff-acf5-5d972db04320",
+  "productionReadOnlyVerification": {
+    "publicCliVersionAndHelp": true,
+    "assetChecks": 15,
+    "exactAssetBytesAndTypes": true,
+    "previousCliReleasesRetained": [
+      "0.4.8",
+      "0.4.9",
+      "0.4.10"
+    ],
+    "bindingsUnchanged": true,
+    "bindingCount": 27,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "newPermissionDiscovered": true,
+    "permissionDefaultUnchecked": true,
+    "ownerPermissionEnabled": true,
+    "durableCredentialWarningShown": true,
+    "activeCliCredentialsInUi": 0,
+    "credentialsCreated": false,
+    "runnerMutationsPerformed": false
+  },
+  "localAcceptance": {
+    "apiUnitCases": 292,
+    "repositoryUnitCases": 223,
+    "completeRepositoryIntegration": true,
+    "cliCases": 47,
+    "hostingPoolUnitCases": 37,
+    "hostingNamespaceIntegration": true,
+    "sourceAndBundledRunnerCli": true,
+    "tsrsWorkspaces": 3,
+    "fullOpenNextBuild": true,
+    "wranglerDryRun": true,
+    "earlierLocalFailure": "SQLite disk I/O while local disk exhausted; full repository gate passed after space recovered"
+  },
+  "linuxAcceptance": {
+    "source": "6d646750d6abb6827fa273d2554373cddd5b96e8",
+    "sourceManifestSha256": "134dbf10629a4a999e4fd44cf8185f4f353ac546f413ebf5a47ae02f248c69a3",
+    "imageManifestDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "npmAndNpxAbsent": true,
+    "sandbox": {
+      "checkedAt": "2026-10-27T15:52:57.608Z",
+      "sandboxId": "cnd_376161c0226354fb6fc6a2ded1bce6d7e1142608",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    },
+    "runtimeFilesMatchExecutedSource": [
+      {
+        "path": "apps/web/src/lib/cli-scopes.ts",
+        "sha256": "515433f38b631224dde4a7e0278e936f262bfd3f8afa9f7c58e9871a2f11b39a"
+      },
+      {
+        "path": "apps/web/src/settings/CliAuthorize.tsx",
+        "sha256": "8a8ad956c23ac7643713cb109f8f1d8ba793d9cceadcdd3dc344868b9b70e507"
+      },
+      {
+        "path": "apps/web/src/trunk/connect/CliAccess.tsx",
+        "sha256": "c94b88561364f033bae48dcd41d1433dbf6ee7e635d64aabcda796a70ed9e4c9"
+      },
+      {
+        "path": "apps/web/src/trunk/review/ProtectionActivity.tsx",
+        "sha256": "a5db47189c02460abae1ad0da469369a44788c39e8519339a21e12d285346e77"
+      },
+      {
+        "path": "bun.lock",
+        "sha256": "31e12a260acff4f926b0fa6b68d3a09c1da8cfb17a9aafd8485034ef1a4df5c8"
+      },
+      {
+        "path": "packages/api/package.json",
+        "sha256": "3c6f3a59305010d0e0f5d9481b7ac2f36b9b7a0235ddfcebe710d70be7e7a127"
+      },
+      {
+        "path": "packages/api/scripts/cli-runners.test.mjs",
+        "sha256": "c736c502830bd011b80c3a0122273170a86f30545e232210aeec3484bfba7ced"
+      },
+      {
+        "path": "packages/api/scripts/runner-pool.test.mjs",
+        "sha256": "604dd168acb4f7708da815cbea5d579e5de0556114fab3e58a7d72c53405c493"
+      },
+      {
+        "path": "packages/api/scripts/smoke-cli-environments.ts",
+        "sha256": "2011ebe9f87bf911f2457b1ae902eb3374e91304cb132dcaec021273f8b49bbf"
+      },
+      {
+        "path": "packages/api/scripts/smoke-cli-protections.ts",
+        "sha256": "95268dc79fc266e174f7e6b986a9fe4e3892a1d6e820df3f6ebd1e3af9d30ce9"
+      },
+      {
+        "path": "packages/api/scripts/smoke-cli-rulesets.ts",
+        "sha256": "df86a23a96670401463eda319f812ac601958b10a9dcaf0c770f7dbe8e78b7f0"
+      },
+      {
+        "path": "packages/api/scripts/smoke-cli-runners.ts",
+        "sha256": "30c2489bf3f7a39166e059af2915687d01349e67074af354f92460dd3f51cc85"
+      },
+      {
+        "path": "packages/api/scripts/team/worker.ts",
+        "sha256": "574079a98e9dbe770d8ce095ad1431cc1ff12ae6c8aa3aa222e8609822e24e95"
+      },
+      {
+        "path": "packages/api/src/ci/store.ts",
+        "sha256": "b5080626a8991394a01e615d9dc304c27cb99987af24603b4cd6fea5c89263fc"
+      },
+      {
+        "path": "packages/api/src/cli/credentials.ts",
+        "sha256": "bf41cbb7d2695cbbf6a42f6552d871a9e5d4a77f21e6a89b4863dd00dcf14dd3"
+      },
+      {
+        "path": "packages/api/src/cli/routes.ts",
+        "sha256": "875ec21bc2f7d4a1ba0966843eb069a516016b32791836a394348bf8641605b3"
+      },
+      {
+        "path": "packages/api/src/repository/activity-types.ts",
+        "sha256": "faef632a9704c2e8f51326c758c8cfd51c52a23f451111bb48963e01071a46a2"
+      },
+      {
+        "path": "packages/api/src/repository/activity.ts",
+        "sha256": "b62b68f1e5fee968154448ada501c12abe11eecd28f6318d91db5852c5bb807f"
+      },
+      {
+        "path": "packages/api/src/repository/cli-runners.ts",
+        "sha256": "1a56d11208a529435b84ea4ad8973f0e960995c78857f5226c200044c7e8c389"
+      },
+      {
+        "path": "packages/api/src/repository/routes.ts",
+        "sha256": "fd5efdfd617246adbda2a8100dcb71ee99681eaa244234e21f53d15de49ce055"
+      },
+      {
+        "path": "packages/api/src/sequencer.ts",
+        "sha256": "67cf01868d1018d43e678f34ac1b9164ba5843495b916b9d5279974342e7f92a"
+      },
+      {
+        "path": "packages/cli/package.json",
+        "sha256": "ce766ad950e70a3501692a76420d5ef145192a7dfad24bba81422b407537782c"
+      },
+      {
+        "path": "packages/cli/src/api.mjs",
+        "sha256": "3cadd5c31861bb005e1cc3ecdffc7544bf8dc2743bfc2f69d2fae915ba943263"
+      },
+      {
+        "path": "packages/cli/src/device.mjs",
+        "sha256": "51b2232934e94bdcea5af4e7bfe91548e2aefd63dfce7247770bb07012478736"
+      },
+      {
+        "path": "packages/cli/src/main.mjs",
+        "sha256": "26d8a3ec36294a487365e2ed77820a5db919a2b0d62e973a4210ffcd7fb25195"
+      },
+      {
+        "path": "packages/cli/src/runners.mjs",
+        "sha256": "ba565118ee8138affb46489ffbcde9b783ec5695c8a42f851ac41f9af52ff871"
+      },
+      {
+        "path": "packages/cli/test/runners.test.mjs",
+        "sha256": "8c69f76ea0b3787df3fb1f141ea487dcf2bf342eea8c07a11d4c44a6a36d0066"
+      },
+      {
+        "path": "tools/actions-pool.example.json",
+        "sha256": "d6adfd32e1f5bf40b8e34ea293f19cb2fa416892f2be2f235555c75de295a036"
+      },
+      {
+        "path": "tools/codegraff-actions.example.json",
+        "sha256": "c2fbf1d08a95241eb30b6cba35be5d4c91490aa7844cc377d66bba35f1ca4aca"
+      },
+      {
+        "path": "tools/runner-pool.mjs",
+        "sha256": "af94c3bc9d842b32645c251b0173c4f08b114ffab459a78de88e63d995c74498"
+      }
+    ],
+    "firstAttempt": {
+      "source": "5dc7ace625547d7e00558c91470daa4040d73f62",
+      "failure": "Old unrelated-scope test expected unrecognized route 404; new route correctly denies missing runners:write with 403. Assertions updated; full second run passes.",
+      "cleanup": {
+        "checkedAt": "2026-10-27T15:40:22.182Z",
+        "sandboxId": "cnd_37157e12220efad501c12fc7442c7692e8906e7e",
+        "state": "destroyed",
+        "deletionConfirmed": true,
+        "failure": "Existing environment permission fixture expected 404 instead of the new explicit 403 denial"
+      }
+    }
+  },
+  "newPermission": "runners:write",
+  "permissionIsDefault": false,
+  "requiresCurrentOwner": true,
+  "registrationCredentialStoredHashOnly": true,
+  "credentialFileSavedBeforePost": true,
+  "lostAcknowledgementSameRegistrationRecovery": true,
+  "revokedRegistrationCannotBeRecovered": true,
+  "runnerCredentialLifetimeIndependentOfCliGrant": true,
+  "unattendedHostedActionsActivated": false,
+  "nanohubAccountKeyScope": {
+    "checkedAt": "2026-10-27T15:59:24.598Z",
+    "status": 403,
+    "sandboxScopeAvailable": false,
+    "allocated": false
+  },
+  "vaultDeployed": false,
+  "githubPushed": false
+}
