@@ -1,0 +1,7 @@
+{
+  "extends": "../../apps/web/tsconfig.worker.json",
+  "compilerOptions": {
+    "types": ["../../apps/web/worker-configuration.d.ts", "node"]
+  },
+  "include": ["app.ts", "backend.ts", "gate.ts", "retired.ts"]
+}

@@ -15,7 +15,8 @@
     "test:repository": "bun run --filter @swarm/api test:repository",
     "nh": "bun packages/cli/bin/nh.mjs",
     "nanohub": "bun packages/cli/bin/nh.mjs",
-    "test:cli": "bun run --filter @nanohub/cli test"
+    "test:cli": "bun run --filter @nanohub/cli test",
+    "test:hosted-fixture": "tsrs --noEmit -p tools/hosted-git-fixture/tsconfig.json && bun test tools/hosted-git-fixture/fixture.test.ts && node --test tools/hosted-git-fixture/proxy.test.mjs"
   },
   "devDependencies": {
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
