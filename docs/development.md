@@ -295,6 +295,12 @@ verifies the pinned image, removes its private Docker authentication, then
 uploads candidate source. Ordinary tests mock issuance; full-project cloud
 acceptance remains explicitly opted in through `tools/verify-codegraff-toolchain.mjs`.
 
+`test:cli-environments` runs the storage/permission/mixed-receiver unit cases
+and both source and standalone CLI forms against real isolated Worker/DO/D1
+state, with native Git clone/fsck. The complete repository gate includes it.
+It creates no production CLI grant or environment. See
+[environment CLI validation](evidence/cli-environments-validation.md).
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

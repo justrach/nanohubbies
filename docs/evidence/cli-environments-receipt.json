@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-27T14:59:17.857Z",
+  "implementationCommit": "22c3d4cb246a84df9cc765b3a7d8f7d474593ca4",
+  "cli": {
+    "format": 1,
+    "version": "0.4.10",
+    "path": "/nh/releases/0.4.10/nh.mjs",
+    "bytes": 53804,
+    "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+  },
+  "mainWorkerVersion": "0fc3b30a-50a2-4cff-acf5-5d972db04320",
+  "previousMainWorkerVersion": "1450c429-a969-483e-8383-c05d9ed8467c",
+  "productionReadOnlyVerification": {
+    "publicCliVersionAndHelp": true,
+    "assetChecks": 15,
+    "exactAssetBytesAndTypes": true,
+    "previousCliReleasesRetained": [
+      "0.4.8",
+      "0.4.9"
+    ],
+    "bindingsUnchanged": true,
+    "bindingCount": 27,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "newPermissionDiscovered": true,
+    "permissionDefaultUnchecked": true,
+    "activeCliCredentialsInUi": 0,
+    "credentialsCreated": false,
+    "environmentMutationsPerformed": false
+  },
+  "localAcceptance": {
+    "apiUnitCases": 286,
+    "repositoryUnitCases": 218,
+    "completeRepositoryIntegration": true,
+    "sourceAndBundledEnvironmentCli": true,
+    "additionalArchiveReadAndScopeIsolationAssertions": true,
+    "tsrsWorkspaces": 3,
+    "nextBuild": true,
+    "openNextStandaloneBuild": true,
+    "wranglerDryRun": true
+  },
+  "linuxAcceptance": {
+    "source": "dfac6cbca7df828f28d80407933c4a226980df9f",
+    "sourceManifestSha256": "fdf597f6d492b7ac58b407d94b59f12f6be6efd0ded393ec1ac9a4e5fa50166e",
+    "registryProvider": "cloudflare",
+    "imageManifestDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "cliCases": 42,
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "npmAndNpxAbsent": true,
+    "sandbox": {
+      "checkedAt": "2026-10-27T15:02:55.339Z",
+      "sandboxId": "cnd_76f76cf6e5e143840d7de738495a8b2b18ccc3ec",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    },
+    "runtimeFilesMatchExecutedSource": [
+      {
+        "path": "apps/web/src/lib/cli-scopes.ts",
+        "sha256": "670fc34a401d089722e2af313991d2c173e93a91a513a2edce3a7cc01b53cffb"
+      },
+      {
+        "path": "apps/web/src/settings/CliAuthorize.tsx",
+        "sha256": "87a9285acf699cb4b58f95a80912d42aa81ec9f31bb2991988a8859f428340e0"
+      },
+      {
+        "path": "packages/api/src/cli/credentials.ts",
+        "sha256": "cde9934eab922b4dd46e910731a41006f40b73d5d4397fa403ac5d8decc057e9"
+      },
+      {
+        "path": "packages/api/src/cli/routes.ts",
+        "sha256": "60b44c70393aa1c752ec4308feb0b0e743aadf68b4255e01d2a88f80992f7ad6"
+      },
+      {
+        "path": "packages/api/src/deployments/store.ts",
+        "sha256": "a09bfc0cb65e838ef03c449d1cfa4aa53e53e3b3e8d123bcabf55c55f89028a3"
+      },
+      {
+        "path": "packages/api/src/repository/cli-environments.ts",
+        "sha256": "d481c98a508c4cd2f5b69743a2c95b06898047142160ebb624bc033d86866e20"
+      },
+      {
+        "path": "packages/api/src/repository/routes.ts",
+        "sha256": "f710f452f700f12df92f4c7b990f8afdc066e2d4096e26cb95e6682002839b91"
+      },
+      {
+        "path": "packages/api/src/sequencer.ts",
+        "sha256": "f14745038df16482c75cb8fc7a2f5058c90fa60e28e3ff357cccf9deb2410b57"
+      },
+      {
+        "path": "packages/cli/src/api.mjs",
+        "sha256": "6c9571a268219eb2d637c81ed35947f732d580d3b1e6619771f5c160de5f543e"
+      },
+      {
+        "path": "packages/cli/src/device.mjs",
+        "sha256": "c25386e25d07d4ca424238d852638399fef51269de5a2d4183443cd712f1d717"
+      },
+      {
+        "path": "packages/cli/src/main.mjs",
+        "sha256": "a024603a6c67e02e028de114d2fdce8f8d8254f0c24dc020ebc37943db87cf18"
+      },
+      {
+        "path": "packages/cli/src/environments.mjs",
+        "sha256": "b8fc913d986b8ae630774e56d943e7d7f7c62e37f2551c83d2ad4219b2f3897d"
+      },
+      {
+        "path": "packages/cli/package.json",
+        "sha256": "b61c434173359bb2fbccf396750efd0759c3f5f6c106d0f0d0d0fa99c142a83a"
+      },
+      {
+        "path": "packages/api/package.json",
+        "sha256": "86d0bd24e901d9feb349e1dc3bf68fe74e5a9c1850e8f2e3cc5f15efa98a706e"
+      },
+      {
+        "path": "bun.lock",
+        "sha256": "0d8bffb7120168f1a7e0975b15469d38e657b2de745d2dc1749f20472bac898f"
+      }
+    ],
+    "postLinuxAdditionalAssertions": "Archive read and unrelated-scope denials added to the HTTP fixture and passed locally; runtime implementation unchanged"
+  },
+  "newPermission": "environments:write",
+  "permissionIsDefault": false,
+  "requiresCurrentAdmin": true,
+  "globalRevisionTracking": "SQLite storage triggers",
+  "noUnconditionalCliFallback": true,
+  "unattendedHostedActionsActivated": false,
+  "nanohubAccountKeyScope": {
+    "checkedAt": "2026-10-27T15:02:55.341Z",
+    "status": 403,
+    "sandboxScopeAvailable": false,
+    "allocated": false
+  },
+  "vaultDeployed": false,
+  "githubPushed": false
+}
