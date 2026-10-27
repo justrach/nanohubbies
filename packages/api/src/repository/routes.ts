@@ -138,7 +138,10 @@ export async function repositoryRoute(env: Env, request: Request, trunk: string,
     let configuration;
     try{configuration=await seq.repositoryConfiguration();}
     catch(error){if(!(error instanceof Error)||!error.message.includes('does not implement the method "repositoryConfiguration"'))throw error;configuration={mode:await seq.repositoryMode()?"git":"snapshot",defaultBranch:"main",revision:null};}
-    return Response.json({ archive, canConfigure, canRequestDeployment:!archiveLocked(archive)&&!!user&&!request.headers.has("authorization")&&canWrite(access), environments:await seq.environments(), ...configuration, refs: await seq.repositoryRefs(), runs: await seq.ciRuns() });
+    let initialImportMaxRefs=100;
+    try{initialImportMaxRefs=await seq.repositoryImportLimit();}
+    catch(error){if(!(error instanceof Error)||!error.message.includes('does not implement the method "repositoryImportLimit"'))throw error;}
+    return Response.json({ archive, canConfigure, canRequestDeployment:!archiveLocked(archive)&&!!user&&!request.headers.has("authorization")&&canWrite(access), environments:await seq.environments(), ...configuration, initialImportMaxRefs, refs: await seq.repositoryRefs(), runs: await seq.ciRuns() });
   }
   if (!(["protection","rulesets"].includes(action) ? canProtect : canConfigure)) return Response.json({ error: "A signed-in repository admin is required for protection; CI administration requires the owner" }, { status: 403 });
   const url = new URL(request.url), origin = request.headers.get("origin");

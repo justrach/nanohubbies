@@ -7,12 +7,13 @@ import { refName } from "./store";
 import { newRefName } from "./ref-name";
 import { isAncestor, repositoryLimits, validateGraph } from "./validate";
 import { repositoryProof } from "./rule-proof";
+import {assertRefBatch} from './ref-batch';
 
 /** Objects become durable before the sequencer compares refs and policies. */
 export async function repositoryPush(env: Env, trunk: string, commands: Command[], pack: Map<string, Unpacked>, actor: string,agent?:import('../contributions/types').ContributionAgent) {
-  if(!commands.length||commands.length>100)throw Error("Push supports 1–100 ref updates per atomic batch");
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
   const snapshot = await seq.repositoryRefs();
+  assertRefBatch(commands.length,!snapshot.length&&commands.every(c=>c.old===ZERO&&c.new!==ZERO));
   const plan = await seq.graphPlan();
   const verifySignature=(sha:string,raw:Uint8Array)=>env.HUB.get(env.HUB.idFromName("hub")).verifyCommitSignature(trunk,sha,raw);
   if (new Set(commands.map(c => c.ref)).size !== commands.length) throw new Error("Duplicate ref command");

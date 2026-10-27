@@ -15,6 +15,7 @@ export async function migrate(source, remote, handle, token, progress = () => {}
   if (url.username || url.password || url.search || url.hash || !/^https?:$/.test(url.protocol) || !address) throw Error('Use a plain Nanohub Git URL without credentials');
   if (url.protocol !== 'https:' && !['127.0.0.1','localhost'].includes(url.hostname)) throw Error('HTTPS required');
   const git = async (...args) => (await exec('git', ['-C', source, ...args], { maxBuffer: 128 << 20, encoding: 'buffer' })).stdout;
+  if((await git('rev-parse','--is-shallow-repository')).toString().trim()==='true')throw Error('Fetch complete history before migrating; a shallow source cannot prove lossless history');
   await git('fsck','--strict');
   const refs = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await git('for-each-ref','--format=%(objectname) %(refname)','refs/heads','refs/tags')).split('\n').filter(Boolean);
   const auth = { Authorization: 'Basic ' + Buffer.from(`${handle}:${token}`).toString('base64') };
@@ -23,6 +24,8 @@ export async function migrate(source, remote, handle, token, progress = () => {}
   if (!snapshot.ok) throw Error(`Cannot read destination: ${snapshot.status}`);
   const state = await snapshot.json();
   if (state.mode !== 'git' || state.refs.length) throw Error('Migration requires a new, empty Git repository; no existing ref is overwritten');
+  const initialImportMaxRefs=state.initialImportMaxRefs??100;
+  if(!Number.isSafeInteger(initialImportMaxRefs)||initialImportMaxRefs<1||initialImportMaxRefs>10_000||refs.length>initialImportMaxRefs)throw Error(`Destination supports at most ${initialImportMaxRefs} initial refs; no objects uploaded`);
   const branch=state.defaultBranch??'main';
   if(!refs.some(ref=>ref.endsWith(` refs/heads/${branch}`)))throw Error(`Destination default branch ${branch} is absent from the source; create the destination with a matching initial defaultBranch`);
   const ids = (await git('rev-list','--objects','--no-object-names',...refs.map(r=>r.split(' ')[0]))).toString().trim().split('\n');

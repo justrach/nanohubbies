@@ -21,9 +21,25 @@ node tools/migrate-repository.mjs /absolute/path/to/source \
   https://nanohub.sh/git/my-repository.git migration
 ```
 
-The source checkout is read-only: uncommitted edits and untracked files are excluded. The command pins the source branch/tag IDs, checks source integrity, uploads bounded compressed batches, then atomically publishes the refs only after the complete reachable graph validates. Finally it makes an independent mirror clone, runs `git fsck --strict`, and compares branch/tag IDs and branch trees/modes. Matching content-addressed objects establish matching file bytes, including runtime assets. A verification failure is not migration acceptance. The original repository remains available throughout.
+The source checkout is read-only: uncommitted edits and untracked files are excluded. Shallow sources are refused; fetch complete history first. The command pins the source branch/tag IDs, checks source integrity and the receiver's supported initial ref count, uploads bounded compressed batches, then atomically publishes the refs only after the complete reachable graph validates. Finally it makes an independent mirror clone, runs `git fsck --strict`, and compares branch/tag IDs and branch trees/modes. Matching content-addressed objects establish matching file bytes, including runtime assets. A verification failure is not migration acceptance. The original repository remains available throughout.
 
 Small repositories can also use ordinary `git push --mirror` into an empty Git repository. The streaming push limit is 32 MiB. Larger repositories use the batch migration tool. Existing refs are never overwritten by the migration tool. A partial object upload is safe to retry while the repository remains empty. Content-addressed packs are immutable; failed/unreferenced upload batches currently remain until the workspace is deleted.
+
+An empty repository accepts up to 10,000 branch/tag creations in one atomic
+initial publication. All existing graph, ref-name, archive and policy checks
+still apply. The serialized writer independently rechecks emptiness; if another
+publication wins first, a batch over 100 refs is rejected without partial refs
+or CI scheduling. Once populated, ordinary atomic pushes retain the 100-ref
+update cap. Older receivers advertise or default to 100 initial refs, so a large
+migration stops before object upload while that receiver is updating.
+
+Both Worker configurations explicitly budget 50,000 subrequests. Cloudflare's
+[current paid-plan default is 10,000](https://developers.cloudflare.com/changelog/post/2026-02-11-subrequests-limit/);
+graph validation can require an R2 read per object. This setting is a bounded
+budget, not proof that a large hosted import meets memory, CPU or traffic limits.
+The graph/object bounds below still apply; local success must be followed by
+isolated hosted acceptance before a primary-host cutover. Free-plan limits are
+different and are not raised by this setting.
 
 Current boundaries:
 

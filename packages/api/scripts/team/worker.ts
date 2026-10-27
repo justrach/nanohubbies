@@ -61,6 +61,11 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/direct-ref-batch'){
+      const body=await request.json() as {trunk:string;updates:Parameters<Sequencer['updateRepository']>[0]};
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).updateRepository(body.updates));}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
     if(url.pathname==='/fixture/drop-runner-acknowledgement'){dropNextRunnerAcknowledgement=true;return Response.json({armed:true});}
     if(url.pathname==='/fixture/conditional-runner'){
       const body=await request.json<{trunk:string;actor:string;registration?:{id:string;name:string;token:string};revoke?:string}>();

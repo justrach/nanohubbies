@@ -7,6 +7,7 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "nanohub-swarm",
   "main": "src/index.ts",
+  "limits": { "subrequests": 50000 },
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   // The deployed version's ID, which /api/agent-help reports.

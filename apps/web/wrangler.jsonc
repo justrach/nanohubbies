@@ -6,6 +6,8 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "nanohub-swarm",
   "main": "worker.ts",
+  // Large Git imports validate the complete object graph through bounded R2 reads.
+  "limits": { "subrequests": 50000 },
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   // The deployed version's ID, which /api/agent-help reports.

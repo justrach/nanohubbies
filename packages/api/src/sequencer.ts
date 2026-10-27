@@ -12,6 +12,7 @@ import {Environments} from "./deployments/store";
 import {deploymentGate} from "./deployments/requirements";
 import { RuleInsights, ruleTransaction } from "./repository/insights";
 import { Repository } from "./repository/store";
+import {assertRefBatch,INITIAL_IMPORT_MAX_REFS} from './repository/ref-batch';
 import { Rulesets } from "./repository/rulesets";
 import { RulesetHistory } from "./repository/ruleset-history";
 import { exportRuleset } from "./repository/ruleset-transfer";
@@ -112,6 +113,7 @@ export class Sequencer extends DurableObject<Env> {
   }
   repositoryMode() { return new Repository(this.sql).mode(); }
   repositoryRefs() { return new Repository(this.sql).refs(); }
+  repositoryImportLimit(){return INITIAL_IMPORT_MAX_REFS;}
   repositoryConfiguration(){const repo=new Repository(this.sql);return {mode:repo.mode()?"git" as const:"snapshot" as const,...repo.configuration(),branches:repo.refs().filter(ref=>ref.name.startsWith("refs/heads/")).map(ref=>({...ref,name:ref.name.slice(11)}))};}
   defaultBranchConfiguration(){return {...this.repositoryConfiguration(),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
   async configureRepositoryDefault(input:{branch:string;commit:string;revision:number;credentialId:string;origin:string},actor:string){
@@ -135,10 +137,10 @@ export class Sequencer extends DurableObject<Env> {
     });
   }
   updateRepository(updates: { name: string; old: string | null; next: { commit: string; tree: string } | null; fastForward: boolean; actor: string; proof?:import("./repository/types").RefProof }[],agent?:ContributionAgent) {
-    if(!updates.length||updates.length>100)throw Error("Push supports 1–100 ref updates per atomic batch");
     return ruleTransaction(this.sql,run=>this.ctx.storage.transactionSync(run),"git",observe => {
       const repo = new Repository(this.sql,observe);
       const defaultRef=`refs/heads/${repo.defaultBranch()}`,before=repo.refs(),branchContext=branchFingerprint(before),deploymentBase=before.find(ref=>ref.name===defaultRef)?.commit??null;
+      assertRefBatch(updates.length,!before.length&&updates.every(u=>u.old===null&&u.next!==null));
       if(agent&&updates.some(update=>update.actor!==agent.owner.id))throw Error('Agent contribution principal does not match the ref writer');
       for (const u of updates) {
         repo.update(u.name, u.old, u.next, u.fastForward, u.actor, false, u.proof,false,branchContext,deploymentBase);
