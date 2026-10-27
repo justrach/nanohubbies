@@ -46,10 +46,11 @@ See the [recorded local result](evidence/cold-recovery-validation.md).
 
 ## Operator request hold
 
-The fence is implemented and verified in an isolated hosted Worker. Main-site
-rollout is pending the full regression gate; see the [rollout evidence](evidence/recovery-hold-validation.md).
-An earlier main-site build does not honor this variable. Verify an aware
-deployment and actual held responses before relying on it.
+The fence is deployed on main-site version
+`1450c429-a969-483e-8383-c05d9ed8467c`. Normal asset delivery and a held
+configuration are verified separately; see the [rollout evidence](evidence/recovery-hold-validation.md).
+Earlier builds may not honor this variable. Verify an aware deployment and
+actual held responses before relying on it.
 
 Set the main Worker's `NANOHUB_RECOVERY_HOLD` configuration variable to `"1"`
 before recovery. This is operator configuration outside DO/D1/R2 backups; it
@@ -70,6 +71,10 @@ Keep `assets.run_worker_first: true` on the deployed Worker and every relevant
 environment. Both committed web configurations now set it. Cloudflare's
 [Worker-first asset routing](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)
 allows the request fence to run before a matching static asset is served.
+After the fence, the combined Worker explicitly asks the assets binding for
+matching GET/HEAD files before invoking Next or legacy routing. API/Git paths
+stay with their authenticated handlers. The normal-delivery gate checks file
+bytes and MIME types, including CSS, rather than accepting HTTP 200 alone.
 This makes asset network requests invoke the Worker too; account for that in
 traffic and cost measurements. Already cached browser content is not remotely
 erased by this flag.

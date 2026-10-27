@@ -1,16 +1,15 @@
 {
   "kind": "nanohub-recovery-request-hold",
-  "version": 1,
+  "version": 2,
   "source": {
-    "baseCommit": "dce0dbdcdedfad6168051a8b4937901bd7818df9",
-    "worktreeChangesIncluded": true,
+    "verifiedCommit": "3200cc6306582b6a5406a4d2a5a0ef0b75665ec6",
     "filesSha256": {
       "packages/api/src/recovery.ts": "87faf1f1a08244776724bf9e6a9c78e770a25db4348745b160ae0aa0625fd1a0",
       "packages/api/src/index.ts": "2c8d9210b3f5c348259ce01b4fba8fa457fd3d655e509b1d9c90c6d8eda612d6",
-      "apps/web/worker.ts": "04a0f591072a7a3ed0783bef9ae1e852b8383eb3c9355bd0d47f14318ce4d051",
+      "apps/web/worker.ts": "e802c41d994281bcb68b0bc9efee8233c3dd757b90143b88ea964488ba0b3456",
       "apps/web/wrangler.jsonc": "2219200e6fb817592e9517e931fffc44ea7acbb2d6e7d20ed8d2e9872e2424c8",
-      "packages/api/scripts/recovery-hold.test.mjs": "86ec26099440797ac60e22f8c5fff07cd0be3b0172143878826eecb1d47491de",
-      "packages/api/scripts/smoke-recovery-hold.ts": "e432705bcec23a810aa8001a575e2c71db17b5c4c8f0bfd2d2ccd90b928288f3",
+      "packages/api/scripts/recovery-hold.test.mjs": "e8f3b719f9cd4623949289b247fd54367d1172d5751f54ab17158dcc860495e9",
+      "packages/api/scripts/smoke-recovery-hold.ts": "0e81331df436ef8561d7a31ffd024322a91daba03fdff0f44be1e05b154ff3b2",
       "packages/api/scripts/smoke-recovery.ts": "a5c8fb1905f28fd4b01a938e95510ff5c57168b73da1a67022c20d17b88e4299",
       "packages/api/scripts/team/fixture.ts": "21a2f2584f812bca244e25a147613bd3dfce5d2bc15eb3747adec179ca4bb96b"
     }
@@ -18,168 +17,535 @@
   "local": {
     "apiUnitPassed": 270,
     "repositoryUnitPassed": 213,
+    "aggregateRepositoryChain": "passed with the normal command after the asset fix",
+    "accessUnitPassed": 3,
+    "accessVaultRealIntegration": "passed",
+    "hostingUnitPassed": 28,
+    "namespaceGitRunnerRealIntegration": "passed",
     "targetedColdRecovery": "passed including held older-restore/restart",
-    "realAssetRouter": "passed normal/held/malformed/HEAD/release",
+    "realAssetRouter": "passed with exact bytes and MIME assertions; Next stub never serves assets",
+    "negativeControlOriginalWorker": "rejected by the strengthened asset acceptance",
     "pinnedTsrs": "passed all three workspaces",
     "nextAndOpenNextBuild": "passed",
-    "wranglerDryRun": "passed",
-    "aggregateRepositoryChain": "incomplete: loopback Git connection failures at different scripts",
-    "isolatedRechecksPassed": [
-      "ruleset roles",
-      "force-push actors"
-    ],
-    "localTcpPressureObserved": true,
-    "tcpFailureRootCauseEstablished": false
+    "earlierLoopbackFailures": "not reproduced in subsequent complete normal runs; underlying cause not established"
   },
   "hosted": {
-    "scope": "disposable Cloudflare Worker with the real application entrypoint and static assets; no application storage/service bindings",
-    "probeVersion": "c68d5754-24a3-4002-98d6-39874ec4e16f",
-    "checkedAt": "2026-10-27T12:40:26.330Z",
-    "observations": [
-      {
-        "method": "GET",
-        "path": "/",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
+    "originalIsolatedHold": {
+      "version": "c68d5754-24a3-4002-98d6-39874ec4e16f",
+      "checksPassed": 17,
+      "deleted": true,
+      "absenceCode": 10007
+    },
+    "correctedBuildProbe": {
+      "storageBindings": false,
+      "normal": {
+        "checkedAt": "2026-10-27T13:02:11.846Z",
+        "url": "https://nanohub-recovery-assets-20261027-566cf902.rachpradhan.workers.dev",
+        "version": "a1cddac7-6df5-4ec4-b277-ec37ab956b23",
+        "storageBindings": false,
+        "observations": [
+          {
+            "path": "/nh/latest.json",
+            "status": 200,
+            "bytes": 177,
+            "sha256": "55e24912ac103608ef949b6ad523c2b4090c59e448796027672f541ef8c5216b",
+            "contentType": "application/json",
+            "headBodyless": true
+          },
+          {
+            "path": "/nh/releases/0.4.9/nh.mjs",
+            "status": 200,
+            "bytes": 49938,
+            "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a",
+            "contentType": "text/javascript",
+            "headBodyless": true
+          },
+          {
+            "path": "/nh/releases/0.4.8/nh.mjs",
+            "status": 200,
+            "bytes": 46789,
+            "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11",
+            "contentType": "text/javascript",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/0681m6fdekw8q.css",
+            "status": 200,
+            "bytes": 7287,
+            "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/10wreoau2i_4v.css",
+            "status": 200,
+            "bytes": 1905,
+            "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+            "status": 200,
+            "bytes": 190,
+            "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/18vdng-ava46y.css",
+            "status": 200,
+            "bytes": 9317,
+            "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/1gg26weswu45_.css",
+            "status": 200,
+            "bytes": 60754,
+            "sha256": "d7b091498e19151edb1ac74fc85c09337dcaa577349d157d82cb3f889c77819d",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+            "status": 200,
+            "bytes": 1524,
+            "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+            "status": 200,
+            "bytes": 6246,
+            "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/36srit4cbyjno.css",
+            "status": 200,
+            "bytes": 5560,
+            "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/3p5q4w0vyk0zs.css",
+            "status": 200,
+            "bytes": 20134,
+            "sha256": "95cd57e1ee9a142c3d31f45501b657c6d0af32952f0dac301a7c3bf634f32f86",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/chunks/3r55xobv4dda2.css",
+            "status": 200,
+            "bytes": 16693,
+            "sha256": "b61a6444f2f35785847bb7866a5b32c949c38351605f368cb8d355f894efaaaa",
+            "contentType": "text/css",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/rI6PHSKD_ZLUmoRSDdgXM/_buildManifest.js",
+            "status": 200,
+            "bytes": 219,
+            "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea",
+            "contentType": "text/javascript",
+            "headBodyless": true
+          },
+          {
+            "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+            "status": 200,
+            "bytes": 71596,
+            "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101",
+            "contentType": "font/woff2",
+            "headBodyless": true
+          }
+        ]
       },
-      {
-        "method": "GET",
-        "path": "/dashboard",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
+      "held": {
+        "checkedAt": "2026-10-27T13:03:17.332Z",
+        "url": "https://nanohub-recovery-assets-20261027-566cf902.rachpradhan.workers.dev",
+        "version": "6090578d-7805-467c-95e8-3b358ca9acf8",
+        "storageBindings": false,
+        "previouslyServedAssetsBlocked": true,
+        "observations": [
+          {
+            "method": "GET",
+            "path": "/nh/latest.json",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/nh/releases/0.4.9/nh.mjs",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/nh/releases/0.4.8/nh.mjs",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/0681m6fdekw8q.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/10wreoau2i_4v.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/18vdng-ava46y.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/1gg26weswu45_.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/36srit4cbyjno.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/3p5q4w0vyk0zs.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/chunks/3r55xobv4dda2.css",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/rI6PHSKD_ZLUmoRSDdgXM/_buildManifest.js",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/dashboard",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/api/agent-help",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/api/trunks/synthetic/live",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/cli/authorize",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "POST",
+            "path": "/api/trunks/synthetic/agents/builder/mcp",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "POST",
+            "path": "/api/trunks/synthetic/ci/claim",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "POST",
+            "path": "/api/trunks/synthetic/secrets/read",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "GET",
+            "path": "/git/owner/synthetic.git/info/refs?service=git-upload-pack",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "POST",
+            "path": "/git/synthetic.git/git-receive-pack",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "OPTIONS",
+            "path": "/api/agent-help",
+            "status": 503,
+            "bodyless": false,
+            "privateNoStore": true,
+            "retryAfter": 60
+          },
+          {
+            "method": "HEAD",
+            "path": "/nh/latest.json",
+            "status": 503,
+            "bodyless": true,
+            "privateNoStore": true,
+            "retryAfter": 60
+          }
+        ]
       },
-      {
-        "method": "GET",
-        "path": "/t/synthetic/branches",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
+      "deleted": true,
+      "absenceConfirmed": true,
+      "absenceCode": 10007
+    },
+    "main": {
+      "firstRolloutVersion": "fadeca05-a98e-446a-9400-d434c867af7f",
+      "firstRolloutAssetFailure": "Next/legacy HTML fallback was returned for static paths; visual and CLI checks caught it",
+      "rollbackVersion": "7b1af261-899b-4870-94f1-c25cf25fc6e7",
+      "rollbackRestoredStyledUi": true,
+      "correctedVersion": "1450c429-a969-483e-8383-c05d9ed8467c",
+      "normalAssets": {
+        "checkedAt": "2026-10-27T13:05:38.207Z",
+        "version": "1450c429-a969-483e-8383-c05d9ed8467c",
+        "status": 200,
+        "holdActive": false,
+        "observations": [
+          {
+            "path": "/nh/latest.json",
+            "status": 200,
+            "bytes": 177,
+            "sha256": "55e24912ac103608ef949b6ad523c2b4090c59e448796027672f541ef8c5216b",
+            "contentType": "application/json"
+          },
+          {
+            "path": "/nh/releases/0.4.9/nh.mjs",
+            "status": 200,
+            "bytes": 49938,
+            "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a",
+            "contentType": "text/javascript"
+          },
+          {
+            "path": "/nh/releases/0.4.8/nh.mjs",
+            "status": 200,
+            "bytes": 46789,
+            "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11",
+            "contentType": "text/javascript"
+          },
+          {
+            "path": "/_next/static/chunks/0681m6fdekw8q.css",
+            "status": 200,
+            "bytes": 7287,
+            "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/10wreoau2i_4v.css",
+            "status": 200,
+            "bytes": 1905,
+            "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+            "status": 200,
+            "bytes": 190,
+            "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/18vdng-ava46y.css",
+            "status": 200,
+            "bytes": 9317,
+            "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/1gg26weswu45_.css",
+            "status": 200,
+            "bytes": 60754,
+            "sha256": "d7b091498e19151edb1ac74fc85c09337dcaa577349d157d82cb3f889c77819d",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+            "status": 200,
+            "bytes": 1524,
+            "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+            "status": 200,
+            "bytes": 6246,
+            "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/36srit4cbyjno.css",
+            "status": 200,
+            "bytes": 5560,
+            "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/3p5q4w0vyk0zs.css",
+            "status": 200,
+            "bytes": 20134,
+            "sha256": "95cd57e1ee9a142c3d31f45501b657c6d0af32952f0dac301a7c3bf634f32f86",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/chunks/3r55xobv4dda2.css",
+            "status": 200,
+            "bytes": 16693,
+            "sha256": "b61a6444f2f35785847bb7866a5b32c949c38351605f368cb8d355f894efaaaa",
+            "contentType": "text/css"
+          },
+          {
+            "path": "/_next/static/rI6PHSKD_ZLUmoRSDdgXM/_buildManifest.js",
+            "status": 200,
+            "bytes": 219,
+            "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea",
+            "contentType": "text/javascript"
+          },
+          {
+            "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+            "status": 200,
+            "bytes": 71596,
+            "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101",
+            "contentType": "font/woff2"
+          }
+        ]
       },
-      {
-        "method": "GET",
-        "path": "/cli/authorize",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
+      "mainHoldAbsent": true,
+      "workerFirstRoutingConfirmed": true,
+      "all27BindingMetadataIdentical": true,
+      "canary": {
+        "allEightReadsIdentical": true,
+        "branches": 6,
+        "policies": 3,
+        "protectionRevision": 3,
+        "rulesets": 3,
+        "rulesRevision": 6,
+        "defaultBranch": "main",
+        "settingsRevision": 1,
+        "archiveRevision": 0,
+        "reviewsRunsAccessVaultAndRunnerStateIdentical": true
       },
-      {
-        "method": "GET",
-        "path": "/nh/latest.json",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
+      "cli": {
+        "checkedAt": "2026-10-27T13:05:39.711Z",
+        "manifest": {
+          "format": 1,
+          "version": "0.4.9",
+          "path": "/nh/releases/0.4.9/nh.mjs",
+          "bytes": 49938,
+          "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+        },
+        "version": "nh 0.4.9",
+        "helpDefaultBranch": true,
+        "olderReleaseUnchanged": true
       },
-      {
-        "method": "GET",
-        "path": "/nh/releases/0.4.9/nh.mjs",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "GET",
-        "path": "/api/agent-help",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "GET",
-        "path": "/api/auth/callback/codegraff",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "GET",
-        "path": "/api/trunks/synthetic/live",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "POST",
-        "path": "/api/trunks/synthetic/agents/builder/mcp",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "GET",
-        "path": "/api/cli/trunks/synthetic/protection",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "POST",
-        "path": "/api/trunks/synthetic/ci/claim",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "POST",
-        "path": "/api/trunks/synthetic/secrets/read",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "GET",
-        "path": "/git/owner/synthetic.git/info/refs?service=git-upload-pack",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "POST",
-        "path": "/git/synthetic.git/git-receive-pack",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      },
-      {
-        "method": "HEAD",
-        "path": "/nh/latest.json",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": true
-      },
-      {
-        "method": "OPTIONS",
-        "path": "/api/agent-help",
-        "status": 503,
-        "privateNoStore": true,
-        "retryAfter": 60,
-        "bodyless": false
-      }
-    ],
-    "deleted": true,
-    "absenceConfirmed": true,
-    "absenceCode": 10007,
-    "mainObservedVersion": "7b1af261-899b-4870-94f1-c25cf25fc6e7",
-    "mainObservedStatus": 200,
-    "mainSiteHeld": false,
-    "mainRolloutPerformed": false
+      "screenshot": "recovery-hold-main-normal.png",
+      "productionHoldEnabledDuringTest": false,
+      "vaultRedeployed": false
+    }
   },
   "limits": {
     "inflightWorkDrained": false,
