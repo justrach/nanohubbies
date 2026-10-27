@@ -1,3 +1,4 @@
+import {isAbsolute} from 'node:path';
 /** Trusted dispatcher configuration only. Saved images use their immutable
  * Docker config ID, because Docker save/load need not retain registry digests. */
 export function archiveDownload(value) {
@@ -10,7 +11,16 @@ export function archiveDownload(value) {
   if(url.protocol!=='https:'||url.username||url.password||url.hash)throw invalid();
   return {url:url.href,sha256:value.sha256,bytes:value.bytes};
 }
-export function toolchain(image,imageSnapshot,imageArchive,imageDownload) {
+export function cloudflareRegistry(image,value) {
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!['provider','config'].includes(key))||value.provider!=='cloudflare'||typeof value.config!=='string'||!isAbsolute(value.config)||/[\x00-\x1f\x7f]/.test(value.config)||typeof image!=='string'||!/^registry\.cloudflare\.com\/[a-f0-9]{32}\/[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$/.test(image))
+    throw Error('Use a Cloudflare registry image pinned by digest and an absolute trusted Wrangler configuration path');
+  return {provider:'cloudflare',config:value.config};
+}
+export function toolchain(image,imageSnapshot,imageArchive,imageDownload,imageRegistry) {
+  if(imageRegistry!==undefined) {
+    if(imageSnapshot!==undefined||imageArchive!==undefined||imageDownload!==undefined)throw Error('Private registry toolchains cannot be combined with snapshots or archive downloads');
+    return {image,snapshot:false,registry:cloudflareRegistry(image,imageRegistry)};
+  }
   if(imageDownload!==undefined) {
     if(imageSnapshot!==undefined||imageArchive!==undefined||typeof image!=='string'||!/^sha256:[a-f0-9]{64}$/.test(image))throw Error('Archive downloads require an exact Docker image ID and cannot be combined with snapshots');
     return {image,snapshot:false,download:archiveDownload(imageDownload)};

@@ -289,6 +289,12 @@ byte/hash/image pins and negative cases, then confirms VM destruction; remove
 the operator-owned HTTPS fixture separately. See [archive delivery](toolchain-archives.md)
 and [live evidence](evidence/toolchain-download-validation.md).
 
+For retained private images, [Cloudflare registry delivery](private-toolchain-registry.md)
+issues a fresh 15-minute pull-only credential after each VM starts, prepares and
+verifies the pinned image, removes its private Docker authentication, then
+uploads candidate source. Ordinary tests mock issuance; full-project cloud
+acceptance remains explicitly opted in through `tools/verify-codegraff-toolchain.mjs`.
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

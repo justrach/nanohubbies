@@ -10,6 +10,7 @@ import { runProcess } from "./ci-runner.mjs";
 import { semaphore, positiveInteger } from "./runner-pool.mjs";
 import {sourceRef} from './ci-ref.mjs';
 import {toolchain,archiveDownload} from './toolchain.mjs';
+import {cloudflarePullCredentials} from './cloudflare-registry.mjs';
 const id = (value) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -164,6 +165,28 @@ rm -f "$headers"
     }
     throw Error('Trusted toolchain archive download timed out');
   }
+  async pullImage(sandbox,image,credentials,deadline,active=async()=>true) {
+    if(!id(sandbox)||typeof image!=='string'||!/^registry\.cloudflare\.com\/[a-f0-9]{32}\/[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$/.test(image))throw Error('Invalid private registry image');
+    if(credentials?.username!=='v1'||typeof credentials.password!=='string'||credentials.password.length<1||credentials.password.length>16384||/[^\x21-\x7e]/.test(credentials.password)||!Number.isSafeInteger(credentials.expiresAt))throw Error('Invalid private registry pull credential');
+    if(Date.now()>=deadline||credentials.expiresAt<=Date.now()+30000||!await active()||Date.now()>=deadline||credentials.expiresAt<=Date.now()+30000)throw Error('Private registry pull cancelled before dispatch');
+    const token=randomUUID(),directory='/tmp/nanohub-registry-'+token,status='/tmp/nanohub-image-pull-'+token+'.exit';
+    // Only this private Docker config receives the short-lived account pull
+    // credential. It is removed before success is reported or source uploaded.
+    await this.exec(sandbox,`umask 077; mkdir -m 700 ${directory}`);
+    await this.upload(sandbox,directory+'/config.json',Buffer.from(JSON.stringify({auths:{'registry.cloudflare.com':{auth:Buffer.from(credentials.username+':'+credentials.password).toString('base64')}}})));
+    await this.exec(sandbox,`chmod 600 ${directory}/config.json`);
+    const seconds=Math.max(1,Math.min(600,Math.floor((Math.min(deadline,credentials.expiresAt)-Date.now())/1000)));
+    const script=`umask 077; timeout ${seconds}s docker --config ${directory} pull ${quote(image)} > /tmp/nanohub-image-pull.log 2>&1; code=$?; if ! rm -rf ${directory}; then code=1; fi; if test -e ${directory}; then code=1; fi; printf '%s\\n' "$code" > ${status}`;
+    await this.exec(sandbox,`nohup sh -c ${quote(script)} > /tmp/nanohub-image-pull-launch.log 2>&1 < /dev/null &`);
+    while(Date.now()<deadline) {
+      if(!await active())throw Error('Private registry pull cancelled: candidate lease is no longer active');
+      const result=(await this.exec(sandbox,`if test -f ${status}; then cat ${status}; else printf running; fi`)).trim();
+      if(result==='0')return;
+      if(result!=='running')throw Error('Private registry toolchain pull or credential cleanup failed');
+      await this.sleep(2000);
+    }
+    throw Error('Private registry toolchain pull timed out');
+  }
 }
 /** Retry only explicit capacity/preparation responses, which allocate no VM.
  * Network timeouts have an unknown outcome and must not allocate duplicates. */
@@ -189,6 +212,8 @@ export async function sandboxJob({
   imageSnapshot,
   imageArchive,
   imageDownload,
+  imageRegistry,
+  registryCredentials = cloudflarePullCredentials,
   prepare = "",
   network = "none",
   artifacts,
@@ -198,8 +223,8 @@ export async function sandboxJob({
   active = async () => true,
   now = Date.now,
 }) {
-  const selected=toolchain(image,imageSnapshot,imageArchive,imageDownload);
-  const provenance=selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{};
+  const selected=toolchain(image,imageSnapshot,imageArchive,imageDownload,imageRegistry);
+  const provenance=selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
   if (deadline <= now()) throw Error("CI lease exhausted");
@@ -241,7 +266,18 @@ export async function sandboxJob({
       }),
     );
     await client.ready(sandbox, Math.min(deadline, now() + 5 * 60000));
-    if(selected.snapshot) {
+    if(selected.registry) {
+      if(now()>=deadline||!await active()||now()>=deadline)throw Error('Candidate lease is no longer active before registry preparation');
+      let credentials;
+      // Trusted issuers can include provider output in their exception. Never
+      // copy that text into a candidate log or hosted callback.
+      try {credentials=await registryCredentials(image,selected.registry);}
+      catch {throw Error('Private registry credential issuance failed');}
+      await client.pullImage(sandbox,image,credentials,Math.min(deadline,now()+10*60000),active);
+      const digests=JSON.parse((await client.exec(sandbox,`docker image inspect --format '{{json .RepoDigests}}' ${quote(image)}`)).trim());
+      if(!Array.isArray(digests)||!digests.includes(image))throw Error('Private toolchain does not match its configured registry digest');
+      if(now()>=deadline||!await active()||now()>=deadline)throw Error('Candidate lease is no longer active after toolchain preparation');
+    } else if(selected.snapshot) {
       await client.restore(sandbox,imageSnapshot,Math.min(deadline,now()+5*60000),active);
       if(imageArchive)await client.loadImage(sandbox,imageArchive,Math.min(deadline,now()+5*60000),active);
     } else if(selected.download) {
@@ -289,7 +325,7 @@ export async function sandboxJob({
       GITHUB_REPOSITORY: repository,
       GITHUB_WORKSPACE: "/tmp/work",
     };
-    const command = `docker run --detach ${selected.snapshot||selected.download?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g --mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
+    const command = `docker run --detach ${selected.registry||selected.snapshot||selected.download?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g --mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
       variables,
     )
       .map(([k, v]) => `--env ${quote(k + "=" + v)}`)
@@ -384,6 +420,7 @@ export async function executeActions(
     client = new Codegraff(process.env.CODEGRAFF_API_KEY),
     processRunner = runProcess,
     sandboxLimit = work => work(),
+    registryCredentials = cloudflarePullCredentials,
   } = {},
 ) {
   const { run, source, artifacts, artifactOrigin } = context;
@@ -454,7 +491,7 @@ export async function executeActions(
         return jobLimit(()=>sandboxLimit(async()=>{
           if(context.active && !await context.active())return stopped(job,'cancelled','Cancelled before allocation: candidate lease is no longer active');
           try {
-            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active});
+            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active});
           }catch(error){return stopped(job,'failure','Sandbox allocation or dispatch failed: '+String(error));}
         }));
       })();

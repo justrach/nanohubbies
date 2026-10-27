@@ -1,8 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stagingGate, verifyVersion } from '../../../tools/ci-runner.mjs';
+import { stagingGate, verifyVersion, runOnce } from '../../../tools/ci-runner.mjs';
 const head='a'.repeat(40),base='b'.repeat(40),context={run:{id:'event',head,base},stagingOrigin:'https://staging.example.invalid'};
 const version=sha=>async()=>Response.json({buildId:sha});
+test('invalid private toolchain configuration is rejected before claiming a hosted job',async()=>{
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',backend:'docker',image:'registry.cloudflare.com/'+'a'.repeat(32)+'/nanohub-ci@sha256:'+'b'.repeat(64),imageRegistry:{provider:'cloudflare',config:'/etc/nanohub/wrangler.jsonc'},artifacts:'/var/lib/nanohub'};
+ await assert.rejects(runOnce(config,'synthetic-unused-token'),/require the Codegraff backend/);
+ await assert.rejects(runOnce({...config,backend:'codegraff',imageRegistry:{...config.imageRegistry,config:'relative.json'}},'synthetic-unused-token'),/absolute trusted/);
+ await assert.rejects(runOnce({...config,backend:'codegraff',imageSnapshot:'snp_fixture'},'synthetic-unused-token'),/cannot be combined/);
+});
 function adapter(){return {dispatch:async c=>{assert.equal(c.idempotencyKey,'event');return {runId:'deploy-1'};},wait:async()=>({state:'success',candidate:head,kind:'deployment'}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};}
 test('a deployment must succeed before version and real acceptance count',async()=>{
   for(const patch of [{state:'failure',candidate:head,kind:'deployment'},{state:'success',candidate:base,kind:'deployment'},{state:'success',candidate:head,kind:'checks'}]){

@@ -21,7 +21,7 @@ This is a configuration fragment, not an enabled production configuration.
 `bytes` must be the exact compressed/downloaded length; it is not an estimate.
 The archive SHA-256 and Docker config ID are different pins. Docker `save`/`load`
 can preserve the config ID without retaining the registry manifest digest.
-The existing registry example remains the default configuration template.
+The private Cloudflare registry example is the default configuration template.
 
 ## Preparation and authority
 
@@ -51,7 +51,10 @@ Receipts retain the archive digest and length, not its URL. Gateway credentials
 remain in the host controller and never enter the VM. This is separate from
 the workload-secret vault; no vault binding or stored secret value changes.
 
-The controller does not automatically renew an expiring URL. A private artifact
+The controller does not automatically renew an expiring archive URL. The
+[private Cloudflare registry path](private-toolchain-registry.md) instead issues
+a fresh pull credential for each job and uses retained digest-pinned images.
+For this archive mode, a private artifact
 store, per-job URL issuance/renewal and real full-toolchain acceptance are still
 required before using this mode for unattended production Actions. The saved
 URL must remain valid through preparation; expiry fails the check without a

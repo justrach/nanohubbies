@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-27T14:31:10.427Z",
+  "productionCodegraff": true,
+  "hostedNanohub": false,
+  "registryProvider": "cloudflare",
+  "registryRepository": "nanohub-ci",
+  "registryManifestDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+  "dockerConfigId": "sha256:9c299c174364eb5562d19716ac08d1e8a18f624aa4223e7440935f0f578ca379",
+  "manifestContextSha256": "141b27e7f57e94950f878d9ed628b81c5bce629d38ff1552793aedf174929e51",
+  "contextFiles": [
+    {
+      "path": "tools/codegraff/Dockerfile",
+      "bytes": 1379,
+      "sha256": "65e3613bfbd416a685b7f05e3e163052c00eb5072a22de44b055259c25b95669"
+    },
+    {
+      "path": "tools/codegraff/Dockerfile.dockerignore",
+      "bytes": 304,
+      "sha256": "ef691fa95a624da513e5a27652aad528d789b022dbe4ac55b4bdf51cfc77224b"
+    },
+    {
+      "path": "package.json",
+      "bytes": 647,
+      "sha256": "51fc423ca0bb4aa75ebd30997c0143041f3a389ec05995f0ba51604c8d0b3a20"
+    },
+    {
+      "path": "bun.lock",
+      "bytes": 183152,
+      "sha256": "ffc3709e8af82270a0f64ff7c8dfd886f45e31f6cbabde6756b5a849e56b9201"
+    },
+    {
+      "path": "apps/web/package.json",
+      "bytes": 1198,
+      "sha256": "af009db5fa9ca977642739ab3f0477ad21756fd25bba5edf8e475c83e0b86a2e"
+    },
+    {
+      "path": "packages/api/package.json",
+      "bytes": 6069,
+      "sha256": "5f96ff45598855c11d959b683d80515acf18324cabb8220928ed362a08b671f5"
+    },
+    {
+      "path": "packages/vault/package.json",
+      "bytes": 234,
+      "sha256": "7e8386d15df712bc8027dcfcef2e8f9cc5674e65fa94fcb0324197f5d4675716"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "bytes": 280,
+      "sha256": "27283561c98b5a397b837442b752e941b004455dd8520a5298051fb0405202ce"
+    }
+  ],
+  "source": "6bcb3997f542fd61fa25eba78315c1a11da9bea8",
+  "sourceManifestSha256": "02d11be9c84d9b468677947cfa4533d8124287c22260298cb9d2f45fc0c5c8a6",
+  "controllerFilesVerifiedAgainstExecutedSource": [
+    {
+      "path": "tools/codegraff-actions.mjs",
+      "sha256": "f17525f3420913ebd7b7a4ec723cca383cef871757f9fa14bee079ab106360e5"
+    },
+    {
+      "path": "tools/toolchain.mjs",
+      "sha256": "5a8832110204c366216391025d80ad145ab8f0ea8cc7a642f39628a1eca17c69"
+    },
+    {
+      "path": "tools/cloudflare-registry.mjs",
+      "sha256": "358d531fc7e222bdbc45549a7ea3ee5c63eaac341b8a3f5c2e8b56a0bc53de30"
+    },
+    {
+      "path": "tools/ci-runner.mjs",
+      "sha256": "8bef1d9e0ed79b219e13c64ae19ac2047372eb73da98f633719d92c743e31705"
+    },
+    {
+      "path": "tools/verify-codegraff-toolchain.mjs",
+      "sha256": "80e6d5663aa3cffd578e8b62577d5a3b7e2288b5f7aef5e641c7e0cd0c505494"
+    },
+    {
+      "path": "packages/api/scripts/codegraff-actions.test.mjs",
+      "sha256": "d89d640f5ca42203625baa6795cca8d2aa529826502d2584e2e724fb2e3f1142"
+    },
+    {
+      "path": "packages/api/scripts/cloudflare-registry.test.mjs",
+      "sha256": "48ca801aa8c9b0433c4d353bff049a4f1164066e2158e198616f338677ef913f"
+    },
+    {
+      "path": "packages/api/scripts/ci-runner.test.mjs",
+      "sha256": "dea7d319684de8823d1927e131b75bce01e32e94f3e231911f9710f8145dd3d2"
+    }
+  ],
+  "privateRetainedManifest": {
+    "anonymousStatus": 401,
+    "authenticatedStatus": 200,
+    "exactDigestVerified": true,
+    "catalogTag": "141b27e7f57e9495"
+  },
+  "buildSandboxId": "cnd_657f207fb97bff4dfaf477f80c89c00b76415900",
+  "freshAcceptanceSandboxId": "cnd_f0e0abc29ffd50cbe6770307775067f1c011b708",
+  "separateFreshVm": true,
+  "linuxGates": [
+    "install",
+    "unit",
+    "repository",
+    "cli",
+    "access",
+    "hosting",
+    "build",
+    "check"
+  ],
+  "network": "none",
+  "credentialFreeCandidate": true,
+  "dockerSocketAbsent": true,
+  "npmAndNpxAbsent": true,
+  "perJobCredential": {
+    "permissions": [
+      "pull"
+    ],
+    "ttlMinutes": 15,
+    "scope": "account registry",
+    "issuedAfterVmStartup": true,
+    "authRemovedBeforeCandidateUpload": true,
+    "cloudflareControlKeyEntersVm": false,
+    "gatewayKeyEntersVm": false
+  },
+  "localAcceptance": {
+    "apiUnitCases": 282,
+    "repositoryUnitCasesOnFirstCompleteLocalRun": 213,
+    "newPreClaimUnitCaseVerifiedSeparately": true,
+    "fullRepositoryIntegrationPassed": true,
+    "hostingPoolCases": 36,
+    "namespaceIntegrationPassed": true,
+    "tsrsWorkspaces": 3
+  },
+  "cleanup": [
+    {
+      "sandboxId": "cnd_657f207fb97bff4dfaf477f80c89c00b76415900",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    },
+    {
+      "sandboxId": "cnd_f0e0abc29ffd50cbe6770307775067f1c011b708",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    }
+  ],
+  "unattendedHostedDispatcherActivated": false,
+  "hostedCallbackVerified": false,
+  "stagingOrMigrationCutover": false,
+  "mainWorkerDeployed": false,
+  "vaultDeployed": false
+}

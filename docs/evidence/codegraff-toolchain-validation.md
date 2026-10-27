@@ -1,5 +1,10 @@
 # Full Linux toolchain acceptance — 2026-10-27
 
+Subsequent [private-registry acceptance](private-toolchain-registry-validation.md)
+retains a new full image and verifies all current offline gates on a separate
+fresh VM. The earlier snapshot failures and unretained image below remain the
+historical outcome of this first experiment.
+
 The [sanitized receipt](codegraff-toolchain-receipt.json) records the exact source,
 image, gates and cleanup. The project's actual Dockerfile builds successfully on a real Codegraff sized
 fleet VM. Its public frozen Bun cache supports every project gate with candidate

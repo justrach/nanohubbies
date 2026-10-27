@@ -288,6 +288,10 @@ test("dispatcher uses accepted base workflow, transfers a real credential-free b
     const archived=await executeActions({run:{...run,head,base},source:dir,artifacts,artifactOrigin:'https://logs.invalid/'},{image:localImage,imageDownload,repository:'alice/repo'},{client:archiveClient});
     assert.equal(archived.results.length,2);assert.ok(archived.results.every(result=>result.state==='success'));assert.deepEqual(downloads,[imageDownload,imageDownload]);
     assert.ok(!JSON.stringify([archiveClient.calls,archiveClient.uploads,archived]).includes('synthetic-private-read'));
+    const privateImage='registry.cloudflare.com/'+'a'.repeat(32)+'/nanohub-ci@sha256:'+'c'.repeat(64),imageRegistry={provider:'cloudflare',config:'/etc/nanohub/wrangler.jsonc'},privateClient=mockClient(),privateExec=privateClient.exec,pulls=[];
+    let issued=0;privateClient.pullImage=async(_id,value,credential)=>{assert.equal(value,privateImage);pulls.push(credential.password);};privateClient.exec=async(id,command)=>command.startsWith('docker image inspect')?JSON.stringify([privateImage]):privateExec(id,command);
+    const privateResult=await executeActions({run:{...run,head,base},source:dir,artifacts,artifactOrigin:'https://logs.invalid/'},{image:privateImage,imageRegistry,repository:'alice/repo'},{client:privateClient,registryCredentials:async()=>({username:'v1',password:'synthetic-per-job-'+ ++issued,expiresAt:Date.now()+900000})});
+    assert.equal(privateResult.results.length,2);assert.ok(privateResult.results.every(result=>result.state==='success'));assert.deepEqual(pulls,['synthetic-per-job-1','synthetic-per-job-2']);assert.ok(!JSON.stringify([privateClient.calls,privateClient.uploads,privateResult]).includes('synthetic-per-job'));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -503,5 +507,39 @@ test('failed download/load, wrong identity or a lease revoked during preparation
   let live=true,clock=Date.now();client.downloadImage=async()=>{if(mode==='download')throw Error('Archive digest verification failed');};client.loadImage=async()=>{if(mode==='load')throw Error('Image load failed');};client.exec=async()=>{if(mode==='cancel')live=false;if(mode==='expired')clock=run.leaseUntil;return mode==='identity'?'sha256:'+'f'.repeat(64):local;};
   const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run,bundle:Buffer.from('candidate'),image:local,imageDownload:download,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>live,now:()=>clock});
   assert.equal(result.state,'failure');assert.equal(client.uploads.length,0);assert.equal(client.calls.filter(c=>c.destroy).length,1);const receipt=JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8'));assert.equal(receipt.cleanupNeeded,false);assert.ok(!JSON.stringify(receipt).includes('synthetic-private-read'));
+ }finally{await rm(dir,{recursive:true,force:true});}}
+});
+
+test('private registry preparation launches one pinned pull and removes its isolated auth directory before reporting success',async()=>{
+ const client=new Codegraff('synthetic-gateway',{sleep:async()=>{}}),commands=[],uploads=[],states=['running','0'];
+ client.exec=async(_id,command)=>{commands.push(command);return command.startsWith('if test')?states.shift():'';};client.upload=async(_id,path,bytes)=>uploads.push({path,bytes:Buffer.from(bytes)});
+ const pinned='registry.cloudflare.com/'+'a'.repeat(32)+'/nanohub-ci@sha256:'+'c'.repeat(64),credentials={username:'v1',password:'synthetic-pull-only',expiresAt:Date.now()+900000};
+ await client.pullImage('vm',pinned,credentials,Date.now()+10000);
+ assert.equal(uploads.length,1);const auth=JSON.parse(uploads[0].bytes);assert.equal(Buffer.from(auth.auths['registry.cloudflare.com'].auth,'base64').toString(),'v1:synthetic-pull-only');
+ assert.ok(commands[0].includes('mkdir -m 700'));assert.ok(commands.some(command=>command.startsWith('chmod 600')));const launch=commands.find(command=>command.startsWith('nohup'));assert.ok(launch.includes(pinned));assert.ok(launch.includes('timeout '));assert.ok(launch.indexOf('rm -rf')<launch.indexOf('printf'));assert.ok(launch.includes('if test -e'));assert.equal(commands.filter(command=>command.startsWith('nohup')).length,1);
+ assert.ok(!JSON.stringify(commands).includes('synthetic-pull-only'));assert.ok(!JSON.stringify(uploads).includes('synthetic-gateway'));const marker=commands.find(command=>command.startsWith('if test'));states.push('0');await client.pullImage('vm',pinned,credentials,Date.now()+10000);assert.notEqual(marker,commands.filter(command=>command.startsWith('if test')).at(-1));
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-pull-syntax-'));try{const file=join(dir,'launch.sh');await writeFile(file,launch);const syntax=await runProcess('sh',['-n',file]);assert.equal(syntax.code,0,syntax.output);}finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('private registry pull rejects expired credentials, inactive leases and terminal failures without relaunching',async()=>{
+ const pinned='registry.cloudflare.com/'+'a'.repeat(32)+'/nanohub-ci@sha256:'+'c'.repeat(64),credential={username:'v1',password:'synthetic-pull-only',expiresAt:Date.now()+900000};
+ const unused=new Codegraff('key');unused.exec=async()=>{throw Error('Must not dispatch');};
+ await assert.rejects(unused.pullImage('vm',pinned,{...credential,expiresAt:Date.now()},Date.now()+10000),/cancelled before/);await assert.rejects(unused.pullImage('vm',pinned,credential,Date.now()-1),/cancelled before/);await assert.rejects(unused.pullImage('vm',pinned,credential,Date.now()+10000,async()=>false),/cancelled before/);
+ const expiresDuringCheck={...credential};await assert.rejects(unused.pullImage('vm',pinned,expiresDuringCheck,Date.now()+10000,async()=>{expiresDuringCheck.expiresAt=Date.now();return true;}),/cancelled before/);
+ for(const terminal of ['1','unexpected']){const client=new Codegraff('key'),commands=[];client.upload=async()=>{};client.exec=async(_id,command)=>{commands.push(command);return command.startsWith('if test')?terminal:'';};await assert.rejects(client.pullImage('vm',pinned,credential,Date.now()+10000),/pull or credential cleanup failed/);assert.equal(commands.filter(command=>command.startsWith('nohup')).length,1);}
+});
+
+test('private jobs prepare and verify the pinned digest before source transfer; issuance, pull, mismatch and cancellation fail closed',async()=>{
+ const pinned='registry.cloudflare.com/'+'a'.repeat(32)+'/nanohub-ci@sha256:'+'c'.repeat(64),imageRegistry={provider:'cloudflare',config:'/etc/nanohub/wrangler.jsonc'};
+ for(const mode of ['success','issue','pull','identity','cancel','expired']){
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-private-job-'));try{
+   const client=mockClient(),events=[],exec=client.exec,upload=client.upload;let live=true,clock=Date.now();
+   client.pullImage=async(_id,value,credentials)=>{events.push('pull');assert.equal(value,pinned);assert.equal(credentials.password,'synthetic-pull-only');if(mode==='pull')throw Error('Private pull failed');};
+   client.exec=async(id,command)=>{if(command.startsWith('docker image inspect')){events.push('verify');if(mode==='cancel')live=false;if(mode==='expired')clock=run.leaseUntil;return JSON.stringify(mode==='identity'?[]:[pinned]);}return exec(id,command);};client.upload=async(...args)=>{events.push('candidate');return upload(...args);};
+   const registryCredentials=async()=>{events.push('issue');if(mode==='issue')throw Error('synthetic-pull-only');return {username:'v1',password:'synthetic-pull-only',expiresAt:Date.now()+900000};};
+   const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run,bundle:Buffer.from('candidate'),image:pinned,imageRegistry,registryCredentials,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>live,now:()=>clock});
+   assert.equal(result.state,mode==='success'?'success':'failure');assert.equal(client.calls.filter(call=>call.destroy).length,1);
+   if(mode==='success'){assert.deepEqual(events.slice(0,4),['issue','pull','verify','candidate']);const command=client.calls.find(call=>call.command?.startsWith('docker run')).command;assert.match(command,/--pull=never/);assert.match(command,/--network=none/);}else assert.equal(client.uploads.length,0);
+   const receipt=JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8')),log=await readFile(join(dir,'check-test.log'),'utf8');assert.equal(receipt.registryProvider,'cloudflare');assert.equal(receipt.image,pinned);assert.equal(receipt.cleanupNeeded,false);assert.ok(!JSON.stringify([result,receipt,log,client.calls,client.uploads]).includes('synthetic-pull-only'));assert.ok(!JSON.stringify(receipt).includes('/etc/nanohub'));
  }finally{await rm(dir,{recursive:true,force:true});}}
 });

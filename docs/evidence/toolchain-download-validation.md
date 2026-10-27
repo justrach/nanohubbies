@@ -1,5 +1,11 @@
 # Fresh-VM image archive transport — 2026-10-27
 
+Subsequent [private-registry acceptance](private-toolchain-registry-validation.md)
+uses a retained full image and per-job temporary pull credentials to pass every
+current offline project gate on a separate fresh VM. This earlier tiny-archive
+receipt retains its original scope; automatic archive-URL renewal is still not
+implemented by the archive mode.
+
 The [receipt](toolchain-download-receipt.json) records a real [Codegraff sandbox](https://codegraff.com/docs/sandboxes) and
 Cloudflare HTTPS endpoint. The new [archive delivery path](../toolchain-archives.md)
 avoids depending on a provider workspace snapshot for image transfer. This

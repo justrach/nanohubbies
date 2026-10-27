@@ -5,7 +5,11 @@
   "concurrency": 4,
   "maxSandboxes": 4,
   "jobConcurrency": 4,
-  "image": "ghcr.io/your-org/nanohub-ci@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "image": "registry.cloudflare.com/REPLACE_WITH_ACCOUNT_ID/nanohub-ci@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "imageRegistry": {
+    "provider": "cloudflare",
+    "config": "/etc/nanohub/wrangler.jsonc"
+  },
   "network": "none",
   "prepare": "bun install --frozen-lockfile --offline",
   "artifacts": "/var/lib/nanohub-ci/private-artifacts"

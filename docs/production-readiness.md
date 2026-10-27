@@ -12,15 +12,17 @@ pending the original migration and CI/staging acceptance.
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md) | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract |
 | Native CLI | Published 0.4.9; source and bundled Git/API administration tests; immutable download hashes; [default-branch acceptance](evidence/cli-default-branch-validation.md) | Broader command parity remains open; public release operations need the checks below |
 | Cloudflare-owned secrets | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md) | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups |
-| Codegraff Actions | Real disposable cloud job through the dispatcher; full offline Linux project gates on a build VM; [toolchain acceptance](evidence/codegraff-toolchain-validation.md); [fresh-VM archive transport](evidence/toolchain-download-validation.md) verifies a tiny image and failure/cleanup paths | Publish/retain the full toolchain and verify fresh-VM execution; private artifact access and per-job URL renewal; a sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation |
+| Codegraff Actions | Real disposable cloud job through the dispatcher; [retained private full image and separate fresh-VM acceptance](evidence/private-toolchain-registry-validation.md) passes every offline project gate using per-job temporary Cloudflare pull access; both VMs are confirmed destroyed | A sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation |
 | Staging and application cutover | Exact candidate/version/approval/acceptance contracts and negative tests | Live intended-application staging job, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted |
 | Recovery | [Local cold DO/D1/R2 loss-and-restore drill](evidence/cold-recovery-validation.md): exact Git and metadata, locks/reviews/archive fences, as-of-checkpoint revocations, retained separate provider values; older-backup authority resurrection demonstrated. An [operator request hold](evidence/recovery-hold-validation.md) is deployed, with normal assets and an isolated held configuration verified | Implement and run the [isolated hosted recovery workflow](recovery.md#hosted-recovery-release-gate), independent retained backups, complete isolation/draining and current-authority reconciliation before reopening; prove Cloudflare resource coverage and measured RPO/RTO |
 | Traffic and operations | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence |
 
-The latest complete local acceptance passes
-275 API unit tests, 213 repository unit cases plus
-the full real Worker/Git acceptance chain, 39 CLI tests, 33 hosting/pool tests,
-access/vault integration, pinned tsrs and production builds. Hosted reads prove
+Current local acceptance passes 282 API unit tests, the full real Worker/Git
+acceptance chain, 36 hosting/pool cases and namespace integration, plus pinned
+tsrs. The separate fresh Linux VM passes frozen offline install, all API and
+repository gates, CLI, access/vault, hosting/pool, production build and tsrs.
+The exact source and limits are in the [registry evidence](evidence/private-toolchain-registry-validation.md).
+Hosted reads prove
 the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
@@ -38,7 +40,7 @@ comparisons. Subsequent complete normal regression commands pass after earlier
 local Git connection failures; their underlying cause remains unestablished.
 See the [precise evidence](evidence/recovery-hold-validation.md).
 
-The next release work should close unattended CI/toolchain distribution, actual
+The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)
 retain their explicit cutover gates. Production remains separate from a verified

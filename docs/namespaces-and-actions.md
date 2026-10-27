@@ -1,6 +1,6 @@
 # Owner/repo storage and Codegraff Actions
 
-This adds GitHub-style repository addressing and a native Codegraff execution backend. The namespace APIs are deployed. A real Codegraff dispatch now passes against an isolated local Nanohub repository; the unattended production dispatcher and distribution of the verified project toolchain still need activation. The new backend does not use GitHub as a source or transport mirror.
+This adds GitHub-style repository addressing and a native Codegraff execution backend. The namespace APIs are deployed. A real Codegraff dispatch passes against an isolated local Nanohub repository. The full project toolchain is retained privately in Cloudflare's managed registry; the unattended production dispatcher still needs activation. The new backend does not use GitHub as a source or transport mirror.
 
 ## Repository model
 
@@ -101,7 +101,7 @@ docker buildx build --platform linux/amd64 -f tools/codegraff/Dockerfile -t ghcr
 # Use the resulting ghcr.io/...@sha256:... reference, not the mutable tag.
 ```
 
-The actual Linux image build and full offline project gates now pass on a real Codegraff VM; see [toolchain acceptance](evidence/codegraff-toolchain-validation.md). It has not been published to a registry. Rebuild its public dependency cache when the lockfile changes. Other repositories should supply their own verified toolchain/cache image. `prepare` runs before each job's steps. Networking defaults to `none`; use a prewarmed offline dependency cache or deliberately configure `network: "bridge"` for dependency downloads. No host credentials or Docker socket are mounted in the candidate container.
+The actual Linux image build and full offline project gates pass on a real Codegraff VM; see [toolchain acceptance](evidence/codegraff-toolchain-validation.md). A subsequent full image is published privately in Cloudflare's registry. [Private registry delivery](private-toolchain-registry.md) renews pull-only access per job, removes it before source transfer and verifies the pinned manifest digest. Rebuild its public dependency cache when the lockfile changes. Other repositories should supply their own verified toolchain/cache image. `prepare` runs before each job's steps. Networking defaults to `none`; use a prewarmed offline dependency cache or deliberately configure `network: "bridge"` for dependency downloads. No host credentials or Docker socket are mounted in the candidate container.
 
 An explicit [HTTPS archive delivery mode](toolchain-archives.md) can instead
 download and verify a saved image before candidate upload. It pins both archive
@@ -113,7 +113,7 @@ remain open. This does not activate an unattended dispatcher.
 ### Dispatcher activation
 
 1. Deploy the application changes. Create the private named Git repo and push its main/workflow history. Open **Actions → Create runner credential** as the owner. Store the resulting repository-scoped `NANOHUB_CI_TOKEN` and the Codegraff API key with the `sandbox` scope in the trusted dispatcher's secret store.
-2. Copy `tools/codegraff-actions.example.json` outside the candidate checkout. Set the canonical owner/repo and replace the image placeholder with a verified SHA-256 digest. Use a private artifact directory for receipts and completion recovery files.
+2. Copy `tools/codegraff-actions.example.json` outside the candidate checkout. Set the canonical owner/repo, account namespace and verified registry SHA-256 digest. Its `imageRegistry` config names the trusted host's Wrangler configuration; provision existing Cloudflare authentication there. For a public registry image, remove `imageRegistry`. Use a private artifact directory for receipts and completion recovery files.
 3. From a trusted deployment of these tools, drain available work or run a long-lived dispatcher:
 
    ```sh
@@ -141,7 +141,8 @@ each `tokenEnv`:
 {
   "origin": "https://nanohub.sh",
   "backend": "codegraff",
-  "image": "ghcr.io/YOUR-ORG/nanohub-ci@sha256:VERIFIED_DIGEST",
+  "image": "registry.cloudflare.com/YOUR-ACCOUNT/nanohub-ci@sha256:VERIFIED_DIGEST",
+  "imageRegistry": { "provider": "cloudflare", "config": "/etc/nanohub/wrangler.jsonc" },
   "artifacts": "/var/lib/nanohub-ci/private-artifacts",
   "concurrency": 8,
   "maxSandboxes": 16,
@@ -186,7 +187,7 @@ Deployment remains a separate owner-approved exact-candidate path. A trusted sta
 
 The namespace fixture uses real Worker/DO/R2/D1 state, real private Git push/fetch, same-name repos under different owners, rename aliases, secrets continuity, cross-repo credential denial, native private logs, reruns, adoption and restart persistence. It also runs the actual dispatcher against a sandbox API fixture, including a real Nanohub clone, Git bundle, lease validation, log upload and result callback. Pool coverage races 32 HTTP claims across eight registrations, checks unique leases, reassigns revoked work and rejects stale delivery. Unit cases cover 260 queued candidates beyond the display window, multi-repository fairness, shared sandbox caps, shutdown drain, dependency concurrency/failure, and capacity retries. These are not live Codegraff VM execution receipts.
 
-The original sandbox-fixture checks above did not establish live execution. The later [real Codegraff acceptance](evidence/codegraff-live-validation.md) proves a disposable production VM running a synthetic Bun job through the actual dispatcher and a local Nanohub Worker, including private log/result delivery and confirmed destruction. It uses the existing trusted CI configuration; the separately supplied Nanohub key still lacks the sandbox scope. The later [full-project Linux toolchain acceptance](evidence/codegraff-toolchain-validation.md) proves the image build and offline project gates. Registry publication, an unattended production dispatcher and hosted Nanohub callback delivery remain unverified. Existing Meld runtime credentials and primary remotes remain unchanged.
+The original sandbox-fixture checks above did not establish live execution. The later [real Codegraff acceptance](evidence/codegraff-live-validation.md) proves a disposable production VM running a synthetic Bun job through the actual dispatcher and a local Nanohub Worker, including private log/result delivery and confirmed destruction. It uses the existing trusted CI configuration; the separately supplied Nanohub key still lacks the sandbox scope. The later [full-project Linux toolchain acceptance](evidence/codegraff-toolchain-validation.md) proves the image build and offline project gates. [Private registry acceptance](evidence/private-toolchain-registry-validation.md) subsequently retains the full image and passes all current offline project gates on a separate fresh VM with per-job temporary pull access and confirmed destruction of both VMs. An unattended production dispatcher and hosted Nanohub callback delivery remain unverified. Existing Meld runtime credentials and primary remotes remain unchanged.
 
 
 ## Explicit live acceptance
