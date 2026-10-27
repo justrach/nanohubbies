@@ -187,3 +187,40 @@ It does not prove whole-repository consistency, lost-namespace recovery,
 long-term backup retention, current-authority reconciliation, alarm/socket/job
 draining, Vault coverage or safe reopening. Its elapsed time measures the probe,
 not an application recovery-time objective.
+
+### Hosted repository drill
+
+The next harness uses real application requests and native Git transport:
+
+```sh
+NANOHUB_LIVE_CLOUDFLARE=1 bun tools/verify-hosted-repository-recovery.mjs /absolute/account-config.jsonc /absolute/private-artifacts
+```
+
+It uses a separate `nh-repo-recovery-*` resource family with the ordinary request
+hold always enabled. A private operator transport exists only in this fixture
+entrypoint so verification can exercise actual application authentication while
+normal routes remain closed. Its configured `seed`, `frozen`, `verify` and
+`reconcile` phases live outside restored application storage; unknown phases
+close that transport. Provider login flows, WebSockets and live-stream routes
+are unavailable. The harness does not run an Actions dispatcher or import job.
+
+The planned acceptance covers physical DO/D1/R2 content loss, complete Git
+clone/fsck and binary/mode/tag comparison, repository addresses, protections,
+tag rules, archive fences, reviews/hunk threads, Room issues and MCP attribution.
+Constructor registration inventories successful real DO instances, including
+internal RPC targets. Checkpoints require a stable retained inventory, no alarm,
+no socket, no unpublished objects and no active import. Retained bytes and
+expectations are copied to private controller files before mutation.
+
+An older checkpoint intentionally precedes removal/revocation of a collaborator,
+Git, CLI, agent/MCP and runner credentials, and synthetic Account tokens. A
+separate latest-authority file records those operations. Reconciliation must
+deny the old access again, including after restart, without reopening normal
+traffic. Synthetic Account values are not real provider or Secrets Store values.
+
+This harness is not a general production restore API. Deleted namespace/name
+reconstruction, independently retained long-term backups, general production
+draining, current-authority acquisition, Vault/workload-grant integration and
+safe public reopening remain part of the complete hosted gate. A passed drill
+may establish only its explicitly recorded scope. Interrupted cleanup uses the
+same command with `--cleanup /absolute/private-artifacts/<run-id>`.

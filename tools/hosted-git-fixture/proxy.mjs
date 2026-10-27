@@ -7,7 +7,10 @@ export async function gitProxy({
   authorization,
   control,
   repositoryPath,
+  upstreamPrefix = "",
 }) {
+  if (!["", "/__fixture/app"].includes(upstreamPrefix))
+    throw Error("Unexpected fixture upstream prefix");
   const upstreamOrigin = new URL(origin).origin,
     controllers = new Set();
   let closing = false;
@@ -53,7 +56,9 @@ export async function gitProxy({
       "git-protocol",
     ])
       if (request.headers[name]) headers.set(name, request.headers[name]);
-    fetch(target, {
+    const upstreamTarget = new URL(target);
+    upstreamTarget.pathname = upstreamPrefix + upstreamTarget.pathname;
+    fetch(upstreamTarget, {
       method: request.method,
       headers,
       ...(["GET", "HEAD"].includes(request.method)

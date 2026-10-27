@@ -44,7 +44,9 @@ export async function verifyHostedGitImport(
     throw Error(
       "Set NANOHUB_LIVE_CLOUDFLARE=1 for explicitly isolated hosted acceptance",
     );
-  assert.ok(["git-import", "storage-recovery"].includes(purpose));
+  assert.ok(
+    ["git-import", "storage-recovery", "repository-recovery"].includes(purpose),
+  );
   let saved, previous;
   if (cleanupDirectory) {
     if (!isAbsolute(cleanupDirectory))
@@ -58,7 +60,11 @@ export async function verifyHostedGitImport(
     );
     assert.equal(saved.root, root);
     purpose = saved.purpose ?? "git-import";
-    assert.ok(["git-import", "storage-recovery"].includes(purpose));
+    assert.ok(
+      ["git-import", "storage-recovery", "repository-recovery"].includes(
+        purpose,
+      ),
+    );
     artifactBase = dirname(cleanupDirectory);
   } else {
     if (
@@ -135,9 +141,11 @@ export async function verifyHostedGitImport(
     runId,
     accountId,
     scope:
-      purpose === "storage-recovery"
-        ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
-        : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
+      purpose === "repository-recovery"
+        ? "isolated hosted repository DO/D1/R2 loss/restore; real Git and policy checks; independent current revocations; normal traffic held"
+        : purpose === "storage-recovery"
+          ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
+          : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
     productionResourcesUsed: false,
     resources: {
       apiName: plan.apiName,
@@ -503,7 +511,39 @@ export async function verifyHostedGitImport(
       );
       const health = await (await call("/__fixture/health")).json();
       assert.equal(health.fixture, "private-hosted-git");
-      if (purpose === "storage-recovery") {
+      if (purpose === "repository-recovery") {
+        const { runRepositoryRecoveryProbe } =
+          await import("./hosted-recovery-fixture/repository-probe.mjs");
+        const setPhase = async (phase) => {
+          assert.ok(["seed", "frozen", "verify", "reconcile"].includes(phase));
+          plan.api.vars.HOSTED_REPO_PHASE = phase;
+          await saveConfigs();
+          await deploy(configPaths.api);
+          record.apiVersion = await currentVersion(configPaths.api);
+          const state = await metadata(record.apiVersion, configPaths.api);
+          assertFixtureBindings(state, plan, "api");
+          record.recoveryPhases ??= [];
+          record.recoveryPhases.push({
+            phase,
+            version: record.apiVersion,
+            at: new Date().toISOString(),
+          });
+          await persist();
+        };
+        await runRepositoryRecoveryProbe({
+          call,
+          wrangler,
+          config: configPaths.purge,
+          plan,
+          record,
+          persist,
+          directory,
+          setPhase,
+          origin: gateOrigin,
+          controlKey: keys.control,
+        });
+        record.acceptancePassed = true;
+      } else if (purpose === "storage-recovery") {
         const { runNativeRecoveryProbe } =
           await import("./hosted-recovery-fixture/probe.mjs");
         await runNativeRecoveryProbe({
@@ -809,6 +849,7 @@ export async function verifyHostedGitImport(
           "private-keys.json",
           "api-secrets.json",
           "gate-secrets.json",
+          "repository-private-grants.json",
         ])
           await rm(join(directory, file), { force: true });
       },

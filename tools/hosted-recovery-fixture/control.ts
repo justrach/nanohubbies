@@ -136,17 +136,21 @@ export async function control(
         })
       : json({ error: "Fixture object missing" }, 404);
   }
-  if (
-    !bindings.has(body.binding) ||
-    typeof body.name !== "string" ||
-    !/^[A-Za-z0-9][A-Za-z0-9:_.\/-]{0,200}$/.test(body.name)
-  )
+  const byId =
+    typeof body.id === "string" &&
+    /^[a-f0-9]{64}$/.test(body.id) &&
+    body.name === undefined;
+  const byName =
+    typeof body.name === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9:_.\/-]{0,200}$/.test(body.name) &&
+    body.id === undefined;
+  if (!bindings.has(body.binding) || (!byId && !byName))
     return json({ error: "Invalid fixture target" }, 400);
   const namespace = (env as unknown as Record<string, DurableObjectNamespace>)[
     body.binding
   ];
   const stub = namespace.get(
-    namespace.idFromName(body.name),
+    byId ? namespace.idFromString(body.id) : namespace.idFromName(body.name),
   ) as unknown as RecoveryStub;
   const key = env.HOSTED_BACKEND_KEY!;
   switch (body.op) {
@@ -156,10 +160,15 @@ export async function control(
       return json(await stub.fixtureRecoveryWrite(key, body.value));
     case "read":
       return json(await stub.fixtureRecoveryRead(key));
+    case "inspect":
+      return json(await stub.fixtureRecoveryInspect(key));
     case "checkpoint":
       return json(await stub.fixtureRecoveryCheckpoint(key));
     case "lose":
       return json(await stub.fixtureRecoveryLose(key));
+    case "lose-inspect":
+      await stub.fixtureRecoveryLose(key);
+      return json(await stub.fixtureRecoveryInspect(key));
     case "schedule":
       return json(await stub.fixtureRecoverySchedule(key, body.bookmark));
     // A caught exception only acknowledges the request; the controller must read and compare restored state.

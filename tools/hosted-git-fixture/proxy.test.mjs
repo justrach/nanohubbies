@@ -26,6 +26,42 @@ test("runtime trace drops request credentials and arbitrary console/exception co
   assert.equal(result.exceptions, 1);
   assert.equal(JSON.stringify(result).includes(secret), false);
 });
+test("repository recovery Git bridge only prefixes the explicit operator transport and preserves auth/query", async () => {
+  await assert.rejects(
+    gitProxy({ upstreamPrefix: "https://foreign.example/" }),
+    /Unexpected fixture upstream/,
+  );
+  const server = createServer((req, res) => {
+    assert.equal(
+      req.url,
+      "/__fixture/app/git/test/repo.git/info/refs?service=git-upload-pack",
+    );
+    assert.equal(req.headers.authorization, "Basic synthetic");
+    assert.equal(req.headers["x-nanohub-hosted-fixture"], "private-control");
+    res.writeHead(200);
+    res.end("real application auth still receives this");
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const proxy = await gitProxy({
+    origin: "http://127.0.0.1:" + server.address().port,
+    authorization: "Basic synthetic",
+    control: "private-control",
+    repositoryPath: "/git/test/repo.git",
+    upstreamPrefix: "/__fixture/app",
+  });
+  try {
+    const response = await fetch(
+      proxy.origin + "/git/test/repo.git/info/refs?service=git-upload-pack",
+      { headers: { authorization: "Basic synthetic" } },
+    );
+    assert.equal(response.status, 200);
+    await response.text();
+  } finally {
+    await proxy.close();
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
 test("Git bridge forwards decompressed gzip/brotli bytes without stale length or encoding", async () => {
   let calls = 0;
   const pack = Buffer.from("binary pack \0".repeat(1000));

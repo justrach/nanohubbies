@@ -2,11 +2,16 @@
 export interface RecoveryEnv {
   HOSTED_BACKEND_KEY?: string;
   HOSTED_FIXTURE_EXPIRES?: string;
+  HOSTED_REPO_RECOVERY?: string;
+  OBJECTS?: R2Bucket;
 }
 type Constructor = new (...args: any[]) => object;
 const bookmark = /^[a-f0-9]{8}-[a-f0-9]{8}-[a-f0-9]{8}-[a-f0-9]{32}$/;
 
-export function recoveryObject<T extends Constructor>(Base: T) {
+export function recoveryObject<T extends Constructor>(
+  Base: T,
+  binding?: string,
+) {
   return class extends Base {
     #state: DurableObjectState;
     #environment: RecoveryEnv;
@@ -14,6 +19,17 @@ export function recoveryObject<T extends Constructor>(Base: T) {
       super(...args);
       this.#state = args[0];
       this.#environment = args[1];
+      if (binding && this.#environment.HOSTED_REPO_RECOVERY === "1") {
+        const entry = { binding, id: this.#state.id.toString() };
+        // Registration completes before RPC delivery, including instances created
+        // by internal application RPCs. The controller retains this outside R2.
+        this.#state.blockConcurrencyWhile(async () => {
+          await this.#environment.OBJECTS!.put(
+            "__fixture/inventory/" + binding + "/" + entry.id,
+            JSON.stringify(entry),
+          );
+        });
+      }
     }
     #authorize(key: string) {
       const expected = this.#environment.HOSTED_BACKEND_KEY;
@@ -55,7 +71,9 @@ export function recoveryObject<T extends Constructor>(Base: T) {
         this.#state.storage.sql
           .exec<{
             name: string;
-          }>("SELECT name FROM sqlite_master WHERE type='table' AND name='fixture_recovery_marker'")
+          }>(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='fixture_recovery_marker'",
+          )
           .toArray().length === 1;
       const sql = exists
         ? this.#state.storage.sql
@@ -82,6 +100,33 @@ export function recoveryObject<T extends Constructor>(Base: T) {
       if (!bookmark.test(point))
         throw Error("Unexpected provider recovery bookmark");
       return { id: this.#state.id.toString(), bookmark: point };
+    }
+    async fixtureRecoveryInspect(key: string) {
+      this.#authorize(key);
+      const tables = this.#state.storage.sql
+        .exec<{
+          name: string;
+        }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__cf_kv' AND name NOT GLOB '_cf_*' ORDER BY name")
+        .toArray();
+      const names = new Set(tables.map((row) => row.name));
+      const pending = names.has("pending")
+        ? this.#state.storage.sql
+            .exec<{ n: number }>("SELECT COUNT(*) AS n FROM pending")
+            .one().n
+        : 0;
+      const imported = names.has("import_state")
+        ? this.#state.storage.sql
+            .exec<{ body: string }>("SELECT body FROM import_state WHERE id=1")
+            .toArray()[0]
+        : undefined;
+      return {
+        id: this.#state.id.toString(),
+        alarm: await this.#state.storage.getAlarm(),
+        webSockets: this.#state.getWebSockets().length,
+        tables,
+        pending,
+        importPhase: imported ? JSON.parse(imported.body).status.phase : null,
+      };
     }
     async fixtureRecoveryLose(key: string) {
       this.#authorize(key);
