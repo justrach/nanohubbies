@@ -13,10 +13,18 @@ export function environmentNames(value:unknown,limit=30):string[] {
 export class Environments {
  constructor(private sql:SqlStorage) {
   sql.exec('CREATE TABLE IF NOT EXISTS deployment_environments (id TEXT PRIMARY KEY, name_key TEXT NOT NULL UNIQUE, data TEXT NOT NULL)');
+  sql.exec('CREATE TABLE IF NOT EXISTS deployment_environments_revision (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL)');
+  sql.exec('INSERT OR IGNORE INTO deployment_environments_revision VALUES(1,0)');
+  const installed=sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger' AND name IN ('deployment_environment_revision_insert','deployment_environment_revision_update','deployment_environment_revision_delete')").toArray()[0].n;
+  if(installed!==3){
+   if(sql.exec('SELECT 1 FROM deployment_environments LIMIT 1').toArray().length)sql.exec('UPDATE deployment_environments_revision SET revision=revision+1 WHERE id=1');
+   for(const [kind,when]of [['insert','INSERT'],['update','UPDATE OF name_key,data'],['delete','DELETE']])sql.exec(`CREATE TRIGGER IF NOT EXISTS deployment_environment_revision_${kind} AFTER ${when} ON deployment_environments BEGIN UPDATE deployment_environments_revision SET revision=revision+1 WHERE id=1; END`);
+  }
   sql.exec('CREATE TABLE IF NOT EXISTS deployment_records (id INTEGER PRIMARY KEY AUTOINCREMENT, environment TEXT NOT NULL, head TEXT NOT NULL, base TEXT NOT NULL, data TEXT NOT NULL)');
   sql.exec('CREATE INDEX IF NOT EXISTS deployment_candidate ON deployment_records(environment,head,base,id DESC)');
  }
  list():DeploymentEnvironment[]{return this.sql.exec<{data:string}>('SELECT data FROM deployment_environments ORDER BY name_key').toArray().map(r=>JSON.parse(r.data));}
+ configuration(){return {revision:this.sql.exec<{revision:number}>('SELECT revision FROM deployment_environments_revision WHERE id=1').toArray()[0].revision,environments:this.list(),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:'storage' as const};}
  find(name:string):DeploymentEnvironment|undefined {if(!validName(name))return;const row=this.sql.exec<{data:string}>('SELECT data FROM deployment_environments WHERE name_key=?',key(name)).toArray()[0];return row?JSON.parse(row.data):undefined;}
  private source(id:string) {
   if(!this.sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ci_runners'").toArray().length)return;

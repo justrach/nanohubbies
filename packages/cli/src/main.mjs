@@ -23,6 +23,10 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   pr resolve NUMBER --thread ID            Resolve a conversation (--reopen to reopen)
   pr close NUMBER / pr merge NUMBER        Close or merge with all server protections
   run list [-R OWNER/REPO]                   List Actions runs (--web for deployment reviews)
+  env list / env view ID / env export ID    Inspect deployment environments (admin permission)
+  env create --file FILE                    Create from {revision,configuration}
+  env update ID --file FILE                 Replace the complete exported environment
+  env delete ID --revision N --confirm ID   Remove an environment (admin permission)
   rules view [-R OWNER/REPO]                 Open repository protection settings
   rules list [-R OWNER/REPO]                 List branch protections and their revision
   rules get PATTERN [-R OWNER/REPO]          Export one exact protection with its revision
@@ -64,6 +68,7 @@ protections:write grant; ruleset edits/export require rulesets:write. Both requi
 your current repository admin role. Archive and unarchive require the separate
 repository:archive permission; it remains available to admins while archived.
 Default branch edits require repository:default and an active repository.
+Environment administration requires environments:write and your current admin role.
 `;
 async function protectionFile(path) {
  const handle=await open(path,'r');
@@ -101,7 +106,7 @@ function options(args) {
 export async function run(args,{execute=processRun,write=console.log,progress=console.error,readProtectionFile=protectionFile,readToken=async()=>{if(process.stdin.isTTY)throw Error('Pipe one credential to the token login option');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>1024)throw Error('Expected one credential on stdin');}return value;},readCredential=async()=>{if(process.stdin.isTTY)throw Error('Git invokes this credential helper through a pipe');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>16384)throw Error('Git credential request is too large');}return value;},platform=process.platform,cwd=process.cwd(),fetcher=fetch,environment=process.env,wait,now}={}) {
  if(!args.length||args[0]==='--help'||args[0]==='help'){write(help);return;}
  if(args[0]==='--version'){write('nh '+cliPackage.version);return;}
- const [group,action,...rest]=args,allowed=new Set(['repo clone','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr comment','pr resolve','pr close','pr merge','run list','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
+ const [group,action,...rest]=args,allowed=new Set(['repo clone','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr comment','pr resolve','pr close','pr merge','run list','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
  const opts=options(rest),pos=[...opts.positionals];let origin=hostOrigin(opts.host??'https://nanohub.sh'),target;
  const helper=opts.helper??(platform==='darwin'?'osxkeychain':'manager');
@@ -111,7 +116,8 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  if(opts['with-api-token']&&`${group} ${action}`!=='auth login')throw Error('--with-api-token is only valid for auth login');
  if(opts['with-token']&&opts['with-api-token'])throw Error('Choose one credential type');
  if(opts.api&&group!=='auth')throw Error('--api is only needed for auth commands');
- if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(group==='rules'&&['set','delete'].includes(action)||group==='ruleset'&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action)))throw Error('--file, --revision and --confirm only apply to rule edits or repository administration');
+ if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action)))throw Error('--file, --revision and --confirm only apply to rule edits or repository administration');
+ if(group==='env'&&(opts.web||opts.print))throw Error('Environment commands use the native API; use rules view for browser settings');
  if(group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action)&&(opts.web||opts.print))throw Error('Repository administration uses the native API; use repo view to open the repository');
  if(opts['default-branch']!==undefined&&!(group==='repo'&&action==='edit'))throw Error('--default-branch only applies to repo edit');
  if(group==='ruleset'&&(opts.web||opts.print))throw Error('Ruleset commands use the native API; use rules view for browser settings');
@@ -144,7 +150,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
   output({...target,gitConfigured:true,message:`Git now uses the scoped CLI credential in this checkout.${environment.NANOHUB_API_TOKEN?' Keep NANOHUB_API_TOKEN available for Git operations.':''}`});return;
  }
  if(group==='auth'&&action==='login'&&!opts['with-token']&&!opts['with-api-token']&&!opts.web&&!opts.print&&!opts.git)return browserLogin({target,opts,pos,git,execute,write,progress,platform,cwd,fetcher,environment,wait,now});
- if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||group==='ruleset'||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment});
+ if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||['ruleset','env'].includes(group)||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment});
  if(group==='repo'&&action==='clone'){
   if(pos.length>1)throw Error('Use at most one destination directory');const directory=pos[0]??basename(target.repository??target.trunk);if(!directory||directory.startsWith('-'))throw Error('Use a destination directory that does not start with a dash');
   let selectedHelper=helper,cli=false;

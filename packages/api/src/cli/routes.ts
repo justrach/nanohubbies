@@ -74,6 +74,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="GET"&&resource==="protection")scope="read";
   if(method==="GET"&&resource==="archive")scope="read";
   if(method==="GET"&&resource==="default-branch")scope="read";
+  if(method==="GET"&&/^environments(?:\/[a-zA-Z0-9-]{8,80}(?:\/configuration)?)?$/.test(resource)||method==="POST"&&resource==="environments"||["PUT","DELETE"].includes(method)&&/^environments\/[a-zA-Z0-9-]{8,80}$/.test(resource))scope="environments:write";
   if(method==="PUT"&&resource==="default-branch")scope="repository:default";
   if(method==="POST"&&resource==="archive")scope="repository:archive";
   if(["PUT","DELETE"].includes(method)&&resource==="protection")scope="protections:write";

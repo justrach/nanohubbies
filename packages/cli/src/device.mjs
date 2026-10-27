@@ -1,6 +1,6 @@
 import {apiRequest,nativeCommand} from './api.mjs';
 const scopes=['read','contents:read','contents:write','pulls:write','reviews:write','pulls:merge'];
-const availableScopes=[...scopes,'protections:write','rulesets:write','repository:archive','repository:default'];
+const availableScopes=[...scopes,'protections:write','rulesets:write','repository:archive','repository:default','environments:write'];
 export async function browserLogin({target,opts,pos,git,execute,write,progress,platform,cwd,fetcher,environment,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),now=Date.now}) {
  if(pos.length)throw Error('Unexpected positional argument');
  const permissions=opts.scopes?[...new Set(['read',...opts.scopes.split(',')])]:[...scopes],days=Number(opts.days??7),label=opts.label??'Nanohub CLI';

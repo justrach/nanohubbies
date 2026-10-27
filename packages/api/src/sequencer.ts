@@ -160,6 +160,27 @@ export class Sequencer extends DurableObject<Env> {
   contributionLinkKnown(sha:string){return !!this.sql.exec("SELECT 1 FROM repository_refs WHERE commit_sha=? UNION ALL SELECT 1 FROM versions WHERE commit_sha=? UNION ALL SELECT 1 FROM repository_audit WHERE json_extract(data,'$.next')=? LIMIT 1",sha,sha,sha).toArray().length;}
   contributionPullExists(number:number){return !!this.sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='review_pulls'").toArray().length&&!!this.sql.exec("SELECT 1 FROM review_pulls WHERE number=?",number).toArray().length;}
   environments(){return new Environments(this.sql).list();}
+  environmentConfiguration(){return {...new Environments(this.sql).configuration(),sources:new CIStore(this.sql).sources()};}
+  async configureEnvironment(input:{revision:number;credentialId:string;origin:string;id?:string;configuration?:import('./deployments/types').EnvironmentInput},actor:string){
+    if(!Number.isSafeInteger(input.revision)||input.revision<0||typeof input.credentialId!=='string'||!input.credentialId||input.id!==undefined&&!/^[a-zA-Z0-9-]{8,80}$/.test(input.id)||!input.id&&!input.configuration)throw Error('Choose the observed environment revision and configuration');
+    const trunk=this.meta<string>('trunk');if(!trunk)throw Error('Repository identity unavailable');
+    const reviewers=input.configuration?.reviewers??[];
+    if(!Array.isArray(reviewers)||reviewers.length>6||reviewers.some(id=>typeof id!=='string'||!id||id.length>256||/[\0\r\n]/.test(id)))throw Error('Choose up to six current repository reviewers');
+    const membership=reviewers.length?await this.deploymentMembers(reviewers,input.origin):undefined;
+    const authority=await rulesetActor(this.env,trunk,actor,input.origin);
+    return this.ctx.storage.transactionSync(()=>{
+      if(!currentRulesetActor(authority,actor)||!['owner','admin'].includes(authority?.role??''))throw Error('Current repository admin access required for deployment environments');
+      if(!this.repositoryMode())throw Error('Deployment environments require Git repository mode');
+      if(membership&&(membership.expiresAt<=Date.now()||membership.checkedAt>Date.now()+1000||Date.now()-membership.checkedAt>30000||reviewers.some(id=>membership.accounts[id]!=='member')))throw Error('Deployment reviewers must have current repository read access');
+      const store=new Environments(this.sql),current=store.configuration();
+      if(current.revision!==input.revision)return {conflict:true as const,...current};
+      const previous=input.id?current.environments.find(e=>e.id===input.id):undefined;
+      const environment=input.configuration?store.set(input.configuration,input.id):undefined;
+      if(!input.configuration)store.remove(input.id!);
+      if(!environment||environment!==previous&&JSON.stringify(environment)!==JSON.stringify(previous))new Repository(this.sql).audit({actor,...(environment?{environment,previousEnvironment:previous??null}:{removedEnvironment:input.id,previousEnvironment:previous}),via:{kind:'cli',credentialId:input.credentialId}});
+      return {...store.configuration(),...(environment?{environment}:{deleted:true as const})};
+    });
+  }
   async setEnvironment(input:import("./deployments/types").EnvironmentInput,actor:string,id?:string,origin=""){if(input.reviewers?.length){const membership=await this.deploymentMembers(input.reviewers,origin);if(input.reviewers.some(id=>membership.accounts[id]!=="member"))throw Error("Deployment reviewers must have current repository read access");}return this.ctx.storage.transactionSync(()=>{if(!this.repositoryMode())throw Error("Deployment environments require Git repository mode");const store=new Environments(this.sql),previous=id?store.list().find(e=>e.id===id):null,environment=store.set(input,id);new Repository(this.sql).audit({actor,environment,previousEnvironment:previous});return environment;});}
   removeEnvironment(id:string,actor:string){return this.ctx.storage.transactionSync(()=>{const store=new Environments(this.sql),previous=store.list().find(e=>e.id===id);store.remove(id);new Repository(this.sql).audit({actor,removedEnvironment:id,previousEnvironment:previous});});}
   async deploymentGate(branch:string,head:string,base:string,actor:string,human:boolean,headBranch?:string,origin=""){const authority=human?await this.currentRulesetActor(actor,origin):undefined;const repo=new Repository(this.sql),gate=deploymentGate(this.sql,branch,head,repo.main().commit,actor,human,authority),refs=repo.refs();if(refs.find(ref=>ref.name===`refs/heads/${branch}`)?.commit!==base||headBranch&&refs.find(ref=>ref.name===`refs/heads/${headBranch}`)?.commit!==head)return {...gate,ready:false,environments:gate.environments.map(environment=>({...environment,ready:false,error:"PR changed while checking deployments; refresh and retry"}))};return gate;}

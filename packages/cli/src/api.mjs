@@ -1,13 +1,14 @@
 import {rulesetCommand} from './rulesets.mjs';
 import {archiveCommand} from './archive.mjs';
 import {defaultBranchCommand} from './default-branch.mjs';
+import {environmentCommand} from './environments.mjs';
 const redact=value=>String(value).replace(/nh(?:c|g|d)_[a-f0-9]{32,}/gi,'[redacted]');
 export class CliApiError extends Error {constructor(message,status){super(message);this.status=status;}}
 export async function apiRequest(origin,path,token,{method='GET',body,revision,revisionType='protection',fetcher=fetch}={}) {
  if(!/^nhc_[a-f0-9]{64}$/.test(token??''))throw Error('CLI API access needs an nhc_ credential. Run auth login --with-api-token.');
  const target=new URL(path,origin);if(target.origin!==origin||!target.pathname.startsWith('/api/cli/'))throw Error('CLI API request must stay on the selected host');
  if(revision!==undefined&&(!Number.isSafeInteger(revision)||revision<0))throw Error('Use a current valid resource revision');
- let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
+ let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':/\/environments(?:\/[a-zA-Z0-9-]+)?$/.test(path)?'The API response was lost. Inspect env list or env export before repeating the edit.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
  const text=await response.text();if(text.length>4*1024*1024)throw Error('CLI API response exceeded the display limit');
  let data;try{data=JSON.parse(text);}catch{throw Error(`CLI API returned a non-JSON response (HTTP ${response.status})`);}
  if(!response.ok)throw new CliApiError(redact(data.error??`CLI API returned HTTP ${response.status}`),response.status);return data;
@@ -48,6 +49,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
  const token=await stored(),base=apiPath(target),get=path=>request(base+path,token),post=(path,body,method='POST')=>request(base+path,token,{method,body});
  if(group==='repo')return ['default-branch','edit'].includes(action)?defaultBranchCommand({action,pos,opts,base,token,request,output}):archiveCommand({action,pos,opts,base,token,request,output});
  if(group==='ruleset')return rulesetCommand({action,pos,opts,base,token,request,output,readFile:readProtectionFile});
+ if(group==='env')return environmentCommand({action,pos,opts,base,token,request,output,readFile:readProtectionFile});
  if(group==='rules') {
   if(action==='list'||action==='get') {
    if(pos.length!==(action==='get'?1:0))throw Error('Use rules list or rules get EXACT_PATTERN');

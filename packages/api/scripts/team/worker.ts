@@ -60,6 +60,11 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/conditional-environment'){
+      const body=await request.json<{trunk:string;actor:string;revision:number;id?:string;configuration?:import('../../src/deployments/types').EnvironmentInput}>();
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureEnvironment({...body,credentialId:'fixture-direct-environment',origin:url.origin},body.actor));}
+      catch(error){return Response.json({error:String(error)},{status:400});}
+    }
     if(url.pathname==="/fixture/conditional-archive") {
       const body=await request.json<{trunk:string;actor:string;archived:boolean;revision:number;confirmation:string}>();
       try{return Response.json(await env.HUB.get(env.HUB.idFromName("hub")).configureRepositoryArchive(body.trunk,body.actor,body.archived,body.revision,"fixture-direct",undefined,body.confirmation));}

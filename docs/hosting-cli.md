@@ -52,7 +52,7 @@ Inside a checkout, omit `-R` to infer the repository from `origin`.
 supports older workspace addresses without owner/repository aliases.
 
 This is not the full GitHub CLI command surface. Account-wide API credentials,
-environment/runner management and standalone native executable releases remain
+runner management and standalone native executable releases remain
 future work. The older Zig `nanohub swarm` CLI lives in the
 separate Nanohub checkout and is not replaced or installed by this change.
 
@@ -499,3 +499,70 @@ uses the same admin grant and revision fence as other policy edits.
 The receiver must advertise `successOnlyCheckConclusions: true` before accepting
 the field. No credential gains new permissions, and no published CLI bytes
 change. See [the contract](check-conclusions.md#success-only-migration-policy).
+
+## Deployment environments
+
+`nh env` and `nanohub env` manage the existing deployment environments through
+native API calls. They require an explicit `environments:write` CLI permission
+and the delegating account's **current repository admin or owner role** for
+reads and writes. Ordinary login defaults and existing protection, ruleset,
+review, merge and Git credentials gain no environment administration permission.
+The browser consent screen describes the effect on reviewers, wait timers and
+branch/tag source restrictions.
+
+```sh
+nh auth login -R owner/repository --scopes read,environments:write
+nh env list -R owner/repository --json
+nh env view ENVIRONMENT_ID -R owner/repository --json
+nh env export ENVIRONMENT_ID -R owner/repository > environment.json
+nh env update ENVIRONMENT_ID --file environment.json -R owner/repository
+nh env delete ENVIRONMENT_ID --revision 12 --confirm ENVIRONMENT_ID -R owner/repository
+```
+
+To create an environment, use `env list` to get the current settings revision,
+then prepare a UTF-8 JSON file and run `nh env create --file environment.json`:
+
+```json
+{
+  "revision": 0,
+  "configuration": {
+    "name": "Staging",
+    "reviewers": [],
+    "preventSelfReview": false,
+    "waitTimerMinutes": 0,
+    "deploymentBranchPolicy": { "mode": "all" }
+  }
+}
+```
+
+Replace the revision with the actual observed value. `runner`, when present,
+must identify an active registration in this repository. Reviewer IDs must have
+current repository read access. Environment names are case-insensitive and
+cannot be renamed to a different name; create a new environment and explicitly
+update its requirements instead. Selected source rules distinguish branch and
+tag patterns. `env export` includes all reviewer, self-review, timer and source
+settings, including explicit empty/default values, so edits are complete
+replacements. The stored per-environment revision and this **global settings
+revision** are distinct.
+
+Every CLI create, update and delete uses `If-Match: "environments-N"`. A browser
+edit, another CLI writer, or a legacy SQL update/deletion invalidates an earlier
+export through storage triggers. Concurrent writes using one revision cannot
+both succeed. Identical no-op replacements leave the revision unchanged.
+Unknown fields, expired/revoked credentials, demoted administrators, archived
+repositories and unavailable current membership evidence fail closed. Old RPC
+receivers return 503 rather than falling back to unconditional browser writes.
+The final sequencer writer independently checks current admin membership,
+reviewer eligibility, the settings revision and the archive fence in its
+serialized transaction. Successful mutations retain account and CLI credential
+provenance in repository activity.
+
+The gateway exposes only `GET/POST .../environments`, `GET/PUT/DELETE
+.../environments/:id` and `GET .../environments/:id/configuration` under this
+scope. It grants no runner registration, secret-value access, deployment approval
+or report submission. Existing credentials with this scope can inspect an
+archived repository, but new environment write grants and mutations are blocked
+while archived. Removing a required environment leaves its branch requirement
+unmet; it does not waive that protection or reuse old deployment approvals.
+An ambiguous mutation response is not retried automatically: inspect `env list`
+or `env export` first.

@@ -9,6 +9,7 @@ export const cliPermissions=[
   ["protections:write","Change or remove branch protection rules (repository admins only)"],
   ["repository:archive","Archive or unarchive this repository (repository admins only)"],
   ["repository:default","Change the default branch (repository admins only)"],
+  ["environments:write","Manage deployment environments, reviewers and source restrictions (repository admins only)"],
 ] as const;
 export const cliPermissionLabels:Record<string,string>=Object.fromEntries(cliPermissions);
 export const cliReadScope=(scope:string)=>scope==="read"||scope==="contents:read";
