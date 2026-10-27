@@ -1,0 +1,92 @@
+{
+  "kind": "nanohub-toolchain-archive-transport",
+  "version": 1,
+  "reviewedSource": {
+    "baseCommit": "2492f5bff6a3d43d66fa62529286e37468752814",
+    "worktreeChangesIncluded": true,
+    "filesSha256": {
+      "tools/toolchain.mjs": "847d623485b3433085f3dba7f88ee1d39e5dd0d4929c8ffcaf4d7f104442b107",
+      "tools/codegraff-actions.mjs": "32fadc268e1b7b39047af7c2b48e61e729e6c5eaff055ed4c79c15ff58518efa",
+      "tools/ci-runner.mjs": "906436dee9f6e7265c46f4f6508db49f9cc532d9728fb5f94e3cbcb905ca9e33",
+      "tools/verify-codegraff-toolchain.mjs": "98078d63f61650c4f93a6a519ebe27487326d3bda535fec8852b52faa8652f93",
+      "packages/api/scripts/codegraff-actions.test.mjs": "65e61f79b537292ba9a8199eb037826f985a5076039004abec1fe24539096972",
+      "packages/api/scripts/smoke-toolchain-download.ts": "af8738146159ebd3b86f4e9477a24c7a4211d0a62148306417d7a69bc9f177d3"
+    }
+  },
+  "liveProbe": {
+    "startedAt": "2026-10-27T13:35:54.484Z",
+    "syntheticImage": true,
+    "hostedNanohub": false,
+    "candidateUploaded": false,
+    "cleanupNeeded": false,
+    "image": "sha256:b9c647cfd580e3a1418562b72f14c39aceb732487781cc78408fc103f0582906",
+    "archiveSha256": "7183a1266cf24d9213ada935bfef0911ba2eae12c13fd52e69109e7a84894f3f",
+    "archiveBytes": 538,
+    "sandboxId": "cnd_1dad8c82f684d2fa9ee03f6833209027d762d8cf",
+    "downloadAndLoadVerified": true,
+    "privateControlScriptRemoved": true,
+    "overflowBytesWritten": 539,
+    "rejected": [
+      "digest",
+      "length",
+      "redirect",
+      "overflow"
+    ],
+    "completedAt": "2026-10-27T13:36:32.257Z",
+    "deletionConfirmed": true
+  },
+  "cloudflareFixture": {
+    "syntheticArchiveOnly": true,
+    "applicationBindings": false,
+    "deleted": true,
+    "absenceConfirmed": true,
+    "absenceCode": 10007
+  },
+  "controlCredential": {
+    "existingTrustedCiTestKeyUsed": true,
+    "copiedToNanohubConfiguration": false,
+    "configuredNanohubKeyScopeRecheck": {
+      "checkedAt": "2026-10-27T13:15:44.072Z",
+      "sandboxReadAllowed": false,
+      "httpStatus": 403,
+      "sandboxScopeRequired": true
+    }
+  },
+  "localGates": {
+    "apiUnitPassed": 275,
+    "repositoryUnitPassed": 213,
+    "fullWorkerGitRepositoryChain": "passed",
+    "hostingUnitPassed": 33,
+    "realNamespaceGitDispatcherIntegration": "passed",
+    "pinnedTsrs": "passed",
+    "syntaxAndDiffChecks": "passed",
+    "liveOptInGuard": "refuses without explicit 1"
+  },
+  "scopeNotes": {
+    "liveHelpers": [
+      "HTTPS download",
+      "archive byte/hash/status validation",
+      "Docker load and exact image identity",
+      "negative responses and bounded writes",
+      "confirmed VM deletion"
+    ],
+    "postLiveLocalChecks": [
+      "additional dispatch deadline recheck",
+      "final candidate lease and expiry checks",
+      "malformed gateway-credential rejection"
+    ],
+    "candidateSourceUploaded": false,
+    "candidateCodeExecuted": false,
+    "mainSiteVersion": "1450c429-a969-483e-8383-c05d9ed8467c",
+    "mainSiteDeployed": false,
+    "hostedRunnerRegistered": false
+  },
+  "remaining": {
+    "fullToolchainPublishedAndRetained": false,
+    "freshVmFullToolchainSuiteVerified": false,
+    "privateArtifactAuthorizationVerified": false,
+    "automaticUrlRenewalImplemented": false,
+    "nanohubKeyHasSandboxScope": false,
+    "unattendedHostedDispatcherEnabled": false
+  }
+}

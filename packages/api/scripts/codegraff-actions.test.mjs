@@ -134,6 +134,8 @@ test("workflow dependencies and built-ins compile; unsupported/unsafe semantics 
   );
 });
 test("Codegraff authenticates only gateway control requests, refuses redirects and redacts response errors", async () => {
+  for (const key of [123, {}, "synthetic-private-key\n", "synthetic-private-key ", "x".repeat(4097)])
+    assert.throws(() => new Codegraff(key), error => !error.message.includes("synthetic-private-key") && /single-line credential/.test(error.message));
   const calls = [];
   const client = new Codegraff("synthetic-gateway-key", {
     fetcher: async (url, init) => {
@@ -281,6 +283,11 @@ test("dispatcher uses accepted base workflow, transfers a real credential-free b
     assert.ok(
       !client.calls.some((c) => JSON.stringify(c).includes("api.github.com")),
     );
+    const localImage='sha256:'+'d'.repeat(64),imageDownload={url:'https://images.invalid/toolchain?cap=synthetic-private-read',sha256:'e'.repeat(64),bytes:100},archiveClient=mockClient(),downloads=[],originalExec=archiveClient.exec;
+    archiveClient.downloadImage=async(_id,value)=>downloads.push(value);archiveClient.loadImage=async()=>{};archiveClient.exec=async(id,command)=>command.startsWith('docker image inspect')?localImage:originalExec(id,command);
+    const archived=await executeActions({run:{...run,head,base},source:dir,artifacts,artifactOrigin:'https://logs.invalid/'},{image:localImage,imageDownload,repository:'alice/repo'},{client:archiveClient});
+    assert.equal(archived.results.length,2);assert.ok(archived.results.every(result=>result.state==='success'));assert.deepEqual(downloads,[imageDownload,imageDownload]);
+    assert.ok(!JSON.stringify([archiveClient.calls,archiveClient.uploads,archived]).includes('synthetic-private-read'));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -448,4 +455,53 @@ test('large Git bundles cross the preview upload limit as bounded base64-safe ch
   const result=await sandboxJob({client,job,run,bundle,image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'});
   assert.equal(result.state,'success');const chunks=client.uploads.filter(u=>/\/bundle-\d{5}$/.test(u.path));assert.equal(chunks.length,3);assert.ok(chunks.every(u=>JSON.stringify({path:u.path,contentBase64:u.bytes.toString('base64')}).length<1000000));assert.deepEqual(Buffer.concat(chunks.map(u=>u.bytes)),bundle);
  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('download toolchains pin archive bytes and Docker identity, reject mixed modes and redact invalid delivery configuration',async()=>{
+ const {toolchain,archiveDownload}=await import('../../../tools/toolchain.mjs'),local='sha256:'+'a'.repeat(64),download={url:'https://images.invalid/toolchain.tar.gz?cap=synthetic-private-read',sha256:'b'.repeat(64),bytes:12345};
+ assert.deepEqual(toolchain(local,undefined,undefined,download),{image:local,snapshot:false,download});
+ for(const changed of [{url:'http://images.invalid/archive'},{url:'https://user:password@images.invalid/archive'},{url:'https://images.invalid/archive#fragment'},{url:'https://images.invalid/archive\n'},{url:'not-a-url'},{url:null},{url:'https://images.invalid/'+('a'.repeat(8200))},{bytes:0},{bytes:1.5},{bytes:2**31+1},{sha256:'bad'},{value:'forbidden'}])assert.throws(()=>archiveDownload({...download,...changed}),error=>!error.message.includes('synthetic-private-read')&&!error.message.includes('password'));
+ for(const args of [[image,undefined,undefined,download],[local,'snp_fixture',undefined,download],[local,undefined,'/workspace/nanohub-toolchain/image.tar',download]])assert.throws(()=>toolchain(...args));
+ await assert.rejects((await import('../../../tools/ci-runner.mjs')).runOnce({origin:'https://host.invalid',repository:'alice/repo',backend:'docker',image:local,imageDownload:download,artifacts:'/tmp/synthetic-artifacts'},'synthetic'),/downloads require the Codegraff backend/);
+});
+
+test('archive download launches once, caps streaming bytes, validates HTTP and SHA, and observes unique completion markers',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-download-script-'));
+ try{
+  const client=new Codegraff('synthetic-control-key',{sleep:async()=>{}}),uploads=[],commands=[],download={url:"https://images.invalid/archive?cap=synthetic'$(touch${IFS}SENTINEL)",sha256:'b'.repeat(64),bytes:12345};
+  let states=['running','0'];client.upload=async(_id,path,bytes)=>uploads.push({path,script:bytes.toString()});client.exec=async(_id,command)=>{commands.push(command);return command.startsWith('if test')?states.shift():'';};
+  await client.downloadImage('vm',download,Date.now()+10000);
+  assert.equal(uploads.length,1);assert.equal(commands.filter(c=>c.startsWith('nohup')).length,1);assert.equal(states.length,0);assert.ok(commands.some(c=>c==='chmod 600 /tmp/nanohub-image-download.sh'));assert.ok(commands.every(c=>!c.includes('synthetic\'')));
+  const script=uploads[0].script;assert.match(script,/set -euo pipefail/);assert.match(script,/--proto '=https'/);assert.match(script,/--max-filesize 12345/);assert.match(script,/head -c 12346/);assert.match(script,/sha256sum --check --status/);assert.match(script,/exit code!="200"/);assert.ok(!script.includes('--location')&&!script.includes('--insecure')&&!script.includes('synthetic-control-key'));
+  const file=join(dir,'download.sh');await writeFile(file,script);const syntax=await runProcess('bash',['-n',file]);assert.equal(syntax.code,0,syntax.output);
+  const first=commands.find(c=>c.startsWith('if test'));states=['0'];await client.downloadImage('vm',download,Date.now()+10000);const polls=commands.filter(c=>c.startsWith('if test'));assert.notEqual(first,polls.at(-1),'Earlier successful download markers cannot complete a later request');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('download failure, cancellation and expiry do not expose capabilities or relaunch a transfer',async()=>{
+ const download={url:'https://images.invalid/image?cap=synthetic-private-read',sha256:'b'.repeat(64),bytes:100};
+ for(const terminal of ['1','unexpected']){const client=new Codegraff('key',{sleep:async()=>{}}),commands=[];client.upload=async()=>{};client.exec=async(_id,command)=>{commands.push(command);return command.startsWith('if test')?terminal:'';};await assert.rejects(client.downloadImage('vm',download,Date.now()+10000),error=>/digest verification failed/.test(error.message)&&!error.message.includes('synthetic-private-read'));assert.equal(commands.filter(c=>c.startsWith('nohup')).length,1);}
+ const unused=new Codegraff('key');unused.upload=async()=>{throw Error('Must not upload');};await assert.rejects(unused.downloadImage('vm',download,Date.now()-1),/cancelled before/);await assert.rejects(unused.downloadImage('vm',download,Date.now()+10000,async()=>false),/cancelled before/);
+ let checks=0;const cancelled=new Codegraff('key');cancelled.upload=async()=>{};const commands=[];cancelled.exec=async(_id,command)=>{commands.push(command);return '';};await assert.rejects(cancelled.downloadImage('vm',download,Date.now()+10000,async()=>++checks===1),/lease is no longer active/);assert.equal(commands.filter(c=>c.startsWith('nohup')).length,1);assert.equal(commands.filter(c=>c.startsWith('if test')).length,0);
+});
+
+test('download jobs verify the loaded image before candidate transfer and keep private URLs out of provenance and candidate execution',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-download-job-'));
+ try{
+  const client=mockClient(),events=[],local='sha256:'+'d'.repeat(64),download={url:'https://images.invalid/archive?cap=synthetic-private-read',sha256:'e'.repeat(64),bytes:100},exec=client.exec,upload=client.upload;
+  client.downloadImage=async(_id,value)=>{assert.deepEqual(value,download);events.push('download');};client.loadImage=async(_id,path)=>{assert.equal(path,'/workspace/nanohub-toolchain/image.tar');events.push('load');};client.exec=async(id,command)=>{if(command.startsWith('docker image inspect')){events.push('verify');return local;}return exec(id,command);};client.upload=async(...args)=>{events.push('candidate');return upload(...args);};
+  const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run,bundle:Buffer.from('candidate bundle'),image:local,imageDownload:download,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'});
+  assert.equal(result.state,'success');assert.deepEqual(events.slice(0,4),['download','load','verify','candidate']);assert.match(client.calls.find(c=>c.command?.startsWith('docker run')).command,/--pull=never/);assert.match(client.calls.find(c=>c.command?.startsWith('docker run')).command,/--network=none/);
+  const receipt=JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8'));assert.deepEqual(receipt.imageDownload,{sha256:download.sha256,bytes:download.bytes});assert.equal(receipt.image,local);assert.equal(receipt.cleanupNeeded,false);
+  for(const value of [receipt,result,client.uploads,client.calls,await readFile(join(dir,'check-test.log'),'utf8')])assert.ok(!JSON.stringify(value).includes('synthetic-private-read'));
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('failed download/load, wrong identity or a lease revoked during preparation prevents candidate uploads and still confirms cleanup',async()=>{
+ for(const mode of ['download','load','identity','cancel','expired']){const dir=await mkdtemp(join(tmpdir(),'nanohub-download-denial-'));try{
+  const client=mockClient(),local='sha256:'+'d'.repeat(64),download={url:'https://images.invalid/archive?cap=synthetic-private-read',sha256:'e'.repeat(64),bytes:100};
+  let live=true,clock=Date.now();client.downloadImage=async()=>{if(mode==='download')throw Error('Archive digest verification failed');};client.loadImage=async()=>{if(mode==='load')throw Error('Image load failed');};client.exec=async()=>{if(mode==='cancel')live=false;if(mode==='expired')clock=run.leaseUntil;return mode==='identity'?'sha256:'+'f'.repeat(64):local;};
+  const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run,bundle:Buffer.from('candidate'),image:local,imageDownload:download,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>live,now:()=>clock});
+  assert.equal(result.state,'failure');assert.equal(client.uploads.length,0);assert.equal(client.calls.filter(c=>c.destroy).length,1);const receipt=JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8'));assert.equal(receipt.cleanupNeeded,false);assert.ok(!JSON.stringify(receipt).includes('synthetic-private-read'));
+ }finally{await rm(dir,{recursive:true,force:true});}}
 });

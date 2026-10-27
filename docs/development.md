@@ -281,6 +281,14 @@ assets cannot bypass the hold. Keep the variable outside application backups
 and preserve it during deployment. It blocks new requests; it does not drain
 existing sockets, alarms or direct RPC. See [the operator hold](recovery.md#operator-request-hold).
 
+`test:toolchain-download:live` is an explicit real-provider probe for a tiny
+synthetic Docker archive. It requires `NANOHUB_LIVE_CODEGRAFF=1`, an existing
+sandbox-scoped control key and trusted configuration/artifacts outside the
+checkout. Standard test commands do not invoke it. It verifies HTTPS transfer,
+byte/hash/image pins and negative cases, then confirms VM destruction; remove
+the operator-owned HTTPS fixture separately. See [archive delivery](toolchain-archives.md)
+and [live evidence](evidence/toolchain-download-validation.md).
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

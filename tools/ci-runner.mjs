@@ -65,7 +65,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   if(config.backend && !['codegraff','docker'].includes(config.backend))throw Error('Unknown CI backend');
   if(config.imageSnapshot!==undefined&&config.backend!=='codegraff')throw Error('Toolchain snapshots require the Codegraff backend');
   if(config.imageArchive!==undefined&&config.backend!=='codegraff')throw Error('Toolchain image archives require the Codegraff backend');
-  if(!config.pipelineAdapter||config.backend==='codegraff')toolchain(config.image,config.imageSnapshot,config.imageArchive);
+  if(config.imageDownload!==undefined&&config.backend!=='codegraff')throw Error('Toolchain archive downloads require the Codegraff backend');
+  if(!config.pipelineAdapter||config.backend==='codegraff')toolchain(config.image,config.imageSnapshot,config.imageArchive,config.imageDownload);
   if(typeof config.artifacts!=='string'||!isAbsolute(config.artifacts))throw Error('Use an absolute private artifacts directory');
   if(config.backend==='codegraff'&&!process.env.CODEGRAFF_API_KEY)throw Error('Configure the Nanohub account CODEGRAFF_API_KEY before claiming cloud jobs');
   const base=config.repository ? `${origin.origin}/api/repos/${config.repository}/ci` : `${origin.origin}/api/trunks/${config.trunk}/ci`;

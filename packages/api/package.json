@@ -39,7 +39,8 @@
     "test:cli-default": "node --test scripts/cli-default-branch.test.mjs && node scripts/smoke-cli-default-branch.ts && node scripts/smoke-cli-default-branch.ts --bundle",
     "test:success-only": "node --test scripts/success-only-checks.test.mjs && node scripts/smoke-success-only-checks.ts",
     "test:codegraff:live": "node scripts/smoke-codegraff-live.ts",
-    "test:recovery": "node --test scripts/recovery-hold.test.mjs && node scripts/smoke-recovery-hold.ts && node scripts/smoke-recovery.ts"
+    "test:recovery": "node --test scripts/recovery-hold.test.mjs && node scripts/smoke-recovery-hold.ts && node scripts/smoke-recovery.ts",
+    "test:toolchain-download:live": "node scripts/smoke-toolchain-download.ts"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.7.6",

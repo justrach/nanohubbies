@@ -103,6 +103,13 @@ docker buildx build --platform linux/amd64 -f tools/codegraff/Dockerfile -t ghcr
 
 The actual Linux image build and full offline project gates now pass on a real Codegraff VM; see [toolchain acceptance](evidence/codegraff-toolchain-validation.md). It has not been published to a registry. Rebuild its public dependency cache when the lockfile changes. Other repositories should supply their own verified toolchain/cache image. `prepare` runs before each job's steps. Networking defaults to `none`; use a prewarmed offline dependency cache or deliberately configure `network: "bridge"` for dependency downloads. No host credentials or Docker socket are mounted in the candidate container.
 
+An explicit [HTTPS archive delivery mode](toolchain-archives.md) can instead
+download and verify a saved image before candidate upload. It pins both archive
+bytes and the Docker config ID, refuses redirects and keeps private URLs out of
+candidate logs/receipts. A fresh-VM synthetic probe passes; retained full-image
+distribution, URL renewal and actual full-project acceptance through that path
+remain open. This does not activate an unattended dispatcher.
+
 ### Dispatcher activation
 
 1. Deploy the application changes. Create the private named Git repo and push its main/workflow history. Open **Actions → Create runner credential** as the owner. Store the resulting repository-scoped `NANOHUB_CI_TOKEN` and the Codegraff API key with the `sandbox` scope in the trusted dispatcher's secret store.

@@ -4,11 +4,12 @@
 import { readFile, writeFile, stat, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { randomUUID } from "node:crypto";
 import { parseWorkflow, quote } from "./actions-workflow.mjs";
 import { runProcess } from "./ci-runner.mjs";
 import { semaphore, positiveInteger } from "./runner-pool.mjs";
 import {sourceRef} from './ci-ref.mjs';
-import {toolchain} from './toolchain.mjs';
+import {toolchain,archiveDownload} from './toolchain.mjs';
 const id = (value) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -16,6 +17,10 @@ export class Codegraff {
   constructor(key, { fetcher = fetch, sleep = pause } = {}) {
     if (!key)
       throw Error("CODEGRAFF_API_KEY is required in the trusted dispatcher");
+    // Fetch header-validation errors can echo an invalid value. Reject it
+    // generically before constructing a request or writing a candidate log.
+    if (typeof key !== "string" || key.length > 4096 || /[^\x21-\x7e]/.test(key))
+      throw Error("CODEGRAFF_API_KEY must be a valid single-line credential");
     this.key = key;
     this.fetcher = fetcher;
     this.sleep = sleep;
@@ -107,7 +112,7 @@ export class Codegraff {
   }
   async loadImage(sandbox,archive,deadline,active=async()=>true) {
     if(!id(sandbox)||archive!=='/workspace/nanohub-toolchain/image.tar')throw Error('Invalid trusted image archive');
-    const status='/tmp/nanohub-image-load.exit',log='/tmp/nanohub-image-load.log';
+    const status='/tmp/nanohub-image-load-'+randomUUID()+'.exit',log='/tmp/nanohub-image-load.log';
     if(Date.now()>=deadline||!await active())throw Error('Toolchain image load cancelled before dispatch');
     // Loading a large cache can outlast the control API command timeout. Launch
     // it once and observe its exit file; an observation timeout never restarts it.
@@ -122,6 +127,42 @@ export class Codegraff {
       await this.sleep(2000);
     }
     throw Error('Trusted toolchain image load timed out');
+  }
+  async downloadImage(sandbox,input,deadline,active=async()=>true) {
+    const archive=archiveDownload(input);
+    if(!id(sandbox))throw Error('Invalid sandbox ID');
+    if(Date.now()>=deadline||!await active()||Date.now()>=deadline)throw Error('Toolchain download cancelled before dispatch');
+    const seconds=Math.max(1,Math.min(600,Math.floor((deadline-Date.now())/1000)));
+    const status='/tmp/nanohub-image-download-'+randomUUID()+'.exit',log='/tmp/nanohub-image-download.log';
+    // The URL can carry a private, expiring read capability. It remains in
+    // an owner-only control script, never in candidate files, logs or provenance.
+    // A pipe bounds disk writes even when the server omits Content-Length.
+    const script=`set -euo pipefail
+umask 077
+mkdir -p /workspace/nanohub-toolchain
+part=/workspace/nanohub-toolchain/image.part
+archive=/workspace/nanohub-toolchain/image.tar
+headers=/workspace/nanohub-toolchain/image.headers
+rm -f "$part" "$archive" "$headers"
+curl --fail --silent --show-error --proto '=https' --max-time ${seconds} --max-filesize ${archive.bytes} --dump-header "$headers" ${quote(archive.url)} | head -c ${archive.bytes+1} > "$part"
+awk '/^HTTP\\// {sub(/\\r$/,"",$0);code=$2} END {exit code!="200"}' "$headers"
+test "$(wc -c < "$part")" -eq ${archive.bytes}
+printf '%s  %s\\n' ${quote(archive.sha256)} "$part" | sha256sum --check --status
+mv "$part" "$archive"
+rm -f "$headers"
+`;
+    const launcher=`umask 077; bash /tmp/nanohub-image-download.sh > ${log} 2>&1; code=$?; rm -f /tmp/nanohub-image-download.sh; printf '%s\\n' "$code" > ${status}`;
+    await this.upload(sandbox,'/tmp/nanohub-image-download.sh',Buffer.from(script));
+    await this.exec(sandbox,'chmod 600 /tmp/nanohub-image-download.sh');
+    await this.exec(sandbox,`nohup sh -c ${quote(launcher)} > /tmp/nanohub-image-download-launch.log 2>&1 < /dev/null &`);
+    while(Date.now()<deadline) {
+      if(!await active())throw Error('Toolchain download cancelled: candidate lease is no longer active');
+      const result=(await this.exec(sandbox,`if test -f ${status}; then cat ${status}; else printf running; fi`)).trim();
+      if(result==='0')return;
+      if(result!=='running')throw Error('Trusted toolchain archive download or digest verification failed');
+      await this.sleep(2000);
+    }
+    throw Error('Trusted toolchain archive download timed out');
   }
 }
 /** Retry only explicit capacity/preparation responses, which allocate no VM.
@@ -147,6 +188,7 @@ export async function sandboxJob({
   image,
   imageSnapshot,
   imageArchive,
+  imageDownload,
   prepare = "",
   network = "none",
   artifacts,
@@ -156,7 +198,8 @@ export async function sandboxJob({
   active = async () => true,
   now = Date.now,
 }) {
-  const selected=toolchain(image,imageSnapshot,imageArchive);
+  const selected=toolchain(image,imageSnapshot,imageArchive,imageDownload);
+  const provenance=selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
   if (deadline <= now()) throw Error("CI lease exhausted");
@@ -194,15 +237,21 @@ export async function sandboxJob({
         job: job.name,
         head: run.head,
         cleanupNeeded: true,
-        ...(selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),
+        ...provenance,
       }),
     );
     await client.ready(sandbox, Math.min(deadline, now() + 5 * 60000));
     if(selected.snapshot) {
       await client.restore(sandbox,imageSnapshot,Math.min(deadline,now()+5*60000),active);
       if(imageArchive)await client.loadImage(sandbox,imageArchive,Math.min(deadline,now()+5*60000),active);
+    } else if(selected.download) {
+      await client.downloadImage(sandbox,selected.download,Math.min(deadline,now()+10*60000),active);
+      await client.loadImage(sandbox,'/workspace/nanohub-toolchain/image.tar',Math.min(deadline,now()+5*60000),active);
+    }
+    if(selected.snapshot||selected.download) {
       const actual=(await client.exec(sandbox,`docker image inspect --format '{{.Id}}' ${quote(image)}`)).trim();
       if(actual!==image)throw Error('Trusted toolchain image is missing or differs from its configured SHA-256 ID');
+      if(now()>=deadline||!await active()||now()>=deadline)throw Error('Candidate lease is no longer active after toolchain preparation');
     }
     await client.exec(sandbox, "mkdir -p /workspace/nanohub");
     const chunks = [];
@@ -240,7 +289,7 @@ export async function sandboxJob({
       GITHUB_REPOSITORY: repository,
       GITHUB_WORKSPACE: "/tmp/work",
     };
-    const command = `docker run --detach ${selected.snapshot?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g --mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
+    const command = `docker run --detach ${selected.snapshot||selected.download?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g --mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
       variables,
     )
       .map(([k, v]) => `--env ${quote(k + "=" + v)}`)
@@ -303,7 +352,7 @@ export async function sandboxJob({
         job: job.name,
         head: run.head,
         cleanupNeeded: !!cleanupError,
-        ...(selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),
+        ...provenance,
       }),
     );
   }
@@ -405,7 +454,7 @@ export async function executeActions(
         return jobLimit(()=>sandboxLimit(async()=>{
           if(context.active && !await context.active())return stopped(job,'cancelled','Cancelled before allocation: candidate lease is no longer active');
           try {
-            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active});
+            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active});
           }catch(error){return stopped(job,'failure','Sandbox allocation or dispatch failed: '+String(error));}
         }));
       })();

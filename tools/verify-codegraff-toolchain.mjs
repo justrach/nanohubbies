@@ -13,7 +13,7 @@ const [configPath,sourcePath,artifactPath]=process.argv.slice(2);
 if(![configPath,sourcePath,artifactPath].every(p=>p&&isAbsolute(p)))
   throw Error('Provide absolute trusted config, clean source checkout and private artifact paths');
 const config=JSON.parse(await readFile(configPath,'utf8'));
-toolchain(config.image,config.imageSnapshot,config.imageArchive);
+const selected=toolchain(config.image,config.imageSnapshot,config.imageArchive,config.imageDownload);
 const source=resolve(sourcePath),artifacts=resolve(artifactPath);
 if(artifacts===source||artifacts.startsWith(source+'/'))throw Error('Artifacts must be outside candidate source');
 await mkdir(artifacts,{recursive:true,mode:0o700});
@@ -48,7 +48,7 @@ printf '\\nNANOHUB_FULL_LINUX_PASS\\n'
 `;
 const run={id:'toolchain-acceptance-'+Date.now(),attempt:1,branch:'toolchain-acceptance',head,base:head,leaseUntil:Date.now()+60*60000};
 const client=new Codegraff(process.env.CODEGRAFF_API_KEY);
-const result=await sandboxJob({client,job:{name:'toolchain/full',id:'full',workflow:'trusted full-project acceptance',timeoutMs:40*60000,script},run,bundle:await readFile(bundlePath),image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,network:'none',artifacts,artifactOrigin:'https://logs.invalid/',repository:'nanohub/toolchain-validation'});
+const result=await sandboxJob({client,job:{name:'toolchain/full',id:'full',workflow:'trusted full-project acceptance',timeoutMs:40*60000,script},run,bundle:await readFile(bundlePath),image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,network:'none',artifacts,artifactOrigin:'https://logs.invalid/',repository:'nanohub/toolchain-validation'});
 await writeFile(join(artifacts,'result.json'),JSON.stringify(result,null,2)+'\n',{mode:0o600});
 assert.equal(result.state,'success');
 const log=await readFile(join(artifacts,'toolchain-full.log'),'utf8');
@@ -57,5 +57,6 @@ for(const [name]of gates)assert.ok(log.includes('NANOHUB_GATE_PASS '+name),'Miss
 assert.ok(log.includes('NANOHUB_FULL_LINUX_PASS'));
 const cleanup=JSON.parse(await readFile(join(artifacts,'toolchain-full.sandbox.json'),'utf8'));
 assert.equal(cleanup.cleanupNeeded,false);
-await writeFile(join(artifacts,'receipt.json'),JSON.stringify({checkedAt:new Date().toISOString(),productionCodegraff:true,hostedNanohub:false,source:head,...toolchain(config.image,config.imageSnapshot,config.imageArchive),sandboxId:result.execution.sandboxId,gates:gates.map(([name])=>name),network:'none',credentialFreeCandidate:true,cleanupDeleted:true},null,2)+'\n',{mode:0o600});
+const provenance=selected.download?{image:selected.image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected;
+await writeFile(join(artifacts,'receipt.json'),JSON.stringify({checkedAt:new Date().toISOString(),productionCodegraff:true,hostedNanohub:false,source:head,...provenance,sandboxId:result.execution.sandboxId,gates:gates.map(([name])=>name),network:'none',credentialFreeCandidate:true,cleanupDeleted:true},null,2)+'\n',{mode:0o600});
 console.log('PASS: fresh Codegraff VM, exact trusted toolchain, credential-free offline full-project checks and confirmed destruction');
