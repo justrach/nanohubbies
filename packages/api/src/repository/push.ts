@@ -25,6 +25,10 @@ export async function repositoryPush(
     !snapshot.length && commands.every((c) => c.old === ZERO && c.new !== ZERO),
   );
   const plan = await seq.graphPlan();
+  const limits = repositoryLimits(env);
+  let incomingBytes = 0;
+  for (const object of pack.values()) incomingBytes += object.body.length;
+  const scan = limits.objectBytes <= 16 << 20 && incomingBytes <= 4 << 20;
   const verifySignature = (sha: string, raw: Uint8Array) =>
     env.HUB.get(env.HUB.idFromName("hub")).verifyCommitSignature(
       trunk,
@@ -38,6 +42,7 @@ export async function repositoryPush(
     trunk,
     async () =>
       (await env.PACKER.get(env.PACKER.idFromName(trunk)).list()).packs,
+    scan,
   );
   // Cache commit topology only. Retaining every historical blob would exhaust
   // Worker memory on repositories whose reachable graph exceeds one push.
@@ -71,13 +76,9 @@ export async function repositoryPush(
       sha: c.new,
       type: c.ref.startsWith("refs/heads/") ? ("commit" as const) : undefined,
     }));
-  const limits = repositoryLimits(env);
-  let incomingBytes = 0;
-  for (const object of pack.values()) incomingBytes += object.body.length;
   // Large incoming packs already occupy memory. Only overlap reads when at
   // most 4 MiB is incoming and each stored object is bounded to 16 MiB.
-  const readAhead =
-    limits.objectBytes <= 16 << 20 && incomingBytes <= 4 << 20 ? 2 : 1;
+  const readAhead = scan ? 2 : 1;
   // Concurrent cold reads must share one prepared pack inventory in this request.
   if (roots.length) await reader.prepare();
   await validateGraph(get, roots, limits, readAhead);

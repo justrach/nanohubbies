@@ -46,6 +46,27 @@ export async function validateGraph(
     string,
     Promise<{ object: StoredObject | null } | { error: unknown }>
   >();
+  let readAt = 0;
+  const fill = () => {
+    while (pending.size < readAhead && readAt < queue.length) {
+      const candidate = queue[readAt++].sha;
+      if (
+        !/^[a-f0-9]{40}$/.test(candidate) ||
+        seen.has(candidate) ||
+        pending.has(candidate)
+      )
+        continue;
+      pending.set(
+        candidate,
+        Promise.resolve()
+          .then(() => get(candidate))
+          .then(
+            (object) => ({ object }),
+            (error) => ({ error }),
+          ),
+      );
+    }
+  };
   try {
     for (let i = 0; i < queue.length; i++) {
       const { sha, type, depth } = queue[i];
@@ -54,26 +75,10 @@ export async function validateGraph(
       if (known) {
         if (type && known !== type)
           throw new Error(`Wrong object type for ${sha}`);
+        if (readAhead > 1) fill();
         continue;
       }
-      for (let at = i; at < Math.min(queue.length, i + readAhead); at++) {
-        const candidate = queue[at].sha;
-        if (
-          !/^[a-f0-9]{40}$/.test(candidate) ||
-          seen.has(candidate) ||
-          pending.has(candidate)
-        )
-          continue;
-        pending.set(
-          candidate,
-          Promise.resolve()
-            .then(() => get(candidate))
-            .then(
-              (object) => ({ object }),
-              (error) => ({ error }),
-            ),
-        );
-      }
+      fill();
       const result = await pending.get(sha)!;
       pending.delete(sha);
       if ("error" in result) throw result.error;

@@ -214,3 +214,51 @@ test("invalid concurrency and object identifiers fail before any I/O", async () 
   );
   assert.equal(calls, 0);
 });
+test("read-ahead fills its bounded slots across duplicate graph edges", async () => {
+  const objects = Array.from({ length: 3 }, (_, i) =>
+      encode("blob", Uint8Array.of(i)),
+    ),
+    stored = new Map(objects.map((o) => [o.sha, decode(o.raw)])),
+    started = [],
+    resolvers = new Map();
+  let releaseAll = false,
+    active = 0,
+    peak = 0;
+  const get = async (sha) => {
+    started.push(sha);
+    active++;
+    peak = Math.max(peak, active);
+    try {
+      if (!releaseAll)
+        await new Promise((resolve) => resolvers.set(sha, resolve));
+      return stored.get(sha);
+    } finally {
+      active--;
+    }
+  };
+  const roots = [
+    ...Array.from({ length: 100 }, () => ({ sha: objects[0].sha })),
+    ...Array.from({ length: 100 }, () => ({ sha: objects[1].sha })),
+    { sha: objects[2].sha },
+  ];
+  const validation = validateGraph(get, roots, limits, 2);
+  try {
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(
+      started,
+      objects.slice(0, 2).map((o) => o.sha),
+    );
+    resolvers.get(objects[0].sha)();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(
+      started,
+      objects.map((o) => o.sha),
+    );
+    assert.equal(peak, 2);
+  } finally {
+    releaseAll = true;
+    for (const resolve of resolvers.values()) resolve();
+  }
+  assert.equal((await validation).size, 3);
+  assert.equal(active, 0);
+});
