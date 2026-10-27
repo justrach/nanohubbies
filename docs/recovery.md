@@ -44,6 +44,53 @@ The test does not implement an automatic production reconciliation service.
 
 See the [recorded local result](evidence/cold-recovery-validation.md).
 
+## Operator request hold
+
+The fence is implemented and verified in an isolated hosted Worker. Main-site
+rollout is pending the full regression gate; see the [rollout evidence](evidence/recovery-hold-validation.md).
+An earlier main-site build does not honor this variable. Verify an aware
+deployment and actual held responses before relying on it.
+
+Set the main Worker's `NANOHUB_RECOVERY_HOLD` configuration variable to `"1"`
+before recovery. This is operator configuration outside DO/D1/R2 backups; it
+is not a repository setting or an application API permission. Only an omitted
+binding or the exact string `"0"` opens requests. Empty, misspelled or unexpected
+values hold traffic as well. No cookie, credential, query parameter, header,
+HTTP method or public health path bypasses the hold.
+
+The API entrypoint and the combined web entrypoint check it before auth,
+throttling, repository resolution, Next.js, asset delegation or legacy routing.
+Held requests receive private, non-cacheable HTTP 503 with `Retry-After: 60`,
+`X-Nanohub-Recovery: hold` and a `recovery_hold` code. HEAD has no response body.
+This includes new WebSocket upgrades, MCP, CLI authorization and downloads,
+OAuth callbacks, Git clone/push, CI callbacks and secret redemption requests
+through the application. In-process page-to-API calls use the same API fence.
+
+Keep `assets.run_worker_first: true` on the deployed Worker and every relevant
+environment. Both committed web configurations now set it. Cloudflare's
+[Worker-first asset routing](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)
+allows the request fence to run before a matching static asset is served.
+This makes asset network requests invoke the Worker too; account for that in
+traffic and cost measurements. Already cached browser content is not remotely
+erased by this flag.
+
+Apply the variable through the operator's normal Cloudflare configuration and
+deployment controls, preserving existing bindings and variables. Verify the
+active deployment and 503 behavior before beginning a restore. Keep the hold
+through later deployments and restores. Releasing it is an explicit operator
+change after current-authority reconciliation; deployment must not silently
+set it to `"0"`. Do not roll back to a build that lacks this fence while relying
+on it. There is deliberately no public recovery/unlock API or owner exemption.
+
+This fences **new fetch requests reaching the aware Worker**, not already
+running requests, open sockets, direct DO/Vault RPC, alarms, imports, service
+clients that bypass this fetch handler or other Worker versions. It neither
+revokes restored credentials nor freezes a cross-service transaction. The
+operator still needs isolation and draining for all those paths. The local
+drill keeps the hold across an older restore and restart, then releases only
+the isolated loopback fixture to demonstrate the authority hazard and reconcile
+it. That is not a safe public reopening procedure.
+
 ## Hosted recovery release gate
 
 The local files are a Miniflare implementation detail, not a Cloudflare backup

@@ -1,4 +1,5 @@
 import {archiveRoute} from "./repository/archive-route";
+import {recoveryHoldResponse} from "./recovery";
 import {cliRoute,cliCredentialRoute} from "./cli/routes";
 import {agentMcpRoute,contributionRoute} from './contributions/routes';
 import {cliSignInReturn} from "./cli/device";
@@ -53,6 +54,8 @@ const GH_NAME = /^[\w.-]{1,100}$/;
 
 export default {
   async fetch(request, env, ctx?: ExecutionContext): Promise<Response> {
+    const hold = recoveryHoldResponse(request, env);
+    if (hold) return hold;
     const url = new URL(request.url);
     try {
       const blocked = await throttle(request, env, url);

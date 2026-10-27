@@ -3,6 +3,7 @@
 // @ts-ignore: .open-next/worker.js exists only after that build.
 import next from "./.open-next/worker.js";
 import api from "@swarm/api";
+import { recoveryHoldResponse } from "@swarm/api/recovery";
 
 export { Account, Agent, Driver, Hub, ImportJob, Lane, Packer, Room, Sequencer } from "@swarm/api";
 
@@ -29,6 +30,8 @@ interface Legacy {
 
 export default {
   async fetch(request, env, ctx) {
+    const hold = recoveryHoldResponse(request, env);
+    if (hold) return hold;
     const { pathname } = new URL(request.url);
     const cliAuthorization=pathname==="/cli/authorize"||pathname==="/cli/authorize/";
     const cliDistribution=pathname==="/nh/install.mjs"||pathname==="/nh/latest.json"||/^\/nh\/releases\/\d+\.\d+\.\d+\/(nh\.mjs|SHA256SUMS)$/.test(pathname);

@@ -11,7 +11,8 @@
   // The deployed version's ID, which /api/agent-help reports.
   "services": [{"binding":"VAULT","service":"nanohub-vault","entrypoint":"VaultService"}],
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
-  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // Let the recovery request fence run before static assets, including CLI downloads.
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS", "run_worker_first": true },
   "durable_objects": {
     "bindings": [
       // One per trunk: the only writer of that trunk.
@@ -57,7 +58,7 @@
     // The same Worker, also mirroring every trunk to a Cloudflare Artifacts
     // repo; it needs a Cloudflare account with Artifacts.
     "artifacts": {
-      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS", "run_worker_first": true },
       "durable_objects": {
         "bindings": [
           { "name": "SEQUENCER", "class_name": "Sequencer" },

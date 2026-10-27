@@ -175,7 +175,30 @@ try {
   stage = "older-checkpoint revocation hazard";
   // This intentionally exposes the rollback hazard only inside an isolated
   // loopback fixture. An old backup is not authority to reopen production.
+  await f.setRecoveryHold("1");
   await old.restore();
+  const heldRequests: [string, string, unknown, Record<string, string>?][] = [
+    ["GET", base + "/branches", undefined, writer],
+    ["GET", base + "/protection", undefined, owner],
+    ["GET", "/git/" + trunk + ".git/HEAD", undefined, basic(gitCredential)],
+    ["GET", "/api/cli/trunks/" + trunk + "/branches", undefined, bearer(cliCredential)],
+    ["POST", base + "/ci/claim", {}, bearer(runner)],
+    ["POST", base + "/secrets/read", {}, bearer(workload)],
+    ["POST", base + "/agents/builder/mcp", {}, bearer(agent)],
+    ["GET", base + "/live", undefined, owner],
+    ["GET", "/api/auth/signin/codegraff", undefined],
+    ["GET", "/api/agent-help", undefined],
+  ];
+  for (const [method, path, body, headers] of heldRequests) {
+    const response = await f.request(method, path, body, headers);
+    assert.equal(response.status, 503, path);
+    assert.equal((await response.json() as { code: string }).code, "recovery_hold");
+  }
+  await f.restart();
+  assert.equal((await f.request("GET", base + "/branches", undefined, owner)).status, 503);
+  // Release only this already isolated loopback fixture to demonstrate the
+  // hazard and reconcile through owner APIs. A public recovery stays closed.
+  await f.setRecoveryHold("0");
   assert.equal((await f.request("GET", base + "/branches", undefined, writer)).status, 200);
   assert.equal((await f.request("GET", "/git/" + trunk + ".git/HEAD", undefined, basic(gitCredential))).status, 200);
   assert.equal((await f.request("GET", "/api/cli/trunks/" + trunk + "/branches", undefined, bearer(cliCredential))).status, 200);
@@ -194,7 +217,7 @@ try {
     scope: "isolated Miniflare DO/D1/R2; Cloudflare Secrets Store simulated separately",
     liveCloudflareRestore: false, productionTrafficReadinessEstablished: false,
     checkpoint: { files: current.files.length, bytes: current.files.reduce((n, file) => n + file.bytes, 0), resources: ["do", "d1", "r2"], providerValuesIncluded: false },
-    verified: { physicalLoss: true, checksumRefusalBeforeMutation: true, exactGitGraphAndBytes: true, policiesAndLocks: true, archiveFences: true, reviewsAndHunks: true, roomAndAgentHistory: true, d1IdentityAndCliRows: true, asOfCheckpointRevocations: true, laterCloudflareRotationRetained: true, idleVaultAlarmAbsent: true, olderCheckpointResurrectsAuthority: true, explicitReconciliationAndRestartDeniesAgain: true },
+    verified: { physicalLoss: true, checksumRefusalBeforeMutation: true, exactGitGraphAndBytes: true, policiesAndLocks: true, archiveFences: true, reviewsAndHunks: true, roomAndAgentHistory: true, d1IdentityAndCliRows: true, asOfCheckpointRevocations: true, laterCloudflareRotationRetained: true, idleVaultAlarmAbsent: true, requestHoldSurvivesOlderRestoreAndRestart: true, olderCheckpointResurrectsAuthority: true, explicitReconciliationAndRestartDeniesAgain: true },
   }));
   console.log("PASS: cold DO/D1/R2 loss and checksum-verified restore; exact Git refs/objects/binary/modes/tag, policies/locks, Room/PR/hunk/audit/agent metadata; as-of-checkpoint revocations, fresh-role review denial; Cloudflare-owned values excluded and later rotation retained; unused vault has no alarm; demonstrated older-backup authority resurrection and explicit reconciliation/restart denial");
 } catch (error) {

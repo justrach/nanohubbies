@@ -274,6 +274,13 @@ older checkpoint revives later-revoked authority until explicit reconciliation.
 The fixture copies stopped Miniflare persistence only; it is not a production
 backup tool. See [recovery scope and the hosted release gate](recovery.md).
 
+The recovery suite also tests the `NANOHUB_RECOVERY_HOLD` operator request fence
+in the actual API/web routers and through Miniflare's static-asset router.
+The combined Worker requires `assets.run_worker_first: true` so CLI/static
+assets cannot bypass the hold. Keep the variable outside application backups
+and preserve it during deployment. It blocks new requests; it does not drain
+existing sockets, alarms or direct RPC. See [the operator hold](recovery.md#operator-request-hold).
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

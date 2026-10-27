@@ -14,15 +14,23 @@ pending the original migration and CI/staging acceptance.
 | Cloudflare-owned secrets | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md) | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups |
 | Codegraff Actions | Real disposable cloud job through the dispatcher; full offline Linux project gates on a build VM; [toolchain acceptance](evidence/codegraff-toolchain-validation.md) | Verified toolchain distribution, an unattended production dispatcher, repository-scoped registration, hosted callbacks, account capacity/cleanup observation |
 | Staging and application cutover | Exact candidate/version/approval/acceptance contracts and negative tests | Live intended-application staging job, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted |
-| Recovery | [Local cold DO/D1/R2 loss-and-restore drill](evidence/cold-recovery-validation.md): exact Git and metadata, locks/reviews/archive fences, as-of-checkpoint revocations, retained separate provider values; older-backup authority resurrection demonstrated | Implement and run the [isolated hosted recovery workflow](recovery.md#hosted-recovery-release-gate), independent retained backups and current-authority reconciliation before reopening; prove Cloudflare resource coverage and measured RPO/RTO |
+| Recovery | [Local cold DO/D1/R2 loss-and-restore drill](evidence/cold-recovery-validation.md): exact Git and metadata, locks/reviews/archive fences, as-of-checkpoint revocations, retained separate provider values; older-backup authority resurrection demonstrated. An [operator request hold](evidence/recovery-hold-validation.md) is implemented and verified in a disposable hosted Worker; main-site rollout remains pending | Finish the request-hold regression gate and rollout, then implement and run the [isolated hosted recovery workflow](recovery.md#hosted-recovery-release-gate), independent retained backups, complete isolation/draining and current-authority reconciliation before reopening; prove Cloudflare resource coverage and measured RPO/RTO |
 | Traffic and operations | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence |
 
-The latest local gates pass 267 API unit tests, 210 repository unit cases plus
+The last complete local acceptance, before the request-hold change, passes
+267 API unit tests, 210 repository unit cases plus
 the full real Worker/Git acceptance chain, 39 CLI tests, 28 hosting/pool tests,
 access/vault integration, pinned tsrs and production builds. Hosted reads prove
 the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
+
+The subsequent request-hold change passes 270 API and 213 repository unit tests,
+targeted cold recovery/asset routing, pinned tsrs and production builds. Seventeen
+live requests to a separate temporary Cloudflare Worker verify the hold; that
+Worker is deleted and its absence confirmed. Full aggregate regression attempts
+stop on local Git connection failures at different integration scripts, so the
+new main-site rollout is deferred. See the [precise evidence](evidence/recovery-hold-validation.md).
 
 The next release work should close unattended CI/toolchain distribution, actual
 application staging acceptance, complete restore verification and traffic/security

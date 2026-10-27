@@ -247,6 +247,14 @@ export async function teamFixture(
     get origin() {
       return origin;
     },
+    /** Test-only deployment configuration; deliberately outside database snapshots. */
+    async setRecoveryHold(value: string | undefined) {
+      const worker = config.workers!.find(worker => worker.config.name === "team-test")!;
+      if (value === undefined) delete worker.config.env!.NANOHUB_RECOVERY_HOLD;
+      else worker.config.env!.NANOHUB_RECOVERY_HOLD = { type: "text", value };
+      await mf.setOptions({ ...config, resourcePersistencePath: join(dir, "state") });
+      origin = (await mf.ready).origin;
+    },
     /** Test-only cold storage operation. No live SQLite files are copied. */
     async offlineStorage<T>(operation: (directory: string) => Promise<T>) {
       await mf.dispose();

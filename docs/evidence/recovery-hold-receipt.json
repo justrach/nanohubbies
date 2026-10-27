@@ -1,0 +1,191 @@
+{
+  "kind": "nanohub-recovery-request-hold",
+  "version": 1,
+  "source": {
+    "baseCommit": "dce0dbdcdedfad6168051a8b4937901bd7818df9",
+    "worktreeChangesIncluded": true,
+    "filesSha256": {
+      "packages/api/src/recovery.ts": "87faf1f1a08244776724bf9e6a9c78e770a25db4348745b160ae0aa0625fd1a0",
+      "packages/api/src/index.ts": "2c8d9210b3f5c348259ce01b4fba8fa457fd3d655e509b1d9c90c6d8eda612d6",
+      "apps/web/worker.ts": "04a0f591072a7a3ed0783bef9ae1e852b8383eb3c9355bd0d47f14318ce4d051",
+      "apps/web/wrangler.jsonc": "2219200e6fb817592e9517e931fffc44ea7acbb2d6e7d20ed8d2e9872e2424c8",
+      "packages/api/scripts/recovery-hold.test.mjs": "86ec26099440797ac60e22f8c5fff07cd0be3b0172143878826eecb1d47491de",
+      "packages/api/scripts/smoke-recovery-hold.ts": "e432705bcec23a810aa8001a575e2c71db17b5c4c8f0bfd2d2ccd90b928288f3",
+      "packages/api/scripts/smoke-recovery.ts": "a5c8fb1905f28fd4b01a938e95510ff5c57168b73da1a67022c20d17b88e4299",
+      "packages/api/scripts/team/fixture.ts": "21a2f2584f812bca244e25a147613bd3dfce5d2bc15eb3747adec179ca4bb96b"
+    }
+  },
+  "local": {
+    "apiUnitPassed": 270,
+    "repositoryUnitPassed": 213,
+    "targetedColdRecovery": "passed including held older-restore/restart",
+    "realAssetRouter": "passed normal/held/malformed/HEAD/release",
+    "pinnedTsrs": "passed all three workspaces",
+    "nextAndOpenNextBuild": "passed",
+    "wranglerDryRun": "passed",
+    "aggregateRepositoryChain": "incomplete: loopback Git connection failures at different scripts",
+    "isolatedRechecksPassed": [
+      "ruleset roles",
+      "force-push actors"
+    ],
+    "localTcpPressureObserved": true,
+    "tcpFailureRootCauseEstablished": false
+  },
+  "hosted": {
+    "scope": "disposable Cloudflare Worker with the real application entrypoint and static assets; no application storage/service bindings",
+    "probeVersion": "c68d5754-24a3-4002-98d6-39874ec4e16f",
+    "checkedAt": "2026-10-27T12:40:26.330Z",
+    "observations": [
+      {
+        "method": "GET",
+        "path": "/",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/dashboard",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/t/synthetic/branches",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/cli/authorize",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/nh/latest.json",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/agent-help",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/callback/codegraff",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/trunks/synthetic/live",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/trunks/synthetic/agents/builder/mcp",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/cli/trunks/synthetic/protection",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/trunks/synthetic/ci/claim",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/trunks/synthetic/secrets/read",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "GET",
+        "path": "/git/owner/synthetic.git/info/refs?service=git-upload-pack",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "POST",
+        "path": "/git/synthetic.git/git-receive-pack",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      },
+      {
+        "method": "HEAD",
+        "path": "/nh/latest.json",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/api/agent-help",
+        "status": 503,
+        "privateNoStore": true,
+        "retryAfter": 60,
+        "bodyless": false
+      }
+    ],
+    "deleted": true,
+    "absenceConfirmed": true,
+    "absenceCode": 10007,
+    "mainObservedVersion": "7b1af261-899b-4870-94f1-c25cf25fc6e7",
+    "mainObservedStatus": 200,
+    "mainSiteHeld": false,
+    "mainRolloutPerformed": false
+  },
+  "limits": {
+    "inflightWorkDrained": false,
+    "directRpcAndAlarmsFenced": false,
+    "restoredCredentialsAutomaticallyRevoked": false,
+    "hostedDisasterRestoreVerified": false,
+    "productionTrafficReadinessEstablished": false
+  }
+}
