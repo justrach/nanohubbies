@@ -16,8 +16,10 @@ export function fixturePlan({
   runId,
   deadline,
   databaseId = "00000000-0000-0000-0000-000000000000",
+  purpose = "git-import",
 }) {
   if (
+    !["git-import", "storage-recovery"].includes(purpose) ||
     !/^[a-f0-9]{32}$/.test(accountId) ||
     !/^[a-z0-9]{8,12}-[a-f0-9]{10}$/.test(runId) ||
     !Number.isSafeInteger(deadline) ||
@@ -27,7 +29,9 @@ export function fixturePlan({
     )
   )
     throw Error("Invalid isolated fixture identity");
-  const prefix = "nh-git-live-" + runId,
+  const prefix =
+      (purpose === "storage-recovery" ? "nh-recovery-live-" : "nh-git-live-") +
+      runId,
     apiName = prefix + "-app",
     gateName = prefix + "-gate",
     bucket = prefix + "-objects",
@@ -45,6 +49,7 @@ export function fixturePlan({
   };
   return {
     accountId,
+    purpose,
     runId,
     deadline,
     apiName,
@@ -55,9 +60,20 @@ export function fixturePlan({
     api: {
       ...common,
       name: apiName,
-      main: resolve(root, "tools/hosted-git-fixture/app.ts"),
+      main: resolve(
+        root,
+        purpose === "storage-recovery"
+          ? "tools/hosted-recovery-fixture/app.ts"
+          : "tools/hosted-git-fixture/app.ts",
+      ),
       workers_dev: false,
-      vars: { DEV_LOGIN: "0", HOSTED_FIXTURE_EXPIRES: String(deadline) },
+      vars: {
+        DEV_LOGIN: "0",
+        HOSTED_FIXTURE_EXPIRES: String(deadline),
+        ...(purpose === "storage-recovery"
+          ? { NANOHUB_RECOVERY_HOLD: "1" }
+          : {}),
+      },
       assets: {
         directory: resolve(root, "apps/web/.open-next/assets"),
         binding: "ASSETS",
@@ -127,6 +143,9 @@ export function assertFixtureBindings(metadata, plan, kind) {
           "HOSTED_FIXTURE_EXPIRES",
           "HOSTED_BACKEND_KEY",
           "SESSION_SECRET",
+          ...(plan.purpose === "storage-recovery"
+            ? ["NANOHUB_RECOVERY_HOLD"]
+            : []),
           ...classes.map(([name]) => name),
         ]
       : [
@@ -148,6 +167,14 @@ export function assertFixtureBindings(metadata, plan, kind) {
     throw Error("Fixture bucket binding does not match the owned resource");
   const services = bindings.filter((binding) => binding.type === "service");
   if (kind === "api") {
+    if (
+      plan.purpose === "storage-recovery" &&
+      bindings.find((binding) => binding.name === "NANOHUB_RECOVERY_HOLD")
+        ?.text !== "1"
+    )
+      throw Error(
+        "Recovery fixture must hold normal requests throughout the drill",
+      );
     if (services.length)
       throw Error("Fixture API must have no external service bindings");
     const database = bindings.find((binding) => binding.name === "AUTH_DB");

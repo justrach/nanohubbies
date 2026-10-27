@@ -38,11 +38,13 @@ export async function verifyHostedGitImport(
   source,
   artifactBase,
   cleanupDirectory,
+  purpose = "git-import",
 ) {
   if (process.env.NANOHUB_LIVE_CLOUDFLARE !== "1")
     throw Error(
       "Set NANOHUB_LIVE_CLOUDFLARE=1 for explicitly isolated hosted acceptance",
     );
+  assert.ok(["git-import", "storage-recovery"].includes(purpose));
   let saved, previous;
   if (cleanupDirectory) {
     if (!isAbsolute(cleanupDirectory))
@@ -55,6 +57,8 @@ export async function verifyHostedGitImport(
       await readFile(join(cleanupDirectory, "operation.json"), "utf8"),
     );
     assert.equal(saved.root, root);
+    purpose = saved.purpose ?? "git-import";
+    assert.ok(["git-import", "storage-recovery"].includes(purpose));
     artifactBase = dirname(cleanupDirectory);
   } else {
     if (
@@ -116,6 +120,7 @@ export async function verifyHostedGitImport(
       runId,
       deadline,
       databaseId: previous?.databaseId,
+      purpose,
     }),
     gateOrigin = previous?.gateOrigin ?? "",
     proxy,
@@ -130,7 +135,9 @@ export async function verifyHostedGitImport(
     runId,
     accountId,
     scope:
-      "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
+      purpose === "storage-recovery"
+        ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
+        : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
     productionResourcesUsed: false,
     resources: {
       apiName: plan.apiName,
@@ -180,6 +187,7 @@ export async function verifyHostedGitImport(
   if (!cleanupDirectory)
     await atomic(join(directory, "manifest.json"), {
       format: 1,
+      purpose,
       root,
       accountId,
       runId,
@@ -273,7 +281,10 @@ export async function verifyHostedGitImport(
     if (!origin) throw Error("Owned gate URL not confirmed");
     return origin;
   };
-  const call = async (path, { method = "GET", body, cookie = false } = {}) => {
+  const call = async (
+    path,
+    { method = "GET", body, cookie = false, expectedStatus } = {},
+  ) => {
     const response = await fetch(gateOrigin + path, {
       method,
       headers: {
@@ -285,7 +296,11 @@ export async function verifyHostedGitImport(
       redirect: "error",
       signal: AbortSignal.timeout(120000),
     });
-    if (!response.ok)
+    if (
+      expectedStatus === undefined
+        ? !response.ok
+        : response.status !== expectedStatus
+    )
       throw Error(`Fixture HTTP ${response.status} at ${path.split("?")[0]}`);
     return response;
   };
@@ -365,43 +380,45 @@ export async function verifyHostedGitImport(
       record.implementationCommit = (
         await exec("git", ["rev-parse", "HEAD"], { cwd: root })
       ).stdout.trim();
-      const sourceEnv = {
-        PATH: process.env.PATH,
-        HOME: directory,
-        GIT_CONFIG_GLOBAL: "/dev/null",
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_TERMINAL_PROMPT: "0",
-      };
-      const git = async (...args) =>
-        (
-          await exec("git", ["-C", source, ...args], {
-            env: sourceEnv,
-            maxBuffer: 8 << 20,
-          })
-        ).stdout;
-      assert.equal(
-        (await git("rev-parse", "--is-shallow-repository")).trim(),
-        "false",
-      );
-      await git("fsck", "--strict");
-      const refs = await git(
-        "for-each-ref",
-        "--format=%(objectname) %(refname)",
-        "refs/heads",
-        "refs/tags",
-      );
-      record.source = {
-        refs: refs.trim().split("\n").length,
-        refsSha256: hash(refs),
-      };
-      const assets = join(root, "apps/web/.open-next/assets"),
-        manifest = JSON.parse(
-          await readFile(join(assets, "nh/latest.json"), "utf8"),
-        ),
-        bytes = await readFile(assets + manifest.path);
-      assert.equal(hash(bytes), manifest.sha256);
-      record.cli = manifest;
-      await writeFile(join(directory, "nh.mjs"), bytes, { mode: 0o600 });
+      if (purpose === "git-import") {
+        const sourceEnv = {
+          PATH: process.env.PATH,
+          HOME: directory,
+          GIT_CONFIG_GLOBAL: "/dev/null",
+          GIT_CONFIG_NOSYSTEM: "1",
+          GIT_TERMINAL_PROMPT: "0",
+        };
+        const git = async (...args) =>
+          (
+            await exec("git", ["-C", source, ...args], {
+              env: sourceEnv,
+              maxBuffer: 8 << 20,
+            })
+          ).stdout;
+        assert.equal(
+          (await git("rev-parse", "--is-shallow-repository")).trim(),
+          "false",
+        );
+        await git("fsck", "--strict");
+        const refs = await git(
+          "for-each-ref",
+          "--format=%(objectname) %(refname)",
+          "refs/heads",
+          "refs/tags",
+        );
+        record.source = {
+          refs: refs.trim().split("\n").length,
+          refsSha256: hash(refs),
+        };
+        const assets = join(root, "apps/web/.open-next/assets"),
+          manifest = JSON.parse(
+            await readFile(join(assets, "nh/latest.json"), "utf8"),
+          ),
+          bytes = await readFile(assets + manifest.path);
+        assert.equal(hash(bytes), manifest.sha256);
+        record.cli = manifest;
+        await writeFile(join(directory, "nh.mjs"), bytes, { mode: 0o600 });
+      }
       await persist();
       // Compile both wrappers before any provider resource is created.
       await wrangler([
@@ -428,7 +445,14 @@ export async function verifyHostedGitImport(
         )?.[0];
       if (!databaseId) throw Error("New D1 identifier not confirmed");
       record.databaseId = databaseId;
-      plan = fixturePlan({ root, accountId, runId, deadline, databaseId });
+      plan = fixturePlan({
+        root,
+        accountId,
+        runId,
+        deadline,
+        databaseId,
+        purpose,
+      });
       await saveConfigs();
       record.bucketRequested = true;
       await persist();
@@ -479,136 +503,166 @@ export async function verifyHostedGitImport(
       );
       const health = await (await call("/__fixture/health")).json();
       assert.equal(health.fixture, "private-hosted-git");
-      const session = await call("/__fixture/session", {
-        method: "POST",
-        body: {},
-      });
-      ownerCookie = session.headers.get("set-cookie")?.split(";")[0] ?? "";
-      if (!ownerCookie) throw Error("Synthetic fixture session not confirmed");
-      await call("/api/namespaces", {
-        method: "POST",
-        body: { name: "hosted-fixture" },
-        cookie: true,
-      });
-      const repo = await (
-        await call("/api/repos/hosted-fixture/meld-copy", {
+      if (purpose === "storage-recovery") {
+        const { runNativeRecoveryProbe } =
+          await import("./hosted-recovery-fixture/probe.mjs");
+        await runNativeRecoveryProbe({
+          call,
+          wrangler,
+          config: configPaths.purge,
+          plan,
+          record,
+          persist,
+          directory,
+        });
+        record.acceptancePassed = true;
+      } else {
+        const sourceEnv = {
+          PATH: process.env.PATH,
+          HOME: directory,
+          GIT_CONFIG_GLOBAL: "/dev/null",
+          GIT_CONFIG_NOSYSTEM: "1",
+          GIT_TERMINAL_PROMPT: "0",
+        };
+        const git = async (...args) =>
+          (
+            await exec("git", ["-C", source, ...args], {
+              env: sourceEnv,
+              maxBuffer: 8 << 20,
+            })
+          ).stdout;
+        const session = await call("/__fixture/session", {
           method: "POST",
           body: {},
-          cookie: true,
-        })
-      ).json();
-      record.repositoryId = repo.id;
-      const issued = await (
-        await call("/api/repos/hosted-fixture/meld-copy/git-tokens", {
+        });
+        ownerCookie = session.headers.get("set-cookie")?.split(";")[0] ?? "";
+        if (!ownerCookie)
+          throw Error("Synthetic fixture session not confirmed");
+        await call("/api/namespaces", {
           method: "POST",
-          body: { label: "Hosted acceptance; destroyed after verification" },
+          body: { name: "hosted-fixture" },
           cookie: true,
-        })
-      ).json();
-      gitToken = issued.token;
-      record.gitCredentialId = issued.id;
-      const authorization =
-        "Basic " + Buffer.from("git:" + gitToken).toString("base64");
-      proxy = await gitProxy({
-        origin: gateOrigin,
-        authorization,
-        control: keys.control,
-        repositoryPath: "/git/hosted-fixture/meld-copy.git",
-      });
-      record.proxyOrigin = proxy.origin;
-      const home = join(directory, "client-home");
-      await mkdir(home, { mode: 0o700 });
-      clientEnv = {
-        PATH: process.env.PATH,
-        HOME: home,
-        XDG_CACHE_HOME: join(home, "cache"),
-        GIT_CONFIG_GLOBAL: "/dev/null",
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_TERMINAL_PROMPT: "0",
-        NANOHUB_API_TOKEN: "",
-      };
-      assert.equal(
-        (
-          await cli(["auth", "login", "--with-token"], {
-            input: gitToken + "\n",
-            label: "login",
-          })
-        ).code,
-        0,
-      );
-      record.importStartedAt = new Date().toISOString();
-      await persist();
-      const imported = await cli(["repo", "import", source, "--git"], {
-        label: "import",
-      });
-      record.importExitCode = imported.code;
-      await persist();
-      assert.equal(
-        imported.code,
-        0,
-        "Hosted import failed; inspect private import logs",
-      );
-      assert.equal(imported.data.verified, true);
-      assert.equal(imported.data.refs, record.source.refs);
-      record.import = imported.data;
-      record.importRequests = proxy.traffic();
-      assert.equal(record.importRequests.refPublications, 1);
-      assert.ok(record.importRequests.objectUploads > 0);
-      const before = await (
-        await call("/api/repos/hosted-fixture/meld-copy/repository", {
-          cookie: true,
-        })
-      ).json();
-      const resumed = await cli(["repo", "import", source, "--git"], {
-        label: "resume",
-      });
-      assert.equal(resumed.code, 0);
-      assert.equal(resumed.data.resumed, true);
-      assert.equal(resumed.data.uploadedObjects, 0);
-      assert.deepEqual(
-        proxy.traffic(),
-        record.importRequests,
-        "Resume must send no object uploads or ref publications",
-      );
-      record.verificationOnlyResume = true;
-      const after = await (
-        await call("/api/repos/hosted-fixture/meld-copy/repository", {
-          cookie: true,
-        })
-      ).json();
-      assert.deepEqual(after.refs, before.refs);
-      assert.deepEqual(
-        await (
-          await call("/api/repos/hosted-fixture/meld-copy/agents", {
+        });
+        const repo = await (
+          await call("/api/repos/hosted-fixture/meld-copy", {
+            method: "POST",
+            body: {},
             cookie: true,
           })
-        ).json(),
-        [],
-      );
-      record.registeredAgents = 0;
-      assert.equal(
-        hash(
-          await git(
-            "for-each-ref",
-            "--format=%(objectname) %(refname)",
-            "refs/heads",
-            "refs/tags",
+        ).json();
+        record.repositoryId = repo.id;
+        const issued = await (
+          await call("/api/repos/hosted-fixture/meld-copy/git-tokens", {
+            method: "POST",
+            body: { label: "Hosted acceptance; destroyed after verification" },
+            cookie: true,
+          })
+        ).json();
+        gitToken = issued.token;
+        record.gitCredentialId = issued.id;
+        const authorization =
+          "Basic " + Buffer.from("git:" + gitToken).toString("base64");
+        proxy = await gitProxy({
+          origin: gateOrigin,
+          authorization,
+          control: keys.control,
+          repositoryPath: "/git/hosted-fixture/meld-copy.git",
+        });
+        record.proxyOrigin = proxy.origin;
+        const home = join(directory, "client-home");
+        await mkdir(home, { mode: 0o700 });
+        clientEnv = {
+          PATH: process.env.PATH,
+          HOME: home,
+          XDG_CACHE_HOME: join(home, "cache"),
+          GIT_CONFIG_GLOBAL: "/dev/null",
+          GIT_CONFIG_NOSYSTEM: "1",
+          GIT_TERMINAL_PROMPT: "0",
+          NANOHUB_API_TOKEN: "",
+        };
+        assert.equal(
+          (
+            await cli(["auth", "login", "--with-token"], {
+              input: gitToken + "\n",
+              label: "login",
+            })
+          ).code,
+          0,
+        );
+        record.importStartedAt = new Date().toISOString();
+        await persist();
+        const imported = await cli(["repo", "import", source, "--git"], {
+          label: "import",
+        });
+        record.importExitCode = imported.code;
+        await persist();
+        assert.equal(
+          imported.code,
+          0,
+          "Hosted import failed; inspect private import logs",
+        );
+        assert.equal(imported.data.verified, true);
+        assert.equal(imported.data.refs, record.source.refs);
+        record.import = imported.data;
+        record.importRequests = proxy.traffic();
+        assert.equal(record.importRequests.refPublications, 1);
+        assert.ok(record.importRequests.objectUploads > 0);
+        const before = await (
+          await call("/api/repos/hosted-fixture/meld-copy/repository", {
+            cookie: true,
+          })
+        ).json();
+        const resumed = await cli(["repo", "import", source, "--git"], {
+          label: "resume",
+        });
+        assert.equal(resumed.code, 0);
+        assert.equal(resumed.data.resumed, true);
+        assert.equal(resumed.data.uploadedObjects, 0);
+        assert.deepEqual(
+          proxy.traffic(),
+          record.importRequests,
+          "Resume must send no object uploads or ref publications",
+        );
+        record.verificationOnlyResume = true;
+        const after = await (
+          await call("/api/repos/hosted-fixture/meld-copy/repository", {
+            cookie: true,
+          })
+        ).json();
+        assert.deepEqual(after.refs, before.refs);
+        assert.deepEqual(
+          await (
+            await call("/api/repos/hosted-fixture/meld-copy/agents", {
+              cookie: true,
+            })
+          ).json(),
+          [],
+        );
+        record.registeredAgents = 0;
+        assert.equal(
+          hash(
+            await git(
+              "for-each-ref",
+              "--format=%(objectname) %(refname)",
+              "refs/heads",
+              "refs/tags",
+            ),
           ),
-        ),
-        record.source.refsSha256,
-      );
-      record.sourceUnchanged = true;
-      await call("/api/tokens/" + issued.id, {
-        method: "DELETE",
-        cookie: true,
-      });
-      const revoked = await cli(["repo", "import", source, "--git"], {
-        label: "revoked",
-      });
-      assert.notEqual(revoked.code, 0);
-      assert.match(revoked.data?.error ?? "", /discovery failed \(401\)/i);
-      record.revocationDenies = true;
-      record.acceptancePassed = true;
+          record.source.refsSha256,
+        );
+        record.sourceUnchanged = true;
+        await call("/api/tokens/" + issued.id, {
+          method: "DELETE",
+          cookie: true,
+        });
+        const revoked = await cli(["repo", "import", source, "--git"], {
+          label: "revoked",
+        });
+        assert.notEqual(revoked.code, 0);
+        assert.match(revoked.data?.error ?? "", /discovery failed \(401\)/i);
+        record.revocationDenies = true;
+        record.acceptancePassed = true;
+      }
     }
   } catch (error) {
     record.error = String(error.message);

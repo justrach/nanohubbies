@@ -145,3 +145,41 @@ drill remain open production requirements. The local test does not establish
 Cloudflare PITR execution, bookmark retention, production resource enumeration,
 alarm/import resumption, cross-service backup atomicity, infrastructure-loss
 recovery, an RPO/RTO, or an automated revocation-safe reopening mechanism.
+
+### Native provider recovery probe
+
+`bun run test:hosted-recovery` checks the isolated harness's authority, target
+bounds, checksum rejection and recovery configuration. To exercise the actual
+provider APIs, an operator can run:
+
+```sh
+NANOHUB_LIVE_CLOUDFLARE=1 bun tools/verify-hosted-storage-recovery.mjs /absolute/account-config.jsonc /absolute/private-artifacts
+```
+
+Only the account identifier is read from the supplied configuration. The harness
+generates a separate `nh-recovery-live-*` Worker pair, all nine application DO
+classes, D1 database and R2 bucket. It uses temporary private ingress keys and a
+two-hour deadline; no production bindings or credentials are copied. Normal
+application requests remain held throughout. The privileged controls exist only
+in the disposable fixture entrypoint, which production does not import.
+
+The native probe writes distinct SQL/KV checkpoints, deletes fixture state,
+restores an earlier DO bookmark, exercises its undo point and returns to the
+newer checkpoint. D1 Time Travel is exercised separately. SQL verification
+includes binary, Unicode, embedded NUL and exact 64-bit integer data. A 1 MiB
+R2 object is retained in a private controller file, verified against separate
+checksum expectations, deleted and restored byte for byte; a corrupted backup
+must be rejected before a restore write. Every phase verifies held API, Git
+discovery and GET/HEAD asset requests.
+
+Cleanup reuses the resumable hosted-import lifecycle: fence the gate, retire all
+nine DO classes, remove the backend, purge and remove the bucket/database, then
+remove the gate and private keys. If cleanup is interrupted, run the same script
+with `--cleanup /absolute/private-artifacts/<run-id>` and the explicit live
+opt-in. Keep the private receipt until all owned resources are confirmed absent.
+
+This is an implementation-level prerequisite for the full hosted gate above.
+It does not prove whole-repository consistency, lost-namespace recovery,
+long-term backup retention, current-authority reconciliation, alarm/socket/job
+draining, Vault coverage or safe reopening. Its elapsed time measures the probe,
+not an application recovery-time objective.
