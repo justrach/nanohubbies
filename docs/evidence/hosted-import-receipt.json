@@ -1,0 +1,102 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T18:37:38.495Z",
+  "implementationCommit": "f00b78d4bae21fb724d95c5fff46bcac5ebb5128",
+  "cliBuildCorrectionCommit": "858ff58",
+  "scope": "complete pinned Meld Git graph; isolated full Cloudflare web/API bundle; real DO/D1/R2",
+  "hosted": true,
+  "isolated": true,
+  "source": {
+    "refs": 178,
+    "refsSha256": "51d433c6ef7e1569fb3b18ac73499aad7cdf805f2073c317a6b2555d943eccc8",
+    "objects": 18097,
+    "expandedBytes": 621196033,
+    "objectTypes": {
+      "commit": 957,
+      "tree": 7402,
+      "blob": 9738
+    },
+    "tags": 0
+  },
+  "cli": {
+    "format": 1,
+    "version": "0.4.12",
+    "path": "/nh/releases/0.4.12/nh.mjs",
+    "bytes": 74001,
+    "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+  },
+  "import": {
+    "verified": true,
+    "objects": 18097,
+    "uploadedObjects": 18097,
+    "refs": 178,
+    "fsck": "strict",
+    "resumed": false,
+    "scope": "committed branches and tags only; external LFS and submodules rejected"
+  },
+  "importRequests": {
+    "objectUploads": 160,
+    "refPublications": 1
+  },
+  "publication": {
+    "wallTimeMs": 221463,
+    "cpuTimeMs": 21401,
+    "r2GetCount": 2732,
+    "status": 200,
+    "outcome": "ok"
+  },
+  "verificationOnlyResume": {
+    "verified": true,
+    "resumed": true,
+    "uploadedObjects": 0,
+    "objectAndRefWrites": 0,
+    "independentClone": true,
+    "strictFsck": true
+  },
+  "revocationDiscoveryStatus": 401,
+  "registeredAgents": 0,
+  "sourceUnchanged": true,
+  "subrequests": 50000,
+  "cpuLimitOverride": false,
+  "bindingsIsolated": true,
+  "startedAt": "2026-10-27T18:21:21.364Z",
+  "finishedAt": "2026-10-27T18:35:53.653Z",
+  "cleanup": {
+    "apiWorkerAbsent": true,
+    "gateWorkerAbsent": true,
+    "databaseAbsent": true,
+    "bucketAbsent": true,
+    "durableNamespacesRetired": true,
+    "deletedObjects": 320,
+    "privateKeysRemoved": true,
+    "independentReadChecks": true,
+    "initialD1ObservationPermissionFailure": true,
+    "serialD1RecheckPassed": true
+  },
+  "trace": {
+    "events": 1598,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "localAcceptance": {
+    "apiUnitCases": 314,
+    "repositoryUnitCases": 245,
+    "completeWorkerGitProtectionRecoveryChain": true,
+    "cliCases": 48,
+    "fixtureCases": 23,
+    "pinnedTsrs": true,
+    "fullOpenNextBuild": true
+  },
+  "main": {
+    "workerVersion": "9f7e3a05-e3d3-40d4-8b89-e4b53aac3739",
+    "versionUnchanged": true,
+    "publicCliUnchanged": true,
+    "deployedCandidate": false
+  },
+  "freshLinuxValidationOfCorrection": false,
+  "githubPushed": false,
+  "applicationCiRun": false,
+  "stagingDeployed": false,
+  "hostedDisasterRecovery": false,
+  "trafficSloEstablished": false
+}
