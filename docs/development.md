@@ -316,6 +316,17 @@ caps after population. The [actual Meld graph acceptance](evidence/initial-impor
 records local object/ref/clone verification separately from hosted migration
 and application CI.
 
+`test:cli-import` runs the migration preflight/retry/credential-boundary cases
+and source/standalone native CLI imports against real isolated Worker/DO/D1/R2.
+It covers ordinary Git and content-scoped CLI credentials without agent creation,
+over-100-ref atomic imports, source binary/mode/symlink/tag identity, private
+clone/fsck, retrying immutable batches, lost final acknowledgements recovered
+without writes, scope/role/archive/provider/revocation denial, and unchanged
+source/global helpers. A real Git clone refuses cross-host HTTP alternates.
+Both forms are included in `test:repository`. The legacy object API remains
+registered-agent-only; new Git transport import endpoints confer no application
+API privileges on Git-only credentials.
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

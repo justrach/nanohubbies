@@ -568,6 +568,48 @@ unmet; it does not waive that protection or reuse old deployment approvals.
 An ambiguous mutation response is not retried automatically: inspect `env list`
 or `env export` first.
 
+## Import complete Git history
+
+CLI **0.4.12** provides `repo import SOURCE -R owner/repository`. First create
+an empty independent Git repository with a default branch present in the source.
+Use a full mirror or a checkout containing all branches/tags you intend to import;
+remote-tracking refs are not source branches. Shallow sources are refused.
+
+```sh
+nh auth login -R owner/repository --scopes read,contents:read,contents:write
+nh repo import /absolute/path/to/source.git -R owner/repository --json
+```
+
+An ordinary repository Git token also works: save it with `auth login
+--with-token` using stdin from your trusted secret manager, then run `repo
+import SOURCE --git -R owner/repository`. Without `--git`, a stored content-scoped
+CLI login is preferred; if none exists the selected OS Git helper is consulted.
+An API credential missing content permission fails instead of falling back to
+another identity. No agent, account-wide credential or browser session is used.
+
+The source stays read-only, including uncommitted/untracked work and its remotes.
+The command preserves committed object IDs/history, branches, tags, binaries,
+executable modes and symlinks. It checks receiver support before bounded uploads,
+publishes the checked ref set atomically, then makes an independent private mirror
+clone, runs strict fsck and compares refs and branch trees/modes. Completion is
+reported only after verification. LFS, submodules, issue/review metadata and
+uncommitted work are outside this migration contract.
+
+The destination must be empty or contain exactly the pinned source refs. An
+identical destination is verification-only (`resumed: true`, `uploadedObjects: 0`).
+Different existing refs are never overwritten. This permits recovery after a
+lost final response or failed verification clone. Immutable batches retry up to
+four attempts for transport/429/503 failures, honoring at most 60 seconds of
+Retry-After per retry. Ref publication is never replayed automatically. Partial
+unreferenced packs may remain until repository deletion.
+
+Existing current role, scope, revocation, archive and ref policies apply. Git
+tokens still cannot call application APIs. Verification disables redirects and
+external credential helpers, scopes its transient HTTP header to the selected
+Git URL, removes its temporary clone, and leaves global/helper configuration
+unchanged. Imported commit authors remain unchanged; ref writes are attributed
+to the credential owner. See [storage limits](standalone-host.md#migrate-committed-code).
+
 ## Runner registrations
 
 CLI **0.4.11** adds these commands. The [release evidence](evidence/cli-runners-validation.md)

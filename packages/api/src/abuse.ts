@@ -49,7 +49,7 @@ export async function throttle(request: Request, env: Env, url: URL): Promise<Re
   const limits = abuseLimits(env, url);
   if (!limits) return null;
   const agent = /^\/api\/trunks\/[^/]+\/agents(?:\/|$)/.test(url.pathname);
-  const push = url.pathname.startsWith("/git/") && (url.pathname.endsWith("/git-receive-pack") || url.searchParams.get("service") === "git-receive-pack");
+  const push = url.pathname.startsWith("/git/") && (url.pathname.endsWith("/git-receive-pack") || url.pathname.endsWith('/nanohub-import/objects') || url.searchParams.get("service") === "git-receive-pack");
   const control = url.pathname.startsWith("/api/") && (
     !["GET", "HEAD"].includes(request.method) || /^\/api\/(auth|github)(?:\/|$)/.test(url.pathname) || url.pathname.endsWith("/live")
   );

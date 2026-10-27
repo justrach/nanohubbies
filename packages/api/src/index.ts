@@ -1,4 +1,5 @@
 import {archiveRoute} from "./repository/archive-route";
+import {gitImport} from './repository/git-import';
 import {recoveryHoldResponse} from "./recovery";
 import {cliRoute,cliCredentialRoute} from "./cli/routes";
 import {agentMcpRoute,contributionRoute} from './contributions/routes';
@@ -487,6 +488,7 @@ async function serveGit(request: Request, env: Env, trunk: string, path: string,
   if (ciRead && !(await seq.ciReadable(readCredential))) return plain("Expired CI read credential\n", 401);
   const teamAccess = ciRead ? null : await requireTeam(env, request, trunk);
   const protect = (response: Response) => teamAccess || ciRead ? privateResponse(response) : response;
+  if(path==='nanohub-import'||path.startsWith('nanohub-import/'))return protect(await gitImport(request,env,trunk,path,teamAccess,ciRead));
   const pushing = path === "git-receive-pack" || (path === "info/refs" && url.searchParams.get("service") === "git-receive-pack");
   if (pushing) {
     await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);

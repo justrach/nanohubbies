@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import {spawn,execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {mkdir,writeFile,readFile,chmod,symlink,cp} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {createHash} from 'node:crypto';
+import {teamFixture,ROOM} from './team/fixture.ts';
+const f=await teamFixture(),exec=promisify(execFile),home=join(f.dir,'cache');await mkdir(home,{mode:0o700});
+const env={...process.env,XDG_CACHE_HOME:home,GIT_CONFIG_GLOBAL:join(f.dir,'global.gitconfig'),GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0',NANOHUB_API_TOKEN:''};
+await writeFile(env.GIT_CONFIG_GLOBAL,'[credential]\n\thelper = !exit 87\n');const globalBefore=await readFile(env.GIT_CONFIG_GLOBAL,'utf8');
+const copy=join(f.dir,"CLI's source");await cp(resolve(import.meta.dirname,'../../cli'),copy,{recursive:true});let bin=join(copy,'bin/nh.mjs');
+if(process.argv.includes('--bundle')){const bundle=join(copy,'nh.mjs');await exec('bun',['build',bin,'--target=bun','--outfile',bundle],{env});bin=bundle;}
+const cli=(args:string[],{repo='import-owner/git-copy',token='',input=''}={})=>new Promise<any>((done,reject)=>{
+ const child=spawn('bun',[bin,...args,'--host',f.origin,'-R',repo,'--credential-helper','cache','--json'],{cwd:f.dir,env:{...env,NANOHUB_API_TOKEN:token},stdio:['pipe','pipe','pipe']});let stdout='',stderr='';child.stdout.on('data',value=>stdout+=value);child.stderr.on('data',value=>stderr+=value);child.once('error',reject);child.once('close',code=>{let data;try{data=JSON.parse(stdout);}catch{}done({code,stdout,stderr,data});});child.stdin.end(input);
+});
+const okay=async(args:string[],options:any={})=>{const result=await cli(args,options);assert.equal(result.code,0,result.stdout+result.stderr);return result.data;};
+const basic=(token:string)=>({Authorization:'Basic '+Buffer.from('git:'+token).toString('base64')});
+const packet=Buffer.alloc(12);packet.write('PACK');packet.writeUInt32BE(2,4);const emptyPack=Buffer.concat([packet,createHash('sha1').update(packet).digest()]);
+const upload=(name:string,token:string,body=emptyPack)=>fetch(`${f.origin}/git/import-owner/${name}.git/nanohub-import/objects`,{method:'POST',headers:{...basic(token),'Content-Type':'application/x-git-packed-objects'},body});
+const credentials:{id:string;owner:any;git?:boolean}[]=[];
+try{
+ const owner=await f.login('owner','101'),writer=await f.login('writer','202'),reader=await f.login('reader','303');
+ await f.json('POST','/api/namespaces',{name:'import-owner'},owner);
+ const entries:any={};for(const name of ['git-copy','api-copy','denied-copy','foreign'])entries[name]=await f.json('POST',`/api/repos/import-owner/${name}`,{},owner);
+ const base=(name:string)=>`/api/repos/import-owner/${name}`;
+ const gitToken=await f.json('POST',base('git-copy')+'/git-tokens',{label:'CLI import fixture'},owner);credentials.push({id:gitToken.id,owner,git:true});
+ const make=async(name:string,who:any,scopes:string[])=>{const grant=await f.json('POST',base(name)+'/cli-credentials',{label:'Import fixture',days:1,scopes},who);credentials.push({id:grant.id,owner:who});return grant;};
+ const api=await make('api-copy',owner,['read','contents:read','contents:write']),read=await make('denied-copy',owner,['read','contents:read']),ordinary=await make('denied-copy',owner,['read','reviews:write']);
+ const source=join(f.dir,'actual source');await mkdir(source);
+ const git=async(...args:string[])=>(await exec('git',['-C',source,'-c','user.name=Import fixture','-c','user.email=fixture@example.invalid',...args],{env})).stdout;
+ await git('init','-b','main');await writeFile(join(source,'README.md'),'Committed source\n');await writeFile(join(source,'binary.bin'),Buffer.from([0,255,1,128,0,33]));await writeFile(join(source,'tool.sh'),'#!/bin/sh\nexit 0\n');await chmod(join(source,'tool.sh'),0o755);await symlink('README.md',join(source,'readme-link'));await git('add','.');await git('commit','-m','Binary, executable and symlink fixture');
+ for(let i=0;i<102;i++)await git('branch',`import/${i}`);await git('branch','検証/🚀');await git('tag','lightweight');await git('tag','-a','annotated','-m','Annotated fixture');
+ await writeFile(join(source,'README.md'),'Uncommitted work remains local\n');await writeFile(join(source,'untracked.txt'),'Do not import\n');const sourceBefore=await git('status','--porcelain=v1');
+ await okay(['auth','login','--with-token'],{input:gitToken.token+'\n'});
+ await f.json('POST','/fixture/import-transport',{drop:'objects'});
+ const imported=await okay(['repo','import',source,'--git']);assert.equal(imported.verified,true);assert.ok(imported.refs>100);assert.equal(imported.resumed,false);
+ const importedState=await f.json('GET',base('git-copy')+'/repository',undefined,owner);assert.equal(importedState.refs.length,106);
+ const beforeResume=await f.json('GET','/fixture/import-transport');const resumed=await okay(['repo','import',source,'--git']);assert.equal(resumed.resumed,true);assert.equal(resumed.uploadedObjects,0);assert.deepEqual(await f.json('GET','/fixture/import-transport'),beforeResume,'verification-only recovery sends no object or ref writes');
+ await f.json('POST','/fixture/import-transport',{drop:'refs'});const lost=await cli(['repo','import',source],{repo:'import-owner/api-copy',token:api.token});assert.equal(lost.code,1);assert.match(lost.data.error,/not confirmed|lost/i);assert.ok(!lost.stdout.includes(api.token)&&!lost.stderr.includes(api.token));
+ const afterLost=await f.json('GET','/fixture/import-transport');const recovered=await okay(['repo','import',source],{repo:'import-owner/api-copy',token:api.token});assert.equal(recovered.resumed,true);assert.deepEqual(await f.json('GET','/fixture/import-transport'),afterLost,'lost final acknowledgement never causes a second publication');
+ assert.equal(await git('status','--porcelain=v1'),sourceBefore);assert.equal(await readFile(env.GIT_CONFIG_GLOBAL,'utf8'),globalBefore);
+ for(const name of ['git-copy','api-copy'])assert.deepEqual(await f.json('GET',base(name)+'/agents',undefined,owner),[],'import must not create an agent');
+ const readDenied=await cli(['repo','import',source],{repo:'import-owner/denied-copy',token:read.token});assert.equal(readDenied.code,1);assert.match(readDenied.data.error,/contents:write/);
+ assert.equal((await upload('denied-copy',read.token)).status,403);assert.equal((await upload('denied-copy',ordinary.token)).status,401);assert.equal((await upload('foreign',gitToken.token)).status,401);
+ assert.equal((await f.request('GET',base('git-copy')+'/repository',undefined,basic(gitToken.token))).status,401,'Git import transport must not open application APIs');
+ assert.equal((await upload('git-copy',gitToken.token)).status,409,'populated imports refuse object batches');
+ const invitation=await f.json('POST',base('denied-copy')+'/collaborators',{userId:'codegraff:writer',role:'writer'},owner);await f.json('POST','/api/invitations/accept',{trunk:entries['denied-copy'].id,token:invitation.token},writer);
+ const delegated=await make('denied-copy',writer,['read','contents:read','contents:write']);assert.equal((await upload('denied-copy',delegated.token)).status,200);
+ await f.json('PATCH',base('denied-copy')+'/collaborators',{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await upload('denied-copy',delegated.token)).status,403);
+ const readerInvite=await f.json('POST',base('denied-copy')+'/collaborators',{userId:'codegraff:reader',role:'reader'},owner);await f.json('POST','/api/invitations/accept',{trunk:entries['denied-copy'].id,token:readerInvite.token},reader);
+ const readerToken=await f.json('POST',base('denied-copy')+'/git-tokens',{label:'Read-only import fixture'},reader);credentials.push({id:readerToken.id,owner:reader,git:true});assert.equal((await upload('denied-copy',readerToken.token)).status,403);
+ const foreign=await f.json('POST',base('foreign')+'/git-tokens',{label:'Archive import fixture'},owner);credentials.push({id:foreign.id,owner,git:true});
+ assert.equal((await upload('foreign',foreign.token,Buffer.from('corrupt pack'))).status,400);assert.deepEqual((await f.json('GET',base('foreign')+'/repository',undefined,owner)).refs,[]);
+ await f.json('POST',base('foreign')+'/archive',{archived:true,revision:0,confirmation:'foreign'},owner);assert.equal((await upload('foreign',foreign.token)).status,403);
+ await f.json('POST',base('denied-copy')+'/team',{roomId:ROOM},owner);f.provider.down=true;assert.equal((await upload('denied-copy',read.token)).status,503);f.provider.down=false;
+ await f.json('DELETE','/api/tokens/'+gitToken.id,undefined,owner);assert.equal((await cli(['repo','import',source,'--git'])).code,1);
+ await f.json('DELETE','/api/cli/credentials/'+api.id,undefined,owner);assert.equal((await cli(['repo','import',source],{repo:'import-owner/api-copy',token:api.token})).code,1);
+ console.log(`PASS: ${process.argv.includes('--bundle')?'bundled':'source'} native agent-free CLI imports over 100 refs with Git and content-scoped credentials; binary/mode/symlink/tag identity, strict clone/fsck, immutable upload retry, lost-final-response verification without writes, untouched source/helper, role/scope/cross-repo/archive/provider/revocation boundaries`);
+}finally{
+ for(const value of credentials)await f.request('DELETE',value.git?'/api/tokens/'+value.id:'/api/cli/credentials/'+value.id,undefined,value.owner).catch(()=>{});
+ await exec('git',['credential-cache','exit'],{env}).catch(()=>{});await f.close();
+}

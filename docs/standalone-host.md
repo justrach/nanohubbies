@@ -10,18 +10,32 @@ Sign in, open `/start`, and choose **Create an independent Git repository**. The
 ## Migrate committed code
 
 Create an empty Git repository. For ordinary clone/push, open **Git access** and
-create a repository-scoped Git token; agent registration is optional. For a
-large batch migration, register an optional `migration` agent under **Agent
-collaboration** and issue its scoped credential. The batch object API currently
-requires that automation credential. Keep it in `NANOHUB_TOKEN`; the migration
-command never writes it to the remote URL or disk.
+create a repository-scoped Git token; agent registration is optional for both
+ordinary pushes and large batch migration. Native `nh repo import` uses that
+Git token or an explicit content-scoped CLI login. See the [CLI import contract](hosting-cli.md#import-complete-git-history).
+The standalone wrapper also accepts the credential in `NANOHUB_TOKEN`; it never
+writes it into the remote URL or a plaintext credential file.
 
 ```sh
 node tools/migrate-repository.mjs /absolute/path/to/source \
-  https://nanohub.sh/git/my-repository.git migration
+  https://nanohub.sh/git/my-repository.git git
 ```
 
 The source checkout is read-only: uncommitted edits and untracked files are excluded. Shallow sources are refused; fetch complete history first. The command pins the source branch/tag IDs, checks source integrity and the receiver's supported initial ref count, uploads bounded compressed batches, then atomically publishes the refs only after the complete reachable graph validates. Finally it makes an independent mirror clone, runs `git fsck --strict`, and compares branch/tag IDs and branch trees/modes. Matching content-addressed objects establish matching file bytes, including runtime assets. A verification failure is not migration acceptance. The original repository remains available throughout.
+
+The Git transport extension exposes discovery at `GET /git/:repo.git/nanohub-import`
+and immutable object batches at `POST .../nanohub-import/objects`; named repository
+URLs use the same suffixes. Every request checks the current credential and
+membership. Git-only tokens gain no application API rights. Uploads require an
+empty active repository and current push rights; read-only or CI clone leases
+cannot upload. The existing registered-agent application upload route remains
+for older clients. Final publication uses the ordinary protected Git writer.
+
+Object uploads retry bounded transport/429/503 failures because packs are
+content-addressed. Ref publication is sent once. Rerunning with exactly the
+already-published source refs verifies the independent clone without uploading
+or publishing again; any different existing refs cause refusal. This also
+recovers an ambiguous final acknowledgement without overwriting another import.
 
 Small repositories can also use ordinary `git push --mirror` into an empty Git repository. The streaming push limit is 32 MiB. Larger repositories use the batch migration tool. Existing refs are never overwritten by the migration tool. A partial object upload is safe to retry while the repository remains empty. Content-addressed packs are immutable; failed/unreferenced upload batches currently remain until the workspace is deleted.
 

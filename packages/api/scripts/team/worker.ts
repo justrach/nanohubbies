@@ -4,6 +4,8 @@ import type {ArchiveChange} from "../../src/repository/archive-types";
 import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
 let dropNextRunnerAcknowledgement=false;
+let dropImportAcknowledgement:string|null=null;
+const importPosts={objects:0,refs:0};
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
@@ -61,6 +63,16 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/import-transport'){
+      if(request.method==='POST'){const body=await request.json<{drop:string}>();dropImportAcknowledgement=body.drop;}
+      return Response.json(importPosts);
+    }
+    if(request.method==='POST'&&/^\/git\/.+\.git\/(nanohub-import\/objects|git-receive-pack)$/.test(url.pathname)){
+      const stage=url.pathname.endsWith('/objects')?'objects':'refs';importPosts[stage]++;
+      const response=await api.fetch(request,env);
+      if(response.ok&&dropImportAcknowledgement===stage){dropImportAcknowledgement=null;await response.body?.cancel();return Response.json({error:'Synthetic lost import acknowledgement'},{status:stage==='objects'?503:502,headers:{'Retry-After':'0.001'}});}
+      return response;
+    }
     if(url.pathname==='/fixture/direct-ref-batch'){
       const body=await request.json() as {trunk:string;updates:Parameters<Sequencer['updateRepository']>[0]};
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).updateRepository(body.updates));}

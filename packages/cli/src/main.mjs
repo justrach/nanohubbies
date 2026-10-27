@@ -3,11 +3,13 @@ import {basename,resolve} from 'node:path';
 import {open} from 'node:fs/promises';
 import cliPackage from '../package.json' with {type:'json'};
 import {nativeCommand,storedApiToken} from './api.mjs';
+import {importCommand} from './import.mjs';
 import {browserLogin} from './device.mjs';
 import {gitHelperCommand,gitCredentialHelper,configureGitHelper,requireGitAccess} from './git-credential.mjs';
 export const help=`Usage: nh <command> [options]                (alias: nanohub)
 
   repo clone OWNER/REPO [DIRECTORY]          Clone with ordinary Git
+  repo import SOURCE -R OWNER/REPO          Import complete history, refs and assets
   repo view [-R OWNER/REPO]                  Open repository in your browser
   repo default-branch [-R OWNER/REPO]        Read default branch, heads and settings revision
   repo edit --default-branch BRANCH         Select an existing branch (explicit admin permission)
@@ -58,7 +60,7 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   --json                  Print structured output without opening a browser
   --web                   Open the signed-in browser for list/view commands
   --api                   Use CLI API credentials (the default for auth commands)
-  --git                   Use separate Git credentials for auth or clone
+  --git                   Use separate Git credentials for auth, clone or import
   --no-browser            Show login instructions without opening a browser
   --scopes S1,S2          Request CLI permissions (read is always included)
   --days N                Requested CLI expiry: 1–30 days (default 7)
@@ -112,7 +114,7 @@ function options(args) {
 export async function run(args,{execute=processRun,write=console.log,progress=console.error,readProtectionFile=protectionFile,readToken=async()=>{if(process.stdin.isTTY)throw Error('Pipe one credential to the token login option');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>1024)throw Error('Expected one credential on stdin');}return value;},readCredential=async()=>{if(process.stdin.isTTY)throw Error('Git invokes this credential helper through a pipe');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>16384)throw Error('Git credential request is too large');}return value;},platform=process.platform,cwd=process.cwd(),fetcher=fetch,environment=process.env,wait,now}={}) {
  if(!args.length||args[0]==='--help'||args[0]==='help'){write(help);return;}
  if(args[0]==='--version'){write('nh '+cliPackage.version);return;}
- const [group,action,...rest]=args,allowed=new Set(['repo clone','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
+ const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
  const opts=options(rest),pos=[...opts.positionals];let origin=hostOrigin(opts.host??'https://nanohub.sh'),target;
  const helper=opts.helper??(platform==='darwin'?'osxkeychain':'manager');
@@ -130,7 +132,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  if(opts['default-branch']!==undefined&&!(group==='repo'&&action==='edit'))throw Error('--default-branch only applies to repo edit');
  if(group==='ruleset'&&(opts.web||opts.print))throw Error('Ruleset commands use the native API; use rules view for browser settings');
  if(group==='rules'&&action!=='view'&&(opts.web||opts.print))throw Error('Use rules view to open protection settings in the browser');
- if(opts.git&&group!=='auth'&&!(group==='repo'&&action==='clone'))throw Error('--git only applies to auth commands or repo clone');
+ if(opts.git&&group!=='auth'&&!(group==='repo'&&['clone','import'].includes(action)))throw Error('--git only applies to auth commands, repo clone or repo import');
  if(opts.git&&(opts.api||opts['with-api-token']))throw Error('Choose Git or CLI API authentication');
  if(opts['with-token']&&opts.api)throw Error('--with-token supplies a Git credential; omit --api');
  if((opts.scopes||opts.days||opts.label||opts['no-browser'])&&`${group} ${action}`!=='auth login')throw Error('Login options only apply to auth login');
@@ -145,6 +147,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
   const match=/^\/git\/(.+)\.git$/.exec(remote.pathname);if(!match)throw Error('Origin is not a Nanohub Git remote');target=address(match[1],origin,!match[1].includes('/'));
  }
  const output=value=>write(opts.json?JSON.stringify(value):value.message??value.url);
+ if(group==='repo'&&action==='import')return importCommand({pos,opts,target,git,cwd,fetcher,environment,write,progress});
  if(group==='auth'&&action==='git-credential') {
   if(pos.length!==1||opts.json||opts.print||opts.web||opts.api||opts.git)throw Error('Git credential protocol expects one operation');
   return gitCredentialHelper({target,git,environment,readCredential,write,operation:pos[0]});
