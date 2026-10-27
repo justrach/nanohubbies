@@ -3,6 +3,7 @@ import api,{Sequencer as ProductionSequencer,Room as ProductionRoom} from "../..
 import type {ArchiveChange} from "../../src/repository/archive-types";
 import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
+let dropNextRunnerAcknowledgement=false;
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
@@ -60,6 +61,16 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/drop-runner-acknowledgement'){dropNextRunnerAcknowledgement=true;return Response.json({armed:true});}
+    if(url.pathname==='/fixture/conditional-runner'){
+      const body=await request.json<{trunk:string;actor:string;registration?:{id:string;name:string;token:string};revoke?:string}>();
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureCliRunner({credentialId:'fixture-direct-runner',origin:url.origin,...(body.registration?{registration:body.registration}:{revoke:body.revoke})},body.actor));}
+      catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(dropNextRunnerAcknowledgement&&request.method==='POST'&&/^\/api\/cli\/(trunks|repos)\/.+\/ci\/runners$/.test(url.pathname)){
+      dropNextRunnerAcknowledgement=false;const response=await api.fetch(request,env);
+      return response.ok?Response.json({error:'Synthetic acknowledgement loss after registration'},{status:502}):response;
+    }
     if(url.pathname==='/fixture/conditional-environment'){
       const body=await request.json<{trunk:string;actor:string;revision:number;id?:string;configuration?:import('../../src/deployments/types').EnvironmentInput}>();
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureEnvironment({...body,credentialId:'fixture-direct-environment',origin:url.origin},body.actor));}

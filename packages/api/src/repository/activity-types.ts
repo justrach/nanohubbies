@@ -14,6 +14,7 @@ export interface RepositoryEvent {
   at: number;
   actor: string;
   via?:{kind:"cli";credentialId:string};
+  runnerRegistration?:{id:string;name:string;revoked:boolean};
   defaultBranch?:{previous:string;next:string;commit:string;revision:number};
   ref?: string;
   old?: string | null;

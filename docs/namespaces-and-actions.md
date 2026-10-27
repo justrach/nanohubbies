@@ -112,8 +112,8 @@ remain open. This does not activate an unattended dispatcher.
 
 ### Dispatcher activation
 
-1. Deploy the application changes. Create the private named Git repo and push its main/workflow history. Open **Actions → Create runner credential** as the owner. Store the resulting repository-scoped `NANOHUB_CI_TOKEN` and the Codegraff API key with the `sandbox` scope in the trusted dispatcher's secret store.
-2. Copy `tools/codegraff-actions.example.json` outside the candidate checkout. Set the canonical owner/repo, account namespace and verified registry SHA-256 digest. Its `imageRegistry` config names the trusted host's Wrangler configuration; provision existing Cloudflare authentication there. For a public registry image, remove `imageRegistry`. Use a private artifact directory for receipts and completion recovery files.
+1. Deploy the application changes. Create the private named Git repo and push its main/workflow history. As the owner, authorize the explicit CLI `runners:write` scope and use `nh runner create NAME --token-file /absolute/private/repository-runner.json -R owner/repository`. Create the private parent directory first; keep it outside Git checkouts. The file is saved before registration and can recover a lost acknowledgement with `nh runner recover`. Alternatively create the credential under **Actions** and store it as `NANOHUB_CI_TOKEN`. Keep the Codegraff API key with the `sandbox` scope in the trusted dispatcher's secret store.
+2. Copy `tools/codegraff-actions.example.json` outside the candidate checkout. Set its absolute `runnerCredentialFile`, canonical owner/repo, account namespace and verified registry SHA-256 digest. For an environment-stored credential, remove `runnerCredentialFile` and configure `tokenEnv` instead. Its `imageRegistry` config names the trusted host's Wrangler configuration; provision existing Cloudflare authentication there. For a public registry image, remove `imageRegistry`. Use a private artifact directory for receipts and completion recovery files.
 3. From a trusted deployment of these tools, drain available work or run a long-lived dispatcher:
 
    ```sh
@@ -134,8 +134,8 @@ requeues its in-flight candidates for another worker; old attempts cannot report
 
 For one Codegraff account serving several repositories, copy
 `tools/actions-pool.example.json` to the trusted host. Keep the shared
-`CODEGRAFF_API_KEY` there and provide a different repository-scoped token for
-each `tokenEnv`:
+`CODEGRAFF_API_KEY` there and provide a different repository-scoped private
+credential file for each target:
 
 ```json
 {
@@ -148,8 +148,8 @@ each `tokenEnv`:
   "maxSandboxes": 16,
   "jobConcurrency": 4,
   "repositories": [
-    { "repository": "nanohub/app", "tokenEnv": "NANOHUB_APP_CI_TOKEN" },
-    { "repository": "nanohub/api", "tokenEnv": "NANOHUB_API_CI_TOKEN" }
+    { "repository": "nanohub/app", "runnerCredentialFile": "/etc/nanohub/private/app-runner.json" },
+    { "repository": "nanohub/api", "runnerCredentialFile": "/etc/nanohub/private/api-runner.json" }
   ]
 }
 ```
@@ -168,7 +168,13 @@ Use one token per repository, even when several repositories belong to the same
 account. A pool config can override the image for each repository. The owner can
 inspect registration names and active candidate counts, create more registrations,
 and revoke them under Actions. Registration counts describe credentials, not the
-number of worker processes sharing those credentials. The API exposes safe
+number of worker processes sharing those credentials. Native `nh runner
+list/create/recover/revoke` commands provide the same owner-only administration
+through an explicit `runners:write` grant. Revoking the provisioning CLI grant
+does not revoke the separate CI credential; revoke the runner registration too
+when retiring it. The dispatcher validates every file's ownership, private mode,
+host and repository before claiming work; file mode cannot also specify
+`tokenEnv` and never falls back to an environment token. The API exposes safe
 registration metadata at `GET /api/repos/:owner/:repo/ci/runners` to the owner.
 
 This repository's workflow has separate unit, Git repository, CLI, access/vault,

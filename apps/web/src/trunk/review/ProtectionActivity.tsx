@@ -9,6 +9,7 @@ import { field, Notice } from "./shared";
 import { RulesetRestore } from "./RulesetRestore";
 
 function title(event: RepositoryEvent) {
+  if(event.runnerRegistration)return `${event.runnerRegistration.revoked?'Revoked':'Registered'} runner “${event.runnerRegistration.name}”`;
   if(event.defaultBranch)return `Default branch changed from ${event.defaultBranch.previous} to ${event.defaultBranch.next}`;
   if(event.archive)return `${event.archive.archived?"Archived":"Unarchived"} repository · revision ${event.archive.revision}`;
   if(event.deploymentReview)return `${event.deploymentReview.decision==="approve"?"Approved":"Rejected"} deployment to “${event.deploymentReview.environment}”`;

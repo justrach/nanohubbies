@@ -12,7 +12,13 @@
   "maxSandboxes": 16,
   "jobConcurrency": 4,
   "repositories": [
-    { "repository": "nanohub/app", "tokenEnv": "NANOHUB_APP_CI_TOKEN" },
-    { "repository": "nanohub/api", "tokenEnv": "NANOHUB_API_CI_TOKEN" }
+    {
+      "repository": "nanohub/app",
+      "runnerCredentialFile": "/etc/nanohub/app-runner.json"
+    },
+    {
+      "repository": "nanohub/api",
+      "runnerCredentialFile": "/etc/nanohub/api-runner.json"
+    }
   ]
 }

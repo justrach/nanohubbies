@@ -301,6 +301,14 @@ state, with native Git clone/fsck. The complete repository gate includes it.
 It creates no production CLI grant or environment. See
 [environment CLI validation](evidence/cli-environments-validation.md).
 
+`test:cli-runners` covers owner-only scope checks, hash-only idempotent
+registration, permanent revocation and safe audit projection, then runs both
+source and standalone CLI forms against real isolated Worker/DO/D1 state.
+The fixture drops a successful registration acknowledgement, recovers the same
+credential from its private file, and verifies revoked read leases/callbacks,
+requeue, archived cleanup, role demotion and provider outages. It creates no
+production grant or runner. The full repository gate includes both forms.
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

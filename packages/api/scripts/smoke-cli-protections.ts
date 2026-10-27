@@ -76,7 +76,8 @@ try {
  await f.json('PATCH',base+'/collaborators',{userId:'codegraff:admin',role:'writer'},owner);
  assert.equal((await f.request('PUT',gateway+'/protection',policy('denied'),condition(grant,5))).status,403);
  assert.equal((await f.request('GET',gateway+'/protection',undefined,auth(grant))).status,200);
- for(const path of ['/ci/runners','/secrets','/collaborators','/cli-credentials'])assert.equal((await f.request('POST',gateway+path,{},auth(grant))).status,404);
+ assert.equal((await f.request('POST',gateway+'/ci/runners',{},auth(grant))).status,403);
+ for(const path of ['/secrets','/collaborators','/cli-credentials'])assert.equal((await f.request('POST',gateway+path,{},auth(grant))).status,404);
  await f.json('PATCH',base+'/collaborators',{userId:'codegraff:admin',role:'admin'},owner);
  await f.json('POST',base+'/archive',{archived:true,revision:0,confirmation:trunk},owner);
  assert.equal((await f.request('PUT',gateway+'/protection',policy('archived'),condition(grant,5))).status,403);

@@ -25,7 +25,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
     protections: "(json_type(data, '$.policy') IS NOT NULL OR json_type(data, '$.removedPolicy') IS NOT NULL)",
     refs: "json_type(data, '$.ref') IS NOT NULL",
     bypasses: "json_array_length(data, '$.bypassedRulesets') > 0",
-    ci: "(json_type(data, '$.stagingApproval') IS NOT NULL OR json_type(data, '$.retry') IS NOT NULL)",
+    ci: "(json_type(data, '$.stagingApproval') IS NOT NULL OR json_type(data, '$.retry') IS NOT NULL OR json_type(data, '$.runnerRegistration') IS NOT NULL)",
     reviews: "json_type(data, '$.dismissal') IS NOT NULL",
     environments:"(json_type(data, '$.environment') IS NOT NULL OR json_type(data, '$.removedEnvironment') IS NOT NULL OR json_type(data, '$.deploymentRequest') IS NOT NULL OR json_type(data, '$.deploymentReview') IS NOT NULL OR json_type(data, '$.deploymentAuthorization') IS NOT NULL)",
   };
@@ -38,6 +38,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
     const event: RepositoryEvent = { id: row.id, at: data.at, actor: data.actor };
     if(data.via?.kind==="cli"&&typeof data.via.credentialId==="string")event.via={kind:"cli",credentialId:data.via.credentialId};
     if(data.defaultBranch)event.defaultBranch=data.defaultBranch;
+    if(data.runnerRegistration&&typeof data.runnerRegistration.id==='string'&&typeof data.runnerRegistration.name==='string'&&typeof data.runnerRegistration.revoked==='boolean')event.runnerRegistration={id:data.runnerRegistration.id,name:data.runnerRegistration.name,revoked:data.runnerRegistration.revoked};
     for (const key of ["ref", "old", "next", "merge", "force", "human", "bypassedRulesets", "bypassRole", "ruleset", "previousRuleset", "removedRuleset", "restoredFrom", "policy", "previousPolicy", "removedPolicy", "stagingApproval", "retry", "head", "base", "dismissal", "environment", "previousEnvironment", "removedEnvironment", "deploymentRequest", "deploymentReview", "deploymentAuthorization", "archive"] as const)
       if (key in data) Object.assign(event, { [key]: data[key] });
     return event;

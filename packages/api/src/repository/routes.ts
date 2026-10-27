@@ -1,5 +1,6 @@
 import {cliRulesets} from "./cli-rulesets";
 import {cliEnvironments} from './cli-environments';
+import {cliRunners} from './cli-runners';
 import {defaultBranchRoute} from './default-route';
 import {archiveLocked,archiveMessage} from "./archive";
 import { creationBody } from "../abuse";
@@ -36,6 +37,7 @@ export async function repositoryRoute(env: Env, request: Request, trunk: string,
   if(action==="rulesets"&&user?.cli)return cliRulesets(env,request,trunk,id,operation,user,access);
   if(action==="default-branch")return defaultBranchRoute(env,request,trunk,user,access,id,operation);
   if(action==='environments'&&user?.cli)return cliEnvironments(env,request,trunk,id,operation,user,access);
+  if(action==='ci'&&user?.cli)return cliRunners(env,request,trunk,id,operation,user,access);
   if(action==="environments") {
     if(!canProtect)return Response.json({error:"A signed-in repository admin is required for deployment environments"},{status:403});
     const headers={"Cache-Control":"private, no-store"};

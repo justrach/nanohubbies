@@ -12,5 +12,6 @@
   },
   "network": "none",
   "prepare": "bun install --frozen-lockfile --offline",
-  "artifacts": "/var/lib/nanohub-ci/private-artifacts"
+  "artifacts": "/var/lib/nanohub-ci/private-artifacts",
+  "runnerCredentialFile": "/etc/nanohub/repository-runner.json"
 }

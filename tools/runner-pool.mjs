@@ -1,5 +1,7 @@
 /** Trusted host scheduling only. One pool may service several repositories
  * using the same Codegraff account, with separate Nanohub repo credentials. */
+import {isAbsolute} from 'node:path';
+import {readRunnerCredentialFile} from '../packages/cli/src/runners.mjs';
 export function positiveInteger(value, name) {
   if (!Number.isSafeInteger(value) || value < 1) throw Error(`${name} must be a positive safe integer`);
   return value;
@@ -22,12 +24,25 @@ export function fleetTargets(config, env) {
     if(!entry||typeof entry!=='object'||Array.isArray(entry))throw Error('Invalid repository configuration');
     const target={...common,...entry};
     if(!target.repository&&!target.trunk)throw Error('Each pool target needs a repository or trunk');
-    const tokenEnv=target.tokenEnv??'NANOHUB_CI_TOKEN';
-    if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(tokenEnv)||!env[tokenEnv])throw Error(`Configure the repository runner credential in ${tokenEnv}`);
     const key=new URL(target.origin).origin+'/'+(target.repository??target.trunk);
     if(seen.has(key))throw Error('Duplicate repository in runner pool');seen.add(key);
+    if(target.runnerCredentialFile!==undefined){
+      if(typeof target.runnerCredentialFile!=='string'||!isAbsolute(target.runnerCredentialFile)||target.tokenEnv!==undefined)throw Error('Use one absolute private runnerCredentialFile or tokenEnv per repository');
+      return {config:target,tokenFile:target.runnerCredentialFile};
+    }
+    const tokenEnv=target.tokenEnv??'NANOHUB_CI_TOKEN';
+    if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(tokenEnv)||!env[tokenEnv])throw Error(`Configure the repository runner credential in ${tokenEnv}`);
     return {config:target,token:env[tokenEnv]};
   });
+}
+export async function resolveFleetTargets(config,env,{readCredentialFile=readRunnerCredentialFile}={}){
+  const targets=fleetTargets(config,env);
+  return Promise.all(targets.map(async target=>{
+    if(!target.tokenFile)return target;
+    const {config,tokenFile}=target;
+    const credential=await readCredentialFile(tokenFile,{origin:new URL(config.origin).origin,repository:config.repository??null,trunk:config.trunk??null});
+    return {config,token:credential.token};
+  }));
 }
 const pause=(ms,signal)=>new Promise(resolve=>{
   if(signal?.aborted)return resolve();
@@ -38,7 +53,7 @@ const pause=(ms,signal)=>new Promise(resolve=>{
  * registrations: the server's atomic lease is the authority, never this loop. */
 export async function runFleet(config,{run,env=process.env,watch=false,signal,onResult=()=>{},onError=()=>{},sleep=pause}={}) {
   if(typeof run!=='function')throw Error('A runner implementation is required');
-  const targets=fleetTargets(config,env),concurrency=positiveInteger(config.concurrency??(config.pipelineAdapter?1:4),'Run concurrency');
+  const targets=await resolveFleetTargets(config,env),concurrency=positiveInteger(config.concurrency??(config.pipelineAdapter?1:4),'Run concurrency');
   const sandboxLimit=semaphore(positiveInteger(config.maxSandboxes??concurrency,'Maximum sandboxes'));
   positiveInteger(config.jobConcurrency??4,'Job concurrency');
   const interval=positiveInteger(config.pollIntervalMs??5000,'Poll interval');

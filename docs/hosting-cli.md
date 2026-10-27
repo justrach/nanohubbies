@@ -51,8 +51,8 @@ Inside a checkout, omit `-R` to infer the repository from `origin`.
 `--host` selects an HTTPS origin; HTTP is allowed only on loopback. `--trunk ID`
 supports older workspace addresses without owner/repository aliases.
 
-This is not the full GitHub CLI command surface. Account-wide API credentials,
-runner management and standalone native executable releases remain
+This is not the full GitHub CLI command surface. Account-wide API credentials
+and standalone native executable releases remain
 future work. The older Zig `nanohub swarm` CLI lives in the
 separate Nanohub checkout and is not replaced or installed by this change.
 
@@ -208,7 +208,8 @@ review is an explicitly delegated account review, marked **via CLI**, rather
 than proof that a human typed it. Self-approvals still cannot count; fresh writer
 membership, CODEOWNERS, stale-review, latest-push and conversation gates apply.
 CLI credentials never receive browser-only ruleset bypass, unrelated administrator APIs,
-secrets, runner administration or private pending drafts. Git transport requires
+secrets or private pending drafts. Runner administration requires its separate
+explicit owner-only permission described below. Git transport requires
 the separate, explicit content scopes described above.
 Existing Git-only and registered-agent credentials gain no CLI API rights.
 
@@ -216,8 +217,8 @@ Existing Git-only and registered-agent credentials gain no CLI API rights.
 
 CLI v0.4.5 adds `rules list`, `rules get`, `rules set` and `rules delete` for
 classic branch protections. `rules view` keeps opening the browser settings page.
-Rulesets, history restoration, environment and runner configuration still use
-their existing settings pages.
+Rulesets, environments and runners have separate native commands and explicit
+permissions described below. History restoration uses its existing settings page.
 
 Members with CLI `read` can list/export protections. Edits require an explicit
 **protections:write** permission and a current owner/admin repository role.
@@ -566,3 +567,71 @@ while archived. Removing a required environment leaves its branch requirement
 unmet; it does not waive that protection or reuse old deployment approvals.
 An ambiguous mutation response is not retried automatically: inspect `env list`
 or `env export` first.
+
+## Runner registrations
+
+Runner administration requires the explicit **`runners:write`** permission and
+current repository **owner** access. Repository admins cannot delegate it.
+Ordinary login defaults and existing credentials gain no runner permission.
+This is separate from the sandbox-scoped Codegraff account key: a Nanohub
+registration authorizes this repository's checks and scoped Git read leases;
+the account key authorizes allocation of Codegraff VMs.
+
+```sh
+nh auth login -R owner/repository --scopes read,runners:write
+nh runner list -R owner/repository --json
+nh runner create codegraff-actions --token-file ~/.config/nanohub/repository-runner.json -R owner/repository
+nh runner recover --token-file ~/.config/nanohub/repository-runner.json -R owner/repository
+nh runner revoke RUNNER_ID --confirm RUNNER_ID -R owner/repository
+```
+
+Create the private parent directory first. The CLI exclusively creates an
+owner-readable file outside Git checkouts, saves its random 256-bit CI credential
+and registration ID, and syncs it **before requesting registration**. Existing
+files are never overwritten. stdout/JSON contains public registration metadata
+and the file path, never the credential field. Keep the file on the trusted
+controller; it is not a repository asset. The server stores only its SHA-256
+hash and never returns the CLI-created credential.
+
+If the response is lost, `runner recover` uses the same ID, name and credential
+from disk. Identical recovery is idempotent and preserves trusted check-source
+pins. Conflicting credentials/names and already-revoked IDs are rejected; delayed
+requests cannot restore a revoked identity. Recovery accepts only a bounded,
+owner-only regular file, refuses symlinks and binds the exact host and owner/repo
+or trunk address stored in the file. Keep using an existing rename alias when
+that is the address recorded in the file. CLI API errors redact CI credentials.
+Old RPC receivers cannot fall back to the browser's unconditional issuer.
+
+Issued CI credentials have an **independent lifetime**: they last until their
+runner registration is revoked, including after the provisioning CLI credential
+expires or is revoked. Browser consent states this. Revocation is owner-only,
+is idempotent, invalidates active Git read leases and callbacks, and immediately
+requeues running/waiting candidates for another registration. The old attempt
+cannot report afterward. Existing grants can list and revoke while archived;
+registration/recovery and new runner-management grants are blocked while
+archived. Successful CLI registration/revocation records account and credential
+provenance in repository activity without tokens or hashes.
+
+The trusted dispatcher can read this file directly:
+
+```json
+{
+  "origin": "https://nanohub.sh",
+  "repository": "owner/repository",
+  "backend": "codegraff",
+  "runnerCredentialFile": "/absolute/private/repository-runner.json",
+  "image": "registry.cloudflare.com/ACCOUNT/nanohub-ci@sha256:VERIFIED_DIGEST",
+  "imageRegistry": { "provider": "cloudflare", "config": "/etc/nanohub/wrangler.jsonc" },
+  "artifacts": "/var/lib/nanohub-ci/private-artifacts"
+}
+```
+
+Set the existing sandbox-scoped `CODEGRAFF_API_KEY` only in the trusted
+controller environment. No `NANOHUB_CI_TOKEN` export is needed for a file-backed
+target. Pools may use a different absolute `runnerCredentialFile` per repository.
+Every file is validated before any claim. Invalid, unreadable or mismatched
+files never fall back to an ambient token. Explicit `tokenEnv` remains supported
+as an alternative, but cannot be combined with a file for one target. Files are
+loaded at pool startup; restart the controller when intentionally switching
+registrations. Candidate bundles, mounts and environment receive neither file
+nor control credential.

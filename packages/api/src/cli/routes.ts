@@ -3,7 +3,7 @@ import {creationBody} from "../abuse";
 import {canAdmin,canWrite,requireTeam,sameOrigin,type TeamAccess} from "../team/access";
 import {cliCredential,listCliCredentials,makeCliCredential,requestedScopes,revokeCliCredential,type CliScope} from "./credentials";
 import {cliDeviceRoute} from "./device";
-import {cliScopes,cliScopeWrites,cliScopeAllowed,cliAdminScope} from "./credentials";
+import {cliScopes,cliScopeWrites,cliScopeAllowed,cliAdminScope,cliOwnerScope} from "./credentials";
 import {archiveLocked} from "../repository/archive";
 
 const json=(body:unknown,status=200)=>Response.json(body,{status});
@@ -21,6 +21,7 @@ export async function cliCredentialRoute(env:Env,request:Request,trunk:string,us
   const scopes=requestedScopes(body.scopes);
   if(!canWrite(access)&&scopes.some(cliScopeWrites))return json({error:"Repository write access is required for these permissions"},403);
   if(scopes.some(cliAdminScope)&&!canAdmin(access))return json({error:"Current repository admin access is required for these permissions"},403);
+  if(scopes.some(cliOwnerScope)&&access.proof.role!=='owner')return json({error:'Current repository owner access is required for runner administration'},403);
   if(scopes.some(scope=>cliScopeWrites(scope)&&scope!=="repository:archive"))await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
   return json(await makeCliCredential(env,user,trunk,new URL(request.url).origin,body.label,scopes,body.days),201);
 }
@@ -74,6 +75,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="GET"&&resource==="protection")scope="read";
   if(method==="GET"&&resource==="archive")scope="read";
   if(method==="GET"&&resource==="default-branch")scope="read";
+  if(['GET','POST'].includes(method)&&resource==='ci/runners'||method==='DELETE'&&/^ci\/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resource))scope='runners:write';
   if(method==="GET"&&/^environments(?:\/[a-zA-Z0-9-]{8,80}(?:\/configuration)?)?$/.test(resource)||method==="POST"&&resource==="environments"||["PUT","DELETE"].includes(method)&&/^environments\/[a-zA-Z0-9-]{8,80}$/.test(resource))scope="environments:write";
   if(method==="PUT"&&resource==="default-branch")scope="repository:default";
   if(method==="POST"&&resource==="archive")scope="repository:archive";
@@ -88,6 +90,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(!info.scopes.includes(scope))return new Response(JSON.stringify({error:`CLI credential requires ${scope}`}),{status:403,headers:{"Content-Type":"application/json","WWW-Authenticate":`Bearer error="insufficient_scope", scope="${scope}"`}});
   if(method!=="GET"&&!canWrite(access))return json({error:"Current repository write access required"},403);
   if(cliAdminScope(scope)&&!canAdmin(access))return json({error:"Current repository admin access required"},403);
+  if(cliOwnerScope(scope)&&access.proof.role!=='owner')return json({error:'Current repository owner access required'},403);
   const target=new URL(url);target.pathname=`/api/trunks/${trunk}/${resource}`;
   return dispatch(new Request(target,internal),target,delegate);
 }

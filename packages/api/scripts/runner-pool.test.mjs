@@ -33,3 +33,15 @@ test('idle watches sleep and resume; missing credentials and invalid pool sizes 
  await assert.rejects(runFleet({...target,concurrency:0},{env:{NANOHUB_CI_TOKEN:'fixture'},run:async()=>{throw Error('must not claim');}}),/positive/);
  assert.throws(()=>fleetTargets({...target,repository:undefined,repositories:[{repository:'nanohub/app'},{repository:'nanohub/app'}]},{NANOHUB_CI_TOKEN:'fixture'}),/Duplicate/);
 });
+
+test('private runner files are resolved before any claim and never fall back to ambient credentials',async()=>{
+ const {mkdtemp,writeFile,rm,chmod}=await import('node:fs/promises'),{join}=await import('node:path'),{tmpdir}=await import('node:os'),{randomUUID}=await import('node:crypto'),{resolveFleetTargets}=await import('../../../tools/runner-pool.mjs');
+ const dir=await mkdtemp(join(tmpdir(),'nh-pool-credential-'));try{
+  const file=join(dir,'runner.json'),credential={format:1,origin:target.origin,repository:target.repository,trunk:null,id:randomUUID(),name:'pool',token:'nhci_'+'e'.repeat(64)};await writeFile(file,JSON.stringify(credential),{mode:0o600});
+  let claims=0;const config={...target,runnerCredentialFile:file,concurrency:1};const resolved=await resolveFleetTargets(config,{NANOHUB_CI_TOKEN:'wrong-ambient-credential'});assert.equal(resolved[0].token,credential.token);
+  await runFleet(config,{env:{NANOHUB_CI_TOKEN:'wrong-ambient-credential'},run:async(config,token)=>{claims++;assert.equal(token,credential.token);assert.equal(config.runnerCredentialFile,file);return {idle:true};}});assert.equal(claims,1);
+  assert.throws(()=>fleetTargets({...config,tokenEnv:'OTHER'},{}),/one absolute/);assert.throws(()=>fleetTargets({...config,runnerCredentialFile:'relative.json'},{}),/absolute/);
+  await chmod(file,0o644);await assert.rejects(runFleet(config,{env:{NANOHUB_CI_TOKEN:'wrong-ambient-credential'},run:async()=>{claims++;}}),/private runner/);assert.equal(claims,1);
+  await chmod(file,0o600);await writeFile(file,JSON.stringify({...credential,repository:'other/repo'}));await assert.rejects(runFleet(config,{env:{},run:async()=>{claims++;}}),/private runner/);assert.equal(claims,1);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

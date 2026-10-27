@@ -274,6 +274,24 @@ export class Sequencer extends DurableObject<Env> {
   ciAuthenticate(token:string){return new CIStore(this.sql).authenticate(token);}
   ciRuns() { return new CIStore(this.sql).list(); }
   ciRunners() { return new CIStore(this.sql).registrations(); }
+  cliRunnerConfiguration(){return {registrations:new CIStore(this.sql).registrations(),clientCredentials:'v1' as const,cliAudit:true as const,ownerOnly:true as const};}
+  async configureCliRunner(input:{credentialId:string;origin:string;registration?:{id:string;name:string;token:string};revoke?:string},actor:string){
+    const trunk=this.meta<string>('trunk');if(!trunk)throw Error('Repository identity unavailable');
+    if(typeof input.credentialId!=='string'||!input.credentialId||!!input.registration===!!input.revoke||input.revoke!==undefined&&!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.revoke))throw Error('Choose one runner registration operation');
+    const authority=await rulesetActor(this.env,trunk,actor,input.origin);
+    return this.ctx.storage.transactionSync(()=>{
+      if(!currentRulesetActor(authority,actor)||authority?.role!=='owner')throw Error('Current repository owner access required for runner administration');
+      const ci=new CIStore(this.sql);let registration;
+      if(input.registration){registration=ci.provisionRunner(input.registration);if(!registration.created)return {registration};}
+      else {
+        const existing=ci.registrations().find(r=>r.id===input.revoke);if(!existing)throw Error('Runner registration not found');
+        ci.revoke(existing.id);registration={id:existing.id,name:existing.name,revoked:true};
+        if(existing.revoked)return {registration};
+      }
+      new Repository(this.sql).audit({actor,runnerRegistration:{id:registration.id,name:registration.name,revoked:registration.revoked},via:{kind:'cli',credentialId:input.credentialId}});
+      return {registration};
+    });
+  }
   ciRunner(name: string) { return new CIStore(this.sql).runner(name); }
   ciApprove(id: string, actor: string) {
     return this.ctx.storage.transactionSync(() => {

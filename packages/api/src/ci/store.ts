@@ -33,6 +33,19 @@ export class CIStore {
     this.sql.exec("INSERT INTO ci_runners (id, hash, name) VALUES (?, ?, ?)", id, hash(token), name);
     return { id, name, token };
   }
+  provisionRunner(input:{id:string;name:string;token:string}) {
+    assertRepositoryWritable(this.sql);
+    if(!input||Object.keys(input).some(key=>!['id','name','token'].includes(key))||typeof input.id!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.id)||typeof input.name!=='string'||!/^[\w.-]{1,80}$/.test(input.name)||typeof input.token!=='string'||!/^nhci_[a-f0-9]{64}$/.test(input.token))throw Error('Use a valid runner registration ID, name and client-generated credential');
+    const existing=this.sql.exec<{hash:string;name:string;revoked:number}>('SELECT hash,name,revoked FROM ci_runners WHERE id=?',input.id).toArray()[0];
+    if(existing){
+      if(existing.revoked)throw Error('Runner registration is revoked and cannot be recovered');
+      if(existing.name!==input.name||existing.hash!==hash(input.token))throw Error('Runner registration ID is already in use');
+      return {id:input.id,name:input.name,revoked:false,created:false};
+    }
+    if(this.sql.exec('SELECT 1 FROM ci_runners WHERE hash=?',hash(input.token)).toArray().length)throw Error('Runner credential is already registered');
+    this.sql.exec('INSERT INTO ci_runners(id,hash,name) VALUES(?,?,?)',input.id,hash(input.token),input.name);
+    return {id:input.id,name:input.name,revoked:false,created:true};
+  }
   revoke(id: string) {
     this.sql.exec("UPDATE ci_runners SET revoked=1 WHERE id=?", id);
     // Release this registration's work immediately so another pool worker can

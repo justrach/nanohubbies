@@ -11,7 +11,7 @@ try{
  const make=async(cookie:any,permissions=scopes)=>{const value=await f.json('POST',base+'/cli-credentials',{label:'Environment CLI fixture',scopes:permissions,days:1},cookie);credentials.push({id:value.id,cookie});return value;};
  for(const cookie of[writer,reader]){assert.ok(!(await f.json('GET',base+'/cli-credentials',undefined,cookie)).allowedScopes.includes('environments:write'));assert.equal((await f.request('POST',base+'/cli-credentials',{label:'Denied environment grant',scopes,days:1},cookie)).status,403);}
  const grant=await make(admin),ordinary=await make(owner,['read','protections:write','rulesets:write']),read=await make(reader,['read']);
- for(const path of ['/ci/runners','/secrets'])assert.equal((await f.request('GET',gateway+path,undefined,auth(grant))).status,404);assert.equal((await f.request('POST',gateway+'/rulesets',{},auth(grant))).status,403);
+ assert.equal((await f.request('GET',gateway+'/ci/runners',undefined,auth(grant))).status,403);assert.equal((await f.request('GET',gateway+'/secrets',undefined,auth(grant))).status,404);assert.equal((await f.request('POST',gateway+'/rulesets',{},auth(grant))).status,403);
  runner=await f.json('POST',base+'/ci/runners',{name:'environment-source'},owner);
  key=await f.json('POST',base+'/git-tokens',{label:'Environment CLI Git fixture'},owner);const source=join(f.dir,'source');await mkdir(source);const remote=f.origin+'/git/'+trunk+'.git';
  const git=async(...args:string[])=>(await exec('git',['-C',source,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',...args],{env:{...environment,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraHeader',GIT_CONFIG_VALUE_0:'Authorization: Basic '+btoa('git:'+key.token)}})).stdout.trim();
