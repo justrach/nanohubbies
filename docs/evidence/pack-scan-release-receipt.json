@@ -1,0 +1,109 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T22:06:22.324Z",
+  "runtimeImplementation": "f00b78d4bae21fb724d95c5fff46bcac5ebb5128",
+  "cliBuildCorrection": "858ff58",
+  "frozenSource": "708509158a85e7d7ce981924de34ca0f3d5b4f11",
+  "sourceParent": "d139ab6d5223f1e0aa2a1b089dff5a02c91c2c13",
+  "sourceManifestSha256": "5dd07e9fdaf9c7155417ca97a59a2bbf72d576433f7803fdd60e4e0fce2064b5",
+  "allSourceFilesMatch": 908,
+  "runtimeFiles": [
+    {
+      "path": "packages/api/src/objects.ts",
+      "sha256": "cf1131ee9f69259a35d9ebf015194874387cffbc4ec288e6ff51d27c5caef99a"
+    },
+    {
+      "path": "packages/api/src/repository/push.ts",
+      "sha256": "31fdc75a7880679017342ddd2397148df6e0b016fef349fbf00ebf24713e45a7"
+    },
+    {
+      "path": "packages/api/src/repository/validate.ts",
+      "sha256": "d01eb2c41694137494cf1ef2aa5f94b4be016ff960f4d5530bd389989103c6af"
+    },
+    {
+      "path": "packages/cli/scripts/build.mjs",
+      "sha256": "5c641942eee1271a6317b61f8f44c9c74c716428eba0233a1eaa81ff17137824"
+    },
+    {
+      "path": "packages/api/package.json",
+      "sha256": "865f5719662f0c03e2ecb8a9828168af683d3efe521e05a7310df3b1dbe80ebd"
+    },
+    {
+      "path": "package.json",
+      "sha256": "aaaecc2cdbd00a542748ce2f76f25773f5043ec89cb99d8299bc938e00918827"
+    }
+  ],
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "registryProvider": "cloudflare",
+    "sandboxId": "cnd_81b59597a9dda2a686a139fb4dd5a9b00ec2546f",
+    "deletionConfirmed": true,
+    "state": "destroyed",
+    "checkedAt": "2026-10-27T22:01:45.966Z"
+  },
+  "production": {
+    "workerVersion": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "previousWorkerVersion": "9f7e3a05-e3d3-40d4-8b89-e4b53aac3739",
+    "cli": {
+      "format": 1,
+      "version": "0.4.12",
+      "path": "/nh/releases/0.4.12/nh.mjs",
+      "bytes": 74001,
+      "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+    },
+    "assetChecks": 15,
+    "exactBytesAndWebMimeTypes": true,
+    "immutableOlderCliReleasesRetained": true,
+    "bindingCount": 27,
+    "bindingsUnchanged": true,
+    "subrequests": 50000,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "rulesPageRendered": true,
+    "ui": {
+      "checkedAt": "2026-10-27T22:04:13.831Z",
+      "background": "rgb(250, 248, 243)",
+      "font": "geist, \"geist Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "stylesheets": 4
+    },
+    "anonymousPrivateGit": {
+      "checkedAt": "2026-10-27T22:04:31.839Z",
+      "scope": "anonymous private Git import discovery boundary only",
+      "status": 401,
+      "challenge": "Basic realm=\"nanohub\"",
+      "cacheControl": "private, no-store",
+      "credentialCreated": false
+    },
+    "newRepositoryCredentialIssued": false,
+    "productionRefsOrSettingsMutated": false,
+    "vaultDeployed": false
+  },
+  "githubPushed": false,
+  "applicationCiRun": false,
+  "stagingDeployed": false,
+  "hostedDisasterRecovery": false,
+  "trafficSloEstablished": false,
+  "nanohubAccountSandboxScopeAvailable": false
+}

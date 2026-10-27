@@ -8,7 +8,7 @@ pending the original migration and CI/staging acceptance.
 
 | Area                                 | Current evidence                                                                                                                                                                                                                                                                                                                                                                                          | Remaining release requirement                                                                                                                                                                                                                                                 |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native Git hosting                   | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [agent-free Meld graph migration through the packaged CLI](evidence/cli-import-validation.md), with all 178 branches/18,097 objects, independent clone/fsck and verification-only recovery                                                                                         | The [pinned hosted full-graph copy](evidence/hosted-import-validation.md) passes; validate and roll out the correction, then complete actual application policy/CI, capacity and cutover acceptance                                                                           |
+| Native Git hosting                   | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [agent-free Meld graph migration through the packaged CLI](evidence/cli-import-validation.md), with all 178 branches/18,097 objects, independent clone/fsck and verification-only recovery                                                                                         | The [pinned hosted full-graph copy](evidence/hosted-import-validation.md) passes; the correction is [validated and deployed](evidence/pack-scan-release-validation.md); complete actual application policy/CI, capacity and cutover acceptance                                |
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md)                                                                                                                                                                                     | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract                                                                                                                                |
 | Native CLI                           | Published 0.4.12; [agent-free complete import and recovery](evidence/cli-import-validation.md), source and bundled Git/API administration, revision-checked [environments](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes                                                               | Broader command parity remains open; public release operations need the checks below                                                                                                                                                                                          |
 | Cloudflare-owned secrets             | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md)                                                                                                                                                                                                                                                                            | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups                                                                                                                                  |
@@ -23,11 +23,14 @@ publication timeout after uploading the full actual graph. A bounded pack-cache
 correction now passes complete hosted import, independent clone/fsck,
 verification-only resume and revocation on the pinned 178-branch/18,097-object
 Meld graph. Independent cleanup confirms namespace retirement and absence of
-all test resources. The correction still needs fresh Linux validation and rollout;
-the main site retains its earlier implementation. The candidate passes 314 API unit tests,
+all test resources. The correction now passes fresh Linux validation and is
+[deployed](evidence/pack-scan-release-validation.md). Its local acceptance passes 314 API unit tests,
 245 repository unit cases, the full Worker/Git/protection/recovery chain, 48 CLI
-tests, pinned tsrs and OpenNext build. The main site's previously deployed
-implementation has the acceptance evidence below.
+tests, pinned tsrs and OpenNext build. The fresh Linux VM passes all eight
+release gates, with independent destruction confirmation and all 908 frozen
+source files matching the rollout. Fifteen live asset checks, 27 unchanged
+bindings and nine exact authenticated canary comparisons pass. The main site's
+earlier implementation has the historical acceptance evidence below.
 
 That earlier local acceptance passes 297 API unit tests, 228 repository unit cases
 and the full real Worker/Git acceptance chain, plus pinned
@@ -42,7 +45,7 @@ the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
 
-The current main Worker is `9f7e3a05-e3d3-40d4-8b89-e4b53aac3739`, with normal
+The current main Worker is `993b659a-8d24-442b-92b4-f5270a94029a`, with normal
 traffic enabled and the request hold available but off. The request hold's first
 corrected rollout was `1450c429-a969-483e-8383-c05d9ed8467c`. A first rollout exposed a static-asset delivery
 regression and was rolled back. The corrected Worker explicitly delegates
@@ -75,7 +78,7 @@ confirmed cleanup. The exact packaged CLI also passes the actual local Meld
 import/resume/revocation sequence with zero registered agents. Production
 verification remains publication and preservation, without a new import grant.
 
-The next release work should validate the correction in a fresh Linux VM and roll it out, then close unattended CI activation and hosted callbacks, actual
+The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)
 retain their explicit cutover gates. Production remains separate from a verified

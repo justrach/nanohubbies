@@ -91,9 +91,11 @@ This closes the pinned large-graph hosted migration gate for the candidate.
 It establishes neither a traffic SLO nor actual application CI/staging or hosted
 restore acceptance. No primary repository is cut over.
 
-The main site remains on Worker `9f7e3a05-e3d3-40d4-8b89-e4b53aac3739`.
-The candidate has not been rolled out there. Fresh Linux validation and rollout for this
-correction, actual application CI/staging, hosted recovery and
-traffic/security acceptance remain release requirements. The Nanohub Actions
-account key was rechecked read-only and still receives provider HTTP 403 for
-missing sandbox scope. No other account's key replaces it.
+At this check, the main site remained on Worker
+`9f7e3a05-e3d3-40d4-8b89-e4b53aac3739`. The later
+[fresh Linux validation and production rollout](pack-scan-release-validation.md)
+releases the correction as Worker `993b659a-8d24-442b-92b4-f5270a94029a`.
+Actual application CI/staging, hosted recovery and traffic/security acceptance
+remain release requirements. The Nanohub Actions account key is rechecked
+read-only and still receives provider HTTP 403 for missing sandbox scope.
+No other account's key replaces it.
