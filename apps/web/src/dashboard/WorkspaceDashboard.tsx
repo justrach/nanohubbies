@@ -119,25 +119,23 @@ export function WorkspaceDashboard({
               <div className={styles.emptyIcon}>
                 <FolderGit2 size={27} />
               </div>
-              <p className={styles.eyebrow}>Your coding workspace</p>
               <h1>Start with a repository</h1>
               <p>
-                Bring in a repository, connect an agent you already use, and
-                keep its work in one place.
+                Create a private repository, push your code and invite collaborators.
               </p>
               <LinkButton href="/start" variant="primary">
                 <Plus size={15} />
-                Create your first workspace
+                Create your first repository
               </LinkButton>
               <ol className={styles.steps}>
                 <li>
                   <span>1</span>Choose a repository
                 </li>
                 <li>
-                  <span>2</span>Connect your agent
+                  <span>2</span>Clone with Git
                 </li>
                 <li>
-                  <span>3</span>Review its changes
+                  <span>3</span>Review changes
                 </li>
               </ol>
             </section>

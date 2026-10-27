@@ -1,0 +1,51 @@
+{
+  "tool": "built-in imagegen",
+  "purpose": "Palette-corrected design concepts; application UI unchanged",
+  "paletteSource": "harness/crates/theme/src/builtins.rs (codegraff_light and codegraff_dark); default selection documented in harness/docs/theme-system.md",
+  "palette": {
+    "light": {
+      "background": "#faf8f3",
+      "shell": "#f0ece3",
+      "raised": "#e7e1d5",
+      "text": "#1a1813",
+      "muted": "#6b6557",
+      "faint": "#a8a090",
+      "accent": "#c77d20",
+      "danger": "#b14228",
+      "warning": "#9a6e1b",
+      "success": "#5c7e47"
+    },
+    "dark": {
+      "background": "#16140f",
+      "shell": "#1f1c16",
+      "raised": "#2a261e",
+      "text": "#edeae2",
+      "muted": "#9a9384",
+      "faint": "#5c564b",
+      "accent": "#e8a33d",
+      "danger": "#d2674f",
+      "warning": "#d9a441",
+      "success": "#7fa86b"
+    }
+  },
+  "variants": [
+    {
+      "key": "paper-harness",
+      "title": "1 — Paper · Harness colors",
+      "file": "01-paper.png",
+      "prompt": "Use case: ui-mockup. Input image 1 is the EDIT TARGET, an existing Nanohub UI concept. Produce one high-fidelity flat desktop screenshot, same landscape framing and dimensions. Preserve its overall layout, repository information, file rows, README, and navigation. This is a new version of the concept, not an app implementation.\nPrimary request: Use the actual default palette from the user's Harness repository at crates/theme/src/builtins.rs, Codegraff Light/Dark, instead of invented brand colors. Maintain Nanohub's three-dot brand, do not replace the brand with Harness or GitHub. Fonts follow Harness: Geist-like clean sans serif and Geist Mono-like hashes. Crisp readable text and exact alignment; opaque flat surfaces, no gradients, atmospheric lighting, paper texture, glow, blur, or glass.\nKeep these exact labels and values: \"nanohub\", \"nanohub-test\", \"git-ui-fixture\", \"Private\", \"Code\", \"Issues\", \"Pull requests\", \"Actions\", \"Agents\" with \"2\", \"Settings\", \"main\", \"Branches\", \"History\", \"Go to file\", \"Clone\", \"Local fixture\", \"Local hosting UI fixture\", \"fb9c17b\", file table \"Name\" and \"Object\", \".github\" and \"dee77aa\", \"README.md\" and \"b44dbf2\", README title \"Local repository fixture\", body \"Synthetic data for testing owner/repo addresses and the Actions queue.\", About text \"Git repository hosted on Nanohub.\"\nHeader cleanup: The top application bar should contain only the Nanohub wordmark, \"Repositories\", \"New repository\", and a small account avatar. Do not add a global search, Explore, Organizations, Help, star, fork or other invented controls. Keep the real repository file finder in its toolbar. Preserve all other layout details of the edit target. All controls should look practical and shippable.\nEXACT HARNESS LIGHT PALETTE: page/canvas #faf8f3; shell/navigation chrome and card headers #f0ece3; raised/selected surfaces #e7e1d5; text #1a1813; muted text #6b6557; faint metadata #a8a090; primary amber accent #c77d20; success #5c7e47; danger #b14228. Borders black at about 12% opacity over the cream surfaces. The primary Clone action should be AMBER with DARK #1a1813 lettering, never green or teal or blue. Use amber for folder icons, selected navigation markers and interactive emphasis, sparingly. Repository owner/name stay dark neutral. Do not introduce terracotta/rust, mint, purple, teal or GitHub blue as brand accents.\nPreserve the Paper concept's horizontal navigation and quiet document-like hierarchy. Only change palette, fonts if necessary, and the specified header cleanup. Use opaque cream content surfaces with subtle warm-gray borders; no texture."
+    },
+    {
+      "key": "graphite-harness",
+      "title": "2 — Dark · Harness colors",
+      "file": "02-graphite.png",
+      "prompt": "Use case: ui-mockup. Input image 1 is the EDIT TARGET, an existing Nanohub UI concept. Produce one high-fidelity flat desktop screenshot, same landscape framing and dimensions. Preserve its overall layout, repository information, file rows, README, and navigation. This is a new version of the concept, not an app implementation.\nPrimary request: Use the actual default palette from the user's Harness repository at crates/theme/src/builtins.rs, Codegraff Light/Dark, instead of invented brand colors. Maintain Nanohub's three-dot brand, do not replace the brand with Harness or GitHub. Fonts follow Harness: Geist-like clean sans serif and Geist Mono-like hashes. Crisp readable text and exact alignment; opaque flat surfaces, no gradients, atmospheric lighting, paper texture, glow, blur, or glass.\nKeep these exact labels and values: \"nanohub\", \"nanohub-test\", \"git-ui-fixture\", \"Private\", \"Code\", \"Issues\", \"Pull requests\", \"Actions\", \"Agents\" with \"2\", \"Settings\", \"main\", \"Branches\", \"History\", \"Go to file\", \"Clone\", \"Local fixture\", \"Local hosting UI fixture\", \"fb9c17b\", file table \"Name\" and \"Object\", \".github\" and \"dee77aa\", \"README.md\" and \"b44dbf2\", README title \"Local repository fixture\", body \"Synthetic data for testing owner/repo addresses and the Actions queue.\", About text \"Git repository hosted on Nanohub.\"\nHeader cleanup: The top application bar should contain only the Nanohub wordmark, \"Repositories\", \"New repository\", and a small account avatar. Do not add a global search, Explore, Organizations, Help, star, fork or other invented controls. Keep the real repository file finder in its toolbar. Preserve all other layout details of the edit target. All controls should look practical and shippable.\nEXACT HARNESS DARK PALETTE: darkest content/canvas #16140f; shell/navigation and card background #1f1c16; raised/selected surface #2a261e; main text #edeae2; muted text #9a9384; faint metadata #5c564b; primary amber #e8a33d; success #7fa86b; danger #d2674f. Borders white at about 10% opacity. Primary Clone action AMBER #e8a33d with DARK #16140f lettering. Folder icons and selected navigation marker use amber instead of mint or blue. These are warm brown-charcoal neutrals, not blue-black. Remove mint/teal accents completely.\nPreserve the Graphite concept's compact horizontal navigation and dark developer-workbench layout. Only change the palette, fonts if necessary, and the specified header cleanup. Keep the right About area, dense file table and README."
+    },
+    {
+      "key": "studio-harness",
+      "title": "3 — Rail · Harness colors",
+      "file": "03-studio.png",
+      "prompt": "Use case: ui-mockup. Input image 1 is the EDIT TARGET, an existing Nanohub UI concept. Produce one high-fidelity flat desktop screenshot, same landscape framing and dimensions. Preserve its overall layout, repository information, file rows, README, and navigation. This is a new version of the concept, not an app implementation.\nPrimary request: Use the actual default palette from the user's Harness repository at crates/theme/src/builtins.rs, Codegraff Light/Dark, instead of invented brand colors. Maintain Nanohub's three-dot brand, do not replace the brand with Harness or GitHub. Fonts follow Harness: Geist-like clean sans serif and Geist Mono-like hashes. Crisp readable text and exact alignment; opaque flat surfaces, no gradients, atmospheric lighting, paper texture, glow, blur, or glass.\nKeep these exact labels and values: \"nanohub\", \"nanohub-test\", \"git-ui-fixture\", \"Private\", \"Code\", \"Issues\", \"Pull requests\", \"Actions\", \"Agents\" with \"2\", \"Settings\", \"main\", \"Branches\", \"History\", \"Go to file\", \"Clone\", \"Local fixture\", \"Local hosting UI fixture\", \"fb9c17b\", file table \"Name\" and \"Object\", \".github\" and \"dee77aa\", \"README.md\" and \"b44dbf2\", README title \"Local repository fixture\", body \"Synthetic data for testing owner/repo addresses and the Actions queue.\", About text \"Git repository hosted on Nanohub.\"\nHeader cleanup: The top application bar should contain only the Nanohub wordmark, \"Repositories\", \"New repository\", and a small account avatar. Do not add a global search, Explore, Organizations, Help, star, fork or other invented controls. Keep the real repository file finder in its toolbar. Preserve all other layout details of the edit target. All controls should look practical and shippable.\nEXACT HARNESS LIGHT PALETTE: page/canvas #faf8f3; shell/navigation chrome and card headers #f0ece3; raised/selected surfaces #e7e1d5; text #1a1813; muted text #6b6557; faint metadata #a8a090; primary amber accent #c77d20; success #5c7e47; danger #b14228. Borders black at about 12% opacity over the cream surfaces. The primary Clone action should be AMBER with DARK #1a1813 lettering, never green or teal or blue. Use amber for folder icons, selected navigation markers and interactive emphasis, sparingly. Repository owner/name stay dark neutral. Do not introduce terracotta/rust, mint, purple, teal or GitHub blue as brand accents.\nPreserve the Studio concept's LEFT NAVIGATION RAIL and content layout, but replace all cool whites and teal with Harness cream/amber. The selected Code row is a subtle amber-tinted rectangle with dark text, not teal. The top header may omit the Nanohub wordmark because it already appears at the top of the rail; put Repositories and New repository in the header instead of the fake search field. Do not duplicate the navigation horizontally."
+    }
+  ]
+}

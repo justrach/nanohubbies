@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
+    "build": "bun ../../packages/cli/scripts/build.mjs && next build",
     "preview": "opennextjs-cloudflare build && wrangler dev --persist-to ../../.wrangler/state",
-    "check": "wrangler types && tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
+    "check": "wrangler types && tsrs --noEmit && tsrs --noEmit -p tsconfig.worker.json",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {

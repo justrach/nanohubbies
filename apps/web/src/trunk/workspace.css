@@ -1,200 +1,457 @@
+/* Paper / warm charcoal repository workspace. Shared Harness palette lives
+   in design-system.css so menus and dialogs inherit the same theme. */
 .workspace-shell {
   min-height: 100vh;
-}
-.workspace-sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  width: 208px;
-  padding: 0 12px 14px;
-  background: color-mix(in srgb, var(--page) 65%, var(--surface));
-  border-right: 1px solid var(--line);
-}
-.workspace-brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 56px;
-  padding-inline: 9px;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
   font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-.workspace-global-links {
-  display: grid;
-  gap: 2px;
-  margin: 14px 0 18px;
-}
-.workspace-global-links a,
-.workspace-sidebar nav a,
-.workspace-mobile-nav nav a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 8px 10px;
-  border-radius: 7px;
-  font-size: 12px;
-  color: var(--ink-2);
-}
-.workspace-global-links a:hover,
-.workspace-sidebar nav a:hover,
-.workspace-mobile-nav nav a:hover {
-  background: var(--wash);
-  color: var(--ink);
-}
-.workspace-sidebar nav a[aria-current],
-.workspace-mobile-nav nav a[aria-current] {
-  background: var(--wash);
-  color: var(--ink);
-  font-weight: 500;
-}
-.workspace-sidebar nav svg,
-.workspace-mobile-nav nav svg,
-.workspace-global-links svg {
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.workspace-sidebar nav small,
-.workspace-mobile-nav nav small {
-  margin-left: auto;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.workspace-nav-label {
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  padding: 0 10px;
-  margin-bottom: 8px;
-}
-.workspace-switcher {
-  position: relative;
-  margin-bottom: 14px;
-}
-.workspace-switcher summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 10px;
-  cursor: pointer;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 500;
-}
-.workspace-switcher summary > span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.workspace-switcher > div {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  padding: 5px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 6px 20px #0002;
-}
-.workspace-switcher a {
-  display: block;
-  padding: 9px;
-  font-size: 11px;
-  border-radius: 5px;
-}
-.workspace-switcher a:hover {
-  background: var(--wash);
-}
-.workspace-sidebar nav {
-  display: grid;
-  gap: 2px;
-  overflow-y: auto;
-}
-.workspace-sidebar-footer {
-  display: grid;
-  gap: 6px;
-  margin-top: auto;
-  padding: 20px 10px 0;
-  color: var(--muted);
-  font-size: 10px;
-}
-.workspace-sidebar-footer a {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .workspace-content {
   min-width: 0;
-  margin-left: 208px;
+}
+.workspace-content > .repo-chrome {
+  background: var(--page);
 }
 .workspace-content .repo-topbar {
   max-width: none;
+  min-height: 64px;
+  padding: 12px 32px;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
 }
-.workspace-mobile-nav {
-  display: none;
+.repository-brand .brand-mark {
+  width: 30px;
+  height: 30px;
 }
-.workspace-content .repo-chrome {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+.repository-brand .brand-wordmark {
+  font-size: 20px;
+  letter-spacing: -0.03em;
 }
-@media (max-width: 1023px) {
-  .workspace-sidebar {
-    display: none;
-  }
-  .workspace-content {
-    margin-left: 0;
-  }
-  .workspace-mobile-nav {
-    display: block;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .workspace-mobile-nav > summary {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 12px 20px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  .workspace-mobile-nav > summary > span {
-    margin-left: auto;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  .workspace-mobile-nav > div {
-    padding: 0 16px 20px;
-    border-top: 1px solid var(--line);
-  }
-  .workspace-mobile-nav .workspace-sidebar-footer {
-    display: none;
-  }
+.repository-global-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--ink);
+  font-size: 13px;
 }
-
-.workspace-more > summary {
+.repository-global-links a:hover {
+  color: var(--series-1);
+}
+[data-theme="dark"] .repository-global-links a:last-child {
+  background: var(--action);
+  color: var(--action-ink);
+  border-radius: var(--radius-control);
+  padding: 7px 12px;
+  font-weight: 600;
+}
+[data-theme="dark"] .repository-global-links a:last-child:hover {
+  background: color-mix(in srgb, var(--action) 92%, var(--ink));
+}
+.repository-identity {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 10px;
+  gap: 20px;
+  padding: 20px 32px 18px;
+}
+.repository-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+}
+.repository-name > svg {
+  color: var(--muted);
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+.repository-owner,
+.repository-title {
+  overflow-wrap: anywhere;
+}
+.repository-owner { color: var(--ink-2); }
+.repository-title {
+  color: var(--ink);
+  font-weight: 600;
+}
+.repository-name a:hover {
+  text-decoration: underline;
+}
+.repository-slash {
+  color: var(--muted);
+  font-weight: 300;
+}
+.repository-visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--wash);
   color: var(--muted);
   font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  padding: 0 7px;
+  border-radius: 20px;
+  margin-left: 2px;
+}
+.repository-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.repository-quick-actions a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.repository-quick-actions a:hover {
+  background: var(--wash);
+  border-color: var(--muted);
+}
+.repository-tabs-row {
+  display: flex;
+  align-items: stretch;
+  padding: 0 24px;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+.repository-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  min-width: 0;
+}
+.repository-tabs > a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.repository-tabs > a:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  z-index: 0;
+}
+.repository-tabs > a:hover:before {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.repository-tabs > a > * {
+  position: relative;
+}
+.repository-tabs svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.repository-tabs > a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--raised);
+  border-radius: 6px;
+}
+.repository-tabs > a[aria-current="page"] svg {
+  color: var(--series-1);
+}
+[data-theme="dark"] .repository-tabs > a[aria-current="page"]:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.repository-tabs small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+.repository-more {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+.repository-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px;
+  border-radius: 6px;
   cursor: pointer;
   list-style: none;
 }
-.workspace-more > summary::-webkit-details-marker { display: none; }
-.workspace-more[open] > summary svg { transform: rotate(180deg); }
-.workspace-sidebar nav { gap: 4px; }
-.workspace-sidebar nav a { font-size: 13px; }
-.workspace-content .repo-chrome { background: var(--page); }
-/* A followed link's page on its way (NavigationPending). */
+.repository-more > summary::-webkit-details-marker {
+  display: none;
+}
+.repository-more > summary:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.repository-more > nav {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  width: 210px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px #0002;
+}
+.repository-more nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 4px;
+  padding: 9px 10px;
+  font-size: 13px;
+}
+.repository-more nav a:hover {
+  background: var(--wash);
+}
+.repository-more nav svg {
+  color: var(--muted);
+}
+.workspace-content > main {
+  max-width: 1280px;
+  padding: 32px 32px 48px;
+}
+.workspace-shell .nh-button {
+  min-height: 32px;
+  font-size: 13px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.workspace-shell .nh-button-primary {
+  border-color: color-mix(in srgb, var(--action) 85%, #000);
+}
+.workspace-shell .nh-button:not(.nh-button-primary):not(.bg-transparent) {
+  background: var(--wash);
+}
+.workspace-shell h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.workspace-shell input:not([type="checkbox"]):not([type="radio"]),
+.workspace-shell select,
+.workspace-shell textarea {
+  border-color: var(--line);
+  border-radius: 6px;
+}
+.workspace-shell input[type="checkbox"] {
+  accent-color: var(--series-1);
+  margin-top: 2px;
+}
+.workspace-shell .repo-code > .grid > aside {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+.workspace-shell .repo-file-toolbar {
+  padding-bottom: 0;
+}
+.repository-branch-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--wash);
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.repository-branch-select:hover {
+  border-color: var(--muted);
+}
+.repository-file-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.repository-file-links a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.repository-file-links a:hover {
+  color: var(--series-1);
+}
+.repository-latest {
+  border-radius: 8px 8px 0 0;
+  min-height: 58px;
+}
+.repository-latest > span:first-child {
+  background: var(--raised);
+}
+.repository-latest > a {
+  color: var(--series-1);
+}
+.repository-files a {
+  min-height: 46px;
+  padding-block: 12px;
+  font-size: 14px;
+}
+.repository-files svg {
+  color: var(--muted);
+}
+.repository-files .repository-folder {
+  color: var(--accent);
+  fill: var(--accent);
+}
+.repository-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.repository-files-header span:last-child {
+  font-size: 11px;
+}
+.repository-readme > h2 {
+  background: var(--wash);
+  border-radius: 8px 8px 0 0;
+  padding-block: 14px;
+}
+.repository-readme .readme {
+  padding-top: 28px;
+  padding-bottom: 32px;
+}
+.repository-protections > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px;
+  background: var(--wash);
+}
+.repository-protections > header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.repository-protections > header p {
+  margin-top: 4px;
+  max-width: 620px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.repository-rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+.repository-rule > svg {
+  color: var(--good-text);
+  flex-shrink: 0;
+}
+.repository-rule code {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.repository-rule p {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.repository-rule > .nh-button {
+  margin-left: auto;
+}
+@media (max-width: 640px) {
+  .repository-environment-rule {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: start;
+  }
+  .repository-environment-rule > .nh-button {
+    grid-column: 2;
+    margin-left: 0;
+    justify-self: start;
+  }
+}
+.repository-protection-form {
+  padding: 24px;
+  border-top: 1px solid var(--line);
+}
+.repository-protection-form > label {
+  max-width: 640px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+.repository-protection-form input:not([type="checkbox"]) {
+  font-size: 14px;
+}
+.repository-rule-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.repository-rule-options > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.repository-rule-options > label + label {
+  border-top: 1px solid var(--line);
+}
+.repository-rule-options strong {
+  display: block;
+  font-weight: 600;
+}
+.repository-rule-options small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+.repository-danger-button {
+  color: var(--critical);
+}
 .navigation-pending {
   position: fixed;
   inset: 0 0 auto;
@@ -209,5 +466,283 @@
 .navigation-pending[data-on] {
   opacity: 1;
   transform: scaleX(0.85);
-  transition: transform 8s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 0.15s;
+  transition:
+    transform 8s cubic-bezier(0.1, 0.7, 0.2, 1),
+    opacity 0.15s;
+}
+@media (max-width: 900px) {
+  .repository-identity {
+    align-items: flex-start;
+  }
+  .repository-quick-actions {
+    display: none;
+  }
+  .repository-global-links {
+    display: none;
+  }
+  .repository-name {
+    font-size: 18px;
+  }
+}
+@media (max-width: 1023px) {
+  .workspace-shell .repo-code > .grid > aside {
+    padding-left: 0;
+    padding-top: 24px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+@media (max-width: 640px) {
+  .workspace-content .repo-topbar {
+    padding: 12px 16px;
+    gap: 12px;
+    min-height: 56px;
+  }
+  .repository-brand .brand-wordmark {
+    display: none;
+  }
+  .repository-identity {
+    padding: 16px;
+  }
+  .repository-tabs-row {
+    padding: 0 8px;
+    gap: 0;
+  }
+  .repository-tabs {
+    gap: 0;
+  }
+  .repository-tabs > a {
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .workspace-content > main {
+    padding: 20px 16px 40px;
+  }
+  .repository-file-links {
+    gap: 10px;
+    font-size: 12px;
+  }
+  .repository-protections > header {
+    flex-wrap: wrap;
+  }
+  .repository-protection-form {
+    padding: 16px;
+  }
+  .repository-protection-form .nh-button {
+    min-height: 36px;
+  }
+}
+.repository-list-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--wash);
+  padding: 0 12px;
+  color: var(--muted);
+}
+.repository-list-search:focus-within {
+  outline: 2px solid var(--series-1);
+  outline-offset: -1px;
+  background: var(--surface);
+}
+.repository-list-search input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+}
+.repository-list-search input:focus-visible {
+  outline: none;
+}
+.repository-pulls > header {
+  align-items: center;
+}
+.repository-list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--wash);
+  border-bottom: 1px solid var(--line);
+}
+.repository-list-filters .nh-button {
+  border: 0;
+  background: transparent !important;
+  box-shadow: none;
+  color: var(--muted);
+}
+.repository-list-filters .nh-button[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+.repository-pulls-empty {
+  padding: 40px 16px 20px;
+  text-align: center;
+}
+.repository-pulls-empty > svg {
+  margin: 0 auto;
+  color: var(--muted);
+}
+.repository-pulls-empty > div {
+  padding-top: 16px;
+}
+.repository-pulls-empty > div > p {
+  font-size: 22px;
+  font-weight: 600;
+}
+.repository-actions {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 32px;
+}
+.repository-actions-sidebar > h1 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.repository-actions-sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+.repository-actions-sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+.repository-actions-sidebar nav button:hover,
+.repository-actions-sidebar nav button[aria-pressed="true"] {
+  background: var(--wash);
+}
+.repository-actions-sidebar nav button[aria-pressed="true"] {
+  font-weight: 600;
+  box-shadow: inset 3px 0 var(--series-1);
+}
+.repository-actions-sidebar nav button > span {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 20px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.repository-actions-sidebar nav svg {
+  color: var(--muted);
+}
+.repository-actions-note {
+  margin-top: 24px;
+  padding: 16px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.repository-actions-note p {
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.repository-actions-main > header h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.repository-actions-main > header p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.repository-action-run > div:first-child > .nh-button {
+  margin-left: auto;
+}
+.repository-action-run > ul:empty {
+  display: none;
+}
+.repository-runner-settings {
+  background: var(--surface);
+}
+@media (max-width: 800px) {
+  .repository-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .repository-actions-sidebar nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .repository-actions-sidebar nav button {
+    flex-shrink: 0;
+  }
+  .repository-actions-note {
+    display: none;
+  }
+  .repository-actions-sidebar > h1 {
+    margin-bottom: 12px;
+  }
+}
+
+.repository-protection-form > label > span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.workspace-shell [role="dialog"] {
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .repo-topbar summary[aria-label="Account menu"] > span:nth-child(2) {
+    display: none;
+  }
+}
+
+/* Branch browsing stays compact; administration has its own settings route. */
+.workspace-shell main.branch-page,
+.workspace-shell main.repository-rules-page { width: 100%; max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; }
+.branch-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.branch-heading h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.025em; }
+.branch-rules-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.branch-rules-link:hover { color: var(--ink); }
+.branch-toolbar { display: flex; align-items: center; gap: 16px; margin: 16px 0 12px; }
+.branch-search { position: relative; flex: 1; max-width: 420px; min-width: 0; }
+.branch-search > svg { position: absolute; top: 10px; left: 10px; color: var(--muted); pointer-events: none; }
+.branch-search input { width: 100%; min-width: 0; height: 34px; padding: 6px 10px 6px 31px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 13px; outline: none; }
+.branch-search input:focus { border-color: var(--series-1); }
+.branch-create { max-width: 720px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 180px); align-items: end; gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.branch-create label { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; }
+.branch-create input,.branch-create select { min-width: 0; width: 100%; height: 34px; padding: 6px 10px; font-size: 13px; }
+.branch-create-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+.branch-list { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.branch-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px; }
+.branch-row + .branch-row { border-top: 1px solid var(--line); }
+.branch-row > svg { flex-shrink: 0; }
+.branch-row-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
+.branch-row-name a { color: var(--series-1); font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.branch-row-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.branch-row-name span { font-size: 11px; color: var(--muted); }
+.branch-row-protection { flex-shrink: 0; color: var(--muted); }
+.branch-row-sha { flex-shrink: 0; font-size: 11px; color: var(--muted); }
+.branch-footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; margin-top: 16px; font-size: 12px; color: var(--muted); }
+.branch-footer > details { flex: 1; min-width: 120px; }
+.branch-footer summary { cursor: pointer; }
+.branch-footer a:hover { color: var(--ink); }
+@media (max-width: 440px) {
+  .workspace-shell main.branch-page,
+  .workspace-shell main.repository-rules-page { padding: 20px 16px 32px; }
+  .branch-create { grid-template-columns: minmax(0, 1fr); }
+  .branch-toolbar { gap: 10px; }
+  .branch-row { gap: 8px; padding: 12px; }
 }

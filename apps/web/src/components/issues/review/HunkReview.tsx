@@ -6,6 +6,7 @@ import type { CodeAnchor, CodeComment } from "./types";
 import { ReviewThread } from "./ReviewThread";
 import styles from "./Review.module.css";
 import { useReviewDraft } from "./useReviewDraft";
+import { suggestionFence } from "@swarm/api/review";
 
 export function HunkReview({
   file,
@@ -15,6 +16,10 @@ export function HunkReview({
   pending,
   onComment,
   onResolve,
+  onPendingComment,
+  pendingLabel,
+  onChooseSuggestion,
+  selectedSuggestions,
 }: {
   file: ChangedFile;
   draftKey: string;
@@ -27,6 +32,10 @@ export function HunkReview({
     replyTo?: string,
   ) => Promise<boolean>;
   onResolve: (root: CodeComment) => Promise<void>;
+  onPendingComment?: (anchor:CodeAnchor,body:string)=>Promise<boolean>;
+  pendingLabel?: string;
+  onChooseSuggestion?:(comment:CodeComment,single:boolean)=>void;
+  selectedSuggestions?:Set<string>;
 }) {
   const hunks = useMemo(() => parsePatch(file.patch ?? ""), [file.patch]);
   const [draft, setDraft] = useReviewDraft(draftKey);
@@ -188,12 +197,18 @@ export function HunkReview({
                 className={styles.composer}
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (await onComment(chosen, body)) {
+                  if (await (onPendingComment??onComment)(chosen, body)) {
                     setBody("");
                     setSelection(null);
                   }
                 }}
               >
+                {chosen.side==="RIGHT"&&<Button size="sm" disabled={pending} onClick={()=>{
+                  const selected=hunk.rows.filter(row=>row.new!==null&&row.new>=chosen.startLine&&row.new<=chosen.line).map(row=>row.text);
+                  const next=(body.trim()?body.trimEnd()+"\n\n":"")+suggestionFence(selected);
+                  if(next.length>16000){setNotice("This selection is too large for a suggestion. Select fewer lines.");return;}
+                  setBody(next);document.getElementById(`review-${hi}`)?.focus();
+                }}>Suggest change</Button>}
                 <label htmlFor={`review-${hi}`}>
                   Comment on {chosen.side === "LEFT" ? "before" : "after"} · L
                   {chosen.startLine}
@@ -205,7 +220,7 @@ export function HunkReview({
                   autoFocus
                   rows={3}
                   maxLength={16000}
-                  placeholder="What should the agent change?"
+                  placeholder="Describe your feedback on this code"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   disabled={pending}
@@ -217,8 +232,9 @@ export function HunkReview({
                     type="submit"
                     disabled={pending || !body.trim()}
                   >
-                    {pending ? "Posting…" : "Post comment"}
+                    {pending ? "Saving…" : onPendingComment ? pendingLabel : "Post comment"}
                   </Button>
+                  {onPendingComment&&<Button size="sm" disabled={pending||!body.trim()} onClick={async()=>{if(await onComment(chosen,body)){setBody("");setSelection(null);}}}>Post single comment</Button>}
                   <Button
                     size="sm"
                     disabled={pending}
@@ -242,6 +258,8 @@ export function HunkReview({
                 pending={pending}
                 onReply={(text) => onComment(root, text, root.id)}
                 onResolve={() => onResolve(root)}
+                onChooseSuggestion={onChooseSuggestion}
+                suggestionSelected={selectedSuggestions?.has(root.id)}
               />
             ))}
           </section>

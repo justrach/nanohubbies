@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, GitBranch, KeyRound, Terminal, Webhook } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Commands, Input } from "@/components/controls";
 import { Card } from "@/components/ui";
 import { FirstPrompt } from "@/onboarding/FirstPrompt";
@@ -14,39 +14,57 @@ import { cn } from "@/lib/utils";
 import { Link } from "@/lib/router";
 import { cloneCommand } from "@swarm/api/connect";
 import { trunkHref } from "../paths";
+import { GitAccess } from "./GitAccess";
+import {CliAccess} from "./CliAccess";
+import {McpConnection} from "../contributions/McpConnection";
 
 type Way = "git" | "cli" | "http";
 
 /** How an agent (Claude Code, Codex, a Codegraff agent, a script, a person)
  *  starts working on the trunk: a push token under your name, then one prompt
  *  that points the agent at the trunk's brief. */
-export function ConnectPage({
+export function ConnectPage(props:{trunk:string;origin:string}) {
+  const {repositoryMode}=useTrunk();
+  const [agentsOpen,setAgentsOpen]=useState(false);
+  useEffect(()=>{
+    const reveal=()=>{if(window.location.hash==="#agent-collaboration")setAgentsOpen(true);};
+    reveal();window.addEventListener("hashchange",reveal);return()=>window.removeEventListener("hashchange",reveal);
+  },[]);
+  if(repositoryMode!=="git")return <AgentConnectPage {...props}/>;
+  return <main className="mx-auto max-w-[1000px] space-y-8 px-5 py-8"><GitAccess {...props}/>
+    <CliAccess {...props}/>
+    <details id="agent-collaboration" open={agentsOpen} onToggle={e=>setAgentsOpen(e.currentTarget.open)} className="border-t border-line pt-5"><summary className="cursor-pointer text-sm font-semibold">Agent collaboration (optional)</summary><AgentConnectPage {...props} embedded/></details></main>;
+}
+function AgentConnectPage({
   trunk,
   origin,
+  embedded=false,
 }: {
   trunk: string;
   origin: string;
+  embedded?:boolean;
 }) {
   const { user, providers, loaded } = useSession();
   const signIn = useSignInUrl();
-  const { initialTokens } = useTrunk();
+  const { initialTokens,repositoryMode } = useTrunk();
   const [name, setName] = useState("my-agent");
   const { made, tokens, error, busy, make, revoke } = usePushTokens(trunk, initialTokens);
   const [way, setWay] = useState<Way>("git");
 
   const handle = made?.agent ?? agentHandle(name);
 
+  const Root=embedded?"section":"main";
+  const Heading=embedded?"h2":"h1";
   return (
-    <main className="mx-auto max-w-[920px] space-y-5 px-5 py-8">
+    <Root className="mx-auto max-w-[920px] space-y-5 px-5 py-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">
+        <Heading className="text-xl font-semibold tracking-tight text-ink">
           Connect an agent
-        </h1>
+        </Heading>
         <p className="mt-1.5 max-w-[75ch] text-[13px] leading-6 text-ink-2">
           Any agent that speaks git works here. Push a feature branch for a
           native pull request, or stack a new branch on an earlier change.
-          Direct pushes to main still use the sequencer’s conflict checks;
-          git reports competing changes so the agent can update and try again.
+          {repositoryMode==="git"?"Repository roles and branch protections apply to every agent.":"Direct pushes to main use the sequencer’s conflict checks; Git reports competing changes so the agent can update and try again."}
         </p>
         <p className="mt-2 text-xs text-ink-2">
           <Link
@@ -111,6 +129,7 @@ export function ConnectPage({
         )}
       </Step>
 
+      <McpConnection origin={origin} trunk={trunk} handle={handle} />
       <Step n={2} title="Give your agent this prompt" icon={Bot}>
         <FirstPrompt
           trunk={trunk}
@@ -217,7 +236,7 @@ export function ConnectPage({
                 </span>
                 <span className="text-muted">
                   {t.usedAt
-                    ? `last pushed ${ago(Date.now() - t.usedAt)}`
+                    ? `last used ${ago(Date.now() - t.usedAt)}`
                     : "not used yet"}
                 </span>
                 <Button
@@ -233,7 +252,7 @@ export function ConnectPage({
           </ul>
         </Card>
       )}
-    </main>
+    </Root>
   );
 }
 

@@ -10,6 +10,12 @@ import type { Head, RepoInfo } from "@/lib/types";
  *  seconds, so pages that read only this do not redraw as changes land. */
 export interface TrunkState {
   trunk: string;
+  archive?:import("@swarm/api/review").ArchiveState;
+  readOnly?:boolean;
+  refreshArchive?:()=>void;
+  address?: {namespace:string;name:string}|null;
+  isPrivate?: boolean;
+  repositoryMode?: "git" | "snapshot";
   /** The newest published version: what clones and these pages read. */
   head: Head | null;
   /** The newest landed version, which may still be publishing. */

@@ -4,6 +4,7 @@ import { compact } from "@/lib/format";
 import type { RepoInfo } from "@/lib/types";
 import { trunkHref } from "../paths";
 import { LiveStats } from "./LiveStats";
+import { AgentContributions } from "../contributions/AgentContributions";
 
 /** The side column of a trunk's front page: where it came from, what is
  *  happening on it now, and the two ways to take part. */
@@ -42,22 +43,23 @@ export function About({ trunk, repo, source }: { trunk: string; repo: RepoInfo |
             </div>
           </>
         ) : (
-          <p className="leading-6 text-ink-2">{source?.startsWith("template:") ? `Made here from the ${source.slice(9)} template.` : "Made here, not imported."}</p>
+          <p className="leading-6 text-ink-2">{source?.startsWith("template:") ? `Made here from the ${source.slice(9)} template.` : "Git repository hosted on Nanohub."}</p>
         )}
       </section>
       <section className="border-t border-line pt-5">
-        <h2 className="mb-3 font-semibold text-ink">Now</h2>
+        <h2 className="mb-3 font-semibold text-ink">Repository activity</h2>
         <LiveStats />
         <Link href={trunkHref(trunk, "/live")} className="mt-3 inline-block text-xs text-series-1 hover:underline">
           Watch it live
         </Link>
       </section>
+      <AgentContributions trunk={trunk} compact />
       <section className="space-y-3 border-t border-line pt-5">
         <Link href={trunkHref(trunk, "/connect")} className="group flex gap-2.5">
           <KeyRound size={16} className="mt-0.5 shrink-0 text-muted" aria-hidden />
           <span>
             <span className="font-medium text-ink group-hover:text-series-1">Connect an agent</span>
-            <span className="block text-xs leading-5 text-muted">Any agent that speaks git: a push lands by itself unless it touches code that changed.</span>
+            <span className="block text-xs leading-5 text-muted">Clone the repository and connect an agent to work on a branch.</span>
           </span>
         </Link>
         {repo && (

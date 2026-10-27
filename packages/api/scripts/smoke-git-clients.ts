@@ -1,0 +1,67 @@
+import assert from "node:assert/strict";
+import {execFile} from "node:child_process";
+import {promisify} from "node:util";
+import {mkdir,writeFile} from "node:fs/promises";
+import {join} from "node:path";
+import {teamFixture} from "./team/fixture.ts";
+const f=await teamFixture(),exec=promisify(execFile);
+const base="/api/trunks/git-clients";
+try {
+  const owner=await f.login("owner","101"),reader=await f.login("reader","202"),outsider=await f.login("outsider","303");
+  await f.json("POST",base,{mode:"git"},owner);
+  await f.json("POST","/api/trunks/other-client-repo",{mode:"git"},owner);
+  const calls=f.provider.calls;f.provider.down=true;
+  const issued=await f.json("POST",`${base}/git-tokens`,{label:"Plain Git client"},owner);
+  assert.equal(issued.kind,"git");assert.match(issued.token,/^nhg_/);
+  const auth={authorization:`Basic ${btoa(`arbitrary-git-username:${issued.token}`)}`};
+  const list=await f.json("GET",`${base}/git-tokens`,undefined,owner);
+  assert.equal(list.length,1);assert.ok(!("token" in list[0]));assert.ok(!("hash" in list[0]));
+  assert.equal((await f.request("POST",`${base}/git-tokens`,{label:"forged"},outsider)).status,404);
+  assert.equal((await f.request("POST",`${base}/git-tokens`,{label:"cross-origin"},{...owner,origin:"https://evil.invalid"})).status,403);
+  for(const path of ["branches","repository/audit","git-tokens","secrets","agents"])
+    assert.equal((await f.request("GET",`${base}/${path}`,undefined,auth)).status,401,"Git token must not grant HTTP API access");
+  assert.equal((await f.request("GET","/git/other-client-repo.git/HEAD",undefined,auth)).status,401);
+  const source=join(f.dir,"plain-client");await mkdir(source);
+  const git=async(...args:string[])=> (await exec("git",["-C",source,"-c","user.name=Human contributor","-c","user.email=human@example.invalid",...args],{env:{...process.env,GIT_TERMINAL_PROMPT:"0",GIT_CONFIG_NOSYSTEM:"1"}})).stdout.trim();
+  await git("init","-b","main");await writeFile(join(source,"README.md"),"Plain Git, no registered agent.\n");await git("add",".");await git("commit","-m","Human initial commit");
+  const remote=`${f.origin}/git/git-clients.git`;
+  // Standard Git credential environment, with no provider-specific client,
+  // agent registration, API integration or token in the remote URL.
+  await git("config","credential.helper",`!f() { test "$1" = get && printf 'username=git\\npassword=%s\\n' "$NANOHUB_GIT_TEST_TOKEN"; }; f`);
+  const transport=async(...args:string[])=>exec("git",["-C",source,...args],{env:{...process.env,GIT_TERMINAL_PROMPT:"0",NANOHUB_GIT_TEST_TOKEN:issued.token}});
+  await transport("push",remote,"main");
+  const head=await git("rev-parse","HEAD");
+  const clone=join(f.dir,"fresh-human-clone");
+  await exec("git",["-c",`http.extraHeader=${auth.authorization.startsWith("Basic ")?`Authorization: ${auth.authorization}`:""}`,"clone",remote,clone],{env:{...process.env,GIT_TERMINAL_PROMPT:"0"}});
+  assert.equal((await exec("git",["-C",clone,"rev-parse","HEAD"])).stdout.trim(),head);
+  await exec("git",["-C",clone,"fsck","--strict"]);
+  const room=await f.json("GET",`${base}/agents`,undefined,owner);
+  assert.equal(room.length,0,"normal Git usage must not create an agent");
+  const rule={name:"Protected refs",target:"branch",enforcement:"active",conditions:{ref_name:{include:["refs/heads/protected/**"],exclude:[]}},rules:[{type:"creation"}],bypass_actors:[{actor_type:"User",actor_id:"codegraff:owner",bypass_mode:"always"}]};
+  await f.json("POST",`${base}/rulesets`,rule,owner);
+  await assert.rejects(transport("push",remote,"HEAD:refs/heads/protected/owner-token"),"a Git token never inherits signed-human bypass permissions");
+  const invite=await f.json("POST",`${base}/collaborators`,{userId:"codegraff:reader",role:"reader"},owner);
+  await f.json("POST","/api/invitations/accept",{trunk:"git-clients",token:invite.token},reader);
+  const readToken=await f.json("POST",`${base}/git-tokens`,{label:"Read-only Git"},reader);
+  const readAuth={authorization:`Basic ${btoa(`git:${readToken.token}`)}`};
+  assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,readAuth)).status,200);
+  assert.equal((await f.request("GET","/git/git-clients.git/info/refs?service=git-receive-pack",undefined,readAuth)).status,403);
+  await f.json("PATCH",`${base}/collaborators`,{userId:"codegraff:reader",role:null},owner);
+  assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,readAuth)).status,404,"removed membership takes effect on existing Git tokens");
+  assert.equal((await f.json("DELETE",`/api/tokens/${issued.id}`,undefined,outsider)).revoked,false);
+  assert.equal((await f.json("DELETE",`/api/tokens/${issued.id}`,undefined,owner)).revoked,true);
+  assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,auth)).status,401);
+  assert.equal((await f.json("GET",`${base}/git-tokens`,undefined,owner)).length,0);
+  const expired=await f.json("POST",`${base}/git-tokens`,{label:"Expiry fixture"},owner);
+  const db=await f.mf.getD1Database("AUTH_DB");
+  const stored=await db.prepare("SELECT hash FROM git_token WHERE id=?").bind(expired.id).first<{hash:string}>();
+  assert.match(stored!.hash,/^[a-f0-9]{64}$/);assert.notEqual(stored!.hash,expired.token);
+  await db.prepare("UPDATE git_token SET expiresAt=? WHERE id=?").bind(Date.now()-1000,expired.id).run();
+  assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,{authorization:`Basic ${btoa(`git:${expired.token}`)}`})).status,401);
+  await f.json("POST","/api/namespaces",{name:"human"},owner);
+  await f.json("POST","/api/repos/human/plain",{},owner);
+  const named=await f.json("POST","/api/repos/human/plain/git-tokens",{label:"Named repository"},owner);
+  assert.equal((await f.request("GET","/git/human/plain.git/HEAD",undefined,{authorization:`Basic ${btoa(`git:${named.token}`)}`})).status,200);
+  assert.equal(f.provider.calls,calls,"independent Git repositories must not depend on Codegraff room APIs");
+  console.log("PASS: ordinary Git push/clone/fsck without agent registration, scoped credentials, reader access, current membership, bypass isolation, API denial and revocation");
+}finally{await f.close();}

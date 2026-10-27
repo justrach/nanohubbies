@@ -9,7 +9,7 @@ import { sha1Hex } from "./sha1";
 const utf8 = new TextEncoder();
 const fromUtf8 = new TextDecoder();
 
-export type ObjectType = "blob" | "tree" | "commit";
+export type ObjectType = "blob" | "tree" | "commit" | "tag";
 
 /** An object in loose form, `<type> <size>\0<body>`, before compression. */
 export interface GitObject {
@@ -119,7 +119,7 @@ export function buildTree(files: Map<string, string>): { root: string; objects: 
 
 export function decode(raw: Uint8Array): { type: ObjectType; body: Uint8Array } {
   // The type is told by its first letters, without a decoder call per object.
-  const type: ObjectType | null = raw[0] === 0x62 ? "blob" : raw[0] === 0x63 ? "commit" : raw[0] === 0x74 && raw[1] === 0x72 ? "tree" : null;
+  const type: ObjectType | null = raw[0] === 0x62 ? "blob" : raw[0] === 0x63 ? "commit" : raw[0] === 0x74 && raw[1] === 0x72 ? "tree" : raw[0] === 0x74 && raw[1] === 0x61 ? "tag" : null;
   const nul = raw.indexOf(0);
   if (!type || nul < 0) throw new Error("not a blob, tree or commit in loose form");
   return { type, body: raw.subarray(nul + 1) };

@@ -73,7 +73,7 @@ export function Releases({ trunk, initial }: { trunk: string; initial: ReleaseLi
           >
             <label className="space-y-1 text-xs text-muted">
               Tag
-              <input className={field} name="tag" placeholder="v1.0.0" required maxLength={80} pattern="[A-Za-z0-9][A-Za-z0-9._\-]*" />
+              <input className={field} name="tag" placeholder="v1.0.0" required maxLength={245} />
             </label>
             <label className="space-y-1 text-xs text-muted">
               Title

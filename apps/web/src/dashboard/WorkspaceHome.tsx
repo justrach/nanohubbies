@@ -43,6 +43,7 @@ const destinations = [
 
 export function WorkspaceHome({ workspace }: { workspace: TrunkListing }) {
   const base = `/t/${encodeURIComponent(workspace.name)}`;
+  const native=workspace.source==="git:lossless";
   const github = workspace.source.startsWith("github:")
     ? workspace.source.slice(7).split("@")[0]
     : null;
@@ -74,35 +75,36 @@ export function WorkspaceHome({ workspace }: { workspace: TrunkListing }) {
             </span>
           </p>
         </div>
-        <LinkButton size="sm" href={`${base}/overview`} variant="ghost">
-          Workspace overview <ArrowRight size={13} />
+        <LinkButton size="sm" href={native?base:`${base}/overview`} variant="ghost">
+          {native?"Open repository":"Workspace overview"} <ArrowRight size={13} />
         </LinkButton>
       </header>
       <nav className={styles.destinations} aria-label="Explore workspace">
         {destinations.map(({ label, detail, path, Icon }) => (
-          <Link key={label} href={base + path} className={styles.destination} title={detail}>
+          <Link key={label} href={base + path} className={styles.destination} title={native&&label==="Pull requests"?"Review changes in this repository.":detail}>
             <Icon size={15} aria-hidden /><span>{label}</span><ArrowRight size={12} className={styles.arrow} />
           </Link>
         ))}
       </nav>
       <div className={styles.actions}>
         <section className={styles.room} aria-labelledby="continue-work">
-          <div className={styles.actionHeading}><MessageSquare size={18} /><h2 id="continue-work">Agent room</h2></div>
-          <p>Follow progress and share the next step.</p>
-          <LinkButton href={`${base}/room`} variant="primary">Open room <ArrowRight size={13} /></LinkButton>
+          <div className={styles.actionHeading}><MessageSquare size={18} /><h2 id="continue-work">{native?"Collaborators":"Agent room"}</h2></div>
+          <p>{native?"Invite people and choose their repository roles.":"Follow progress and share the next step."}</p>
+          <LinkButton href={`${base}/${native?"people":"room"}`} variant={native?"secondary":"primary"}>{native?"Manage collaborators":"Open room"} <ArrowRight size={13} /></LinkButton>
         </section>
         <section className={styles.connect} aria-labelledby="connect-agent">
-          <div className={styles.actionHeading}><Terminal size={18} /><h2 id="connect-agent">Connect an agent</h2></div>
-          <p>Get a credential and a prompt for your harness.</p>
-          <LinkButton href={`${base}/setup`}>Set up agent <ArrowRight size={13} /></LinkButton>
+          <div className={styles.actionHeading}><Terminal size={18} /><h2 id="connect-agent">{native?"Git access":"Connect an agent"}</h2></div>
+          <p>{native?"Clone and push from any terminal or Git client.":"Get a credential and a prompt for your harness."}</p>
+          <LinkButton href={`${base}/${native?"connect":"setup"}`} variant={native?"primary":"secondary"}>{native?"Set up Git access":"Set up agent"} <ArrowRight size={13} /></LinkButton>
         </section>
       </div>
+      {native&&<p className="text-xs text-muted">Want agent collaboration? <Link className="text-series-1 underline underline-offset-2" href={`${base}/connect#agent-collaboration`}>Connect any coding agent</Link> when you need it.</p>}
       <details className={styles.explainer}>
         <summary>
           <BookOpen size={15} />
           How this workspace works
         </summary>
-        <ol>
+        {native?<><ol><li><strong>Work with Git.</strong> Clone, create a branch, commit and push from your usual tools.</li><li><strong>Review changes.</strong> Open a pull request and satisfy the repository’s review and check requirements.</li><li><strong>Collaborate your way.</strong> Invite people or optionally connect an agent from any coding tool.</li></ol><p>Git history, branches, tags and binary assets live in this repository.</p></>:<><ol>
           <li>
             <strong>Choose work in Issues.</strong> Open a task to read its
             description and context.
@@ -121,12 +123,14 @@ export function WorkspaceHome({ workspace }: { workspace: TrunkListing }) {
           reflect the import; full history, binary assets and issue discussions
           remain on GitHub.
         </p>
+        </>}
       </details>
     </div>
   );
 }
 
 export function sourceLabel(source: string): string {
+  if(source==="git:lossless")return "Git repository";
   if (source.startsWith("github:")) return source.slice(7).split("@")[0];
   if (source.startsWith("template:")) return `Demo · ${source.slice(9)}`;
   if (!source || source === "files") return "Local repository";

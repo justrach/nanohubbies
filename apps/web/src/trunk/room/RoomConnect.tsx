@@ -9,6 +9,7 @@ import { FirstPrompt } from "@/onboarding/FirstPrompt";
 import { agentHandle } from "@/onboarding/model";
 import { useTrunk } from "@/trunk/context";
 import { usePushTokens } from "@/onboarding/usePushTokens";
+import { McpConnection } from "../contributions/McpConnection";
 
 export function RoomConnect({
   trunk,
@@ -142,6 +143,7 @@ export function RoomConnect({
           )}
         </div>
         <div className="min-w-0 space-y-5">
+          <McpConnection origin={origin} trunk={trunk} handle={name} />
           <FirstPrompt
             trunk={trunk}
             origin={origin}

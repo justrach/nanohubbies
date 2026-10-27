@@ -30,6 +30,8 @@ interface Legacy {
 export default {
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
+    const cliAuthorization=pathname==="/cli/authorize"||pathname==="/cli/authorize/";
+    const cliDistribution=pathname==="/nh/install.mjs"||pathname==="/nh/latest.json"||/^\/nh\/releases\/\d+\.\d+\.\d+\/(nh\.mjs|SHA256SUMS)$/.test(pathname);
     if (pathname.startsWith("/api/") || pathname.startsWith("/git/")) return api.fetch(request, env, ctx);
     const { LEGACY: legacy, LEGACY_PATHS: paths = "", LEGACY_ORIGIN: origin } = env as Env & Legacy;
     const toLegacy = () => {
@@ -37,12 +39,16 @@ export default {
       const url = new URL(request.url);
       return legacy!.fetch(new Request(`${origin}${url.pathname}${url.search}`, request));
     };
-    if (legacy && paths.split(",").some((p) => p && (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(`${p}/`)))) {
+    if (!cliAuthorization && !cliDistribution && legacy && paths.split(",").some((p) => p && (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(`${p}/`)))) {
       return toLegacy();
     }
     const res = await (next as NextHandler).fetch(request, env, ctx);
-    if (legacy && res.status === 404 && (request.method === "GET" || request.method === "HEAD")) return toLegacy();
-    if (pathname.startsWith("/t/") || pathname === "/dashboard" || pathname === "/") {
+    if (!cliAuthorization && !cliDistribution && legacy && res.status === 404 && (request.method === "GET" || request.method === "HEAD")) return toLegacy();
+    if(cliDistribution) {
+      const headers=new Headers(res.headers);headers.set("Cache-Control","public, max-age=0, must-revalidate");headers.set("X-Content-Type-Options","nosniff");
+      return new Response(res.body,{status:res.status,statusText:res.statusText,headers});
+    }
+    if (/^\/[^/]+\/[^/]+(?:\/|$)/.test(pathname) || pathname.startsWith("/t/") || pathname === "/dashboard" || pathname === "/") {
       const headers = new Headers(res.headers);
       headers.set("Cache-Control", "private, no-store");
       headers.set("Vary", "Cookie, Authorization");

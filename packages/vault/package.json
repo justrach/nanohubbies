@@ -1,0 +1,10 @@
+{
+  "name": "@swarm/vault",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8790 --persist-to ../../.wrangler/vault",
+    "check": "wrangler types && tsrs --noEmit"
+  },
+  "devDependencies": {}
+}

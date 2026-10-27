@@ -1,0 +1,17 @@
+**
+!package.json
+!bun.lock
+!apps/
+!apps/web/
+!apps/web/package.json
+!packages/
+!packages/api/
+!packages/api/package.json
+!packages/vault/
+!packages/vault/package.json
+!packages/cli/
+!packages/cli/package.json
+!tools/
+!tools/codegraff/
+!tools/codegraff/Dockerfile
+!tools/codegraff/Dockerfile.dockerignore

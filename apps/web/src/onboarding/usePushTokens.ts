@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session";
 import { agentHandle } from "./model";
 
 export interface PushToken {
+  kind?: "git";
   id: string;
   label: string;
   trunk: string | null;
@@ -17,7 +18,7 @@ export interface PushToken {
 /** Secrets live only in this mount; lists return metadata, never the token. */
 export function usePushTokens(trunk: string, initial?: { owner: string | null; tokens: PushToken[] }) {
   const { user } = useSession();
-  const seeded = initial && initial.owner === user?.id ? initial.tokens : undefined;
+  const seeded = initial && initial.owner === user?.id ? initial.tokens.filter(t=>t.kind!=="git") : undefined;
   const first = useRef(true);
   const reading = useRef(false);
   const [tokens, setTokens] = useState<PushToken[]>(seeded ?? []);
@@ -43,7 +44,7 @@ export function usePushTokens(trunk: string, initial?: { owner: string | null; t
       if (current.current !== requested || readRevision !== revision.current)
         return;
       const next = all.filter(
-        (token) => token.trunk === trunk && token.expiresAt > Date.now(),
+        (token) => token.kind !== "git" && token.trunk === trunk && token.expiresAt > Date.now(),
       );
       setTokens(next);
       setMade((secret) =>

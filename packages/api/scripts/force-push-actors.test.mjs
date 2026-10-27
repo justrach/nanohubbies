@@ -1,0 +1,32 @@
+import test,{after}from'node:test';import assert from'node:assert/strict';import{DatabaseSync}from'node:sqlite';import{build}from'esbuild';import{mkdtemp,rm}from'node:fs/promises';import{tmpdir}from'node:os';import{join}from'node:path';import{pathToFileURL}from'node:url';
+const dir=await mkdtemp(join(tmpdir(),'nh-force-actors-'));after(()=>rm(dir,{recursive:true,force:true}));await build({entryPoints:['repository/policy','repository/store','repository/rulesets','repository/routes'].map(p=>new URL('../src/'+p+'.ts',import.meta.url).pathname),bundle:true,platform:'node',format:'esm',outbase:new URL('../src',import.meta.url).pathname,outdir:dir,outExtension:{'.js':'.mjs'}});const load=p=>import(pathToFileURL(join(dir,p+'.mjs'))),{Policies}=await load('repository/policy'),{Repository}=await load('repository/store'),{Rulesets}=await load('repository/rulesets'),{repositoryRoute}=await load('repository/routes');
+const sha=c=>c.repeat(40),a={commit:sha('a'),tree:sha('1')},b={commit:sha('b'),tree:sha('2')};const policy={branch:'feature',pullRequest:false,approvals:0,checks:[],beforeOpen:[],preventForce:true,preventDelete:true,allowForcePush:['owner']};
+function fixture(){const db=new DatabaseSync(':memory:'),sql={exec(q,...args){const rows=db.prepare(q).all(...args);return{toArray:()=>rows};}};sql.exec('CREATE TABLE versions(version INTEGER PRIMARY KEY,commit_sha TEXT,tree_sha TEXT)');const repo=new Repository(sql);repo.initialize();repo.update('refs/heads/main',null,a,true,'owner');repo.update('refs/heads/feature',null,a,true,'owner');return{db,sql,repo,p:new Policies(sql)};}
+test('selected force-push accounts affect rewrites only, with normalized bounded account IDs',()=>{
+ const f=fixture();try{f.p.set({...policy,allowForcePush:['owner','owner']});assert.deepEqual(f.p.list()[0].allowForcePush,['owner']);f.p.direct('feature',false,true,'writer',a.commit,b.commit);f.p.direct('feature',false,false,'owner',a.commit,b.commit);assert.throws(()=>f.p.direct('feature',false,false,'writer',a.commit,b.commit),/fast-forward/);assert.throws(()=>f.p.direct('feature',false,false,'',a.commit,b.commit),/fast-forward/);
+ for(const allowForcePush of [null,'owner',[{}],['bad\naccount'],Array.from({length:101},(_,i)=>'id'+i)])assert.throws(()=>f.p.set({...policy,allowForcePush}),/Invalid branch policy/);
+ assert.throws(()=>f.p.set({...policy,preventForce:false}),/force-push blocking/);assert.equal(f.p.get('feature').preventForce,true);
+ }finally{f.db.close();}
+});
+test('overlapping force restrictions intersect; an unqualified block and an empty exception list both deny everyone',()=>{
+ const f=fixture();try{f.p.set({...policy,branch:'feat*',allowForcePush:['owner','writer']});f.p.set({...policy,allowForcePush:['writer','admin']});assert.deepEqual(f.p.get('feature').allowForcePush,['writer']);f.p.direct('feature',false,false,'writer');assert.throws(()=>f.p.direct('feature',false,false,'owner'),/fast-forward/);
+ f.p.set({...policy,branch:'feature*',allowForcePush:undefined});assert.deepEqual(f.p.get('feature').allowForcePush,[]);assert.throws(()=>f.p.direct('feature',false,false,'writer'),/fast-forward/);f.p.remove('feature*');f.p.set({...policy,allowForcePush:[]});assert.deepEqual(f.p.get('feature').allowForcePush,[]);assert.throws(()=>f.p.direct('feature',false,false,'owner'),/fast-forward/);
+ }finally{f.db.close();}
+});
+test('force permission cannot waive pusher restrictions, locks, deletion, PRs, checks, linear history, signatures or rulesets',()=>{
+ const f=fixture();try{
+ for(const[extra,error]of[[{allowPush:['writer']},/not allowed/],[{locked:true},/locked/],[{pullRequest:true},/reviewed pull request/],[{checks:['test']},/reviewed pull request/],[{requireLinearHistory:true},/linear history/],[{requireSignedCommits:true},/verified signed commits/]]){f.p.set({...policy,...extra});assert.throws(()=>f.repo.update('refs/heads/feature',a.commit,b,false,'owner'),error);assert.equal(f.repo.refs().find(r=>r.name==='refs/heads/feature').commit,a.commit);}
+ f.p.set(policy);assert.throws(()=>f.repo.update('refs/heads/feature',a.commit,null,false,'owner'),/cannot be deleted/);new Rulesets(f.sql).set({name:'No force',target:'branch',enforcement:'active',conditions:{ref_name:{include:['refs/heads/feature'],exclude:[]}},rules:[{type:'non_fast_forward'}]});assert.throws(()=>f.repo.update('refs/heads/feature',a.commit,b,false,'owner'),/force pushes are blocked/);
+ }finally{f.db.close();}
+});
+test('current force permission is re-read at final write and accepted rewrites retain force/actor audit',()=>{
+ const f=fixture();try{f.p.set(policy);const proof={old:a.commit,next:b.commit,linear:true};f.p.set({...policy,allowForcePush:[]});assert.throws(()=>f.repo.update('refs/heads/feature',a.commit,b,false,'owner',false,proof),/fast-forward/);f.p.set(policy);f.repo.update('refs/heads/feature',a.commit,b,false,'owner',false,proof);const event=f.repo.activity({kind:'refs'}).events[0];assert.equal(event.force,true);assert.equal(event.actor,'owner');assert.equal(event.old,a.commit);assert.equal(event.next,b.commit);assert.equal(f.repo.main().commit,a.commit);
+ }finally{f.db.close();}
+});
+test('feature writes wait for a force-aware receiver while existing protection edits keep working',async()=>{
+ let writes=0;const seq={protectionConfiguration:()=>({revisionTracking:'storage',revision:2,policies:[]}),setPolicy:p=>{writes++;return[p];},configureProtection:c=>{writes++;return{revision:3,policies:[c.policy]};}};const env={SEQUENCER:{idFromName:x=>x,get:()=>seq},HUB:{idFromName:x=>x,get:()=>({find:()=>({owner:'owner'})})}},access={proof:{role:'admin'}},browser={id:'owner'},cli={...browser,cli:{credentialId:'test',scopes:['read','protections:write']}};
+ const request=body=>new Request('https://nanohub.invalid/api/trunks/test/protection',{method:'PUT',headers:{Origin:'https://nanohub.invalid','Content-Type':'application/json','If-Match':'"protection-2"'},body:JSON.stringify(body)});
+ for(const user of[browser,cli])assert.equal((await repositoryRoute(env,request(policy),'test','protection',undefined,user,access)).status,503);assert.equal(writes,0);
+ assert.equal((await repositoryRoute(env,request({...policy,allowForcePush:undefined}),'test','protection',undefined,browser,access)).status,200);assert.equal(writes,1);
+ seq.protectionConfiguration=()=>({revisionTracking:'storage',revision:2,policies:[],forcePushActors:true});assert.equal((await repositoryRoute(env,request(policy),'test','protection',undefined,cli,access)).status,200);assert.equal(writes,2);
+});

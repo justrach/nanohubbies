@@ -2,158 +2,161 @@
 
 import {
   Activity,
+  Play,
   ChevronDown,
   CircleDot,
   Code2,
-  FolderGit2,
   GitCommitHorizontal,
   GitPullRequest,
   GitBranch,
   LayoutDashboard,
-  Menu,
   MessageSquare,
-  Plus,
   Settings2,
   Tag,
   Users,
+  LockKeyhole,
+  BookMarked,
+  Ellipsis,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BrandMark } from "@/components/Brand";
 import { Link } from "@/lib/router";
 import { useLiveRoom, useTrunk } from "./context";
 import { trunkHref } from "./paths";
 import "./workspace.css";
 
 const destinations = [
-  { path: "/overview", label: "Overview", icon: LayoutDashboard },
-  { path: "/room", label: "Agent room", icon: MessageSquare },
   { path: "", label: "Code", icon: Code2 },
-  { path: "/branches", label: "Branches", icon: GitBranch },
-  { path: "/commits", label: "Commits", icon: GitCommitHorizontal },
   { path: "/issues", label: "Issues", icon: CircleDot },
   { path: "/pulls", label: "Pull requests", icon: GitPullRequest },
+  { path: "/actions", label: "Actions", icon: Play },
+  { path: "/room", label: "Agents", icon: MessageSquare },
   { path: "/releases", label: "Releases", icon: Tag },
   { path: "/live", label: "Activity", icon: Activity },
-  { path: "/people", label: "People", icon: Users },
+  { path: "/people", label: "Settings", icon: Settings2 },
+];
+const secondary = [
+  { path: "/overview", label: "Overview", icon: LayoutDashboard },
+  { path: "/branches", label: "Branches", icon: GitBranch },
+  { path: "/commits", label: "Commits", icon: GitCommitHorizontal },
   { path: "/setup", label: "Agent setup", icon: Settings2 },
+  { path: "/connect", label: "Git access", icon: BookMarked },
+  { path: "/settings/rules", label: "Rules", icon: Settings2 },
 ];
 export function workspaceSection(rest: string) {
+  if(rest.startsWith("/settings/"))return "Settings";
   if (rest.startsWith("/pulls/")) return "Pull requests";
   if (/^\/(tree|blob)(\/|$)/.test(rest)) return "Code";
   if (rest.startsWith("/commit")) return "Commits";
-  if (rest.startsWith("/connect")) return "Agent setup";
-  return destinations.find((item) => item.path === rest)?.label ?? "Workspace";
+  if (rest.startsWith("/connect")) return "Git access";
+  return (
+    [...destinations, ...secondary].find((item) => item.path === rest)?.label ??
+    "Repository"
+  );
 }
-
 export function WorkspaceNav({ trunk }: { trunk: string }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const mobile = useRef<HTMLDetailsElement>(null);
-  useEffect(() => { if (mobile.current) mobile.current.open = false; }, [pathname]);
-  const { head, tip, repo } = useTrunk();
+  const more = useRef<HTMLDetailsElement>(null);
+  const tabs = useRef<HTMLElement>(null);
+  const { address, isPrivate } = useTrunk();
   const room = useLiveRoom();
   const section = workspaceSection(pathname.slice(trunkHref(trunk).length));
+  useEffect(() => {
+    if (more.current) more.current.open = false;
+  }, [pathname]);
+  useEffect(() => {
+    const dismiss = (e: PointerEvent) => {
+      if (more.current && !more.current.contains(e.target as Node))
+        more.current.open = false;
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && more.current) {
+        more.current.open = false;
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
+  useEffect(() => {
+    tabs.current
+      ?.querySelector<HTMLElement>('[aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
   const counts: Record<string, number> = {
-    "Agent room": room.roster.length,
-    Commits: tip,
     Issues: [...room.issues.values()].filter(
       (issue) => issue.state !== "closed",
     ).length,
+    Agents: room.roster.length,
   };
-  const renderDestination = (item: typeof destinations[number]) => (
+  const isCurrent = (label: string) =>
+    section === label ||
+    (label === "Code" && ["Branches", "Commits"].includes(section)) ||
+    (label === "Agents" && section === "Agent setup");
+  const link = (item: (typeof destinations)[number]) => (
     <Link
       key={item.path}
       to={trunkHref(trunk, item.path)}
       prefetch={false}
       onMouseEnter={() => router.prefetch(trunkHref(trunk, item.path))}
       onFocus={() => router.prefetch(trunkHref(trunk, item.path))}
-      aria-current={section === item.label ? "page" : undefined}
+      aria-current={isCurrent(item.label) ? "page" : undefined}
     >
-      <item.icon size={15} aria-hidden />
+      <item.icon size={16} aria-hidden />
       <span>{item.label}</span>
-      {counts[item.label] > 0 && item.label !== "Commits" && (
-        <small>{counts[item.label].toLocaleString()}</small>
-      )}
+      {counts[item.label] > 0 && <small>{counts[item.label]}</small>}
     </Link>
   );
-  const links = (
-    <>
-      <div className="workspace-global-links">
-        <Link to="/dashboard" prefetch={false}>
-          <FolderGit2 size={15} />
-          All workspaces
-        </Link>
-        <Link
-          to="/start"
-          prefetch={false}
-          onMouseEnter={() => router.prefetch("/start")}
-        >
-          <Plus size={15} />
-          New workspace
-        </Link>
-      </div>
-      <details className="workspace-switcher">
-        <summary>
-          <FolderGit2 size={15} />
-          <span>{trunk}</span>
-          <ChevronDown size={13} />
-        </summary>
-        <div>
-          <Link to="/dashboard" prefetch={false}>
-            Switch workspace
+  return (
+    <div className="repository-navigation">
+      <div className="repository-identity">
+        <div className="repository-name">
+          <BookMarked size={20} aria-hidden />
+          {address && (
+            <>
+              <Link to="/dashboard" className="repository-owner">
+                {address.namespace}
+              </Link>
+              <span className="repository-slash">/</span>
+            </>
+          )}
+          <Link to={trunkHref(trunk)} className="repository-title">
+            {address?.name ?? trunk}
           </Link>
-          <Link to="/start" prefetch={false}>
-            Create a workspace
+          {isPrivate !== undefined && (
+            <span className="repository-visibility">
+              {isPrivate && <LockKeyhole size={11} aria-hidden />}
+              {isPrivate ? "Private" : "Public"}
+            </span>
+          )}
+        </div>
+        <div className="repository-quick-actions">
+          <Link to={trunkHref(trunk, "/branches")}>
+            <GitBranch size={14} aria-hidden />
+            Branches
+          </Link>
+          <Link to={trunkHref(trunk, "/people")}>
+            <Users size={14} aria-hidden />
+            Collaborators
           </Link>
         </div>
-      </details>
-      <nav aria-label="Workspace">
-        {destinations.filter((item) => ["Overview", "Agent room", "Code", "Issues", "Pull requests", "Agent setup"].includes(item.label)).map(renderDestination)}
-        <details className="workspace-more" key={section} open={["Branches", "Commits", "Releases", "Activity", "People"].includes(section)}>
-          <summary>More <ChevronDown size={13} aria-hidden /></summary>
-          {destinations.filter((item) => ["Branches", "Commits", "Releases", "Activity", "People"].includes(item.label)).map(renderDestination)}
+      </div>
+      <div className="repository-tabs-row">
+        <nav ref={tabs} aria-label="Repository" className="repository-tabs">
+          {destinations.map(link)}
+        </nav>
+        <details ref={more} className="repository-more">
+          <summary aria-label="More repository pages">
+            <Ellipsis size={18} />
+            <ChevronDown size={11} />
+          </summary>
+          <nav aria-label="More repository pages">{secondary.map(link)}</nav>
         </details>
-      </nav>
-      <footer className="workspace-sidebar-footer">
-        <span>
-          {head ? `main · v${tip.toLocaleString()}` : "Preparing source"}
-        </span>
-        {repo && (
-          <a
-            href={repo.url}
-            target="_blank"
-            rel="noreferrer"
-            title={repo.fullName}
-          >
-            {repo.fullName}
-          </a>
-        )}
-      </footer>
-    </>
-  );
-  return (
-    <>
-      <aside className="workspace-sidebar">
-        <Link
-          to="/dashboard"
-          className="workspace-brand"
-          aria-label="nanohub dashboard"
-        >
-          <BrandMark />
-          nanohub
-        </Link>
-        {links}
-      </aside>
-      <details ref={mobile} className="workspace-mobile-nav">
-        <summary>
-          <Menu size={16} />
-          {trunk}
-          <span>{section}</span>
-          <ChevronDown size={14} />
-        </summary>
-        <div>{links}</div>
-      </details>
-    </>
+      </div>
+    </div>
   );
 }

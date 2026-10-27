@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-27T10:50:38.341Z",
+  "localNanohub": true,
+  "productionCodegraff": true,
+  "head": "9f6170fda55c1fc60a96511fca8e719f8d144727",
+  "base": "214c92290dfa9e42de102e9b951fce2dcfefc067",
+  "image": "oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d",
+  "sandboxId": "cnd_2e0fac37c72a849f8ae9f987cd01aa3e9d8dfc62",
+  "check": "live/bun",
+  "conclusion": "success",
+  "cleanupDeleted": true,
+  "privateLogDelivered": true,
+  "anonymousLogDenied": true,
+  "acceptedBaseWorkflow": true,
+  "credentialFreeCandidate": true
+}

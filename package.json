@@ -2,15 +2,24 @@
   "name": "nanohub-swarm",
   "private": true,
   "type": "module",
-  "packageManager": "npm@11.6.1",
-  "workspaces": ["apps/*", "packages/*"],
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check": "turbo run check",
-    "preview": "npm run preview -w @swarm/web"
+    "preview": "bun run --filter @swarm/web preview",
+    "test:repository": "bun run --filter @swarm/api test:repository",
+    "nh": "bun packages/cli/bin/nh.mjs",
+    "nanohub": "bun packages/cli/bin/nh.mjs",
+    "test:cli": "bun run --filter @nanohub/cli test"
   },
   "devDependencies": {
-    "turbo": "^2.11.6"
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
+    "turbo": "^2.11.6",
+    "yaml": "2.9.1"
   }
 }

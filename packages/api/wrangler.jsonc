@@ -1,4 +1,4 @@
-// The API on its own, for `npm run dev`: it answers on 8787 while `next dev`
+// The API on its own, for `bun run dev`: it answers on 8787 while `next dev`
 // serves the pages on 3000 and forwards /api and /git here. Anything else that
 // lands here (a sign-in coming back, say) is sent on to APP_ORIGIN. Deployed,
 // apps/web's Worker serves both from one origin; keep the bindings below the
@@ -10,6 +10,7 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   // The deployed version's ID, which /api/agent-help reports.
+  "services": [{"binding":"VAULT","service":"nanohub-vault","entrypoint":"VaultService"}],
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "vars": { "APP_ORIGIN": "http://localhost:3000" },
   "durable_objects": {

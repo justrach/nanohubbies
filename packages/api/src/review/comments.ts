@@ -1,24 +1,7 @@
-import type { Owner } from "../types";
+import {assertRepositoryWritable} from "../repository/archive";
+import type { CodeAnchor, CodeComment, CommentList } from "./comment-types";
+export type { CodeAnchor, CodeComment, CommentList } from "./comment-types";
 
-export interface CodeAnchor {
-  path: string;
-  side: "LEFT" | "RIGHT";
-  startLine: number;
-  line: number;
-}
-export interface CodeComment extends CodeAnchor {
-  id: string;
-  commit: string;
-  author: Owner;
-  body: string;
-  at: number;
-  replyTo: string | null;
-  resolved: boolean;
-}
-export interface CommentList {
-  comments: CodeComment[];
-  truncated: boolean;
-}
 export type CommentCommand =
   | { op: "list"; commit: string }
   | { op: "add"; comment: CodeComment }
@@ -35,6 +18,7 @@ export class CodeComments {
     );
   }
   run(command: CommentCommand): CommentList {
+    if(command.op!=="list")assertRepositoryWritable(this.sql);
     const commit =
       command.op === "add" ? command.comment.commit : command.commit;
     if (command.op === "add") {

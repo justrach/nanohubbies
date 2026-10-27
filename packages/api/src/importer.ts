@@ -143,12 +143,12 @@ async function headBranch(owner: string, repo: string, token: string | null): Pr
   }).catch(() => null);
   if (!res?.ok) return null;
   const head = (await res.text()).slice(0, 4096);
-  return /symref=HEAD:refs\/heads\/([^\s\0]+)/.exec(head)?.[1] ?? null;
+  return /symref=HEAD:refs\/heads\/([^ \r\n\0]+)/.exec(head)?.[1] ?? null;
 }
 
 /** Parses "owner/repo", "https://github.com/owner/repo", or either with "#ref". */
 export function parseRepo(input: string): { owner: string; repo: string; ref: string | null } {
-  const [spec, ref] = input.trim().split("#");
+  const hash=input.indexOf("#"),spec=(hash<0?input:input.slice(0,hash)).trim(),ref=hash<0?null:input.slice(hash+1);
   const m = spec.replace(/\.git$/, "").match(/^(?:https?:\/\/github\.com\/)?([\w.-]+)\/([\w.-]+)\/?$/);
   if (!m) throw new Error("give a repository as owner/name or a github.com URL");
   return { owner: m[1], repo: m[2], ref: ref || null };

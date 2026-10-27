@@ -29,12 +29,12 @@ A Turborepo with two packages:
 
 ## Run it
 
-    npm install
-    npm run dev            # the API on http://localhost:8787, the dashboard on http://localhost:3000
+    bun install
+    bun run dev            # the API on http://localhost:8787, the dashboard on http://localhost:3000
 
 Open http://localhost:3000, create a trunk from the template or import a public
 GitHub repository, and launch scripted agents from the trunk's page. They run
-inside Durable Objects, not in the browser. `npm run preview` builds the
+inside Durable Objects, not in the browser. `bun run preview` builds the
 deployable Worker instead and serves all of it on http://localhost:8787.
 
 Scripts, from `packages/api` with the dev server running:
@@ -62,7 +62,7 @@ the total work per change. Then the sequencer alone lands changes back to
 back with nothing in between (a development-only endpoint), and publishes
 them: both run in the sequencer, so together they are the ceiling once the
 rest runs in parallel. Local storage slows as it fills, so measure each step
-against a dev server on a fresh store (`npx wrangler dev --persist-to
+against a dev server on a fresh store (`bun x wrangler dev --persist-to
 "$(mktemp -d)"`, then `SWARM_URL=` its address).
 
 `runtimes.ts` runs the same landing and publishing code outside Workers, on
@@ -79,7 +79,7 @@ and hex code.
 The homepage's Get started action opens `/dashboard`. Its GitHub and Codegraff
 buttons use the same account flow; GitHub preselects that provider on Codegraff.
 New and returning users both land on `/dashboard`, where they can create a
-workspace. Repository setup follows sign-in. Run `npm run test:auth -w @swarm/api`
+workspace. Repository setup follows sign-in. Run `bun run --filter @swarm/api test:auth`
 from `swarm/` to check both entry points and their callback destinations.
 
 Sign in with Codegraff runs through Better Auth, with Codegraff as an OpenID
@@ -119,8 +119,8 @@ The workspace info API reports `mirror.pushed` for checking publication.
 Artifacts bindings reach the real service even in local development, so this
 mode needs a Cloudflare account with Artifacts. From `packages/api`:
 
-    npx wrangler login
-    npx wrangler dev --env artifacts
+    bun x wrangler login
+    bun x wrangler dev --env artifacts
 
 The scripts then also wait for each trunk's Artifacts repo to catch up, clone
 it with plain git, and check that its HEAD is the trunk's HEAD. They delete the
@@ -130,7 +130,7 @@ trunks they make, Artifacts repos included, unless `KEEP=1` is set.
 ## Cloudflare CLIs
 
 The workspaces use Wrangler 4.151.0. Cloudflare's separate `cf` CLI can be
-installed with `npm install -g cf`; it has its own authentication, checked with
+installed with `bun add --global cf`; it has its own authentication, checked with
 `cf auth whoami`. Installing it does not migrate this OpenNext deployment.
 
 
@@ -145,7 +145,7 @@ snapshot, not a full Git mirror. Setup shows retained/excluded counts and any
 incomplete GitHub context. Upstream history and issue comment threads are not
 copied. Issue and PR metadata are bounded snapshots taken at import time.
 
-Validate with `npm run test:import` in `packages/api`. For a real local
+Validate with `bun run test:import` in `packages/api`. For a real local
 corpus, `node scripts/smoke-import.ts /path/to/repository` streams its HEAD
 archive, seeds isolated Worker storage, clones it back, compares every retained
 file and runs `git fsck`. It never modifies the source repository or a user's
@@ -171,7 +171,7 @@ preserves local tasks created while the copy runs.
 
 Run `node scripts/smoke-background-import.ts` from `packages/api` for the isolated
 12 MiB import, restart, lost-response replay, privacy, early setup, Git integrity,
-context collision, and retry checks. Run `npm run test:import` for stream parsing.
+context collision, and retry checks. Run `bun run test:import` for stream parsing.
 
 
 ## Workspace startup
@@ -208,3 +208,93 @@ motion behavior when extending components.
 Public hosts enforce durable trunk quotas and per-address request throttles.
 See [public admission controls](public-abuse-controls.md) for defaults,
 deployment variables, concurrency and recovery trade-offs, and local checks.
+
+## Stateful rollout checks
+
+Worker root metadata and a successful upload do not prove that every Durable
+Object is running new code. Cloudflare releases them
+[eventually consistently](https://developers.cloudflare.com/durable-objects/platform/known-issues/#code-updates).
+Keep changed RPC contracts compatible in both directions. For a new conditional
+writer, return a retryable unavailable response when an old receiver lacks the
+method; never fall back to an unconditional write.
+
+After the deployment command finishes, verify both its recorded version and a
+real operation on each changed object class. For protection administration,
+`nh rules list -R OWNER/CANARY --json` with a scoped read credential must return
+the stored protections, a numeric revision and `revisionTracking: "storage"`.
+A 503 with Retry-After indicates
+the new RPC is not available yet. Keep the same deployment under observation;
+do not infer that it stopped or create a replacement merely from a timeout.
+Reconcile version, namespace ownership and deployed content if the mismatch
+persists. Do not create broad or permanent credentials for a readiness check.
+
+Protection revisions are storage fences, not edit counts. Persistent triggers
+also observe old application SQL during rollback. A fence migration invalidates
+existing exports once; clients must re-export rather than assume revisions are
+contiguous or reuse a file after a deployment changes its revision.
+
+Default-branch rollouts must additionally verify a real signed-in
+`GET /api/trunks/:id/default-branch`, including its current branch, numeric
+settings revision and branch/commit list. Custom initialization preflights the
+new receiver; selection has no unsafe legacy fallback. Ship the updated trusted
+dispatcher with this feature and retain a default-aware application on rollback
+after non-main selection. See [default branch compatibility](default-branch.md#deployment-and-compatibility).
+
+Native ruleset administration has a separate `rulesets:write` grant and conditional
+RPC. Its receiver must advertise `revisionTracking: "storage"`; metadata reads
+alone do not prove edit readiness. Ruleset table triggers advance the shared
+graph revision for older SQL writers, and default-pointer storage triggers invalidate
+that revision as well. First fence installation invalidates older exports
+once. Verify deployed rule objects stay identical while the revision advances;
+never bypass the precondition to get through a mixed-version rollout.
+
+Selected force-push permissions require `forcePushActors: true` on the stateful
+protection receiver before new list writes. File-rule graph producers also carry
+`fileTransitions: true`: they checked actual ref-tree changes, including rewinds,
+as well as introduced commits. Updated final writers reject earlier evidence
+without this marker. During mixed-version propagation, retry against the updated
+producer; do not remove a rule or downgrade evidence to complete a push.
+
+
+CLI lifecycle administration preflights both `Hub.archiveConfiguration`
+(`conditionalWrites: true`, `nameConfirmation: true`) and `Sequencer.archiveConfiguration`
+(`cliAudit: true`). Signed-in browser archive reads expose these readiness markers
+when both receivers are updated, while retaining legacy read fallback. The separate `configureRepositoryArchive` RPC checks the
+revision and repository name inside the same transaction as current admin membership and transition
+creation. Never fall back to `archiveRepository` for a conditional CLI edit.
+`repository:archive` is the only mutation scope delegable while archived; it
+cannot edit content or rules. `test:cli-archive` exercises source and standalone
+Bun modules, actual Git guards and interrupted transition/restart recovery.
+
+
+Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
+actor, with a maximum 30-second validity checked inside the final ref writer.
+It is not a cross-service atomic membership/ref transaction. Browser branches,
+restacks, PR merges and suggestion applications propagate the trusted evidence;
+HTTP bodies never set it. PR signature and deployment previews use the same role
+matcher. Git/CLI/agent credentials retain their existing no-bypass boundary.
+
+`Sequencer.rulesetPlan` preflights `Hub.rulesetRoleSupport` before advertising
+`roleBypass: true`; older receivers preserve metadata reads but cannot accept new
+role grants. `graphPlan` remains synchronous and binds proofs to current stored
+rules. Do not replace the native snapshot with a cached external membership or
+turn a failed lookup into an owner fallback. Run `test:ruleset-roles` for the
+source/published-CLI, real Git/PR, demotion, provider and suggestion coverage.
+
+
+`test:codegraff:live` is explicitly opt-in and outside normal CI gates. It uses
+local Nanohub fixture credentials and a real production Codegraff VM. Keep the
+sandbox-scoped account key only in the control process environment. A fleet
+GET may retain a `destroyed` tombstone after DELETE; this is a successful terminal
+state. The dispatcher now confirms absent/destroyed/deleted/expired state before
+clearing its cleanup receipt. Stopped/running or unverifiable records preserve
+recovery-needed status and fail the job. See [live evidence](evidence/codegraff-live-validation.md).
+
+
+CLI default-branch administration requires the stateful receiver's
+`conditionalWrites: true`, `cliAudit: true` and `revisionTracking: "storage"`
+markers at `/default-branch`. The first settings-fence migration advances
+settings and graph revisions once on existing Git repositories without changing
+any pointer, ref or rule. Re-read before editing; old conditional exports fail.
+Keep a default-aware receiver on rollback. The separate `repository:default`
+permission is never inferred from a protection, ruleset or archive grant.

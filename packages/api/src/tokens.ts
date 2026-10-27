@@ -1,5 +1,7 @@
 import type { Owner } from "./types";
 import { agentCredential, listAgentTokens, revokeAgentToken } from "./agent-credentials";
+import { gitCredential, listGitTokens, revokeGitToken } from "./git-credentials";
+import {cliGitCredential} from "./cli/credentials";
 
 /** Push tokens: how an agent proves who it works for. A signed-in person makes
  *  one on a trunk's page, and git sends it as HTTP Basic credentials: the
@@ -41,6 +43,7 @@ async function hash(token: string): Promise<string> {
 }
 
 export interface TokenInfo {
+  kind?: "git";
   id: string;
   label: string;
   trunk: string | null;
@@ -72,23 +75,27 @@ export async function listTokens(env: Env, owner: Owner): Promise<TokenInfo[]> {
     .prepare(`select "id", "label", "trunk", "createdAt", "expiresAt", "usedAt" from "push_token" where "ownerId" = ? and "revokedAt" is null and "expiresAt" > ? order by "createdAt" desc limit 50`)
     .bind(owner.id, Date.now())
     .all<TokenInfo>();
-  return [...results, ...await listAgentTokens(env, owner)].sort((a, b) => b.createdAt - a.createdAt);
+  return [...results, ...await listAgentTokens(env, owner), ...await listGitTokens(env, owner)].sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function revokeToken(env: Env, owner: Owner, id: string): Promise<boolean> {
   const d = await ready(env);
   const r = await d.prepare(`update "push_token" set "revokedAt" = ? where "id" = ? and "ownerId" = ? and "revokedAt" is null`).bind(Date.now(), id, owner.id).run();
-  return (r.meta.changes ?? 0) > 0 || await revokeAgentToken(env, owner, id);
+  return (r.meta.changes ?? 0) > 0 || await revokeAgentToken(env, owner, id) || await revokeGitToken(env, owner, id);
 }
 
 /** Who a push comes from, by its Basic credentials: the person the token
  *  belongs to, and the agent the username names. Null when the credentials
  *  are missing, wrong, revoked, expired, or for another trunk. */
-export async function pusher(env: Env, request: Request, trunk: string): Promise<{ owner: Owner; agent: string | null; agentId?: string; credentialId?: string } | null> {
+export async function pusher(env: Env, request: Request, trunk: string): Promise<{ owner: Owner; agent: string | null; agentId?: string; agentType?:string; credentialId?: string; gitOnly?: boolean; readOnly?:boolean } | null> {
   const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Basic ")) return null;
   let user = "";
   let token = "";
+  const mcp=/^\/api\/(?:trunks\/[^/]+|repos\/[^/]+\/[^/]+)\/agents\/([a-z0-9][a-z0-9.-]{0,47})\/mcp\/?$/.exec(new URL(request.url).pathname);
+  const mcpBearer=mcp&&/^Bearer (nha_[a-f0-9]{48})$/i.exec(header);
+  if(mcpBearer){user=mcp[1];token=mcpBearer[1];}
+  else {
+  if (!header.startsWith("Basic ")) return null;
   try {
     const plain = atob(header.slice(6));
     const colon = plain.indexOf(":");
@@ -98,7 +105,10 @@ export async function pusher(env: Env, request: Request, trunk: string): Promise
   } catch {
     return null;
   }
+  }
   if (token.startsWith("nha_")) return agentCredential(env, token, user, trunk);
+  if (token.startsWith("nhg_")) return new URL(request.url).pathname.startsWith("/git/") ? gitCredential(env,token,trunk) : null;
+  if (token.startsWith("nhc_")) return cliGitCredential(env,request,token,trunk);
   if (!token.startsWith(PREFIX)) return null;
   const d = await ready(env);
   const row = await d

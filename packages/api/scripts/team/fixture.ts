@@ -9,7 +9,10 @@ import assert from "node:assert/strict";
 export const ROOM = "room_" + "a".repeat(24);
 export const OTHER = "room_" + "b".repeat(24);
 /** `bindings` add to (or override) the Worker's test bindings. */
-export async function teamFixture(bindings: Record<string, string> = {}) {
+export async function teamFixture(
+  bindings: Record<string, string> = {},
+  options: { vault?: boolean } = {},
+) {
   const dir = await mkdtemp(join(tmpdir(), "nanohub-team-"));
   const members = new Map<string, "owner" | "member">([
     ["101", "owner"],
@@ -21,6 +24,7 @@ export async function teamFixture(bindings: Record<string, string> = {}) {
     wrongAudience: false,
     expired: false,
     calls: 0,
+    blockedSubjects: new Set<string>(),
   };
   let issuer = "";
   const server = createServer(async (req, res) => {
@@ -36,6 +40,7 @@ export async function teamFixture(bindings: Record<string, string> = {}) {
       res.writeHead(401).end();
       return;
     }
+    if(provider.blockedSubjects.has(subject)){res.writeHead(503).end();return;}
     let ids: string[] | null = null;
     if (req.method === "POST") {
       let body = "";
@@ -99,6 +104,9 @@ export async function teamFixture(bindings: Record<string, string> = {}) {
         body: request.method === "POST" ? await request.text() : undefined,
       });
     },
+    serviceBindings: options.vault
+      ? { VAULT: { name: "vault-test", entrypoint: "VaultService" } }
+      : undefined,
     r2Buckets: ["OBJECTS"],
     d1Databases: ["AUTH_DB"],
     bindings: {
@@ -109,11 +117,50 @@ export async function teamFixture(bindings: Record<string, string> = {}) {
       ...bindings,
     },
   });
+  const secretBindings: Record<
+    string,
+    { store_id: string; secret_name: string }
+  > = {};
+  const secretScopes: Record<
+    string,
+    { repository: string; environment: string; name: string }
+  > = {};
+  let vaultScript = "";
+  function configureVault() {
+    const vaultConfig = convertV4MiniflareOptions({
+      name: "vault-test",
+      modules: true,
+      script: vaultScript,
+      compatibilityDate: "2026-09-01",
+      durableObjects: { VAULTS: { className: "Vault", useSQLite: true } },
+      bindings: { CLOUDFLARE_SECRET_SCOPES: JSON.stringify(secretScopes) },
+      secretsStoreSecrets: secretBindings,
+    });
+    config.workers = config.workers!.filter(
+      (w) => w.config.name !== "vault-test",
+    );
+    config.workers.push(...vaultConfig.workers!);
+  }
+  if (options.vault) {
+    const vaultOutput = await build({
+      entryPoints: [
+        new URL("../../../vault/src/index.ts", import.meta.url).pathname,
+      ],
+      bundle: true,
+      platform: "neutral",
+      format: "esm",
+      external: ["cloudflare:workers"],
+      write: false,
+    });
+    vaultScript = vaultOutput.outputFiles[0].text;
+    configureVault();
+  }
   let mf = new Miniflare({
     ...config,
     resourcePersistencePath: join(dir, "state"),
   });
   let origin = (await mf.ready).origin;
+  config.port = Number(new URL(origin).port);
   async function request(
     method: string,
     path: string,
@@ -152,6 +199,42 @@ export async function teamFixture(bindings: Record<string, string> = {}) {
     };
   }
   return {
+    async provisionSecret(
+      repository: string,
+      environment: string,
+      name: string,
+      value: string,
+    ) {
+      assert.ok(options.vault);
+      const binding = `SECRET_${Object.keys(secretBindings).length}`;
+      secretScopes[binding] = { repository, environment, name };
+      secretBindings[binding] = {
+        store_id: "fixture-cloudflare-store",
+        secret_name: `${repository}-${environment}-${name}`,
+      };
+      configureVault();
+      await mf.setOptions({
+        ...config,
+        resourcePersistencePath: join(dir, "state"),
+      });
+      origin = (await mf.ready).origin;
+      const admin = await (
+        await mf.getSecretsStoreSecretAPI(binding, "vault-test")
+      )();
+      const id = await admin.create(value);
+      return {
+        binding,
+        async update(next: string) {
+          const api = await (
+            await mf.getSecretsStoreSecretAPI(binding, "vault-test")
+          )();
+          await api.update(next, id);
+        },
+        async read() {
+          return (await mf.getSecretsStoreSecret(binding, "vault-test")).get();
+        },
+      };
+    },
     dir,
     members,
     provider,

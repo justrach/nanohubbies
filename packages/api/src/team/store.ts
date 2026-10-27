@@ -15,7 +15,7 @@ export interface IdentityProof {
   issuer: string;
   audience: string;
   roomId: string;
-  role: Membership["role"];
+  role: Membership["role"] | import("../collaborators/store").RepoRole;
   agentId: string | null;
   credentialId: string | null;
   verifiedAt: number;

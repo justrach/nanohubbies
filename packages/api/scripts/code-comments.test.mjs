@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { CodeComments, anchorInPatch } from "../src/review/comments.ts";
+import {build} from "esbuild";
+const bundled=await build({entryPoints:[new URL("../src/review/comments.ts",import.meta.url).pathname],bundle:true,platform:"node",format:"esm",write:false});
+const {CodeComments,anchorInPatch}=await import("data:text/javascript;base64,"+Buffer.from(bundled.outputFiles[0].text).toString("base64"));
 
 const patch = "@@ -2,3 +2,3 @@\n kept\n-old\n+new\n end\n@@ -20 +20 @@\n-old2\n+new2\n";
 const anchor = { path: "src/main.ts", side: "RIGHT", startLine: 2, line: 4 };

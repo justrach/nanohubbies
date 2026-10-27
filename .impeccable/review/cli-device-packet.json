@@ -1,0 +1,40 @@
+{
+  "request": "Continue Nanohub GitHub-like protections/secrets/locks and nh/nanohub CLI; add browser authorization for the existing scoped native CLI.",
+  "mode": "Operate",
+  "buildPath": "code-led",
+  "scope": "Extend existing Nanohub CLI access surface with a browser consent page, preserving Harness Paper identity.",
+  "confirmed": "User selected warm Harness colors and approved Paper UI directions 1/2; user requested Impeccable. Functional choices are routine implementation within the authorized CLI goal.",
+  "artifact": "apps/web/src/settings/CliAuthorize.tsx",
+  "route": "/cli/authorize",
+  "truth": [
+    "docs/hosting-cli.md",
+    "docs/github-parity.md",
+    "apps/web/src/trunk/connect/CliAccess.tsx",
+    "apps/web/src/design-system.css"
+  ],
+  "missing": [
+    "PRODUCT.md",
+    "DESIGN.md"
+  ],
+  "contract": {
+    "palette": "Existing Paper rgb(250,248,243), charcoal foreground, muted warm brown, amber primary. No new visual world.",
+    "type": "Existing Geist / Geist Mono for code only.",
+    "firstViewport": "Identify CLI authorization, terminal code and account; make the requested repository and permissions explicit before access is authorized.",
+    "interaction": "Mandatory terminal-code confirmation enables approval, optional scopes and expiry may be reduced; denial ends the request and returns focus to heading.",
+    "quality": "No overflow at 1280 and 320. Clearly separate sign-in from consent; no private code/token exposed; responsive keyboard-operable form."
+  },
+  "screenshots": {
+    "desktop": ".impeccable/review/desktop.png",
+    "mobile": ".impeccable/review/mobile.png",
+    "denied": ".impeccable/review/denied.png"
+  },
+  "sizes": {
+    "desktop": "1280px viewport, full page",
+    "mobile": "320x800 viewport, full page; document width320"
+  },
+  "incumbent": "docs/evidence/cli-production-test-permissions.png",
+  "behaviorEvidence": "Local development sign-in stayed on consent route. Review scope was unchecked, terminal confirmation checked, Authorize enabled. Deny visibly ended request; no credential issued. Real Worker/D1/Bun tests pass approve/reduce/deny/expiry/races/recovery.",
+  "detector": "Unavailable: launcher exits126 permission denied. No detector findings obtained. Judge craft floor manually.",
+  "comp": "None: precise Operate extension of established UI; no new identity or comp-led build.",
+  "notes": "Black N badge is Next.js development tooling and does not ship in the production build."
+}

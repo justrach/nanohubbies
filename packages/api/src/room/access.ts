@@ -33,7 +33,7 @@ export class RoomAccess {
     const team = JSON.parse(raw) as NonNullable<SocketIdentity["team"]>;
     return { who, team: { ...team, until: Date.now() + 300_000 } };
   }
-  async allowed(identity: SocketIdentity): Promise<boolean> {
+  async allowed(identity: SocketIdentity, write = false): Promise<boolean> {
     const trunk =
       getMeta<string>(this.sql, "team_trunk") ?? identity.team?.trunk;
     if (!trunk) return true;
@@ -50,7 +50,10 @@ export class RoomAccess {
         identity.team.until <= Date.now()
       )
         return false;
-      if (binding.kind === "owner") return identity.who.id === binding.boundBy;
+      if (binding.kind === "owner") {
+        const role=await this.env.HUB.get(this.env.HUB.idFromName("hub")).collaboratorRole(trunk,identity.who.id);
+        return !!role && (!write || role !== "reader");
+      }
       const evidence = await ownerEvidence(
         this.env,
         identity.team.origin,
@@ -65,8 +68,8 @@ export class RoomAccess {
       return false;
     }
   }
-  async check(ws: WebSocket): Promise<boolean> {
-    const allowed = await this.allowed(this.attachment(ws));
+  async check(ws: WebSocket, write = false): Promise<boolean> {
+    const allowed = await this.allowed(this.attachment(ws), write);
     if (!allowed) this.close(ws);
     return allowed;
   }

@@ -1,3 +1,6 @@
+import { readGitBody } from "./repository/bytes";
+import { repositoryPush } from "./repository/push";
+import { repositoryLimits } from "./repository/validate";
 import { applyEdits, isCode, symbols } from "./footprint";
 import type { ObjectType } from "./git";
 import { ObjectReader } from "./objects";
@@ -29,24 +32,38 @@ export interface Pusher {
   owner: Owner;
   agent: string | null;
   agentId?: string;
+  agentType?:string;
 }
 
 export async function receivePack(env: Env, trunk: string, request: Request, who: Pusher): Promise<Response> {
-  const body = new Uint8Array(await request.arrayBuffer());
-  if (body.length > MAX_PUSH) return new Response("push too large\n", { status: 413 });
-  const { commands, caps, pack } = readRequest(body);
+  let body: Uint8Array;
+  try { body = await readGitBody(request, MAX_PUSH); }
+  catch (error) { return new Response((error as Error).message, { status: 413 }); }
+  let parsed:ReturnType<typeof readRequest>;
+  try { parsed=readRequest(body); }
+  catch { return new Response("Malformed Git push framing or ref encoding",{status:400}); }
+  const { commands, caps, pack } = parsed;
   let objects: Map<string, Unpacked>;
   try {
-    objects = pack.length ? unpack(pack) : new Map();
+    objects = pack.length ? unpack(pack, repositoryLimits(env)) : new Map();
   } catch (e) {
     return report(caps, (e as Error).message, commands.map((c) => ({ ref: c.ref, refused: "unpack failed" })), []);
+  }
+  const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
+  if (await seq.repositoryMode()) {
+    try {
+      await repositoryPush(env, trunk, commands, objects, who.owner.id,who.agentId&&who.agent?{id:who.agentId,handle:who.agent,type:who.agentType??'Agent',owner:who.owner}:undefined);
+      return report(caps, null, commands.map(c => ({ ref: c.ref, refused: null })), ["Git refs and objects saved without rewriting"]);
+    } catch (error) {
+      return report(caps, null, commands.map(c => ({ ref: c.ref, refused: (error as Error).message })), []);
+    }
   }
   const messages: string[] = [];
   const statuses: RefStatus[] = [];
   for (const c of commands) {
     let refused: string | null;
     if (!LANDS.has(c.ref)) {
-      try { await pushBranch(env, trunk, c, objects); refused = null; messages.push(`saved ${c.ref}; open a PR to review and land it`); }
+      try { await pushBranch(env, trunk, c, objects,who.owner.id); refused = null; messages.push(`saved ${c.ref}; open a PR to review and land it`); }
       catch (error) { refused = (error as Error).message; }
     }
     else if (c.new === ZERO) refused = "main cannot be deleted";

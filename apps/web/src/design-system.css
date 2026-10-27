@@ -1,54 +1,64 @@
-/* Neutral surfaces; blue identifies actions and the primary chart series. */
+/* Harness Codegraff palette: Paper light and warm charcoal dark.
+   Source: harness/crates/theme/src/builtins.rs (codegraff_light/dark).
+   Links use a darker amber in light mode for readable small text. */
 :root {
   color-scheme: light;
-  --page: #f8f9fb;
-  --surface: #ffffff;
-  --ink: #1b2029;
-  --ink-2: #525252;
-  --muted: #737373;
-  --grid: #e5e5e5;
-  --axis: #b8b8b8;
-  --line: rgba(0, 0, 0, 0.1);
-  --wash: rgba(0, 0, 0, 0.035);
+  --page: #faf8f3;
+  --surface: #faf8f3;
+  --raised: #e7e1d5;
+  --ink: #1a1813;
+  --ink-2: #514c40;
+  --muted: #6b6557;
+  --grid: #e7e1d5;
+  --axis: #a8a090;
+  --line: #d9d3c7;
+  --wash: #f0ece3;
   /* categorical: 1 swarm / working, 2 direct push, 3 merge queue */
-  --series-1: #2463eb;
+  --series-1: #8d5615;
   --series-2: #b77939;
   --series-3: #2995a0;
   /* status: fixed, always with an icon and a label */
-  --good: #0ca30c;
-  --warning: #fab219;
-  --serious: #ec835a;
-  --critical: #d03b3b;
-  --good-text: #197148;
-  --brand: #2463eb;
-  --brand-soft: #e9efff;
-  --shadow-panel: 0 1px 2px rgb(18 28 45 / 3%);
+  --good: #5c7e47;
+  --warning: #9a6e1b;
+  --serious: #b14228;
+  --critical: #b14228;
+  --good-text: #486537;
+  --brand: #8d5615;
+  --brand-soft: #f0e1c7;
+  --accent: #c77d20;
+  --shadow-panel: none;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #121419;
-  --surface: #1b1d22;
-  --ink: #fafafa;
-  --ink-2: #b8b8b8;
-  --muted: #999999;
-  --grid: #2d2d2d;
-  --axis: #505050;
-  --line: rgba(255, 255, 255, 0.12);
-  --wash: rgba(255, 255, 255, 0.04);
-  --series-1: #72a8ff;
+  --page: #16140f;
+  --surface: #1f1c16;
+  --raised: #2a261e;
+  --ink: #edeae2;
+  --ink-2: #c6bfae;
+  --muted: #9a9384;
+  --grid: #2a261e;
+  --axis: #5c564b;
+  --line: #3d382e;
+  --wash: #1f1c16;
+  --series-1: #e8a33d;
   --series-2: #d49c62;
   --series-3: #56b7bc;
-  --good-text: #73d696;
-  --brand: #72a8ff;
-  --brand-soft: #202b42;
+  --good: #7fa86b;
+  --good-text: #7fa86b;
+  --warning: #d9a441;
+  --serious: #d2674f;
+  --critical: #d2674f;
+  --brand: #e8a33d;
+  --brand-soft: #3c2d18;
+  --accent: #e8a33d;
   --shadow-panel: none;
 }
 
 /* Shared geometry, type and interaction tokens. Keep dense workspaces compact. */
 :root {
-  --radius-control: 8px;
-  --radius-panel: 12px;
+  --radius-control: 6px;
+  --radius-panel: 8px;
   --radius-small: 6px;
   --space-unit: 4px;
   --text-label: 12px;
@@ -56,14 +66,14 @@
   --text-title: 24px;
   --tracking-heading: -0.035em;
   --duration-fast: 140ms;
-  --action: #245de0;
-  --action-ink: #ffffff;
+  --action: #c77d20;
+  --action-ink: #1a1813;
   --hero-ink: #f6f8ff;
   --hero-muted: #dce5f7;
 }
 :root[data-theme="dark"] {
-  --action: #83adff;
-  --action-ink: #111c30;
+  --action: #e8a33d;
+  --action-ink: #16140f;
 }
 .brand-lockup { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); }
 .brand-wordmark { font-size: 15px; font-weight: 650; letter-spacing: -0.04em; }

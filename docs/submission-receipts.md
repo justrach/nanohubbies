@@ -153,10 +153,10 @@ or provenance-published. Exit codes:
 From `packages/api`:
 
 ```sh
-npm run test:receipts
-npm run test:backlog
-npm run test:cli   # after zig build at the repository root
-npm run check
+bun run test:receipts
+bun run test:backlog
+bun run test:cli   # after zig build at the repository root
+bun run check
 ```
 
 The self-contained regression uses the installed Workers runtime, SQLite Durable

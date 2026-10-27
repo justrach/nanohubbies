@@ -14,17 +14,22 @@ import { setupFacts } from "./model";
 import { usePushTokens } from "./usePushTokens";
 import { cloneCommand } from "@swarm/api/connect";
 import styles from "./Onboarding.module.css";
+import { ConnectPage } from "@/trunk/connect/ConnectPage";
 
 const AGENTS = ["Codex", "Claude Code", "Codegraff", "Other agent"];
 
-export function SetupPage({
+export function SetupPage(props:{trunk:string;origin:string}) {
+  const {repositoryMode}=useTrunk();
+  return repositoryMode==="git"?<ConnectPage {...props}/>:<AgentSetupPage {...props}/>;
+}
+function AgentSetupPage({
   trunk,
   origin,
 }: {
   trunk: string;
   origin: string;
 }) {
-  const { repo, head, importJob, initialTokens } = useTrunk();
+  const { repo, head, importJob, initialTokens, address } = useTrunk();
   const sourceReady = !!head || !!importJob?.ready;
   const room = useLiveRoom();
   const { user, loaded, providers } = useSession();
@@ -43,7 +48,7 @@ export function SetupPage({
   );
   const step = selectedStep ?? (facts.connected ? 2 : 1);
   const clone = credentials.made
-    ? `export ROOM_TOKEN='${credentials.made.token}'\n${cloneCommand(origin, trunk, credentials.made.agent)}`
+    ? `export ROOM_TOKEN='${credentials.made.token}'\n${cloneCommand(origin, address?`${address.namespace}/${address.name}`:trunk, credentials.made.agent)}`
     : null;
   const hasCredential = !!credentials.made || credentials.tokens.length > 0;
   return (

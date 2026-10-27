@@ -4,7 +4,7 @@
 
 export const ZERO = "0".repeat(40);
 const utf8 = new TextEncoder();
-const fromUtf8 = new TextDecoder();
+const fromUtf8 = new TextDecoder("utf-8", {fatal:true,ignoreBOM:true});
 const FLUSH = utf8.encode("0000");
 const CAPS = "report-status side-band-64k no-thin ofs-delta delete-refs quiet agent=nanohub-swarm";
 
@@ -18,11 +18,11 @@ export interface Command {
  *  refuse to push onto a main it has not fetched ("fetch first"), and here the
  *  trunk decides what lands. Its recent commits go out as `.have` lines
  *  instead, so the client still sends only the objects that are new. */
-export function advertise(haves: string[], branches = ""): Response {
-  const refs = branches.trim().split("\n").filter((b) => b && !b.endsWith("\trefs/heads/main")).map((b) => b.replace("\t", " "));
+export function advertise(haves: string[], branches = "", conventional = false): Response {
+  const refs = branches.split("\n").filter((b) => b && (conventional || !b.endsWith("\trefs/heads/main"))).map((b) => b.replace("\t", " "));
   const lines = [...refs, ...haves.map((sha) => `${sha} .have`)];
   if (!lines.length) lines.push(`${ZERO} capabilities^{}`);
-  const body = concat([pkt("# service=git-receive-pack\n"), FLUSH, ...lines.map((l, i) => pkt(i === 0 ? `${l}\0${CAPS}\n` : `${l}\n`)), FLUSH]);
+  const body = concat([pkt("# service=git-receive-pack\n"), FLUSH, ...lines.map((l, i) => pkt(i === 0 ? `${l}\0${CAPS}${conventional?" atomic":""}\n` : `${l}\n`)), FLUSH]);
   return new Response(body, { headers: { "content-type": "application/x-git-receive-pack-advertisement", "cache-control": "no-cache" } });
 }
 
@@ -31,21 +31,27 @@ export function readRequest(body: Uint8Array): { commands: Command[]; caps: Set<
   const commands: Command[] = [];
   let caps = new Set<string>();
   let i = 0;
+  let flushed=false;
   while (i + 4 <= body.length) {
-    const len = parseInt(fromUtf8.decode(body.subarray(i, i + 4)), 16);
-    if (Number.isNaN(len)) throw new Error("malformed push request");
+    const header=fromUtf8.decode(body.subarray(i,i+4));
+    if(!/^[0-9a-fA-F]{4}$/.test(header))throw Error("malformed push request");
+    const len = parseInt(header, 16);
+    if ((len!==0&&len<4)||i+len>body.length) throw new Error("malformed push request");
     i += Math.max(len, 4);
-    if (len < 4) break; // flush: the commands end here
+    if (len === 0) {flushed=true;break;}
     let line = fromUtf8.decode(body.subarray(i - len + 4, i)).replace(/\n$/, "");
     const nul = line.indexOf("\0");
     if (nul >= 0) {
+      if(commands.length||line.indexOf("\0",nul+1)>=0)throw Error("malformed push capabilities");
       caps = new Set(line.slice(nul + 1).trim().split(" "));
       line = line.slice(0, nul);
     }
-    const [old, neu, ref] = line.split(" ");
-    if (!/^[0-9a-f]{40}$/.test(old) || !/^[0-9a-f]{40}$/.test(neu) || !ref) throw new Error("malformed push command");
+    const parsed=/^([0-9a-f]{40}) ([0-9a-f]{40}) (refs\/[^ \0\r\n]+)$/.exec(line);
+    if (!parsed) throw new Error("malformed push command");
+    const [,old,neu,ref]=parsed;
     commands.push({ old, new: neu, ref });
   }
+  if(!flushed)throw Error("unterminated push command list");
   return { commands, caps, pack: body.subarray(i) };
 }
 

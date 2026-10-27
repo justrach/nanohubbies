@@ -23,11 +23,11 @@ export function PeopleView(props: { people: Person[]; watchers: Owner[]; swarms:
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-3">
-      <Panel className="lg:col-span-2" title="People" subtitle={`${people.length} ${people.length === 1 ? "person" : "people"} on this trunk, each with their own agents`}>
+      <Panel className="min-w-0 lg:col-span-2" title="People" subtitle={`${people.length} ${people.length === 1 ? "person" : "people"} on this trunk, each with their own agents`}>
         {people.length === 0 ? (
           <p className="py-8 text-center text-xs text-muted">Nobody yet. Sign in and launch a swarm, or start a life from the API.</p>
         ) : (
-          <table className="tabular w-full text-xs">
+          <div className="max-w-full overflow-x-auto" role="region" aria-label="People activity" tabIndex={0}><table className="tabular w-full min-w-[640px] text-xs">
             <thead className="text-muted">
               <tr>
                 <th className="py-1.5 text-left font-normal">Person</th>
@@ -76,7 +76,7 @@ export function PeopleView(props: { people: Person[]; watchers: Owner[]; swarms:
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </Panel>
       <Panel title="Who re-planned around whom" subtitle="Conflicts by whose agent lost and whose change won" actions={<ViewToggle table={table} onChange={setTable} />}>

@@ -1,0 +1,12 @@
+{
+  "origin": "https://nanohub.sh",
+  "repository": "your-handle/your-repository",
+  "backend": "codegraff",
+  "concurrency": 4,
+  "maxSandboxes": 4,
+  "jobConcurrency": 4,
+  "image": "ghcr.io/your-org/nanohub-ci@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "network": "none",
+  "prepare": "bun install --frozen-lockfile --offline",
+  "artifacts": "/var/lib/nanohub-ci/private-artifacts"
+}

@@ -1,3 +1,4 @@
+import {tagName,newRefName} from '../repository/ref-name';
 export interface ReleaseAsset { id: string; name: string; size: number; key: string }
 export interface Release {
   id: string; trunk: string; tag: string; title: string; notes: string;
@@ -31,9 +32,9 @@ export function publicRelease(r: Release): PublicRelease {
 }
 export function releaseFields(input: Record<string, unknown>) {
   const { tag, title, notes, version } = input;
-  if (typeof tag !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(tag)) throw new Error("Use a release tag of up to 80 letters, numbers, dots, dashes or underscores");
+  tagName(tag); newRefName(`refs/tags/${tag}`);
   if (typeof title !== "string" || !title.trim() || title.length > 200) throw new Error("Provide a title of up to 200 characters");
   if (typeof notes !== "string" || notes.length > 16000) throw new Error("Release notes can contain up to 16000 characters");
   if (!Number.isSafeInteger(version) || (version as number) < 1) throw new Error("Choose a published source version");
-  return { tag, title: title.trim(), notes, version: version as number };
+  return { tag: tag as string, title: title.trim(), notes, version: version as number };
 }

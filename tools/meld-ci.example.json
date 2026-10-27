@@ -1,0 +1,8 @@
+{
+  "origin": "https://nanohub.sh",
+  "trunk": "meld-migration",
+  "artifacts": "/var/lib/nanohub-ci/artifacts",
+  "artifactOrigin": "https://ci.example.invalid/private-artifacts/",
+  "pipelineAdapter": "/opt/nanohub/tools/meld-staging-adapter.mjs",
+  "stagingOrigin": "https://staging.meld.space"
+}

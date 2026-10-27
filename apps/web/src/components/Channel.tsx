@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import {TrunkContext} from "@/trunk/context";
+import { useContext, useEffect, useRef, useState } from "react";
 import { clock } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import type { Message } from "@/lib/types";
@@ -9,6 +10,7 @@ import type { Message } from "@/lib/types";
  *  message is a recipient. */
 export function Channel({ messages, post }: { messages: Message[]; post: (body: string) => void }) {
   const { user } = useSession();
+  const readOnly=useContext(TrunkContext)?.readOnly;
   const [body, setBody] = useState("");
   // Scrolls the channel's own box, never the page, to the newest message.
   const box = useRef<HTMLDivElement | null>(null);
@@ -18,7 +20,7 @@ export function Channel({ messages, post }: { messages: Message[]; post: (body: 
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!body.trim()) return;
+    if (readOnly||!body.trim()) return;
     post(body);
     setBody("");
   };
@@ -51,13 +53,13 @@ export function Channel({ messages, post }: { messages: Message[]; post: (body: 
       <form onSubmit={send} className="mt-3 flex items-center gap-2">
         <span className="shrink-0 text-[11px] text-muted">as {user?.name ?? "guest"}</span>
         <input
-          aria-label="Message"
+          aria-label="Message" disabled={readOnly}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Message, @agent to reach it"
           className="min-w-0 flex-1 rounded-md border border-line bg-page px-2 py-1.5 text-xs text-ink outline-none placeholder:text-muted focus:border-axis"
         />
-        <button type="submit" className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-page hover:opacity-90">
+        <button disabled={readOnly} type="submit" className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-page hover:opacity-90">
           Send
         </button>
       </form>

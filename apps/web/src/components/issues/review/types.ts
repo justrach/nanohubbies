@@ -12,6 +12,8 @@ export interface CodeComment extends CodeAnchor {
   at: number;
   replyTo: string | null;
   resolved: boolean;
+  via?:{kind:"cli";credentialId:string};
+  applied?:{applicationId:string;commit:string;actor:{id:string;name:string};at:number};
 }
 export interface CommentList {
   comments: CodeComment[];

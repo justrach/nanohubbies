@@ -1,0 +1,65 @@
+name: Check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run --filter @swarm/api test:unit
+  repository:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run test:repository
+  cli:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run test:cli
+  access:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run --filter @swarm/api test:access
+  hosting:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run --filter @swarm/api test:hosting
+  build:
+    runs-on: codegraff
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - run: bun run --filter @swarm/web build
+  check:
+    runs-on: codegraff
+    needs: [unit, repository, cli, access, hosting, build]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(bun --version)" = "1.4.4"
+      - run: bun install --frozen-lockfile --offline
+      - name: Type check with pinned tsrs; all prerequisite tests must pass
+        run: bun run check

@@ -12,6 +12,9 @@ export interface User {
   name: string;
   email: string | null;
   provider: "codegraff" | "dev";
+  emailVerified?: boolean;
+  /** Server-derived repository API delegation; never accepted from a cookie. */
+  cli?: {credentialId:string;scopes:import("./cli/credentials").CliScope[]};
 }
 
 interface Settings {
@@ -57,7 +60,7 @@ export async function currentUser(request: Request, s: Settings): Promise<User |
   const raw = cookie(request, SESSION);
   const data = raw ? await unseal<User & { exp: number }>(raw, s.secret) : null;
   if (!data || data.exp < Date.now()) return null;
-  return { id: data.id, name: data.name, email: data.email, provider: data.provider };
+  return { id: data.id, name: data.name, email: data.email, provider: data.provider, ...(data.emailVerified===true?{emailVerified:true}:{}) };
 }
 
 export async function sessionCookie(user: User, s: Settings, url: URL): Promise<string> {

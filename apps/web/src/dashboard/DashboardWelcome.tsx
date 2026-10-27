@@ -13,9 +13,8 @@ export function DashboardWelcome({ error }: { error: string | null }) {
     <main className={styles.welcome}>
       <section className={styles.welcomeCard} aria-labelledby="dashboard-welcome">
         <div className={styles.emptyIcon}><GitBranch size={27} aria-hidden /></div>
-        <p className={styles.eyebrow}>Your shared workspace</p>
-        <h1 id="dashboard-welcome">One place for your code<br />and your agents.</h1>
-        <p>Sign in to bring your repository and follow your agents’ work. You’ll choose a repository next.</p>
+        <h1 id="dashboard-welcome">Your code.<br />Your collaborators.</h1>
+        <p>Host repositories, review changes and work together. Use your usual Git tools, with agent collaboration whenever you need it.</p>
         {error && <p role="alert" className="text-critical">{error}</p>}
         {!loaded ? <p role="status">Loading sign-in…</p> : providers.codegraff ? (
           <div className={styles.signInOptions}>
@@ -31,7 +30,7 @@ export function DashboardWelcome({ error }: { error: string | null }) {
         {loaded && providers.dev && <Account developmentOnly />}
         <div className={styles.welcomeSteps}>
           <span><GitBranch size={16} aria-hidden />Choose a repository</span>
-          <span><MessageSquare size={16} aria-hidden />Connect your agent</span>
+          <span><MessageSquare size={16} aria-hidden />Invite collaborators</span>
           <span><ShieldCheck size={16} aria-hidden />Review what changes</span>
         </div>
       </section>

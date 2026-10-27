@@ -49,9 +49,9 @@ export async function requireTeam(
   const credential = request.headers.has("authorization")
     ? await pusher(env, request, trunk)
     : null;
-  if (request.headers.has("authorization") && !credential?.agentId)
+  if (request.headers.has("authorization") && !credential?.agentId && !credential?.gitOnly)
     throw new TeamError(
-      "Use a registered agent's scoped credential",
+      "Use a repository Git token or a registered agent credential",
       401,
       "agent_credential_required",
     );
@@ -65,15 +65,16 @@ export async function requireTeam(
       "not_found",
     );
   if (binding.kind === "owner") {
-    if (who.id !== binding.boundBy)
+    const role = await hub.collaboratorRole(trunk, who.id);
+    if (!role)
       throw new TeamError("Workspace not found or access unavailable", 404, "not_found");
-    // A local session or its bound agent credential proves ownership. This is
+    // A session or its bound agent credential proves current repository access. This is
     // deliberately not represented as a Codegraff membership verification.
     return {
       binding,
       proof: {
         ownerId: who.id, subject: who.id, issuer: binding.issuer,
-        audience: new URL(request.url).origin, roomId: "owner", role: "owner",
+        audience: new URL(request.url).origin, roomId: "owner", role,
         agentId: credential?.agentId ?? null,
         credentialId: credential?.credentialId ?? null, verifiedAt: Date.now(),
       },
@@ -135,10 +136,11 @@ export async function visibleTrunks(
       /* Public entries remain available during provider outages. */
     }
   }
+  const direct = await Promise.all(entries.map((entry,i) => policies[i]?.kind === "owner" && user ? hub.collaboratorRole(entry.name,user.id) : null));
   return entries.filter(
     (_, i) =>
       !policies[i] || (policies[i]!.kind === "owner"
-        ? policies[i]!.boundBy === user?.id
+        ? !!direct[i]
         : allowed.has(`${policies[i]!.issuer}/${policies[i]!.roomId}`)),
   );
 }
@@ -153,4 +155,12 @@ export function privateResponse(response: Response) {
     statusText: response.statusText,
     headers,
   });
+}
+
+export const canWrite = (access: TeamAccess | null) => access?.proof.role !== "reader";
+export const canAdmin = (access: TeamAccess | null) => !!access && ["owner","admin"].includes(access.proof.role) && !access.proof.agentId;
+export function sameOrigin(env: Env, request: Request) {
+  const url=new URL(request.url), origin=request.headers.get("origin");
+  if (origin === url.origin) return true;
+  try { return !!origin && settings(env,url).dev && ["localhost","127.0.0.1"].includes(url.hostname) && new URL(origin).hostname === url.hostname; } catch { return false; }
 }

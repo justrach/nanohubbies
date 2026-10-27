@@ -6,7 +6,7 @@ import type { Unpacked } from "../unpack";
 import { branchName } from "./types";
 import { commitAt, mergeBase, publishObjects } from "./graph";
 
-export async function pushBranch(env: Env, trunk: string, command: Command, pack: Map<string, Unpacked>) {
+export async function pushBranch(env: Env, trunk: string, command: Command, pack: Map<string, Unpacked>, actor:string) {
   if (!command.ref.startsWith("refs/heads/")) throw new Error("Push a branch under refs/heads/");
   const name = branchName(command.ref.slice(11));
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
@@ -14,7 +14,7 @@ export async function pushBranch(env: Env, trunk: string, command: Command, pack
   const current = snapshot.branches.find((b) => b.name === name);
   if ((current?.commit ?? ZERO) !== command.old) throw new Error("Branch changed; fetch before pushing again");
   if (command.new === ZERO) {
-    await seq.review({ op: "branch", name, old: command.old === ZERO ? null : command.old, next: null });
+    await seq.review({ op: "branch", name, old: command.old === ZERO ? null : command.old, next: null, actor });
     return;
   }
   const reader = new ObjectReader(env.OBJECTS, trunk, async () => (await env.PACKER.get(env.PACKER.idFromName(trunk)).list()).packs);
@@ -81,5 +81,5 @@ export async function pushBranch(env: Env, trunk: string, command: Command, pack
     }
   }
   await publishObjects(env, trunk, [...pack].filter(([sha]) => commits.has(sha) || seen.has(sha)).map(([, o]) => encode(o.type, o.body)));
-  await seq.review({ op: "branch", name, old: command.old === ZERO ? null : command.old, next: { commit: command.new, tree: head.tree }, rebased });
+  await seq.review({ op: "branch", name, old: command.old === ZERO ? null : command.old, next: { commit: command.new, tree: head.tree }, rebased, actor });
 }

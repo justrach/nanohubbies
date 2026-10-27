@@ -190,7 +190,7 @@
 .message {
   margin-top: 12px;
 }
-.message > div {
+.message > div:first-child {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -219,6 +219,11 @@
 .thread form {
   margin-top: 12px;
 }
+.suggestion { margin-top:10px; padding:12px 0; border-top:1px solid var(--line); font-size:12px; min-width:0; }
+.suggestion > strong { font-size:11px; font-weight:500; color:var(--muted); }
+.suggestion pre { max-height:280px; overflow:auto; margin:10px 0; padding:10px; background:var(--wash); font-family:var(--font-mono); font-size:12px; line-height:1.7; }
+.suggestion footer { display:flex; flex-wrap:wrap; gap:8px; }
+.composer > button { margin-bottom:10px; }
 .more {
   width: 100%;
   padding: 10px;

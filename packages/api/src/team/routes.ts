@@ -25,7 +25,7 @@ export async function teamRoute(
       verification: access
         ? {
             method: access.binding.kind === "owner"
-              ? access.proof.agentId ? "owner_session_and_agent_credential" : "owner_session"
+              ? access.proof.agentId ? "repository_membership_and_agent_credential" : "repository_membership_and_session"
               : access.proof.agentId
               ? "codegraff_membership_and_agent_credential"
               : "codegraff_membership_and_session",

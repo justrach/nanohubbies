@@ -1,6 +1,17 @@
+import {archiveRoute} from "./repository/archive-route";
+import {cliRoute,cliCredentialRoute} from "./cli/routes";
+import {agentMcpRoute,contributionRoute} from './contributions/routes';
+import {cliSignInReturn} from "./cli/device";
+import {archiveMessage} from "./repository/archive";
+import {deploymentRequestRoute} from "./deployments/routes";
+import { namespaceRoute, namespacedAPI } from "./namespaces/routes";
+import { collaboratorRoute, acceptInvitation } from "./collaborators/routes";
+import { secretRoute, workloadSecrets } from "./secrets/routes";
+import { repositoryRoute, runnerRoute } from "./repository/routes";
 import { workspaceBootstrap } from "./workspace/bootstrap";
-import { SeedTooLarge, throttle } from "./abuse";
+import { SeedTooLarge, throttle, creationBody } from "./abuse";
 import { currentUser, devUser, sessionCookie, settings, signOutCookie } from "./auth";
+import {signingRoute} from "./signing/routes";
 import { codegraffAuth, codegraffReady, sessionUser } from "./better-auth";
 import { brief } from "./brief";
 import { BROWSE, browse } from "./browse/routes";
@@ -18,10 +29,11 @@ import { reviewRoute } from "./review/routes";
 import { commentRoute } from "./review/comment-route";
 import { releaseRoute, publicReleases } from "./releases/routes";
 import { coordination } from "./room/routes";
-import { requireTeam, privateResponse, visibleTrunks } from "./team/access";
+import { requireTeam, privateResponse, visibleTrunks, canWrite, sameOrigin } from "./team/access";
 import { TeamError } from "./team/provider";
 import { teamRoute, discoverTeams } from "./team/routes";
 import { listTokens, makeToken, pusher, revokeToken } from "./tokens";
+import { makeGitToken, listGitTokens } from "./git-credentials";
 import { AGENT_ROUTES, agentHelp, serve } from "./workflow";
 import type { Owner } from "./types";
 
@@ -45,6 +57,12 @@ export default {
     try {
       const blocked = await throttle(request, env, url);
       if (blocked) return blocked;
+      const namedGit=url.pathname.match(/^\/git\/([^/]+)\/([^/]+)\.git\/(.+)$/);
+      if(namedGit) {
+        const repo=await env.HUB.get(env.HUB.idFromName("hub")).resolveRepository(namedGit[1],namedGit[2]);
+        if(!repo)throw new TeamError("Repository not found",404,"not_found");
+        return await serveGit(request,env,repo.id,namedGit[3],url);
+      }
       const git = url.pathname.match(/^\/git\/([^/]+)\.git\/(.+)$/);
       if (git) return await serveGit(request, env, checked(git[1], TRUNK, "trunk"), git[2], url);
       if (url.pathname.startsWith("/api/")) return privateResponse(await api(request, env, url, ctx));
@@ -53,8 +71,8 @@ export default {
       if (app && request.method === "GET") return Response.redirect(`${app}${url.pathname}${url.search}`, 302);
       return json({ error: "not found" }, 404);
     } catch (e) {
-      if (e instanceof TeamError) return json({ error: e.message, code: e.code }, e.status, { "Cache-Control": "private, no-store", ...(e.status === 401 ? { "WWW-Authenticate": 'Basic realm="nanohub team"' } : {}) });
-      return json({ error: e instanceof Error ? e.message : String(e) }, e instanceof SeedTooLarge ? 413 : 400);
+      if (e instanceof TeamError) return json({ error: e.message, code: e.code }, e.status, { "Cache-Control": "private, no-store", ...(e.status === 401 ? { "WWW-Authenticate": 'Basic realm="nanohub"' } : {}) });
+      return json({ error: e instanceof Error ? e.message : String(e) }, e instanceof SeedTooLarge ? 413 : String(e).includes(archiveMessage)?403:400);
     }
   },
 } satisfies ExportedHandler<Env>;
@@ -99,14 +117,34 @@ export default {
 //   GET    /api/agent-help                       the agent routes below, as JSON, from the table that serves them
 //   *      /api/trunks/:t/agents/:a/...          an agent's workflow (./workflow): lives, ls, file, symbol, refs,
 //                                                submit, retry, submission, hold, status
-async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext): Promise<Response> {
+async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext, delegated?:import("./auth").User): Promise<Response> {
   const [, , kind, rawTrunk, action, rawAgent, agentAction] = url.pathname.split("/");
   const q = (name: string) => url.searchParams.get(name) ?? "";
   const method = request.method;
   const hub = env.HUB.get(env.HUB.idFromName("hub"));
   const auth = settings(env, url);
-  const user = request.headers.has("authorization") ? null : (await sessionUser(env, request, url)) ?? (await currentUser(request, auth));
+  const user = delegated ?? (request.headers.has("authorization") ? null : (await sessionUser(env, request, url)) ?? (await currentUser(request, auth)));
+  if(kind==="cli")return cliRoute(env,request,user,(next,target,actor)=>api(next,env,target,ctx,actor));
+  if(kind==="signing-keys")return signingRoute(env,request,user,rawTrunk);
 
+  if(kind === "namespaces") return namespaceRoute(env,request,user,rawTrunk);
+  if(kind === "repos" && rawTrunk && action) {
+    const rest=url.pathname.split("/").slice(5);
+    const resolved=await namespacedAPI(env,request,user,rawTrunk,action,rest);
+    if(resolved.response)return resolved.response;
+    const target=new URL(request.url);target.pathname=`/api/trunks/${resolved.id}${rest.length?"/"+rest.join("/"):""}`;
+    return api(new Request(target,request),env,target,ctx);
+  }
+  if(kind === "repository-addresses" && rawTrunk) {
+    const id=checked(rawTrunk,TRUNK,"repository");await requireTeam(env,request,id,user);
+    if(method === "POST") {
+      if(!user || request.headers.has("authorization") || !sameOrigin(env,request))return json({error:"Same-origin owner session required"},403);
+      const {namespace,name}=await request.json<{namespace:string;name:string}>();return json(await hub.reserveRepository(namespace,name,user.id,id),201);
+    }
+    if(method!=="GET")return json({error:"Method not supported"},405);
+    const repo=await hub.repositoryAddress(id);if(!repo)return json({error:"No named repository address"},404);
+    return json(repo);
+  }
   if (kind === "auth") {
     const route = [rawTrunk, action].filter(Boolean).join("/");
     const codegraff = codegraffReady(env, url);
@@ -115,10 +153,11 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
       if (!codegraff) throw new Error("Sign in with Codegraff is not configured here");
       // Better Auth answers with where to go and sets its state cookie; a
       // browser following a link wants the redirect itself. Failures come back
-      // to the dashboard as ?error=<code>.
+      // to the dashboard or fixed CLI consent route as ?error=<code>.
+      const callback=cliSignInReturn(q("cli_code"));
       const res = await (await codegraffAuth(env, url.origin, true, q("teams") === "1")).api.signInSocial({
         body: {
-          provider: "codegraff", callbackURL: "/dashboard", newUserCallbackURL: "/dashboard", errorCallbackURL: "/dashboard",
+          provider: "codegraff", callbackURL: callback, newUserCallbackURL: callback, errorCallbackURL: callback,
           additionalParams: route === "signin/github" ? { login_provider: "github" } : undefined,
         },
         headers: request.headers,
@@ -131,7 +170,7 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
       return new Response(null, { status: 302, headers });
     }
     // Where Codegraff sends people back: Better Auth checks the state, trades
-    // the code, signs them in, and redirects to the dashboard.
+    // the code, signs them in, and redirects to the selected fixed app page.
     if (route === "callback/codegraff" && codegraff) return (await codegraffAuth(env, url.origin)).handler(request);
     if (route === "dev" && method === "POST") {
       if (!auth.dev) throw new Error("the development login is off here");
@@ -198,13 +237,51 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
     return json((await visibleTrunks(env, request, await hub.list(), user)).filter((t) => t.source.toLowerCase() === source || t.source.toLowerCase().startsWith(`${source}@`)));
   }
 
+  if (kind === "invitations" && rawTrunk === "accept") return acceptInvitation(env,request,user);
   if (kind === "public-releases" && rawTrunk) return publicReleases(env, request, checked(rawTrunk, TRUNK, "trunk"), action, rawAgent);
   if (kind === "agent-help") return json(agentHelp(env, url.origin));
   if (kind !== "trunks") return json({ error: "not found" }, 404);
   if (!rawTrunk) return json(await visibleTrunks(env, request, await hub.list(), user));
 
   const trunk = checked(rawTrunk, TRUNK, "trunk");
+  if (action === "ci") {
+    const runner = await runnerRoute(env, request, trunk, rawAgent, agentAction);
+    if (runner) return runner;
+  }
+  if (action === "secrets" && rawAgent === "read") return workloadSecrets(env,request,trunk);
   const teamAccess = await requireTeam(env, request, trunk, user);
+  if(action==='contributions'&&!rawAgent)return contributionRoute(env,request,trunk,teamAccess);
+  if(action==='agents'&&rawAgent&&agentAction==='mcp'&&/^\/api\/trunks\/[^/]+\/agents\/[^/]+\/mcp\/?$/.test(url.pathname))return agentMcpRoute(env,request,trunk,checked(rawAgent,AGENT,'agent'),teamAccess);
+  if(action==="cli-credentials"&&!rawAgent)return cliCredentialRoute(env,request,trunk,user,teamAccess);
+  if(action==="archive") {
+    if(rawAgent)return json({error:"Archive operation not found"},404);
+    return archiveRoute(env,request,trunk,user,teamAccess);
+  }
+  // Account token revocation and normal Git read-token creation remain available.
+  // Repository deletion keeps its separate owner-only authorization below.
+  if(!["GET","HEAD"].includes(method)&&!(action==="git-tokens"||method==="DELETE"&&(!action||action==="ci")))await hub.assertRepositoryWritable(trunk);
+  if (!canWrite(teamAccess) && !["GET","HEAD"].includes(method) && !(method === "POST" && (action === "deployment-requests"&&!!rawAgent&&agentAction==="reviews" || action === "git-tokens" || action === "agents" && (!rawAgent || agentAction === "token")))) return json({error:"Repository read access does not permit writes"},403);
+  if (action === "git-tokens") {
+    if (!user || request.headers.has("authorization")) return json({error:"Sign in to manage your Git tokens"},403);
+    if (!(await env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk)).repositoryMode())) return json({error:"Git tokens require a Git repository"},400);
+    if (method === "GET") return json(await listGitTokens(env,{id:user.id,name:user.name},trunk));
+    if (method === "POST") {
+      if (!sameOrigin(env,request)) return json({error:"Same-origin request required"},403);
+      const body=await creationBody<{label:string}>(request,1024);
+      return json(await makeGitToken(env,{id:user.id,name:user.name},trunk,body.label),201);
+    }
+    return json({error:"Method not supported"},405);
+  }
+  if(action === "action-logs" && method === "GET") {
+    const path=url.pathname.split("/").slice(5);
+    if(path.length!==3 || !/^[a-zA-Z0-9_-]{1,80}$/.test(path[0]) || !/^[1-9][0-9]{0,8}$/.test(path[1]) || !/^[a-zA-Z0-9_.-]{1,220}\.log$/.test(path[2]))return json({error:"Log not found"},404);
+    const object=await env.OBJECTS.get(`ci/${trunk}/${path.join("/")}`);
+    return object?new Response(object.body,{headers:{"Content-Type":"text/plain; charset=utf-8","X-Content-Type-Options":"nosniff"}}):json({error:"Log not found"},404);
+  }
+  if(action==="deployment-requests")return deploymentRequestRoute(env,request,trunk,rawAgent,agentAction,user,teamAccess);
+  if (action === "collaborators") return collaboratorRoute(env,request,trunk,rawAgent,user,teamAccess);
+  if (action === "secrets") return secretRoute(env,request,trunk,user,teamAccess);
+  if (["repository", "protection", "rulesets", "environments", "ci","default-branch"].includes(action)) return repositoryRoute(env, request, trunk, action, rawAgent, user, teamAccess, agentAction);
   if (action === "releases") return releaseRoute(env, request, trunk, rawAgent, agentAction, user, teamAccess);
   if (action === "team") return teamRoute(env, request, trunk, user, teamAccess);
   if (teamAccess && action?.startsWith("benchmark")) return json({ error: "Benchmarks cannot impersonate agents in a team workspace" }, 403);
@@ -214,7 +291,7 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
   // Who is asking, as the room and agents record it. Without sign-in, a guest.
   const me: Owner = user ? { id: user.id, name: user.name } : { id: "guest", name: "guest" };
 
-  if (action === "branches" || action === "pulls") return reviewRoute(env, request, trunk, action, rawAgent, agentAction, user);
+  if (action === "branches" || action === "pulls") return reviewRoute(env, request, trunk, action, rawAgent, agentAction, user, teamAccess,url.pathname.split("/").slice(7));
 
   if (!action) {
     if (method === "POST") return createTrunk(request, env, url, trunk, user, false);
@@ -256,8 +333,8 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
   if (action === "commit" && agentAction === "comments") return commentRoute(env, request, trunk, rawAgent, user);
   if (BROWSE.has(action)) return browse(env, trunk, action, rawAgent, url, ctx);
   if (action === "brief") {
-    const [head, repo, agenda] = await Promise.all([seq.head(), room.repo(), room.agenda(20)]);
-    return new Response(brief({ trunk, origin: url.origin, head, repo, agenda, team: !!teamAccess, ownerOnly: teamAccess?.binding.kind === "owner" }), { headers: { "content-type": "text/markdown; charset=utf-8" } });
+    const [head, repo, agenda, address, gitMode] = await Promise.all([seq.head(), room.repo(), room.agenda(20), hub.repositoryAddress(trunk), seq.repositoryMode()]);
+    return new Response(brief({ trunk, address:address?`${address.namespace}/${address.name}`:undefined,gitMode, origin: url.origin, head, repo, agenda, team: !!teamAccess, ownerOnly: teamAccess?.binding.kind === "owner" }), { headers: { "content-type": "text/markdown; charset=utf-8" } });
   }
   if (action === "info") {
     try { return json(await seq.info()); }
@@ -398,18 +475,32 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
  *  smart protocol (./push), and land. */
 async function serveGit(request: Request, env: Env, trunk: string, path: string, url: URL): Promise<Response> {
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
-  const teamAccess = await requireTeam(env, request, trunk);
-  const protect = (response: Response) => teamAccess ? privateResponse(response) : response;
+  const bearer = request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
+  let readCredential = bearer;
+  if (request.headers.get("authorization")?.startsWith("Basic ")) {
+    try { readCredential = atob(request.headers.get("authorization")!.slice(6)).split(":").slice(1).join(":"); } catch {}
+  }
+  const ciRead = readCredential.startsWith("nhread_");
+  if (ciRead && !(await seq.ciReadable(readCredential))) return plain("Expired CI read credential\n", 401);
+  const teamAccess = ciRead ? null : await requireTeam(env, request, trunk);
+  const protect = (response: Response) => teamAccess || ciRead ? privateResponse(response) : response;
   const pushing = path === "git-receive-pack" || (path === "info/refs" && url.searchParams.get("service") === "git-receive-pack");
   if (pushing) {
+    await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
+    if (!canWrite(teamAccess)) return protect(plain("Repository read access does not permit pushes\n",403));
+    if (ciRead) return plain("CI clone credentials are read-only\n", 403);
     // A push needs an agent's credential from the trunk's page. Git answers
     // this challenge with the URL's handle and its credential helper's token.
     const who = await pusher(env, request, trunk);
-    if (!who) return new Response(`a push needs your agent's credential: ${url.origin}/api/trunks/${trunk}/brief shows how to give git its token\n`, { status: 401, headers: { "WWW-Authenticate": 'Basic realm="nanohub swarm"' } });
-    return protect(path === "git-receive-pack" ? await receivePack(env, trunk, request, who) : advertise(await seq.haves(), await seq.refs()));
+    if (!who) return new Response(`Git authentication required. Create a repository Git token at ${url.origin}/t/${trunk}/connect and use it as your Git password.\n`, { status: 401, headers: { "WWW-Authenticate": 'Basic realm="nanohub"' } });
+    if(who.readOnly)return protect(plain("This CLI credential permits clone/fetch only; Git push requires contents:write\n",403));
+    return protect(path === "git-receive-pack" ? await receivePack(env, trunk, request, who) : advertise(await seq.haves(), await seq.refs(), await seq.repositoryMode()));
   }
   if (path === "info/refs") return protect(plain(await seq.refs()));
-  if (path === "HEAD") return protect(plain("ref: refs/heads/main\n"));
+  if (path === "HEAD") {
+    try{return protect(plain(`ref: refs/heads/${(await seq.repositoryConfiguration()).defaultBranch}\n`));}
+    catch(error){if(error instanceof Error&&error.message.includes('does not implement the method "repositoryConfiguration"'))return protect(plain("ref: refs/heads/main\n"));throw error;}
+  }
   // No alternates, said as an empty list rather than a 404: git gives up on a
   // failed response mid-stream, and some clients' HTTP/2 lose their place.
   if (path === "objects/info/alternates" || path === "objects/info/http-alternates") return plain("");

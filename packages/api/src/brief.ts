@@ -8,26 +8,38 @@ const indent = (lines: string) => lines.replace(/^/gm, "    ");
 /** What an agent needs to work on a trunk, as markdown: where to get it, how
  *  a change lands, what to work on, and the other ways in. It is the one URL
  *  to hand any coding agent, and it reads the trunk as it is now. */
-export function brief(p: { trunk: string; origin: string; head: Head; repo: RepoInfo | null; agenda: Agenda; team?: boolean; ownerOnly?: boolean }): string {
-  const git = `${p.origin}/git/${p.trunk}.git`;
+export function brief(p: { trunk: string; origin: string; head: Head; repo: RepoInfo | null; agenda: Agenda; team?: boolean; ownerOnly?: boolean; address?:string; gitMode?:boolean }): string {
+  const git = `${p.origin}/git/${p.address??p.trunk}.git`;
   const page = `${p.origin}/t/${p.trunk}`;
   const from = p.repo ? `, imported from https://github.com/${p.repo.fullName}${p.repo.commit ? ` at ${p.repo.commit.slice(0, 12)}` : ""}` : "";
   const open = p.agenda.filter((i) => !i.heldBy).slice(0, 10);
+  const landing=p.gitMode ? "## Protected Git writes\n\nPush a feature branch, run its Actions checks and open a PR. Git-mode repositories do not accept sequencer text/symbol submissions. Reader credentials can clone but cannot write." : `## Direct landing when requested
+
+1. Start from the newest main: \`git pull --rebase\`.
+2. Make one focused change and commit it, with a message that says what it does. Name an issue as
+   \`#12\`, or write \`Closes #12\` when the change finishes it.
+3. \`git push\`. The push lands even when you are behind, unless a change that landed since your copy
+   changed the same code. Git prints the version it landed as.
+4. Refused because main changed the same code? Git prints what changed and who changed it. Run
+   \`git pull --rebase\`, check that your change still holds, and push again.
+5. After a push that landed on top of other agents' work, run \`git pull --rebase\` before the next one.
+
+`;
   return `# Working on the trunk ${p.trunk}
 
 ${p.trunk} is a git repository on nanohub swarm${from}. It is at v${p.head.version}.
 Agents can push feature branches and open native pull requests, including stacks.
-Main also supports direct landing through the sequencer's conflict checks.
+${p.gitMode ? "Git pushes preserve commit IDs and complete trees. Main changes follow the repository branch protection policy." : "Main also supports direct landing through the sequencer conflict checks."}
 
 ## Get it
 
-${p.ownerOnly ? "This workspace is private to its owner and their registered agents: cloning and pushing need your agent credential." : p.team ? "This is a private team workspace: cloning and pushing need your registered agent credential and current Codegraff membership." : `Anyone can clone it with \`git clone ${git}\`; pushing needs your agent credential.`}
+${p.ownerOnly ? "This repository is private to its current collaborators and their registered agents: cloning and pushing need your agent credential." : p.team ? "This is a private team workspace: cloning and pushing need your registered agent credential and current Codegraff membership." : `Anyone can clone it with \`git clone ${git}\`; pushing needs your agent credential.`}
 The person you work for registers your handle at ${page}/connect and gives you its token,
 shown once. Your handle is the git username and the token is the password. Keep the token
 in ROOM_TOKEN, out of messages, logs, commits and remote URLs:
 
     export ROOM_TOKEN=<your token>
-${indent(cloneCommand(p.origin, p.trunk, "<agent>"))}
+${indent(cloneCommand(p.origin, p.address??p.trunk, "<agent>"))}
 
 Git reads the token from ROOM_TOKEN only when the server asks for it, and nothing writes it
 to disk. A clone made without these settings takes them with:
@@ -43,7 +55,7 @@ For reviewable work, start a branch from the workspace's main and push it here:
     git push -u origin HEAD
 
 Open a native PR at ${page}/pulls, or POST ${p.origin}/api/trunks/${p.trunk}/pulls
-with JSON \`{"title":"Describe the change","head":"agent/my-change","base":"main"}\`.
+with JSON \`{"title":"Describe the change","head":"agent/my-change"}\`.
 Use the same Basic credentials as git. A branch push does not change main.
 
 To stack another change, branch from agent/my-change, push the new branch, and
@@ -59,16 +71,7 @@ anchor. POST /reviews with \`{commit,anchor,verdict,body}\` (COMMENT, APPROVE, o
 REQUEST_CHANGES); POST /merge or /restack with \`{commit,anchor}\` from the reviewed
 revision. A stale revision is refused. POST /close closes an open PR.
 
-## Direct landing when requested
-
-1. Start from the newest main: \`git pull --rebase\`.
-2. Make one focused change and commit it, with a message that says what it does. Name an issue as
-   \`#12\`, or write \`Closes #12\` when the change finishes it.
-3. \`git push\`. The push lands even when you are behind, unless a change that landed since your copy
-   changed the same code. Git prints the version it landed as.
-4. Refused because main changed the same code? Git prints what changed and who changed it. Run
-   \`git pull --rebase\`, check that your change still holds, and push again.
-5. After a push that landed on top of other agents' work, run \`git pull --rebase\` before the next one.
+${landing}
 
 ## What to work on
 

@@ -1,5 +1,7 @@
 "use client";
 
+import {TrunkContext} from "@/trunk/context";
+import {useContext} from "react";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +10,7 @@ import { api, trunkPath } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
 export function GitHubSync({ trunk }: { trunk: string }) {
+  const readOnly=useContext(TrunkContext)?.readOnly;
   const { user } = useSession();
   const router = useRouter();
   const scope = `${trunk}:${user?.id ?? ""}`;
@@ -60,7 +63,7 @@ export function GitHubSync({ trunk }: { trunk: string }) {
       <Button
         size="sm"
         type="button"
-        disabled={busy}
+        disabled={busy||readOnly}
         onClick={() => void refresh()}
       >
         <RefreshCw

@@ -1,0 +1,2 @@
+.page input[type="checkbox"] { accent-color: var(--brand); }
+.page [tabindex="-1"]:focus { outline: 2px solid var(--brand); outline-offset: 4px; }

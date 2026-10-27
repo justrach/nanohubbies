@@ -8,13 +8,14 @@ import { IssueDrawer } from "@/components/IssueDrawer";
 import { IssuesBoard } from "@/components/IssuesBoard";
 import styles from "@/components/issues/Issues.module.css";
 import { PeopleView } from "@/components/PeopleView";
+import { Collaborators } from "../room/Collaborators";
 import { useLiveRoom, useTrunk } from "../context";
 import { useClock, useIssueList } from "./useClock";
 
 /** The trunk's issues as a board. An issue opens in a drawer, and its number
  *  in the address (#12) opens it straight away, so a commit can link to it. */
 export function IssuesView() {
-  const { trunk, repo } = useTrunk();
+  const { trunk, repo, readOnly } = useTrunk();
   const room = useLiveRoom();
   const serverNow = useClock(5000) + room.skew;
   const issues = useIssueList(room, serverNow);
@@ -60,6 +61,7 @@ export function IssuesView() {
           issues={issues}
           onOpen={open}
           selected={issue}
+          readOnly={readOnly}
         />
         {repo && (
           <details className={styles.sync}>
@@ -93,10 +95,12 @@ export function IssuesView() {
 
 /** Everyone whose agents work here, and whose changes they re-planned around. */
 export function PeopleTab() {
+  const { trunk } = useTrunk();
   const room = useLiveRoom();
   const serverNow = useClock(5000) + room.skew;
   return (
     <main className="mx-auto max-w-[1440px] px-5 py-5">
+      <Collaborators trunk={trunk} />
       <PeopleView
         people={room.people}
         watchers={room.watchers}

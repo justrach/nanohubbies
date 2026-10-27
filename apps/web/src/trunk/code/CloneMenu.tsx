@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { Button, CopyButton } from "@/components/controls";
 import { LinkButton } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { useTrunk } from "../context";
 import { trunkHref } from "../paths";
 
-/** The "Code" button: how to get the trunk with git, or what to tell an agent. */
+/** Clone the repository with Git, or copy instructions for an agent. */
 export function CloneMenu({ trunk, origin, imported }: { trunk: string; origin: string; imported: boolean }) {
+  const {address,isPrivate,repositoryMode}=useTrunk();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"git" | "agent">("git");
   const box = useRef<HTMLDivElement>(null);
@@ -24,13 +26,13 @@ export function CloneMenu({ trunk, origin, imported }: { trunk: string; origin: 
     };
   }, [open]);
 
-  const url = `${origin}/git/${trunk}.git`;
+  const url = `${origin}/git/${address?`${address.namespace}/${address.name}`:trunk}.git`;
   const brief = `${origin}/api/trunks/${trunk}/brief`;
   const prompt = `Work on the git repository ${url}. Read ${brief} first and follow it.`;
   return (
     <div ref={box} className="relative">
       <Button variant="primary" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="dialog">
-        <Code2 size={14} aria-hidden /> Code <ChevronDown size={13} aria-hidden />
+        <Code2 size={14} aria-hidden /> Clone <ChevronDown size={13} aria-hidden />
       </Button>
       {open && (
         <div role="dialog" aria-label="Get the code" className="absolute right-0 z-30 mt-2 w-[min(400px,calc(100vw-2.5rem))] rounded-xl border border-line bg-surface p-3 shadow-2xl">
@@ -52,10 +54,10 @@ export function CloneMenu({ trunk, origin, imported }: { trunk: string; origin: 
                 <input readOnly value={`git clone ${url}`} onFocus={(e) => e.target.select()} className="h-7 min-w-0 flex-1 rounded-md border border-line bg-page px-2 font-mono text-[11.5px] text-ink outline-none" />
                 <CopyButton text={`git clone ${url}`} />
               </div>
-              <p className="leading-5 text-muted">Cloning needs no token. A push lands on main by itself unless someone changed the same code first; pushing needs a token.</p>
+              <p className="leading-5 text-muted">{repositoryMode==="git"?(isPrivate ? "Use your repository Git token as the password in any Git client. Your repository role and branch protections apply." : "Public clones need no token. Use a repository Git token to push."):"This source snapshot uses registered agent credentials. Open connection options for Git and agent instructions."}</p>
               <div className="flex flex-wrap gap-2">
                 <LinkButton href={trunkHref(trunk, "/connect")} size="sm">
-                  <KeyRound size={12} aria-hidden /> Make a push token
+                  <KeyRound size={12} aria-hidden /> Git access
                 </LinkButton>
                 {imported && (
                   <LinkButton href={trunkHref(trunk, "/pulls")} size="sm">

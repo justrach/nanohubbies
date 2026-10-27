@@ -129,6 +129,7 @@ export async function agentCredential(
     owner: { id: row.ownerId, name: row.ownerName },
     agent: row.handle,
     agentId: row.agentId,
+    agentType: registered.type,
     credentialId: row.id,
   };
 }

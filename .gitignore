@@ -15,3 +15,8 @@ apps/web/public/runtimes.json
 
 # The production deployment names account resources; it stays local.
 apps/web/wrangler.deploy.jsonc
+# Generated Cloudflare secret references are account-specific metadata.
+packages/vault/wrangler.secrets.jsonc
+
+# Portable hosting CLI assets are rebuilt from packages/cli on every web build.
+apps/web/public/nh/

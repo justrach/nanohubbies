@@ -1,0 +1,11 @@
+{
+  "id": 424242,
+  "name": "Imported release tag protections",
+  "target": "tag",
+  "enforcement": "active",
+  "conditions": {
+    "repository_name": { "include": ["~ALL"], "exclude": [] },
+    "ref_name": { "include": ["refs/tags/import-smoke-*"], "exclude": [] }
+  },
+  "rules": [{ "type": "deletion" }, { "type": "non_fast_forward" }]
+}

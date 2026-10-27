@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-10-27T11:44:46.336091+00:00",
+  "workerVersion": "5f06d7f5-7568-44ad-ac6d-9cea8bdb6f45",
+  "repository": "rachxpradhan/prod-codeowners-20261027",
+  "defaultBranch": "main",
+  "branchHeadsUnchanged": 6,
+  "settingsRevisionBefore": 0,
+  "settingsRevisionAfter": 1,
+  "rulesetRevisionBefore": 5,
+  "rulesetRevisionAfter": 6,
+  "rulesetObjectsUnchanged": 3,
+  "protectionObjectsUnchanged": 3,
+  "protectionRevision": 3,
+  "receiver": {
+    "conditionalWrites": true,
+    "cliAudit": true,
+    "revisionTracking": "storage"
+  },
+  "cli": {
+    "format": 1,
+    "version": "0.4.9",
+    "path": "/nh/releases/0.4.9/nh.mjs",
+    "bytes": 49938,
+    "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+  },
+  "publicCliVersionVerified": "nh 0.4.9",
+  "olderReleaseUnchanged": true,
+  "productionCredentialIssued": false,
+  "productionDefaultSelected": false,
+  "apiUnitTests": 262,
+  "repositoryUnitTests": 205,
+  "cliTests": 39,
+  "hostingPoolTests": 28,
+  "sourceAndBundledRealWorkerGitAccepted": true
+}

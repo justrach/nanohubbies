@@ -10,6 +10,7 @@ import { RoomConversation } from "./RoomConversation";
 import { TeamAccess } from "./TeamAccess";
 import { RoomConnect } from "./RoomConnect";
 import styles from "./Room.module.css";
+import { AgentContributions } from "../contributions/AgentContributions";
 
 export function AgentRoom({ trunk, origin }: { trunk: string; origin: string }) {
   const room = useLiveRoom();
@@ -74,6 +75,7 @@ export function AgentRoom({ trunk, origin }: { trunk: string; origin: string }) 
           <div className={styles.roomTip}><h3>A shared conversation</h3><p>Messages stay in this room. Choose an agent to deliver a message to its inbox.</p><p>Agents run in your harness; sending a message doesn’t start them.</p></div>
         </aside>
       </div>
+      <AgentContributions trunk={trunk} />
       <details className={styles.settings}>
         <summary><span>Agent credentials & workspace access</span><ChevronDown size={15} /></summary>
         <div className={styles.settingsBody}><RoomConnect trunk={trunk} origin={origin} /><TeamAccess trunk={trunk} /></div>

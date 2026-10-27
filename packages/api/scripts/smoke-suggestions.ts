@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {mkdir,writeFile,symlink,chmod} from 'node:fs/promises';
+import {join} from 'node:path';
+import {teamFixture} from './team/fixture.ts';
+const f=await teamFixture(),exec=promisify(execFile),trunk='suggestions-git',base=`/api/trunks/${trunk}`;
+let issued:any,author:any;
+try {
+ author=await f.login('author','101');const reviewer=await f.login('reviewer','202'),reader=await f.login('reader','303');await f.json('POST',base,{mode:'git'},author);
+ for(const [id,who,role] of [['reviewer',reviewer,'writer'],['reader',reader,'reader']] as const){const invite=await f.json('POST',`${base}/collaborators`,{userId:`codegraff:${id}`,role},author);await f.json('POST','/api/invitations/accept',{trunk,token:invite.token},who);}
+ issued=await f.json('POST',`${base}/git-tokens`,{label:'Suggestions Git fixture'},author);const source=join(f.dir,'source');await mkdir(source);
+ const git=async(...args:string[])=>(await exec('git',['-C',source,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',...args])).stdout.trim();
+ await git('init','-b','main');await writeFile(join(source,'README.md'),'Base\n');await writeFile(join(source,'run.sh'),'echo base\r\n');await chmod(join(source,'run.sh'),0o755);await writeFile(join(source,'asset.bin'),new Uint8Array([0,255,1,0]));await writeFile(join(source,'é.txt'),'Untouched\n');await symlink('README.md',join(source,'link'));await git('add','.');await git('commit','-m','Base');const anchor=await git('rev-parse','HEAD');
+ const remote=`${f.origin}/git/${trunk}.git`,transport=async(...args:string[])=>exec('git',['-C',source,...args],{env:{...process.env,GIT_TERMINAL_PROMPT:'0',GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:`http.${remote}.extraHeader`,GIT_CONFIG_VALUE_0:`Authorization: Basic ${btoa(`git:${issued.token}`)}`}});
+ await transport('push',remote,'main');await git('checkout','-b','feature');await writeFile(join(source,'README.md'),'Candidate\nSecond line\nThird line\n');await writeFile(join(source,'run.sh'),'echo candidate\r\n');await git('add','.');await git('commit','-m','Candidate');const head=await git('rev-parse','HEAD'),before=await git('ls-tree','-r','HEAD');await transport('push',remote,'feature','feature:other-feature');
+ const policy={branch:'main',pullRequest:true,approvals:1,checks:[],beforeOpen:[],preventForce:true,preventDelete:true,requireConversationResolution:true};await f.json('PUT',`${base}/protection`,policy,author);await f.json('POST',`${base}/pulls`,{title:'Apply suggestions',head:'feature'},author);await f.json('POST',`${base}/pulls`,{title:'Other scope',head:'other-feature'},author);
+ const view=()=>f.json('GET',`${base}/pulls/1`,undefined,author),observed={commit:head,anchor},path=`${base}/pulls/1/suggestions/apply`,fence=(body:string)=>'```suggestion\n'+body+'\n```';
+ const comment=async(id:string,file:string,startLine:number,line:number,body:string,extra={})=>f.json('POST',`${base}/pulls/1/comments`,{...observed,id,path:file,side:'RIGHT',startLine,line,body:fence(body),...extra},reviewer);
+ await comment('suggest-first','README.md',1,1,'Accepted\nInserted');await comment('suggest-tail','README.md',3,3,'Tail');await comment('suggest-script','run.sh',1,1,'echo reviewed');
+ await comment('suggest-left','README.md',1,1,'Old-side edit',{side:'LEFT'});await comment('suggest-noop','README.md',1,1,'Candidate');await comment('suggest-overlap','README.md',1,2,'Overlap');await comment('suggest-reply','README.md',1,1,'Reply suggestion',{replyTo:'suggest-first'});
+ const request={id:'apply-request-1',...observed,commentIds:['suggest-first','suggest-tail','suggest-script'],message:'Apply suggestions'};
+ assert.equal((await f.request('POST',path,request,reader)).status,403);assert.equal((await f.request('POST',path,request,{...author,Origin:''})).status,403);assert.equal((await f.request('POST',path,request,{...author,Origin:'https://other.invalid'})).status,403);
+ assert.equal((await f.request('GET',path,undefined,author)).status,405);assert.equal((await f.request('POST',path,{...request,next:{commit:head},proof:{}},author)).status,400);
+ for(const change of [{commentIds:['suggest-first','suggest-first']},{commentIds:[]},{message:'bad\nmessage'}])assert.equal((await f.request('POST',path,{...request,...change},author)).status,400);
+ assert.equal((await f.request('POST',`${base}/pulls/2/suggestions/apply`,request,author)).status,404);
+ for(const id of ['suggest-left','suggest-reply'])assert.equal((await f.request('POST',path,{...request,commentIds:[id]},author)).status,409);
+ assert.equal((await f.request('POST',path,{...request,commentIds:['suggest-noop']},author)).status,400);assert.equal((await f.request('POST',path,{...request,commentIds:['suggest-first','suggest-overlap']},author)).status,400);
+ await f.json('POST',`${base}/agents`,{handle:'apply-bot',type:'test'},author);const agent=await f.json('POST',`${base}/agents/apply-bot/token`,{},author),agentHeader={authorization:`Basic ${btoa(`apply-bot:${agent.token}`)}`};assert.equal((await f.request('POST',path,request,agentHeader)).status,403);assert.equal((await f.request('POST',path,request,{...author,...agentHeader})).status,403);
+ assert.equal((await f.request('POST',path,request,{authorization:`Basic ${btoa(`git:${issued.token}`)}`})).status,401);
+ const unchanged=async()=>{const v=await view();assert.equal(v.head.commit,head);assert.ok(v.discussion.comments.every((c:any)=>!c.applied));};
+ await f.json('POST',`${base}/pulls/1/reviews`,{...observed,verdict:'APPROVE'},reviewer);
+ await f.json('PUT',`${base}/protection`,{...policy,branch:'feature',pullRequest:false,approvals:0,requireConversationResolution:false,locked:true},author);assert.equal((await f.request('POST',path,request,author)).status,400);await unchanged();await f.json('DELETE',`${base}/protection`,{branch:'feature'},author);
+ const config=(name:string,target:string,rules:any[],include=['~ALL'])=>({name,target,enforcement:'active',...(target==='push'?{}:{conditions:{ref_name:{include,exclude:[]}}}),rules});
+ const metadata=await f.json('POST',`${base}/rulesets`,config('Suggestion subjects','branch',[{type:'commit_message_pattern',parameters:{operator:'starts_with',pattern:'fix:'}}],['refs/heads/feature']),author);
+ assert.equal((await f.request('POST',path,request,author)).status,400);await unchanged();
+ const restricted=await f.json('POST',`${base}/rulesets`,config('Script guard','push',[{type:'file_path_restriction',parameters:{restricted_file_paths:['run.sh']}}]),author);
+ const good={...request,message:'fix: apply reviewed suggestions'};assert.equal((await f.request('POST',path,good,author)).status,400);await unchanged();await f.json('DELETE',`${base}/rulesets/${restricted.id}`,undefined,author);
+ const pending=(await f.json('POST',`${base}/pulls/1/pending-review`,{reviewId:'private-draft-apply',revision:0,...observed,comment:{id:'private-apply-comment',path:'README.md',side:'RIGHT',startLine:1,line:1,body:'Private feedback before apply'}},author)).pending;
+ const applied=await f.json('POST',path,good,author),next=applied.application.commit;let v=await view();assert.equal(v.head.commit,next);assert.equal(v.reviews[0].dismissed.kind,'stale');assert.equal(v.reviewGate.approvals,0);assert.equal(v.pendingReview.commit,head);assert.ok(v.runs.some((r:any)=>r.head===next));assert.equal(v.branches.find((b:any)=>b.name==='main').commit,anchor);
+ for(const id of request.commentIds){const c=v.discussion.comments.find((c:any)=>c.id===id);assert.equal(c.applied.commit,next);assert.equal(c.resolved,true);}
+ assert.equal((await f.json('POST',path,good,author)).application.commit,next);assert.equal((await f.request('POST',path,{...good,message:'fix: different'},author)).status,409);
+ assert.equal((await f.request('POST',path,{...good,id:'other-apply-request',commit:next},author)).status,409);
+ assert.equal((await f.request('POST',`${base}/pulls/1/pending-review/submit`,{reviewId:pending.id,revision:pending.revision,...observed,body:'Old',verdict:'APPROVE'},author)).status,409);await f.json('DELETE',`${base}/pulls/1/pending-review`,{reviewId:pending.id,revision:pending.revision},author);
+ await transport('fetch',remote,'feature');const newHead=await git('rev-parse','FETCH_HEAD');assert.equal(newHead,next);assert.equal(await git('show',`${next}:README.md`),'Accepted\nInserted\nSecond line\nTail');assert.equal((await exec('git',['-C',source,'show',`${next}:run.sh`],{encoding:'buffer'})).stdout.toString(),'echo reviewed\r\n');
+ const after=await git('ls-tree','-r',next);for(const name of ['asset.bin','link','é.txt'])assert.equal(after.split('\n').find(l=>l.endsWith('\t'+name)),before.split('\n').find(l=>l.endsWith('\t'+name)));assert.match(after,/100755 blob [a-f0-9]+\trun.sh/);assert.equal(await git('rev-parse',`${next}^`),head);assert.match(await git('show','-s','--format=%B',next),/Co-authored-by:/);
+ for(const c of v.discussion.comments.filter((c:any)=>!c.replyTo&&!c.resolved))await f.json('PATCH',`${base}/pulls/1/comments`,{commit:next,anchor,id:c.id,resolved:true},author);
+ await f.json('POST',`${base}/pulls/1/reviews`,{commit:next,anchor,verdict:'APPROVE'},reviewer);assert.equal((await view()).reviewGate.ready,true);await f.json('POST',`${base}/pulls/1/merge`,{commit:next,anchor},author);
+ assert.equal((await f.json('POST',path,good,author)).application.commit,next);const clone=join(f.dir,'clone');await transport('clone',remote,clone);await exec('git',['-C',clone,'fsck','--strict']);assert.equal((await exec('git',['-C',clone,'rev-parse','HEAD'])).stdout.trim(),next);
+ console.log('PASS: real Git suggestion batches, immutable ranges, overlap/stale/role/origin rejection, branch and metadata/path protections, binary/mode/symlink preservation, atomic receipts, stale reviews/private drafts, fresh approval and protected merge/fsck');
+}finally{if(issued)await f.json('DELETE',`/api/tokens/${issued.id}`,undefined,author).catch(()=>{});await f.close();}

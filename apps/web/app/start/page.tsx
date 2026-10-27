@@ -3,7 +3,7 @@ import { StartPage } from "@/onboarding/StartPage";
 import { get } from "@/server/api";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Create a workspace" };
+export const metadata: Metadata = { title: "Create a repository" };
 
 export default async function Page({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

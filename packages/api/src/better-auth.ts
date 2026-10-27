@@ -71,8 +71,8 @@ export async function sessionUser(env: Env, request: Request, url: URL): Promise
   const auth = await codegraffAuth(env, url.origin, false);
   const got = await auth.api.getSession({ headers: request.headers }).catch(() => null);
   if (!got) return null;
-  const { id, name, email } = got.user;
-  return { id: userId(id), name: name || email.split("@")[0] || "codegraff user", email, provider: "codegraff" };
+  const { id, name, email, emailVerified } = got.user;
+  return { id: userId(id), name: name || email.split("@")[0] || "codegraff user", email, emailVerified:emailVerified===true, provider: "codegraff" };
 }
 
 /** The app's id for a person in the auth tables. Their Account object is named after it. */

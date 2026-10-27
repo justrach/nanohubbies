@@ -1,20 +1,100 @@
 /** Test-only entrypoint. It is never referenced by either Wrangler config. */
-import api from "../../src/index";
+import api,{Sequencer as ProductionSequencer,Room as ProductionRoom} from "../../src/index";
+import type {ArchiveChange} from "../../src/repository/archive-types";
 import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
+
+/** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
+export class Sequencer extends ProductionSequencer {
+  legacyDefault(change:{branch:string;manualCounter?:boolean;rollback?:boolean}) {
+    return this.ctx.storage.transactionSync(()=>{
+      this.ctx.storage.sql.exec("UPDATE repository_config SET default_branch=? WHERE id=1",change.branch);
+      if(change.manualCounter)this.ctx.storage.sql.exec("UPDATE repository_settings_revision SET revision=revision+1 WHERE id=1");
+      if(change.rollback)throw Error("Synthetic legacy default rollback");
+    });
+  }
+  legacyRuleset(change:{id:number;configuration?:import("../../src/repository/ruleset-types").RulesetInput;manualCounter?:boolean;rollback?:boolean}) {
+    return this.ctx.storage.transactionSync(()=>{
+      const sql=this.ctx.storage.sql;
+      if(change.configuration)sql.exec("UPDATE repository_rulesets SET data=? WHERE id=?",JSON.stringify(change.configuration),change.id);
+      else sql.exec("DELETE FROM repository_rulesets WHERE id=?",change.id);
+      if(change.manualCounter)sql.exec("UPDATE repository_rules_revision SET revision=revision+1 WHERE id=1");
+      if(change.rollback)throw Error("Synthetic legacy ruleset rollback");
+    });
+  }
+  legacyProtection(change:{branch:string;policy?:import("../../src/repository/types").BranchPolicy;manualCounter?:boolean;rollback?:boolean}) {
+    return this.ctx.storage.transactionSync(()=>{
+      const sql=this.ctx.storage.sql;
+      if(change.policy)sql.exec("INSERT INTO branch_policies VALUES (?,?) ON CONFLICT(branch) DO UPDATE SET data=excluded.data",change.branch,JSON.stringify(change.policy));
+      else sql.exec("DELETE FROM branch_policies WHERE branch=?",change.branch);
+      // The first CLI protection release incremented in application code;
+      // older builds did not. Neither path invokes the current policy store.
+      if(change.manualCounter)sql.exec("UPDATE branch_policy_revision SET revision=revision+1 WHERE id=1");
+      if(change.rollback)throw Error("Synthetic legacy writer transaction rollback");
+    });
+  }
+  applyRepositoryArchive(change:ArchiveChange) {
+    const failure=(this.env as Env&{ARCHIVE_TEST_FAILURE?:string}).ARCHIVE_TEST_FAILURE;
+    if(failure&&["before","after","unarchive-before","unarchive-after"].includes(failure)&&(failure.startsWith("unarchive")?!change.archived:change.archived)) {
+      const sql=this.ctx.storage.sql;sql.exec("CREATE TABLE IF NOT EXISTS archive_test_fault (id INTEGER PRIMARY KEY)");
+      if(!sql.exec("SELECT 1 FROM archive_test_fault").toArray().length) {
+        sql.exec("INSERT INTO archive_test_fault VALUES (1)");
+        if(failure.endsWith("after"))super.applyRepositoryArchive(change);
+        throw Error("Synthetic archive RPC interruption");
+      }
+    }
+    return super.applyRepositoryArchive(change);
+  }
+}
+
+export class Room extends ProductionRoom {
+  async applyRepositoryArchive(trunk:string,change:ArchiveChange) {
+    if((this.env as Env&{ARCHIVE_TEST_FAILURE?:string}).ARCHIVE_TEST_FAILURE==="room-before"&&change.archived) {
+      const sql=this.ctx.storage.sql;sql.exec("CREATE TABLE IF NOT EXISTS archive_test_fault (id INTEGER PRIMARY KEY)");
+      if(!sql.exec("SELECT 1 FROM archive_test_fault").toArray().length){sql.exec("INSERT INTO archive_test_fault VALUES (1)");throw Error("Synthetic Room archive interruption");}
+    }
+    return super.applyRepositoryArchive(trunk,change);
+  }
+}
 
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==="/fixture/conditional-archive") {
+      const body=await request.json<{trunk:string;actor:string;archived:boolean;revision:number;confirmation:string}>();
+      try{return Response.json(await env.HUB.get(env.HUB.idFromName("hub")).configureRepositoryArchive(body.trunk,body.actor,body.archived,body.revision,"fixture-direct",undefined,body.confirmation));}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
+    if(url.pathname==="/fixture/legacy-ruleset") {
+      const body=await request.json<{trunk:string;id:number;configuration?:import("../../src/repository/ruleset-types").RulesetInput;manualCounter?:boolean;rollback?:boolean}>();
+      try{await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {legacyRuleset:(input:typeof body)=>Promise<void>}).legacyRuleset(body);return Response.json({wrote:true});}
+      catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(url.pathname==="/fixture/legacy-default"||url.pathname==="/fixture/conditional-default") {
+      const body=await request.json<{trunk:string;branch:string;commit:string;revision:number;actor:string;manualCounter?:boolean;rollback?:boolean}>(),seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk));
+      try{
+        if(url.pathname.endsWith('legacy-default'))await (seq as unknown as {legacyDefault:(input:typeof body)=>Promise<void>}).legacyDefault(body);
+        else await seq.configureRepositoryDefault({branch:body.branch,commit:body.commit,revision:body.revision,credentialId:'fixture-direct-rpc',origin:url.origin},body.actor);
+        return Response.json({wrote:true});
+      }catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(url.pathname==="/fixture/legacy-protection") {
+      const body=await request.json<{trunk:string;branch:string;policy?:import("../../src/repository/types").BranchPolicy;manualCounter?:boolean;rollback?:boolean}>();
+      // Test entrypoint only; no production Worker exports this hook.
+      try{await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {legacyProtection:(input:typeof body)=>Promise<void>}).legacyProtection(body);return Response.json({wrote:true});}
+      catch(error){return Response.json({error:String(error)},{status:400});}
+    }
     if (url.pathname === "/fixture/session") {
       const {
         localId,
         subject,
         name = "Same display name",
+        emailVerified = false,
       } = await request.json<{
         localId: string;
         subject: string;
         name?: string;
+        emailVerified?: boolean;
       }>();
       await env.AUTH_DB.prepare(
         'CREATE TABLE IF NOT EXISTS "account" ("userId" TEXT PRIMARY KEY, "providerId" TEXT, "accountId" TEXT)',
@@ -29,6 +109,7 @@ export default {
         name,
         email: `${subject}@example.invalid`,
         provider: "codegraff",
+        ...(emailVerified===true?{emailVerified:true}:{}),
       };
       await env.ACCOUNT.get(env.ACCOUNT.idFromName(user.id)).save({
         access: `fixture-${subject}`,
@@ -44,6 +125,23 @@ export default {
           },
         },
       );
+    }
+    if(url.pathname==="/fixture/archive-state") {
+      const trunk=url.searchParams.get("trunk")!;
+      return Response.json({hub:await env.HUB.get(env.HUB.idFromName("hub")).repositoryArchive(trunk),sequencer:await env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk)).repositoryArchive(),room:await env.ROOM.get(env.ROOM.idFromName(trunk)).repositoryArchive()});
+    }
+    if(url.pathname==="/fixture/archive-write") {
+      const body=await request.json<{trunk:string;kind:string;head:string;base:string}>(),seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)),room=env.ROOM.get(env.ROOM.idFromName(body.trunk));
+      try{
+        if(body.kind==="land") {
+          const head=await seq.head();return Response.json(await seq.submit({id:"archive-text-test-write",agent:"archive-fixture",kind:"agent",owner:{id:"codegraff:owner",name:"owner"},life:1,intent:"Archive text writer validation",base:head.version,reads:{strong:[],weak:[]},edits:[{op:"create",path:"after-archive.txt",text:"Writable only after unarchive\n"}],issue:null,closes:false}));
+        }
+        if(body.kind==="room")await room.openIssue("Late issue","Must not land after the archive barrier","owner");
+        else if(body.kind==="review")await seq.review({op:"close",number:1});
+        else if(body.kind==="policy")await seq.setPolicy({branch:"main",pullRequest:false,approvals:0,checks:[],beforeOpen:[],preventForce:false,preventDelete:false},"owner");
+        else await seq.updateRepository([{name:"refs/heads/late-write",old:null,next:{commit:body.head,tree:body.base},fastForward:true,actor:"owner"}]);
+        return Response.json({wrote:true});
+      }catch(error){return Response.json({error:String(error)},{status:403});}
     }
     if (url.pathname === "/fixture/proof")
       return Response.json(

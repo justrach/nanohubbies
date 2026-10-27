@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { GitHubPath } from "@/views/GitHubPath";
-import { lookup } from "@/server/api";
+import { lookup, get, orMissing } from "@/server/api";
 
 type Props = { params: Promise<{ owner: string; repo: string; rest?: string[] }> };
 
@@ -20,6 +20,11 @@ export default async function Page({ params }: Props) {
   const { owner, repo, rest = [] } = await params;
   if (!OWNER.test(owner) || !REPO.test(repo)) notFound();
   const name = repo.replace(/\.git$/, "");
+  const managed=await get<{exists:boolean}>(`/api/namespaces/${encodeURIComponent(owner.toLowerCase())}`);
+  if(managed.exists) {
+    const repo=await orMissing(get<{id:string}>(`/api/repos/${encodeURIComponent(owner.toLowerCase())}/${encodeURIComponent(name.toLowerCase())}`));
+    redirect(`/t/${repo.id}${rest.length?"/"+rest.map(encodeURIComponent).join("/"):""}`);
+  }
   if ((rest[0] === "pull" || rest[0] === "pulls") && /^\d+$/.test(rest[1] ?? "")) redirect(`/pr/${owner}/${name}/${rest[1]}`);
   const found = await lookup(`${owner}/${name}`).catch(() => []);
   if (found.length) {

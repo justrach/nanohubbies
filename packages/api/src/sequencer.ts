@@ -1,7 +1,36 @@
+import {ArchiveStore,assertRepositoryWritable,type ArchiveChange} from "./repository/archive";
+import {rulesetActor} from './repository/actor';
+import type {RulesetActor} from './repository/bypass';
+import {currentRulesetActor} from './repository/bypass';
+import {DeploymentRequests} from "./deployments/requests";
+import {Contributions} from './contributions/store';
+import type {ContributionAgent,WorkStart,WorkReport,ContributionFilter} from './contributions/types';
+import {runRef,runRefTarget} from './ci/ref';
+import {deploymentMembership} from "./deployments/membership";
+import type {DeploymentMembership} from "./deployments/approval-types";
+import {Environments} from "./deployments/store";
+import {deploymentGate} from "./deployments/requirements";
+import { RuleInsights, ruleTransaction } from "./repository/insights";
+import { Repository } from "./repository/store";
+import { Rulesets } from "./repository/rulesets";
+import { RulesetHistory } from "./repository/ruleset-history";
+import { exportRuleset } from "./repository/ruleset-transfer";
+import { codeOwnerAccounts } from "./repository/codeowner-access";
+import { codeOwnerDecision } from "./repository/codeowners";
+import type { CodeOwnerEvidence } from "./repository/codeowner-types";
+import { Policies, type BranchPolicy } from "./repository/policy";
+import { CIStore, type CheckResult, type StagingEvidence } from "./ci/store";
 import { DurableObject } from "cloudflare:workers";
 import { ReviewStore } from "./review/store";
+import { reviewWriter } from "./review/access";
+import { reviewerMembership } from "./review/reviewer-access";
+import type { ReviewerMembership } from "./review/reviewer-types";
 import { CodeComments, type CommentCommand } from "./review/comments";
-import type { ReviewCommand } from "./review/types";
+import { PullComments, type PullCommentCommand } from "./review/pull-comments";
+import { PendingReviews, type PendingCommand, type SubmitPending } from "./review/pending";
+import { SuggestionApplications,type ApplySuggestions } from "./review/suggestion-store";
+import {branchFingerprint} from "./signing/ref-proof";
+import type { ReviewCommand, ReviewSnapshot } from "./review/types";
 import { listTargets } from "./sequencer/queries";
 import { applyEdits, EditError, isCode, symbols, targets, type Applied } from "./footprint";
 import { objectKey, type GitObject } from "./git";
@@ -44,6 +73,9 @@ export class Sequencer extends DurableObject<Env> {
     super(ctx, env);
     this.sql = ctx.storage.sql;
     migrate(this.sql);
+    // Install the persistent policy revision fence before serving any RPC.
+    // SQL triggers continue to invalidate exports if an older build writes.
+    ctx.storage.transactionSync(()=>{new Policies(this.sql);new Rulesets(this.sql);});
     this.pusher = new MirrorPusher(this.sql, () => this.env.ARTIFACTS);
     this.feed = new Feed(async (events) => {
       const trunk = this.meta<string>("trunk");
@@ -68,16 +100,231 @@ export class Sequencer extends DurableObject<Env> {
     void this.upload().catch(() => {});
   }
 
-  init(trunk: string, files: { path: string; text: string }[]): Promise<Head> {
-    return this.initializer.initialize(trunk, files);
+  repositoryArchive() { return new ArchiveStore(this.sql).state(); }
+  archiveConfiguration() {return {cliAudit:true as const};}
+  applyRepositoryArchive(change:ArchiveChange) {
+    return this.ctx.storage.transactionSync(()=>{
+      if(!this.meta<string>("trunk"))throw Error("Repository initialization must complete before archival");
+      const result=new ArchiveStore(this.sql).apply(change);
+      if(result.changed){if(change.archived)new CIStore(this.sql).cancelForArchive();new Repository(this.sql).audit({actor:change.actor,archive:{archived:change.archived,revision:change.revision},...(change.via?{via:change.via}:{})});}
+      return result.state;
+    });
   }
-  beginImport(trunk: string, id: string) { return this.initializer.begin(trunk, id); }
-  appendImport(id: string, batch: number, files: { path: string; text: string }[]) { return this.initializer.append(id, batch, files); }
-  finishImport(id: string) { return this.initializer.finish(id); }
+  repositoryMode() { return new Repository(this.sql).mode(); }
+  repositoryRefs() { return new Repository(this.sql).refs(); }
+  repositoryConfiguration(){const repo=new Repository(this.sql);return {mode:repo.mode()?"git" as const:"snapshot" as const,...repo.configuration(),branches:repo.refs().filter(ref=>ref.name.startsWith("refs/heads/")).map(ref=>({...ref,name:ref.name.slice(11)}))};}
+  defaultBranchConfiguration(){return {...this.repositoryConfiguration(),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
+  async configureRepositoryDefault(input:{branch:string;commit:string;revision:number;credentialId:string;origin:string},actor:string){
+    const trunk=this.meta<string>("trunk");if(!trunk)throw Error("Repository identity unavailable");
+    const authority=await rulesetActor(this.env,trunk,actor,input.origin);
+    return this.selectRepositoryDefault(input,actor,{kind:"cli",credentialId:input.credentialId},authority);
+  }
+  selectRepositoryDefault(input:{branch:string;commit:string;revision:number},actor:string,via?:{kind:"cli";credentialId:string},authority?:RulesetActor){
+    return this.ctx.storage.transactionSync(()=>{
+      if(via&&(!currentRulesetActor(authority,actor)||!['owner','admin'].includes(authority?.role??'')))throw Error("Current repository admin access required to change the default branch");
+      const repo=new Repository(this.sql),before=repo.defaultBranch(),result=repo.selectDefault(input.branch,input.commit,input.revision,actor,via);
+      if(!("conflict" in result)&&before!==result.defaultBranch){const base=repo.main(),ci=new CIStore(this.sql);for(const ref of repo.refs().filter(ref=>ref.name.startsWith("refs/heads/")))ci.enqueue(ref.name.slice(11),ref.commit,base.commit,actor);}
+      return result;
+    });
+  }
+  initRepository(trunk: string,defaultBranch="main") {
+    return this.ctx.storage.transactionSync(() => {
+      new Repository(this.sql).initialize(defaultBranch);
+      setMeta(this.sql, "trunk", trunk);
+      return { mode: "git", refs: [],defaultBranch };
+    });
+  }
+  updateRepository(updates: { name: string; old: string | null; next: { commit: string; tree: string } | null; fastForward: boolean; actor: string; proof?:import("./repository/types").RefProof }[],agent?:ContributionAgent) {
+    if(!updates.length||updates.length>100)throw Error("Push supports 1–100 ref updates per atomic batch");
+    return ruleTransaction(this.sql,run=>this.ctx.storage.transactionSync(run),"git",observe => {
+      const repo = new Repository(this.sql,observe);
+      const defaultRef=`refs/heads/${repo.defaultBranch()}`,before=repo.refs(),branchContext=branchFingerprint(before),deploymentBase=before.find(ref=>ref.name===defaultRef)?.commit??null;
+      if(agent&&updates.some(update=>update.actor!==agent.owner.id))throw Error('Agent contribution principal does not match the ref writer');
+      for (const u of updates) {
+        repo.update(u.name, u.old, u.next, u.fastForward, u.actor, false, u.proof,false,branchContext,deploymentBase);
+        if(agent&&u.old!==(u.next?.commit??null))new Contributions(this.sql).push(agent,u.name,u.old,u.next?.commit??null,u.next?(u.name.startsWith('refs/heads/')?u.next.commit:u.proof?.peeledCommit):undefined);
+      }
+      const finalRefs=repo.refs(),main=finalRefs.find(r=>r.name===defaultRef);
+      // A mirror may send feature refs before main; schedule against the
+      // final atomic ref set rather than silently missing those import events.
+      if (main) for (const u of updates) if (u.next && finalRefs.find(ref=>ref.name===u.name)?.commit===u.next.commit && u.name.startsWith("refs/heads/") && u.name !== defaultRef) new CIStore(this.sql).enqueue(u.name.slice(11), u.next.commit, main.commit);
+      if(main)for(const u of updates)if(u.next&&finalRefs.find(ref=>ref.name===u.name)?.commit===u.next.commit&&u.name.startsWith('refs/tags/')&&u.proof?.old===u.old&&u.proof.next===u.next.commit&&/^[a-f0-9]{40}$/.test(u.proof.peeledCommit??''))new CIStore(this.sql).enqueue(u.name.slice(10),u.proof.peeledCommit!,main.commit,u.actor,{ref:u.name,target:u.next.commit});
+      return repo.refs();
+    });
+  }
+  ciSources(){return new CIStore(this.sql).sources();}
+  contributions(filter:ContributionFilter={}){return new Contributions(this.sql).page(filter);}
+  agentWork(id:string,agent:string){return new Contributions(this.sql).get(id,agent);}
+  startAgentWork(agent:ContributionAgent,input:WorkStart){return this.ctx.storage.transactionSync(()=>new Contributions(this.sql).start(agent,input));}
+  reportAgentWork(agent:ContributionAgent,input:WorkReport){return this.ctx.storage.transactionSync(()=>new Contributions(this.sql).report(agent,input));}
+  contributionLinkKnown(sha:string){return !!this.sql.exec("SELECT 1 FROM repository_refs WHERE commit_sha=? UNION ALL SELECT 1 FROM versions WHERE commit_sha=? UNION ALL SELECT 1 FROM repository_audit WHERE json_extract(data,'$.next')=? LIMIT 1",sha,sha,sha).toArray().length;}
+  contributionPullExists(number:number){return !!this.sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='review_pulls'").toArray().length&&!!this.sql.exec("SELECT 1 FROM review_pulls WHERE number=?",number).toArray().length;}
+  environments(){return new Environments(this.sql).list();}
+  async setEnvironment(input:import("./deployments/types").EnvironmentInput,actor:string,id?:string,origin=""){if(input.reviewers?.length){const membership=await this.deploymentMembers(input.reviewers,origin);if(input.reviewers.some(id=>membership.accounts[id]!=="member"))throw Error("Deployment reviewers must have current repository read access");}return this.ctx.storage.transactionSync(()=>{if(!this.repositoryMode())throw Error("Deployment environments require Git repository mode");const store=new Environments(this.sql),previous=id?store.list().find(e=>e.id===id):null,environment=store.set(input,id);new Repository(this.sql).audit({actor,environment,previousEnvironment:previous});return environment;});}
+  removeEnvironment(id:string,actor:string){return this.ctx.storage.transactionSync(()=>{const store=new Environments(this.sql),previous=store.list().find(e=>e.id===id);store.remove(id);new Repository(this.sql).audit({actor,removedEnvironment:id,previousEnvironment:previous});});}
+  async deploymentGate(branch:string,head:string,base:string,actor:string,human:boolean,headBranch?:string,origin=""){const authority=human?await this.currentRulesetActor(actor,origin):undefined;const repo=new Repository(this.sql),gate=deploymentGate(this.sql,branch,head,repo.main().commit,actor,human,authority),refs=repo.refs();if(refs.find(ref=>ref.name===`refs/heads/${branch}`)?.commit!==base||headBranch&&refs.find(ref=>ref.name===`refs/heads/${headBranch}`)?.commit!==head)return {...gate,ready:false,environments:gate.environments.map(environment=>({...environment,ready:false,error:"PR changed while checking deployments; refresh and retry"}))};return gate;}
+  policies() { return new Policies(this.sql).list(); }
+  async rulesetPlan():Promise<import('./repository/ruleset-types').RulesetPlan> {
+    const plan=new Rulesets(this.sql).plan();
+    try{if(await this.env.HUB.get(this.env.HUB.idFromName('hub')).rulesetRoleSupport()===true)return plan;}
+    catch(error){if(!(error instanceof Error)||!error.message.includes('does not implement the method "rulesetRoleSupport"'))throw error;}
+    const {roleBypass:_role,...legacy}=plan;return legacy;
+  }
+  graphPlan() {return {...new Rulesets(this.sql).plan(),signing:{branches:new Repository(this.sql).refs().filter(ref=>ref.name.startsWith("refs/heads/")).map(({name,commit})=>({name,commit})),policies:new Policies(this.sql).list().filter(policy=>policy.requireSignedCommits)}};}
+  ruleSuites(query?:import("./repository/insight-types").RuleSuiteQuery){return new RuleInsights(this.sql).list(query);}
+  ruleSuite(id:number){return new RuleInsights(this.sql).get(id);}
+  repositoryActivity(query: import("./repository/activity-types").ActivityQuery) { return new Repository(this.sql).activity(query); }
+  rulesetRestorePreview(id: number, eventId: number) { return new RulesetHistory(this.sql).preview(id, eventId); }
+  rulesetExport(id: number, eventId?: number) {
+    const value = eventId === undefined ? new Rulesets(this.sql).plan().rulesets.find(r => r.id === id)
+      : new RulesetHistory(this.sql).preview(id, eventId).selected;
+    if (!value) throw Error("Ruleset version unavailable");
+    return exportRuleset(value);
+  }
+  restoreRuleset(id: number, eventId: number, revision: number, actor: string) {
+    return this.ctx.storage.transactionSync(() => {
+      if (!this.repositoryMode()) throw Error("Rulesets require Git repository mode");
+      return new RulesetHistory(this.sql).restore(id, eventId, revision, actor);
+    });
+  }
+  configureRuleset(change:{id?:number;configuration?:import("./repository/rulesets").RulesetInput;revision:number;credentialId:string},actor:string) {
+    return this.ctx.storage.transactionSync(()=>{
+      if(!this.repositoryMode())throw Error("Rulesets require Git repository mode");
+      const rules=new Rulesets(this.sql),plan=rules.plan();
+      if(!Number.isSafeInteger(change.revision)||change.revision<0)throw Error("Invalid ruleset revision");
+      if(plan.revision!==change.revision)return {conflict:true as const,revision:plan.revision};
+      const previousRuleset=change.id===undefined?null:plan.rulesets.find(rule=>rule.id===change.id);
+      let ruleset;
+      if(change.configuration)ruleset=rules.set(change.configuration,change.id);
+      else{if(change.id===undefined)throw Error("Choose a ruleset to remove");rules.remove(change.id);}
+      new Repository(this.sql).audit({actor,...(ruleset?{ruleset}:{removedRuleset:change.id}),previousRuleset,via:{kind:"cli",credentialId:change.credentialId}});
+      return {...rules.plan(),...(ruleset?{ruleset}:{deleted:true})};
+    });
+  }
+  setRuleset(input: import("./repository/rulesets").RulesetInput, actor: string, id?: number) {
+    return this.ctx.storage.transactionSync(() => {
+      if (!this.repositoryMode()) throw Error("Rulesets require Git repository mode");
+      const rules = new Rulesets(this.sql), previousRuleset = id === undefined ? null : rules.plan().rulesets.find(r => r.id === id);
+      const ruleset = rules.set(input,id);
+      new Repository(this.sql).audit({actor,ruleset,previousRuleset});
+      return ruleset;
+    });
+  }
+  removeRuleset(id: number, actor: string) {
+    return this.ctx.storage.transactionSync(() => {
+      const rules = new Rulesets(this.sql), previousRuleset = rules.plan().rulesets.find(r => r.id === id);
+      rules.remove(id);
+      new Repository(this.sql).audit({actor,removedRuleset:id,previousRuleset});
+    });
+  }
+  setPolicy(policy: BranchPolicy, actor: string) {
+    return this.ctx.storage.transactionSync(() => this.writePolicy(policy,actor));
+  }
+  private writePolicy(policy:BranchPolicy,actor:string,credentialId?:string) {
+      if(policy.environments?.length&&!this.repositoryMode())throw Error("Required deployments require Git repository mode");
+      if(policy.allowForcePush!==undefined&&!this.repositoryMode())throw Error("Selected force-push permissions require Git repository mode");
+      if(policy.requireLinearHistory&&!this.repositoryMode())throw Error("Linear history rules require Git repository mode");
+      if(policy.requireCodeOwnerReview&&!this.repositoryMode())throw Error("Code owner review requires Git repository mode");
+      if(policy.requireSignedCommits&&!this.repositoryMode())throw Error("Signed commit rules require Git repository mode");
+      const policies = new Policies(this.sql), previousPolicy = policies.list().find(p => p.branch === policy.branch) ?? null;
+      const result = policies.set(policy);
+      new Repository(this.sql).audit({ actor, policy:result.find(p=>p.branch===policy.branch), previousPolicy,...(credentialId?{via:{kind:"cli",credentialId}}:{}) });
+      return result;
+  }
+  protectionConfiguration(){const p=new Policies(this.sql);return {policies:p.list(),revision:p.revision(),revisionTracking:"storage" as const,forcePushActors:true as const};}
+  configureProtection(change:{policy?:BranchPolicy;branch:string;revision:number;credentialId:string},actor:string) {
+    return this.ctx.storage.transactionSync(()=>{
+      const policies=new Policies(this.sql);
+      if(policies.revision()!==change.revision)return {conflict:true as const,revision:policies.revision()};
+      if(change.policy)this.writePolicy(change.policy,actor,change.credentialId);
+      else {
+        const previousPolicy=policies.list().find(p=>p.branch===change.branch)??null;
+        if(!previousPolicy)throw Error("No branch protection rule with that exact pattern");
+        policies.remove(change.branch);
+        new Repository(this.sql).audit({actor,removedPolicy:change.branch,previousPolicy,via:{kind:"cli",credentialId:change.credentialId}});
+      }
+      return {policies:policies.list(),revision:policies.revision()};
+    });
+  }
+  removePolicy(pattern:string,actor:string){return this.ctx.storage.transactionSync(()=>{
+    const policies=new Policies(this.sql),previousPolicy=policies.list().find(p=>p.branch===pattern);
+    const result=policies.remove(pattern);new Repository(this.sql).audit({actor,removedPolicy:pattern,previousPolicy});return result;
+  });}
+  ciAuthenticate(token:string){return new CIStore(this.sql).authenticate(token);}
+  ciRuns() { return new CIStore(this.sql).list(); }
+  ciRunners() { return new CIStore(this.sql).registrations(); }
+  ciRunner(name: string) { return new CIStore(this.sql).runner(name); }
+  ciApprove(id: string, actor: string) {
+    return this.ctx.storage.transactionSync(() => {
+      const repo=new Repository(this.sql),refs = repo.refs(), ci = new CIStore(this.sql);
+      let run=ci.get(id);
+      const main=refs.find(r=>r.name===`refs/heads/${repo.defaultBranch()}`);
+      if(runRef(run).startsWith('refs/tags/')&&main&&main.commit!==run.base&&refs.find(r=>r.name===runRef(run))?.commit===runRefTarget(run))run=ci.enqueue(run.branch,run.head,main.commit,actor,{ref:runRef(run),target:runRefTarget(run)});
+      const approved = ci.approveDeployment(run.id, actor, refs.find(r => r.name === runRef(run))?.commit===runRefTarget(run)?run.head:undefined, main?.commit);
+      new Repository(this.sql).audit({ actor, stagingApproval: id, head: run.head, base: run.base });
+      return approved;
+    });
+  }
+  ciRetry(id:string,actor:string) {
+    return this.ctx.storage.transactionSync(()=>{
+      const repo=new Repository(this.sql),refs=repo.refs(),ci=new CIStore(this.sql);let run=ci.get(id);
+      const main=refs.find(r=>r.name===`refs/heads/${repo.defaultBranch()}`);
+      if(runRef(run).startsWith('refs/tags/')&&main&&main.commit!==run.base&&refs.find(r=>r.name===runRef(run))?.commit===runRefTarget(run))run=ci.enqueue(run.branch,run.head,main.commit,actor,{ref:runRef(run),target:runRefTarget(run)});
+      const result=ci.retry(run.id,refs.find(r=>r.name===runRef(run))?.commit===runRefTarget(run)?run.head:undefined,main?.commit,actor);
+      new Repository(this.sql).audit({actor,retry:id});return result;
+    });
+  }
+  ciRevoke(id: string) { return this.ctx.storage.transactionSync(()=>new CIStore(this.sql).revoke(id)); }
+  async ciClaim(token:string,origin="") {
+    const ci=new CIStore(this.sql),waiting=ci.waiting(token),requests=new DeploymentRequests(this.sql);
+    const proof=await this.deploymentMembers(waiting.flatMap(run=>run.environmentWait?requests.get(run.environmentWait).reviews.map(review=>review.actor):[]),origin);
+    const ready=(run:import("./ci/types").Run)=>!!run.environmentWait&&requests.status(requests.get(run.environmentWait),run,proof).state==="ready";
+    return this.ctx.storage.transactionSync(()=>new CIStore(this.sql).claim(token,Date.now(),waiting.filter(ready).map(run=>run.id),ready));
+  }
+  ciLogAccess(token:string,id:string,attempt:number) { return new CIStore(this.sql).logAccess(token,id,attempt); }
+  ciReadable(token: string) { return new CIStore(this.sql).readable(token); }
+  async ciComplete(token:string,id:string,attempt:number,results:CheckResult[],staging:StagingEvidence|null,deployments:import("./deployments/types").DeploymentReport[]=[],origin="") {
+    new CIStore(this.sql).authenticate(token);const requests=new DeploymentRequests(this.sql);
+    const proof=await this.deploymentMembers(Array.isArray(deployments)?deployments.flatMap(report=>{try{return report?.authorizationId?requests.get(this.sql.exec<{data:string}>("SELECT data FROM deployment_authorizations WHERE id=?",report.authorizationId).toArray().map(row=>JSON.parse(row.data))[0]?.request??"").reviews.map(review=>review.actor):[];}catch{return [];}}):[],origin);
+    return this.ctx.storage.transactionSync(()=>new CIStore(this.sql).complete(token,id,attempt,results,staging,Date.now(),deployments,proof));
+  }
+  private async deploymentMembers(accounts:string[],origin:string):Promise<DeploymentMembership> {
+    const ids=[...new Set(accounts)],now=Date.now(),proof:DeploymentMembership={accounts:{},checkedAt:now,expiresAt:now+30000};if(ids.length>1000)throw Error("Deployment reviewer lookup limit exceeded");
+    for(let i=0;i<ids.length;i+=64){const part=ids.slice(i,i+64);try{const value=await deploymentMembership(this.env,this.meta<string>("trunk")!,origin,part);Object.assign(proof.accounts,value.accounts);proof.checkedAt=Math.min(proof.checkedAt,value.checkedAt);proof.expiresAt=Math.min(proof.expiresAt,value.expiresAt);}catch{for(const id of part)proof.accounts[id]="unavailable";}}
+    return proof;
+  }
+  async deploymentRequests(actor:string,origin:string,before?:number,limit=25) {
+    const store=new DeploymentRequests(this.sql),page=store.list(before,limit),proof=await this.deploymentMembers([...page.requests.flatMap(request=>request.reviews.map(review=>review.actor)),actor],origin),ci=new CIStore(this.sql);
+    return {requests:page.requests.map(request=>store.status(store.get(request.id),ci.get(request.run),proof,actor)),nextCursor:page.nextCursor};
+  }
+  requestDeployment(runId:string,environment:string,actor:string) {return this.ctx.storage.transactionSync(()=>{return new DeploymentRequests(this.sql).request(new CIStore(this.sql).get(runId),environment,actor,Date.now(),request=>new Repository(this.sql).audit({actor,deploymentRequest:{id:request.id,environment:request.environment},head:request.head,base:request.base}));});}
+  async reviewDeployment(id:string,actor:string,decision:"approve"|"reject",comment:string,revision:number,origin:string) {
+    const proof=await this.deploymentMembers([actor],origin);return this.ctx.storage.transactionSync(()=>{const requests=new DeploymentRequests(this.sql),request=requests.get(id),result=requests.review(id,new CIStore(this.sql).get(request.run),actor,decision,comment,revision,proof);if(decision==="reject")new CIStore(this.sql).rejectEnvironment(request.run,id,request.environmentId);if(result.reviews.length>request.reviews.length)new Repository(this.sql).audit({actor,deploymentReview:{request:id,decision,comment,environment:request.environment}});return result;});
+  }
+  async runnerDeployment(token:string,runId:string,attempt:number,environment:string,origin:string,optional=false) {
+    const ci=new CIStore(this.sql);ci.logAccess(token,runId,attempt);if(optional&&!new Environments(this.sql).find(environment))return {configured:false as const};const request=this.requestDeployment(runId,environment,ci.authenticate(token)),proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
+    return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql);current.logAccess(token,runId,attempt);return new DeploymentRequests(this.sql).status(new DeploymentRequests(this.sql).get(request.id),current.get(runId),proof);});
+  }
+  async authorizeDeployment(token:string,id:string,attempt:number,origin:string) {
+    const ci=new CIStore(this.sql),requests=new DeploymentRequests(this.sql),request=requests.get(id);ci.logAccess(token,request.run,attempt);const proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
+    return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql);current.logAccess(token,request.run,attempt);const authorization=new DeploymentRequests(this.sql).authorize(id,current.get(request.run),current.authenticate(token),proof,Date.now(),authorization=>new Repository(this.sql).audit({actor:authorization.runner,deploymentAuthorization:{id:authorization.id,request:id,environment:request.environment}}));return authorization;});
+  }
+  async deferDeployment(token:string,id:string,attempt:number,results:CheckResult[],origin:string) {
+    const ci=new CIStore(this.sql),requests=new DeploymentRequests(this.sql),request=requests.get(id);ci.logAccess(token,request.run,attempt);const proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
+    return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql),run=current.get(request.run),status=new DeploymentRequests(this.sql).status(new DeploymentRequests(this.sql).get(id),run,proof);if(status.state==="ready")return {ready:true as const};if(status.state!=="waiting")throw Error(status.reason??"Deployment is not waiting");return current.defer(token,run.id,attempt,id,results);});
+  }
+
+  init(trunk: string, files: { path: string; text: string }[]): Promise<Head> {
+    assertRepositoryWritable(this.sql);return this.initializer.initialize(trunk, files);
+  }
+  beginImport(trunk: string, id: string) { assertRepositoryWritable(this.sql);return this.initializer.begin(trunk, id); }
+  appendImport(id: string, batch: number, files: { path: string; text: string }[]) { assertRepositoryWritable(this.sql);return this.initializer.append(id, batch, files); }
+  finishImport(id: string) { assertRepositoryWritable(this.sql);return this.initializer.finish(id); }
 
   /** The newest version whose objects are all in R2. Sessions read from it and
    *  clones fetch it, so it never names an object that is not there yet. */
   head(): Head {
+    if (this.repositoryMode()) return new Repository(this.sql).main();
     const head = this.meta<Head>("published");
     if (!head) throw new Error("no such trunk");
     return head;
@@ -94,20 +341,47 @@ export class Sequencer extends DurableObject<Env> {
 
   /** The heads, the mirror, and the publishing backlog, from this object's own state. */
   info(): { head: Head; tip: Head; mirror: Mirror | null; backlog: ReturnType<Backlog["snapshot"]> } {
+    if (this.repositoryMode()) return { head: this.head(), tip: this.head(), mirror: null, backlog: this.backlog.snapshot() };
     return { head: this.head(), tip: this.meta<Head>("tip")!, mirror: this.meta<Mirror>("mirror") ?? null, backlog: this.backlog.snapshot() };
   }
 
   /** The ref list for git's dumb HTTP protocol. */
   refs(): string {
-    return new ReviewStore(this.sql, () => this.head()).branches().map((b) => `${b.commit}\trefs/heads/${b.name}\n`).join("");
+    if (this.repositoryMode()) return this.repositoryRefs().map(r => `${r.commit}\t${r.name}\n`).join("");
+    return new ReviewStore(this.sql, () => this.head(), this.repositoryMode()).branches().map((b) => `${b.commit}\trefs/heads/${b.name}\n`).join("");
   }
 
-  review(command: ReviewCommand) {
-    if (command.op === "merge" && this.info().tip.commit !== command.base.commit) throw new Error("Main changed; refresh and retry");
+  async codeOwnersStatus(number: number, evidence: CodeOwnerEvidence, origin: string) {
+    let accounts: Record<string,string|null>={};
+    try {if(evidence.groups.length)accounts=await codeOwnerAccounts(this.env,this.meta<string>("trunk")!,origin,evidence);}
+    catch(error) {evidence={...evidence,error:(error as Error).message};}
+    const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),p=s.pulls.find(p=>p.number===number);
+    const base=p&&s.branches.find(b=>b.name===p.base),head=p&&s.branches.find(b=>b.name===p.head);
+    if(!p||base?.commit!==evidence.base||head?.commit!==evidence.head)
+      return codeOwnerDecision({...evidence,error:"PR changed while checking code owners; refresh"},{},[],true);
+    const membership=await this.currentReviewers(s,number,origin);
+    const latest=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),current=latest.pulls.find(row=>row.number===number),currentHead=latest.branches.find(row=>row.name===p.head),currentBase=latest.branches.find(row=>row.name===p.base);
+    if(!current||current.anchor!==p.anchor||currentHead?.commit!==evidence.head||currentBase?.commit!==evidence.base)return codeOwnerDecision({...evidence,error:"PR changed while checking reviewers; refresh"},{},[],true);
+    return codeOwnerDecision(evidence,accounts,new Policies(this.sql,membership).eligibleApprovals(current,latest.reviews,currentHead.commit).map(r=>r.author.id),!!new Policies(this.sql).get(current.base)?.requireCodeOwnerReview);
+  }
+  async review(command: ReviewCommand) {
+    const refActor=command.op==='merge'&&command.human?command.request.owner?.id:(command.op==='branch'||command.op==='restack')&&command.human?command.actor:undefined;
+    const authority=refActor?await this.currentRulesetActor(refActor,'origin' in command?command.origin??'':''):undefined;
+    if(command.op==="review"&&command.independent&&(!command.origin||!await reviewWriter(this.env,this.meta<string>("trunk")!,command.origin,command.author.id)))throw Error("Review requires a signed-in current repository writer");
+    if (command.op === "dismiss" && (!command.human || !await reviewWriter(this.env,this.meta<string>("trunk")!,command.origin,command.actor.id)))
+      throw Error("Review dismissal requires a signed-in repository writer");
+    const mergeNumber=command.op==="merge"?command.number:undefined,mergeTarget=mergeNumber?new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot().pulls.find(p=>p.number===mergeNumber)?.base:undefined;
+    if(command.op==="merge"&&(this.repositoryMode()?new Repository(this.sql).refs().find(ref=>ref.name===`refs/heads/${mergeTarget}`)?.commit:this.info().tip.commit)!==command.base.commit)throw Error("Base changed; refresh and retry");
+    if(command.op==="merge"&&mergeTarget&&new Policies(this.sql).get(mergeTarget)?.requireCodeOwnerReview&&command.codeOwners) {
+      if(!command.origin)throw Error("Code owner identity verification needs the request origin");
+      command={...command,codeOwnerAccounts:await codeOwnerAccounts(this.env,this.meta<string>("trunk")!,command.origin,command.codeOwners)};
+    }
+    const membership=command.op==="merge"?await this.currentReviewers(new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),command.number,command.origin??""):undefined;
     const mark = this.feed.mark();
     try {
-      const result = this.ctx.storage.transactionSync(() => new ReviewStore(this.sql, () => this.head()).run(command, (req) => this.landAll([req], false)[0]));
-      if (command.op === "merge") { void this.mirrorPush(); void this.upload().catch(() => {}); }
+      const source=command.op==="merge"?"merge":command.op==="restack"?"restack":"branch";
+      const result = ruleTransaction(this.sql,run=>this.ctx.storage.transactionSync(run),source,observe=>new ReviewStore(this.sql, () => this.head(), this.repositoryMode(),membership,observe,authority).run(command, (req) => this.landAll([req], false, true)[0]));
+      if (command.op === "merge" && !this.repositoryMode()) { void this.mirrorPush(); void this.upload().catch(() => {}); }
       return result;
     } catch (error) {
       forget(this.sql); forgetLeases(this.sql);
@@ -116,14 +390,80 @@ export class Sequencer extends DurableObject<Env> {
     }
   }
 
+  async reviewGate(number: number, head: string, anchor: string,origin:string) {
+    const before=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),membership=await this.currentReviewers(before,number,origin);
+    const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),p=s.pulls.find(p=>p.number===number);
+    if (!p || p.anchor!==anchor || (p.state==="open"?s.branches.find(b=>b.name===p.head)?.commit:p.headCommit)!==head)
+      return {ready:false,error:"PR changed while checking reviews; refresh",approvals:0,required:0};
+    if(membership.expiresAt<=Date.now())return {ready:false,error:"Reviewer membership verification expired; refresh",approvals:0,required:0,reviewerAccess:membership.accounts};
+    return {...new Policies(this.sql,membership).reviewGate(p,s.reviews,head),reviewerAccess:membership.accounts};
+  }
+
+  private async currentRulesetActor(actor:string,origin:string):Promise<RulesetActor|undefined> {
+    if(!new Rulesets(this.sql).plan().rulesets.some(rule=>rule.enforcement!=="disabled"&&rule.bypass_actors?.some(a=>a.actor_type==='RepositoryRole')))return;
+    return rulesetActor(this.env,this.meta<string>("trunk")!,actor,origin);
+  }
+
+  private async currentReviewers(snapshot:ReviewSnapshot,number:number,origin:string):Promise<ReviewerMembership> {
+    const pull=snapshot.pulls.find(p=>p.number===number),head=pull&&(pull.state==="open"?snapshot.branches.find(b=>b.name===pull.head)?.commit:pull.headCommit);
+    const ids=pull&&head?[...new Set(new Policies(this.sql).eligibleApprovals(pull,snapshot.reviews,head).map(r=>r.author.id))]:[];
+    try{return await reviewerMembership(this.env,this.meta<string>("trunk")!,origin,ids);}
+    catch{return {accounts:Object.fromEntries(ids.map(id=>[id,"unavailable" as const])),checkedAt:Date.now(),expiresAt:Date.now()+30000};}
+  }
+
   codeComments(command: CommentCommand) {
     return this.ctx.storage.transactionSync(() => new CodeComments(this.sql).run(command));
+  }
+
+  async pullComments(command: PullCommentCommand) {
+    if (command.op !== "list" && !await reviewWriter(this.env, this.meta<string>("trunk")!, command.actor.origin, command.actor.id))
+      throw Error("Inline review requires a signed-in repository writer");
+    return this.ctx.storage.transactionSync(() => {
+      const s = new ReviewStore(this.sql, () => this.head(), this.repositoryMode()).snapshot();
+      const pull = s.pulls.find(p => p.number === command.number);
+      if (!pull) throw Error("No such pull request");
+      return new PullComments(this.sql).run(command, pull, s.branches.find(b => b.name === pull.head));
+    });
+  }
+
+  async pendingReview(command:PendingCommand) {
+    if(!await reviewWriter(this.env,this.meta<string>("trunk")!,command.actor.origin,command.actor.id))throw Error("Pending review requires a signed-in repository writer");
+    return this.ctx.storage.transactionSync(()=>{
+      const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),pull=s.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error("No such pull request");
+      return new PendingReviews(this.sql).run(command,pull,s.branches.find(b=>b.name===pull.head));
+    });
+  }
+
+  async submitPendingReview(command:SubmitPending) {
+    if(!await reviewWriter(this.env,this.meta<string>("trunk")!,command.actor.origin,command.actor.id))throw Error("Pending review requires a signed-in repository writer");
+    return this.ctx.storage.transactionSync(()=>{
+      const reviews=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()),s=reviews.snapshot(),pull=s.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error("No such pull request");
+      return new PendingReviews(this.sql).submit(command,pull,s.branches.find(b=>b.name===pull.head),draft=>{
+        const next=reviews.run({op:"review",number:pull.number,author:draft.author,commit:command.commit,anchor:command.anchor,verdict:command.verdict,body:command.body,independent:true,batch:{id:draft.id,comments:draft.comments.map(c=>c.id)}},()=>{throw Error("Unexpected review landing");});
+        return next.reviews.at(-1)!;
+      });
+    });
+  }
+
+  suggestionApplication(command:Pick<ApplySuggestions,"id"|"number"|"commit"|"anchor"|"commentIds"|"message"|"actor">) {
+    return new SuggestionApplications(this.sql).existing(command);
+  }
+
+  async applySuggestions(command:ApplySuggestions) {
+    if(!await reviewWriter(this.env,this.meta<string>("trunk")!,command.origin,command.actor.id))throw Error("Applying suggestions requires a signed-in repository writer");
+    const authority=await this.currentRulesetActor(command.actor.id,command.origin);
+    const mark=this.feed.mark();
+    try {return ruleTransaction(this.sql,run=>this.ctx.storage.transactionSync(run),"suggestions",observe=>new SuggestionApplications(this.sql,observe,authority).run(command,()=>this.head(),this.repositoryMode()));}
+    catch(error){forget(this.sql);forgetLeases(this.sql);this.feed.back(mark);this.backlog.recount();throw error;}
   }
 
   /** Commits a pushing client may already have: the newest 32 versions, then
    *  every power of two further back, so even an agent far behind finds one
    *  near what it cloned and sends only what is new. */
   haves(): string[] {
+    if (this.repositoryMode()) return this.repositoryRefs().filter(r => r.name.startsWith("refs/heads/")).map(r => r.commit);
     const tip = this.head().version;
     const wanted = new Set<number>();
     for (let v = tip; v > 0 && v > tip - 32; v--) wanted.add(v);
@@ -232,7 +572,8 @@ export class Sequencer extends DurableObject<Env> {
    *  changes still go in; if the batch's write fails, none of it goes in and
    *  none of its events go out. Either way the caches are read again from the
    *  tables, and the error reaches the caller, whose retries replay receipts. */
-  private landAll(reqs: ChangeRequest[], publish = true): Submitted[] {
+  private landAll(reqs: ChangeRequest[], publish = true, approved = false): Submitted[] {
+    assertRepositoryWritable(this.sql);
     const results: Submitted[] = [];
     const queued = this.feed.mark();
     const started = Date.now();
@@ -243,7 +584,7 @@ export class Sequencer extends DurableObject<Env> {
         const before = this.feed.mark();
         beginLanding(this.sql);
         try {
-          results.push(decideOnce(this.ctx.storage, req, () => this.decide(req), () => this.backlog.admits(heldBytes(this.sql, PENDING, 2))));
+          results.push(decideOnce(this.ctx.storage, req, () => this.decide(req, approved), () => this.backlog.admits(heldBytes(this.sql, PENDING, 2))));
         } catch (e) {
           this.feed.back(before);
           failed = true;
@@ -277,7 +618,14 @@ export class Sequencer extends DurableObject<Env> {
     return results;
   }
 
-  private decide(req: ChangeRequest): Submitted {
+  private decide(req: ChangeRequest, approved = false): Submitted {
+    if (this.repositoryMode()) return this.reject(req, "Git repository mode requires feature-branch pushes and pull requests; text submissions cannot rewrite its assets or history");
+    try {
+      const policies=new Policies(this.sql);
+      if(approved)policies.restrictions("main",req.owner?.id??"",false,null,null);
+      else policies.direct("main",false,true,req.owner?.id??"");
+    } catch(error){return this.reject(req,(error as Error).message);}
+
     const tip = this.meta<Head>("tip");
     if (!tip) throw new Error("no such trunk");
     if (req.base > tip.version) return this.reject(req, `base v${req.base} is ahead of the trunk (v${tip.version})`);
@@ -348,12 +696,13 @@ export class Sequencer extends DurableObject<Env> {
 
   /** One kind of operation, `n` times, for timing (./sequencer/bench). */
   repeat(op: string, n: number): number {
-    return repeat(this.sql, op, n);
+    assertRepositoryWritable(this.sql);return repeat(this.sql, op, n);
   }
 
   /** Waits until `version`'s objects are in R2, for a client that reads it or
    *  builds on it next: a git push, or a life about to read. */
   async whenPublished(version: number): Promise<void> {
+    if (this.repositoryMode()) return;
     await this.publishedThrough(version);
   }
 
@@ -411,6 +760,7 @@ export class Sequencer extends DurableObject<Env> {
   /** Builds the commit for the tip and queues its new objects for R2 and,
    *  when there is one, the Artifacts mirror. */
   private commitTip(version: number, objects: GitObject[], root: string, c: Landing, soft: Overlap[], parent: string | null): Head {
+    assertRepositoryWritable(this.sql);
     const made = landingCommit(version, root, c, soft, parent);
     // Objects a recent version already made are published already.
     const all = [...new Map([...objects, made].map((o) => [o.sha, o])).values()];

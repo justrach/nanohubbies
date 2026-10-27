@@ -13,9 +13,16 @@ export async function workspaceBootstrap(env: Env, trunk: string, user: User | n
     env.ROOM.get(env.ROOM.idFromName(trunk)).repo(),
     user ? listTokens(env, {id:user.id, name:user.name}) : [],
   ]);
-  if (headResult.error && !(job && !job.ready)) throw headResult.error;
+  const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
+  const mode = await seq.repositoryMode() ? "git" : "snapshot";
+  let defaultBranch="main";
+  if(mode==="git")try{defaultBranch=(await seq.repositoryConfiguration()).defaultBranch;}catch(error){if(!(error instanceof Error)||!error.message.includes('does not implement the method "repositoryConfiguration"'))throw error;}
+  const empty = mode === "git" && !(await seq.repositoryRefs()).some(r => r.name === `refs/heads/${defaultBranch}`);
+  if (headResult.error && !empty && !(job && !job.ready)) throw headResult.error;
   return Response.json({
-    workspace: entry, info: headResult.info, job, repo,
+    archive:await hub.repositoryArchive(trunk),
+    address: await hub.repositoryAddress(trunk), access: {private:!!await hub.team(trunk)},
+    workspace: entry, repository: { mode, empty,defaultBranch }, info: headResult.info, job, repo,
     session: {user, providers},
     tokens: tokens.filter(token => token.trunk === trunk && token.expiresAt > Date.now()),
   }, {headers:{"Cache-Control":"private, no-store"}});

@@ -1,9 +1,17 @@
+import {ArchiveStore,assertRepositoryWritable,type ArchiveChange} from "./repository/archive";
+import { Namespaces } from "./namespaces/store";
+import { Collaborators, type RepoRole } from "./collaborators/store";
 import { DurableObject } from "cloudflare:workers";
 import type { AbuseLimits } from "./abuse";
 import { TeamStore, type TeamBinding, type IdentityProof } from "./team/store";
 import { Admission } from "./hub/admission";
 import { ReleaseStore } from "./releases/store";
 import type { ReleaseCommand } from "./releases/types";
+import {SigningKeys} from "./signing/store";
+import {sshKey} from "./signing/ssh";
+import {pgpKey} from "./signing/pgp";
+import {verifyCommit} from "./signing/verify";
+import {currentSigningEmail} from "./signing/identity";
 
 export interface TrunkInfo {
   name: string;
@@ -27,10 +35,85 @@ export class Hub extends DurableObject<Env> {
     this.admission = new Admission(ctx.storage, this.sql);
   }
 
+  repositoryArchive(trunk:string) { return new ArchiveStore(this.sql,trunk).state(); }
+  archiveConfiguration(trunk:string) {return {...this.repositoryArchive(trunk),conditionalWrites:true as const,nameConfirmation:true as const};}
+  configureRepositoryArchive(trunk:string,actor:string,archived:boolean,revision:number,credentialId:string,proof?:IdentityProof,confirmation?:string) {
+    return this.archiveRepository(trunk,actor,archived,revision,proof,{conditional:true,confirmation,via:{kind:"cli",credentialId}});
+  }
+  assertRepositoryWritable(trunk:string) { assertRepositoryWritable(this.sql,trunk); }
+  async archiveRepository(trunk:string,actor:string,archived:boolean,revision:number,proof?:IdentityProof,options?:{conditional?:boolean;confirmation?:string;via?:ArchiveChange["via"]}) {
+    const state=this.ctx.storage.transactionSync(()=>{
+      const entry=this.find(trunk);if(!entry)throw Error("Repository not found");
+      const binding=this.teams.get(trunk),role=binding?.kind==="owner"?new Collaborators(this.sql).role(trunk,actor):null;
+      const external=binding&&binding.kind!=="owner"&&proof&&proof.ownerId===actor&&!proof.agentId&&proof.roomId===binding.roomId&&proof.issuer===binding.issuer&&proof.role==="owner"&&proof.verifiedAt<=Date.now()+1000&&Date.now()-proof.verifiedAt<30000;
+      if(!(binding?.kind==="owner"?["owner","admin"].includes(role??""):external||entry.owner===actor&&!binding))throw Error("A current repository owner or admin is required to archive");
+      if(options?.conditional&&options.confirmation!==(new Namespaces(this.sql).byId(trunk)?.name??trunk))throw Error("Repository name changed; inspect archive status before continuing");
+      return new ArchiveStore(this.sql,trunk).prepare(archived,revision,actor,Date.now(),options);
+    });
+    if(!state.transition)return state;
+    const change=state.transition;
+    // A reopen commits at the Hub before either local writer is activated.
+    // Partial activation is visible and resumable, never falsely "archived".
+    if(!change.archived)this.ctx.storage.transactionSync(()=>new ArchiveStore(this.sql,trunk).beginOpening(change));
+    // Persist the pending Hub fence before either RPC. Lost replies leave an
+    // explicit resumable operation; they never reopen metadata mutation.
+    await this.env.ROOM.get(this.env.ROOM.idFromName(trunk)).applyRepositoryArchive(trunk,change);
+    await this.env.SEQUENCER.get(this.env.SEQUENCER.idFromName(trunk)).applyRepositoryArchive(change);
+    return this.ctx.storage.transactionSync(()=>{if(!this.find(trunk))throw Error("Repository not found");return new ArchiveStore(this.sql,trunk).complete(change);});
+  }
+  claimNamespace(name: string, actor: string) { return this.ctx.storage.transactionSync(() => new Namespaces(this.sql).claim(name,actor)); }
+  signingKeys(owner:string){return new SigningKeys(this.sql).list(owner);}
+  async addSigningKey(owner:import("./types").Owner,label:string,publicKey:string,emails:string[]) {
+    if(typeof publicKey!=="string"||publicKey.length>64*1024)throw Error("Provide a public signing key up to 64 KiB");
+    const current=await Promise.all(emails.map(async email=>await currentSigningEmail(this.env,owner.id,email)?email:null)),allowed=current.filter((email):email is string=>!!email);
+    const parsed=publicKey.trim().startsWith("-----BEGIN PGP PUBLIC KEY BLOCK-----")?await pgpKey(publicKey,allowed):sshKey(publicKey);
+    return this.ctx.storage.transactionSync(()=>{new SigningKeys(this.sql).add(parsed,label,owner,allowed);return new SigningKeys(this.sql).list(owner.id);});
+  }
+  revokeSigningKey(owner:string,id:string){return this.ctx.storage.transactionSync(()=>new SigningKeys(this.sql).revoke(owner,id));}
+  verifyCommitSignature(repository:string,commit:string,raw:Uint8Array){return verifyCommit(this.sql,repository,commit,raw,body=>this.ctx.storage.transactionSync(body),(account,email)=>currentSigningEmail(this.env,account,email));}
+  commitSignature(repository:string,commit:string){return new SigningKeys(this.sql).receipt(repository,commit);}
+  namespaceExists(name:string) { return new Namespaces(this.sql).exists(name); }
+  namespaceFor(actor: string) { return new Namespaces(this.sql).owned(actor); }
+  codeOwnerAccounts(trunk: string, tokens: string[]) {
+    if(!Array.isArray(tokens)||tokens.length>1000||tokens.some(t=>typeof t!=="string"||t.length>256))throw Error("Invalid code owner lookup");
+    const namespaces=new Namespaces(this.sql),binding=this.teams.get(trunk),direct=binding?.kind==="owner",members=new Collaborators(this.sql);
+    return {binding,accounts:Object.fromEntries(tokens.map(token=>{
+      const id=/^@[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/i.test(token)?namespaces.ownerForHandle(token.slice(1)):null;
+      return [token,id&&(!direct||["owner","admin","writer"].includes(members.role(trunk,id)??""))?id:null];
+    }))};
+  }
+  repositoryAddress(id: string) { return new Namespaces(this.sql).byId(id); }
+  resolveRepository(namespace: string, name: string) { return new Namespaces(this.sql).resolve(namespace,name); }
+  reserveRepository(namespace: string, name: string, actor: string, existingId?:string) { return this.ctx.storage.transactionSync(() => {if(existingId)assertRepositoryWritable(this.sql,existingId);const repo=new Namespaces(this.sql).reserve(namespace,name,actor,existingId);assertRepositoryWritable(this.sql,repo.id);return repo;}); }
+  renameRepository(id:string,name:string,actor:string) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,id);return new Namespaces(this.sql).rename(id,name,actor);}); }
+  collaboratorRole(trunk: string, userId: string) { return new Collaborators(this.sql).role(trunk,userId); }
+  rulesetActor(trunk:string,actor:string) {
+    const binding=this.teams.get(trunk),role=binding?.kind==='owner'?new Collaborators(this.sql).role(trunk,actor):!binding&&this.find(trunk)?.owner===actor?'owner':null;
+    return {binding,role,checkedAt:Date.now()};
+  }
+  rulesetRoleSupport(){return true as const;}
+  reviewerAccess(trunk:string,ids:string[]) {
+    if(!Array.isArray(ids)||ids.length>2000||ids.some(id=>typeof id!=="string"||id.length>256))throw Error("Invalid reviewer lookup");
+    const binding=this.teams.get(trunk),members=binding?.kind==="owner"?new Collaborators(this.sql):null,owner=!binding?this.find(trunk)?.owner:null;
+    const accounts:Record<string,"writer"|"no_write">={};
+    for(const id of ids)accounts[id]=(members?["owner","admin","writer"].includes(members.role(trunk,id)??""):!binding&&owner===id)?"writer":"no_write";
+    return {binding,accounts,checkedAt:Date.now()};
+  }
+  deploymentReviewerAccess(trunk:string,ids:string[]) {
+    if(!Array.isArray(ids)||ids.length>128||ids.some(id=>typeof id!=="string"||!id||id.length>256))throw Error("Invalid deployment reviewer lookup");
+    const binding=this.teams.get(trunk),members=binding?.kind==="owner"?new Collaborators(this.sql):null,owner=!binding?this.find(trunk)?.owner:null;
+    const accounts:Record<string,"member"|"absent">={};for(const id of ids)accounts[id]=(members?!!members.role(trunk,id):!binding&&owner===id)?"member":"absent";
+    return {binding,accounts,checkedAt:Date.now()};
+  }
+  collaborators(trunk: string) { return new Collaborators(this.sql).list(trunk); }
+  inviteCollaborator(trunk: string, actor: string, userId: string, role: RepoRole, hash: string) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,trunk);return new Collaborators(this.sql).invite(trunk,actor,userId,role,hash);}); }
+  acceptInvitation(trunk: string, userId: string, hash: string) { return this.ctx.storage.transactionSync(() => new Collaborators(this.sql).accept(trunk,userId,hash)); }
+  changeCollaborator(trunk: string, actor: string, userId: string, role: RepoRole | null) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,trunk);return new Collaborators(this.sql).change(trunk,actor,userId,role);}); }
+  cancelInvitation(trunk: string, actor: string, id: string) { assertRepositoryWritable(this.sql,trunk);return new Collaborators(this.sql).cancel(trunk,actor,id); }
   team(trunk: string) { return this.teams.get(trunk); }
-  releases(command: ReleaseCommand) { return this.ctx.storage.transactionSync(() => new ReleaseStore(this.sql).run(command)); }
-  protectOwner(trunk: string, ownerId: string, origin: string) { return this.teams.protectOwner(trunk, ownerId, origin); }
-  bindTeam(trunk: string, ownerId: string, binding: TeamBinding) { return this.teams.bind(trunk, ownerId, binding); }
+  releases(command: ReleaseCommand) { return this.ctx.storage.transactionSync(() => {if(command.op!=="list")assertRepositoryWritable(this.sql,command.op==="create"?command.release.trunk:command.trunk);return new ReleaseStore(this.sql).run(command);}); }
+  protectOwner(trunk: string, ownerId: string, origin: string) { assertRepositoryWritable(this.sql,trunk);return this.teams.protectOwner(trunk, ownerId, origin); }
+  bindTeam(trunk: string, ownerId: string, binding: TeamBinding) { assertRepositoryWritable(this.sql,trunk);return this.teams.bind(trunk, ownerId, binding); }
   teamProof(trunk: string, principal: string) { return this.teams.proof(trunk, principal); }
   recordTeamProof(trunk: string, proof: IdentityProof) { this.teams.record(trunk, proof); }
 
@@ -41,7 +124,7 @@ export class Hub extends DurableObject<Env> {
   /** Forgets a trunk and its releases; returns the release files' keys to delete. */
   remove(name: string): string[] {
     return this.ctx.storage.transactionSync(() => {
-      this.sql.exec("DELETE FROM trunks WHERE name = ?", name);
+      this.sql.exec("DELETE FROM trunks WHERE name = ?", name);new ArchiveStore(this.sql,name).forget();
       return new ReleaseStore(this.sql).forget(name);
     });
   }

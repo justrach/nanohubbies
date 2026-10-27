@@ -1,0 +1,14 @@
+{
+  "origin": "https://nanohub.sh",
+  "backend": "codegraff",
+  "image": "ghcr.io/your-org/nanohub-ci@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "network": "none",
+  "artifacts": "/var/lib/nanohub-ci/private-artifacts",
+  "concurrency": 8,
+  "maxSandboxes": 16,
+  "jobConcurrency": 4,
+  "repositories": [
+    { "repository": "nanohub/app", "tokenEnv": "NANOHUB_APP_CI_TOKEN" },
+    { "repository": "nanohub/api", "tokenEnv": "NANOHUB_API_CI_TOKEN" }
+  ]
+}

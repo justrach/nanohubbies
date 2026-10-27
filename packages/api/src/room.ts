@@ -1,3 +1,4 @@
+import {ArchiveStore,archiveMessage,assertRepositoryWritable,type ArchiveChange} from "./repository/archive";
 import { DurableObject } from "cloudflare:workers";
 import type { SwarmPlan } from "./driver";
 import * as channel from "./room/channel";
@@ -41,6 +42,14 @@ export class Room extends DurableObject<Env> {
     this.access = new RoomAccess(env, this.sql, ctx);
   }
 
+  repositoryArchive(){return new ArchiveStore(this.sql).state();}
+  async applyRepositoryArchive(trunk:string,change:ArchiveChange) {
+    const result=this.ctx.storage.transactionSync(()=>new ArchiveStore(this.sql).apply(change));
+    if(change.archived&&result.state.archived) {
+      await this.stopSwarm(trunk,null);
+    }
+    return result.state;
+  }
   /** Folds a batch of events into the agents' states and the tallies, keeps
    *  them for replay, and sends them to everyone watching. */
   publish(events: RoomEvent[]) {
@@ -90,10 +99,12 @@ export class Room extends DurableObject<Env> {
   // ---- the channel ----
 
   post(from: string, body: string, context: { replyTo?: number; handoffTo?: string } = {}): RoomEvent {
+    assertRepositoryWritable(this.sql);
     return channel.post(this.sql, this.emit, from, body, context);
   }
 
   registerAgent(owner: Owner, handle: string, type: string) {
+    assertRepositoryWritable(this.sql);
     const agent = registry.register(this.sql, owner, handle, type);
     this.scheduleFrame();
     return agent;
@@ -105,6 +116,7 @@ export class Room extends DurableObject<Env> {
     return agent ? agent.id === id : !id;
   }
   agentHeartbeat(handle: string, status: registry.Presence, task: string, progress: string) {
+    assertRepositoryWritable(this.sql);
     const agent = registry.heartbeat(this.sql, handle, status, task, progress);
     this.scheduleFrame();
     return agent;
@@ -118,10 +130,12 @@ export class Room extends DurableObject<Env> {
   // ---- issues ----
 
   importRepo(repo: RepoInfo, issues: Parameters<typeof board.importRepo>[2]) {
+    assertRepositoryWritable(this.sql);
     board.importRepo(this.sql, repo, issues);
   }
 
   refreshGitHubContext(repo: RepoInfo, issues: Parameters<typeof board.importRepo>[2], notes: string[]) {
+    assertRepositoryWritable(this.sql);
     const result = this.ctx.storage.transactionSync(() => refreshContext(this.sql, repo, issues, notes));
     const frame = JSON.stringify({ type: "snapshot", ...this.snapshot() });
     this.broadcasts = this.broadcasts.then(async () => {
@@ -139,6 +153,7 @@ export class Room extends DurableObject<Env> {
   }
 
   openIssue(title: string, body: string, author: string, labels: Issue["labels"] = []): Issue {
+    assertRepositoryWritable(this.sql);
     return board.openIssue(this.sql, this.emit, title, body, author, labels);
   }
 
@@ -155,10 +170,12 @@ export class Room extends DurableObject<Env> {
   }
 
   hold(agent: string, number: number): Issue | null {
+    assertRepositoryWritable(this.sql);
     return board.hold(this.sql, this.emit, agent, number);
   }
 
   claim(agent: string, owner: string | null, cap: number) {
+    assertRepositoryWritable(this.sql);
     return board.claim(this.sql, agent, owner, cap);
   }
 
@@ -171,9 +188,11 @@ export class Room extends DurableObject<Env> {
     who: Owner,
     opts: { agents: number; seconds: number; shared: number; skew: number; think: [number, number] },
   ): Promise<SwarmState> {
+    assertRepositoryWritable(this.sql);
     const mine = this.swarms().find((s) => s.owner.id === who.id);
     if (mine?.running) throw new Error(`${who.name} already has a swarm running on this trunk`);
     const targets = await this.env.SEQUENCER.get(this.env.SEQUENCER.idFromName(trunk)).targets(200);
+    assertRepositoryWritable(this.sql);
     if (!targets.length) throw new Error("the trunk has no JavaScript functions for agents to share");
     const agents = Math.max(1, Math.min(20_000, Math.floor(opts.agents)));
     const drivers = Math.ceil(agents / PER_DRIVER);
@@ -187,6 +206,7 @@ export class Room extends DurableObject<Env> {
         return this.driver(trunk, who, d).start(plan);
       }),
     );
+    assertRepositoryWritable(this.sql);
     this.sql.exec(
       `INSERT OR REPLACE INTO swarms (owner_id, owner_name, prefix, agents, drivers, shared, started, until) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       who.id,
@@ -213,7 +233,7 @@ export class Room extends DurableObject<Env> {
     return this.swarms();
   }
 
-  restrictTeam(trunk: string) { this.access.restrict(trunk); }
+  restrictTeam(trunk: string) { assertRepositoryWritable(this.sql);this.access.restrict(trunk); }
 
   // ---- watchers ----
 
@@ -252,10 +272,15 @@ export class Room extends DurableObject<Env> {
   async webSocketMessage(ws: WebSocket, data: string | ArrayBuffer) {
     try {
       const msg = JSON.parse(typeof data === "string" ? data : new TextDecoder().decode(data)) as { type?: string; body?: string };
-      if (!await this.access.check(ws)) return;
+      if (!await this.access.check(ws, msg.type === "post")) return;
       const who = this.access.attachment(ws).who;
+      if(msg.type==="post") {
+        const trunk=getMeta<string>(this.sql,"team_trunk");
+        if(trunk)await this.env.HUB.get(this.env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
+      }
       if (msg.type === "post" && msg.body) this.post(who ? `person:${who.name}` : "guest", String(msg.body));
-    } catch {
+    } catch(error) {
+      if(String(error).includes(archiveMessage)){try{ws.send(JSON.stringify({type:"error",code:"repository_archived",error:archiveMessage}));}catch{}}
       // A malformed frame from a watcher is ignored, not fatal.
     }
   }

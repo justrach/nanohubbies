@@ -2,6 +2,8 @@ import { DurableObject } from "cloudflare:workers";
 import type { PackInfo } from "./objects";
 import { migratePacks, PackStore, type PackRow, type Raw } from "./packer/store";
 import { forget } from "./sequencer/store";
+import { decode, type GitObject } from "./git";
+import { buildPack, compressedPackEntry, packKey } from "./packfile";
 
 /** One per trunk, beside its sequencer: writes the objects the sequencer lands
  *  to R2 as packs, merges them, deletes merged-away ones after a while, and
@@ -22,6 +24,22 @@ export class Packer extends DurableObject<Env> {
   /** A batch of landed objects, written as one pack. Returns once it is in R2. */
   async publish(trunk: string, rows: Raw[], through: number): Promise<void> {
     await this.store.write(trunk, rows, through);
+  }
+
+  /** Durable Git objects without advancing the swarm publication watermark. */
+  async publishGit(trunk: string, objects: GitObject[]) {
+    if (!objects.length) return;
+    const built = buildPack(objects.map(o => {
+      const { type, body } = decode(o.raw);
+      return compressedPackEntry(o.sha, type, body);
+    }));
+    await Promise.all([
+      this.env.OBJECTS.put(packKey(trunk, built.name, "pack"), built.pack),
+      this.env.OBJECTS.put(packKey(trunk, built.name, "idx"), built.idx),
+    ]);
+    this.store.adopt(trunk, [{ name: built.name, level: 0, first: 0, last: 0, objects: objects.length, bytes: built.pack.length, dropped: null }], 0);
+    // Keep migration batches without duplicating a large repository during
+    // background compaction. The regular swarm writer compacts its own packs.
   }
 
   list(): { packs: PackInfo[]; through: number } {

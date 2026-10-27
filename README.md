@@ -31,8 +31,8 @@ Developed on Node 24 (the scripts run TypeScript directly). No Cloudflare accoun
 ```sh
 git clone https://github.com/justrach/nanohubbies.git
 cd nanohubbies
-npm install
-npm run dev     # API on http://localhost:8787, dashboard on http://localhost:3000
+bun install
+bun run dev     # API on http://localhost:8787, dashboard on http://localhost:3000
 ```
 
 Open http://localhost:3000, create a workspace from the template or import a
@@ -50,11 +50,11 @@ node scripts/bench.ts           # the same edits landed three ways: plain git, a
 <details>
 <summary>Deploy, sign-in, and Cloudflare Artifacts</summary>
 
-`npm run preview` builds the deployable Worker (Next.js through OpenNext plus
+`bun run preview` builds the deployable Worker (Next.js through OpenNext plus
 the API) and serves all of it on http://localhost:8787. Sign-in uses Better
 Auth with Codegraff as the OpenID Connect provider and a D1 database of its
 own; without `BETTER_AUTH_SECRET`, local development shows a development login
-instead. The Cloudflare Artifacts mirror is opt-in (`npx wrangler dev --env
+instead. The Cloudflare Artifacts mirror is opt-in (`bun x wrangler dev --env
 artifacts`). Every variable, binding, and script is in
 [docs/development.md](docs/development.md).
 
@@ -117,6 +117,11 @@ the same code; then git says what changed and who changed it. The Connect page
 also gives the agent its brief (`/api/trunks/<workspace>/brief`), the room
 routes, and the `nanohub swarm` CLI.
 
+The Git hosting CLI is available as `bun run nh -- --help` (also
+`bun run nanohub`). See [CLI usage and validation](docs/hosting-cli.md) for
+repository cloning, browser authorization, separate Git/API credentials, native pull requests and
+reviews, hunk comments, protected merges and Actions history.
+
 ## Numbers
 
 Changes landed in 30 seconds by scripted agents on one repository, on one Mac
@@ -175,6 +180,8 @@ other files are compared whole, which is coarser but never wrong.
 
 ## Docs
 
+- [Standalone Git hosting](docs/standalone-host.md): lossless migration, binary assets, protected branches and trusted CI/staging gates.
+
 - [How it works](docs/how-it-works.md): lives, the sequencer, pushing with
   plain git, people, issues, holds and leases, and footprint keys.
 - [A workspace as a repository](docs/repository.md): code, history and diffs,
@@ -184,6 +191,9 @@ other files are compared whole, which is coarser but never wrong.
   Cloudflare Artifacts, imports, the design system, and public limits.
 - [Submission receipts](docs/submission-receipts.md),
   [the agent room](docs/agent-room.md),
+  [MCP agent contributions](docs/agent-mcp.md),
+  [required check conclusions](docs/check-conclusions.md),
+  [Git ref names and literal shell handling](docs/git-ref-names.md),
   [public admission controls](docs/public-abuse-controls.md), and
   [Entire CLI interop](docs/entire-cli.md).
 
@@ -192,3 +202,9 @@ other files are compared whole, which is coarser but never wrong.
 `apps/web/src/components/rare/` holds a few components from Rare UI, copied from
 commit f64e583 while the project was MIT licensed; the license is in that
 directory.
+
+Repository invitations and the separate Cloudflare Secrets Store service: [access and secrets](docs/access-and-secrets.md).
+
+Owner/repo storage addresses and native Codegraff Actions: [namespaces and Actions](./docs/namespaces-and-actions.md).
+
+GitHub compatibility and protection coverage: [parity and restrictions](docs/github-parity.md).

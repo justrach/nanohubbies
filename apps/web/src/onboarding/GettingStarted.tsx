@@ -10,6 +10,11 @@ import styles from "./GettingStarted.module.css";
 /** A persistent checklist beside the work. Native dialog provides focus
  * containment, Escape, and focus restoration without a dialog bundle. */
 export function GettingStarted() {
+  const {repositoryMode,trunk}=useTrunk();
+  if(repositoryMode==="git")return <details className="relative text-xs"><summary className="cursor-pointer rounded px-2 py-1.5 text-muted hover:bg-wash">Get started</summary><nav aria-label="Repository setup" className="absolute right-0 z-30 mt-2 w-56 space-y-1 rounded border border-line bg-surface p-2 shadow-lg"><LinkButton href={`/t/${trunk}/connect`} size="sm">Git access</LinkButton><LinkButton href={`/t/${trunk}/people`} size="sm">Invite collaborators</LinkButton><a href={`/t/${trunk}/connect#agent-collaboration`} className="block rounded px-3 py-2 text-ink hover:bg-wash" onClick={e=>{const panel=document.getElementById("agent-collaboration");if(panel instanceof HTMLDetailsElement)panel.open=true;const menu=e.currentTarget.closest("details");if(menu)menu.open=false;}}>Optional agent setup</a></nav></details>;
+  return <AgentGettingStarted/>;
+}
+function AgentGettingStarted() {
   const { trunk, head, importJob, initialTokens } = useTrunk();
   const room = useLiveRoom();
   const facts = setupFacts(

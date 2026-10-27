@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import {spawn,execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {mkdir} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {teamFixture} from './team/fixture.ts';
+const f=await teamFixture({APP_ORIGIN:'http://localhost:3000'}),trunk='cli-device',base=`/api/trunks/${trunk}`,exec=promisify(execFile),bin=resolve(import.meta.dirname,'../../cli/bin/nh.mjs');
+const home=join(f.dir,'home'),cache=join(f.dir,'cache');await mkdir(home,{mode:0o700});await mkdir(cache,{mode:0o700});
+const environment={...process.env,HOME:home,XDG_CACHE_HOME:cache,GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0',NANOHUB_API_TOKEN:''};
+const hash=async(value:string)=>Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))).toString('hex');
+const d=()=>f.mf.getD1Database('AUTH_DB');
+const create=(body:any={})=>f.json('POST','/api/cli/device',{trunk,label:'Device fixture',scopes:['read','reviews:write'],days:7,...body});
+const preview=(code:string,cookie:any)=>f.json('GET','/api/cli/authorize?code='+code,undefined,cookie);
+const decide=(flow:any,cookie:any,body:any={})=>f.request('POST','/api/cli/authorize',{userCode:flow.user_code,decision:'approve',codeConfirmed:true,scopes:['read','reviews:write'],days:1,...body},cookie);
+const poll=(flow:any)=>f.request('POST','/api/cli/token',{device_code:flow.device_code});
+const resetPoll=async(flow:any)=>{await(await d()).prepare('UPDATE cli_devices SET nextPollAt=0 WHERE hash=?').bind(await hash(flow.device_code)).run();};
+const auth=(token:string)=>({Authorization:'Bearer '+token});
+let owner:any,child:ReturnType<typeof spawn>|undefined;
+try {
+  owner=await f.login('owner','101');const writer=await f.login('writer','202'),reader=await f.login('reader','303'),outsider=await f.login('outsider','404');
+  await f.json('POST',base,{mode:'git'},owner);
+  assert.equal((await create({client_origin:'http://localhost:3000'})).verification_uri,'http://localhost:3000/cli/authorize');
+  assert.equal((await f.request('POST','/api/cli/device',{trunk,client_origin:'https://other.invalid'})).status,400);
+  for(const [id,cookie,role]of[['writer',writer,'writer'],['reader',reader,'reader']]as const){const invitation=await f.json('POST',`${base}/collaborators`,{userId:`codegraff:${id}`,role},owner);await f.json('POST','/api/invitations/accept',{trunk,token:invitation.token},cookie);}
+  const missing=await create({trunk:'does-not-exist'}),privateRequest=await create();
+  const a=await f.request('GET','/api/cli/authorize?code='+missing.user_code,undefined,outsider),b=await f.request('GET','/api/cli/authorize?code='+privateRequest.user_code,undefined,outsider);assert.equal(a.status,404);assert.equal(b.status,404);assert.deepEqual(await a.json(),await b.json(),'Private repository existence is not disclosed');
+  assert.equal((await f.request('GET','/api/cli/authorize?code='+privateRequest.user_code)).status,401);
+  for(const body of [{device_code:'ABCD-EFGH'},{device_code:privateRequest.device_code,owner:'spoof'}])assert.equal((await f.request('POST','/api/cli/token',body)).status,400);
+  const shown=await preview(privateRequest.user_code.toLowerCase(),owner);assert.equal(shown.repository,trunk);assert.equal(shown.account.id,'codegraff:owner');assert.ok(!JSON.stringify(shown).includes(privateRequest.device_code));assert.equal(shown.maxDays,7);
+  for(const [body,status]of[[{codeConfirmed:false},400],[{scopes:['read','pulls:merge']},403],[{days:30},403],[{owner:'spoof'},400]]as const)assert.equal((await decide(privateRequest,owner,body)).status,status);
+  assert.equal((await decide(privateRequest,{...owner,Origin:'https://other.invalid'})).status,403);
+  let response=await poll(privateRequest);assert.equal((await response.json()as any).error,'authorization_pending');response=await poll(privateRequest);let value=await response.json()as any;assert.equal(value.error,'slow_down');assert.equal(value.interval,10);
+  response=await decide(privateRequest,owner);assert.equal(response.status,200);assert.equal((await response.json()as any).status,'approved');
+  assert.equal((await(await d()).prepare('SELECT COUNT(*) AS n FROM cli_credentials').first<any>()).n,0,'Approval alone does not expose or mint the credential');
+  await resetPoll(privateRequest);response=await poll(privateRequest);assert.equal(response.status,200);const token=await response.json()as any;assert.match(token.access_token,/^nhc_[a-f0-9]{64}$/);assert.equal(token.scope,'read reviews:write');
+  assert.equal((await f.json('GET','/api/cli/whoami',undefined,auth(token.access_token))).user.id,'codegraff:owner');
+  assert.equal((await(await poll(privateRequest)).json()as any).access_token,token.access_token,'Lost token response recovers the same grant');
+  const record=await(await d()).prepare('SELECT * FROM cli_devices WHERE hash=?').bind(await hash(privateRequest.device_code)).first<any>();assert.equal(record.status,'consumed');assert.ok(!JSON.stringify(record).includes(privateRequest.device_code));assert.ok(!JSON.stringify(record).includes(privateRequest.user_code));assert.ok(!JSON.stringify(record).includes(token.access_token));
+  await f.json('DELETE',`/api/cli/credentials/${token.credential_id}`,undefined,owner);assert.equal((await(await poll(privateRequest)).json()as any).error,'access_denied');assert.equal((await f.request('GET','/api/cli/whoami',undefined,auth(token.access_token))).status,401,'Recovery cannot resurrect a revoked credential');
+  const denied=await create();assert.equal((await decide(denied,owner,{decision:'deny'})).status,200);assert.equal((await decide(denied,owner,{decision:'deny'})).status,200);assert.equal((await(await poll(denied)).json()as any).error,'access_denied');assert.equal((await decide(denied,owner)).status,409);
+  const expired=await create();await(await d()).prepare('UPDATE cli_devices SET expiresAt=? WHERE hash=?').bind(Date.now()-1,await hash(expired.device_code)).run();assert.equal((await(await poll(expired)).json()as any).error,'expired_token');assert.equal((await f.request('GET','/api/cli/authorize?code='+expired.user_code,undefined,owner)).status,404);
+  const readerFlow=await create();assert.deepEqual((await preview(readerFlow.user_code,reader)).allowedScopes,['read']);assert.equal((await decide(readerFlow,reader)).status,403);assert.equal((await decide(readerFlow,reader,{scopes:['read']})).status,200);const readerGrant=await(await poll(readerFlow)).json()as any;assert.equal(readerGrant.scope,'read');await f.json('DELETE',`/api/cli/credentials/${readerGrant.credential_id}`,undefined,reader);
+  const contentScopes=['read','contents:read','contents:write'];
+  const contentReader=await create({scopes:contentScopes});assert.deepEqual((await preview(contentReader.user_code,reader)).allowedScopes,['read','contents:read']);assert.equal((await decide(contentReader,reader,{scopes:contentScopes})).status,403);assert.equal((await decide(contentReader,reader,{scopes:['read','contents:read']})).status,200);const contentReaderGrant=await(await poll(contentReader)).json()as any;assert.equal(contentReaderGrant.scope,'read contents:read');await f.json('DELETE',`/api/cli/credentials/${contentReaderGrant.credential_id}`,undefined,reader);
+  const contentWriter=await create({scopes:contentScopes});assert.equal((await decide(contentWriter,writer,{scopes:['read','contents:write']})).status,400);assert.equal((await decide(contentWriter,writer,{scopes:contentScopes})).status,200);await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await(await poll(contentWriter)).json()as any).error,'access_denied');await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'writer'},owner);
+  const changed=await create();assert.equal((await decide(changed,writer)).status,200);await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await(await poll(changed)).json()as any).error,'access_denied');await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'writer'},owner);assert.equal((await(await poll(changed)).json()as any).error,'access_denied','Restoring access cannot revive a denied grant');
+  const archived=await create();assert.equal((await decide(archived,owner)).status,200);await f.json('POST',base+'/archive',{archived:true,revision:0,confirmation:trunk},owner);assert.equal((await(await poll(archived)).json()as any).error,'access_denied');const archivedRead=await create({scopes:contentScopes});assert.deepEqual((await preview(archivedRead.user_code,owner)).allowedScopes,['read','contents:read']);assert.equal((await preview(archivedRead.user_code,owner)).archived,true);assert.equal((await decide(archivedRead,owner,{scopes:['read','contents:read']})).status,200);const archivedGrant=await(await poll(archivedRead)).json()as any;assert.equal(archivedGrant.scope,'read contents:read');await f.json('DELETE',`/api/cli/credentials/${archivedGrant.credential_id}`,undefined,owner);await f.json('POST',base+'/archive',{archived:false,revision:1,confirmation:trunk},owner);
+  const competing=await create({scopes:['read']});const decisions=await Promise.all([decide(competing,owner,{scopes:['read']}),decide(competing,writer,{scopes:['read']})]);assert.equal(decisions.filter(r=>r.status===200).length,1);assert.ok(decisions.every(r=>[200,404,409].includes(r.status)));
+  const concurrent=await Promise.all([poll(competing),poll(competing)]),grants:any[]=[];for(const r of concurrent){const body=await r.json()as any;if(r.ok)grants.push(body);else assert.equal(body.error,'slow_down');}assert.ok(grants.length>=1);const recovered=await(await poll(competing)).json()as any;for(const g of grants)assert.equal(g.access_token,recovered.access_token);assert.equal((await(await d()).prepare('SELECT COUNT(*) AS n FROM cli_credentials WHERE id=?').bind(recovered.credential_id).first<any>()).n,1);
+  const winner=await f.json('GET','/api/cli/whoami',undefined,auth(recovered.access_token));await f.json('DELETE',`/api/cli/credentials/${recovered.credential_id}`,undefined,winner.user.id==='codegraff:owner'?owner:writer);
+  const restarted=await create({scopes:['read']});assert.equal((await decide(restarted,owner,{scopes:['read']})).status,200);await f.restart();const resumed=await(await poll(restarted)).json()as any;assert.match(resumed.access_token,/^nhc_/);await f.json('DELETE',`/api/cli/credentials/${resumed.credential_id}`,undefined,owner);
+  const originFlow=await create({scopes:['read']});const other=await f.mf.dispatchFetch('https://other.invalid/api/cli/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_code:originFlow.device_code})});assert.equal(other.status,400);assert.equal((await other.json()as any).error,'invalid_grant');
+  // Real headless CLI: read its public user code, approve as a synthetic fixture
+  // account, and let its actual timer poll/store; never print the device secret.
+  let stdout='',stderr='',userCode='';
+  child=spawn('bun',[bin,'auth','login','--host',f.origin,'--trunk',trunk,'--credential-helper','cache','--no-browser','--scopes','read','--days','1','--json'],{cwd:f.dir,env:environment,stdio:['pipe','pipe','pipe']});child.stdin.end();
+  const ready=new Promise<string>((resolveCode,reject)=>{child!.stderr!.on('data',chunk=>{stderr+=chunk;const code=/Enter code: ([A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})/.exec(stderr)?.[1];if(code)resolveCode(code);});child!.on('error',reject);child!.on('exit',()=>{if(!/Enter code:/.test(stderr))reject(Error('CLI exited without authorization instructions'));});});
+  child.stdout!.on('data',chunk=>stdout+=chunk);const finished=new Promise<number|null>((resolveExit,reject)=>{child!.on('close',resolveExit);child!.on('error',reject);});
+  userCode=await ready;const actual=await preview(userCode,owner);assert.deepEqual(actual.allowedScopes,['read']);response=await f.request('POST','/api/cli/authorize',{userCode,decision:'approve',codeConfirmed:true,scopes:['read'],days:1},owner);assert.equal(response.status,200);assert.equal(await finished,0,stderr+stdout);const final=JSON.parse(stdout);assert.equal(final.authenticated,true);assert.deepEqual(final.credential.scopes,['read']);assert.ok(!/nh[cd]_[a-f0-9]{64}/.test(stderr+stdout));
+  const status=await exec('bun',[bin,'auth','status','--host',f.origin,'--trunk',trunk,'--credential-helper','cache','--json'],{cwd:f.dir,env:environment});assert.equal(JSON.parse(status.stdout).authenticated,true);
+  const logout=await exec('bun',[bin,'auth','logout','--host',f.origin,'--trunk',trunk,'--credential-helper','cache','--json'],{cwd:f.dir,env:environment});assert.equal(JSON.parse(logout.stdout).revoked,true);
+  assert.equal((await(await d()).prepare('SELECT COUNT(*) AS n FROM cli_credentials WHERE revokedAt IS NULL AND expiresAt>?').bind(Date.now()).first<any>()).n,0);
+  const throttled=await teamFixture({ABUSE_PROTECTION:'1'});
+  try{
+    for(let i=0;i<6;i++)assert.equal((await throttled.request('POST','/api/cli/device',{trunk:'no-existence-check',scopes:['read']})).status,200);
+    let blocked=await throttled.request('POST','/api/cli/device',{trunk:'no-existence-check',scopes:['read']});assert.equal(blocked.status,429);assert.ok(Number(blocked.headers.get('Retry-After'))>0);
+    const account=await throttled.login('limiter','101');for(let i=0;i<10;i++)assert.equal((await throttled.request('GET','/api/cli/authorize?code=ABCD-EFGH',undefined,account)).status,404);
+    blocked=await throttled.request('GET','/api/cli/authorize?code=ABCD-EFGH',undefined,account);assert.equal(blocked.status,429);
+  }finally{await throttled.close();}
+  console.log('PASS: real Worker/D1 browser CLI authorization, code/scope/expiry consent, private-repository privacy, atomic approve/deny races, controlled polling, lost response recovery without plaintext, revocation non-resurrection, reader/demotion/archive boundaries, restart/origin binding and actual headless Bun login/status/logout with isolated helper');
+}finally{child?.kill('SIGTERM');await exec('git',['credential-cache','exit'],{env:environment}).catch(()=>{});await f.close();}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useSession, useSignInUrl } from "@/lib/session";
 import { GhAvatar } from "@/pr/people";
+import Link from "next/link";
 
 /** Who you are, or how to sign in. */
 export function Account({ developmentOnly = false }: { developmentOnly?: boolean } = {}) {
@@ -24,6 +25,7 @@ export function Account({ developmentOnly = false }: { developmentOnly?: boolean
         <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-line bg-surface p-4 shadow-lg">
           <p className="mb-1 text-muted">Signed in with {user.provider === "codegraff" ? "Codegraff" : user.provider}</p>
           <p className="mb-4 font-medium">{user.name}</p>
+          <Link href="/settings/signing-keys" className="mb-4 block text-ink-2 underline">Signing keys</Link>
           {user.provider === "codegraff" && <div className="mb-4"><p className="mb-2 text-muted">GitHub connection</p><GitHub /></div>}
           <button type="button" onClick={() => api("/api/auth/signout", { method: "POST" }).then(refresh)} className="flex w-full items-center gap-2 border-t border-line pt-3 text-ink-2 hover:text-ink"><LogOut size={14} />Sign out</button>
         </div>

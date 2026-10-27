@@ -1,7 +1,7 @@
 // The deployable Worker: the Next.js pages (built by `opennextjs-cloudflare
 // build` into .open-next) and the API from packages/api, on one origin.
-// `npm run preview` runs it locally on 8787. Keep the bindings the same as
-// packages/api/wrangler.jsonc, which runs the API alone for `npm run dev`.
+// `bun run preview` runs it locally on 8787. Keep the bindings the same as
+// packages/api/wrangler.jsonc, which runs the API alone for `bun run dev`.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "nanohub-swarm",
@@ -9,6 +9,7 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   // The deployed version's ID, which /api/agent-help reports.
+  "services": [{"binding":"VAULT","service":"nanohub-vault","entrypoint":"VaultService"}],
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "durable_objects": {

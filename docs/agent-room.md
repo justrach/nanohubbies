@@ -32,6 +32,10 @@ commit-author fallback used by legacy tokens.
 
 ## Agent loop
 
+For persistent work attribution through any compatible MCP client, see
+[Agent work over MCP](agent-mcp.md). The repository sidebar, Agents history and
+PR-linked activity distinguish reported work from server-recorded Git updates.
+
 Read `/api/agent-help` and the trunk's `/brief` for the current contract. With
 the bound Basic credentials:
 
@@ -62,7 +66,7 @@ in shared history. No scheduler or agent runtime is provided by the room.
 
 ## Validation
 
-From `packages/api`, `npm run test:room` runs an isolated Miniflare
+From `packages/api`, `bun run test:room` runs an isolated Miniflare
 integration against real Worker routing, SQLite Durable Objects, D1 and R2.
 It covers identity collisions, credential restrictions and revocation,
 legacy spoof rejection, HTTP and git landing, websocket human sender labels,
@@ -105,7 +109,7 @@ is not exposed by a public API. This establishes account membership and credenti
 binding; agent type, task and progress remain self-reported, with no attestation
 of the model vendor or running process.
 
-Run `npm run test:teams` from `packages/api` for isolated integration
+Run `bun run test:teams` from `packages/api` for isolated integration
 coverage of membership proofs, owner-only binding, private reads, real git
 clone/push, live revocation, provider failures and persisted restrictions. The
 fixture uses synthetic identities and never changes a user's actual workspace.

@@ -3,10 +3,11 @@ import type { Sequencer } from "../sequencer";
 import { entryAt } from "../trees";
 import type { Head } from "../types";
 import { changesBetween, patchBetween, PatchTooBig, readCommit, summaries, summarize } from "./history";
-import { TooBig, TrunkObjects } from "./objects";
+import { blobText, TooBig, TrunkObjects } from "./objects";
 import { mbox } from "./ship";
 import { cached, cachedResponse } from "./cache";
 
+//   GET /api/trunks/:t/paths?v=                bounded file paths from the committed Git tree
 //   GET /api/trunks/:t/tree?v=&path=          a directory at a version (the published head by default), with its README
 //   GET /api/trunks/:t/blob?v=&path=          one file, as JSON · /raw?v=&path= the same file as plain text
 //   GET /api/trunks/:t/commits?from=&limit=   the history, newest first, from version `from` down
@@ -14,7 +15,7 @@ import { cached, cachedResponse } from "./cache";
 //   GET /api/trunks/:t/compare?from=&to=      everything that changed between two versions
 //   GET /api/trunks/:t/patch?from=&to=&format=mbox|diff
 //                                             the same as one patch: `git am` takes the mbox, `git apply` the diff
-export const BROWSE = new Set(["tree", "blob", "raw", "commits", "commit", "compare", "patch"]);
+export const BROWSE = new Set(["tree", "blob", "raw", "commits", "commit", "compare", "patch", "paths"]);
 
 /** The trunk read like any git host's repository: everything here is read
  *  from the git objects in R2, at published versions, so the sequencer only
@@ -33,6 +34,23 @@ export async function browse(env: Env, trunk: string, action: string, id: string
     return head;
   };
   try {
+    if(action === "paths") {
+      const head=await at(q("v"));
+      return cachedResponse(await cache(["paths",head],async()=>{
+        const queue=[{sha:head.tree,path:"",depth:0}],paths:string[]=[];
+        for(let i=0;i<queue.length;i++){
+          const dir=queue[i];
+          if(dir.depth>100)throw new TooBig("Directory nesting exceeds the file finder limit; clone with Git instead");
+          for(const entry of readTree(await objects.body(dir.sha,"tree"))){
+            const path=dir.path?`${dir.path}/${entry.name}`:entry.name;
+            if(isDir(entry))queue.push({sha:entry.sha,path,depth:dir.depth+1});
+            else paths.push(path);
+            if(paths.length>5000||queue.length>4000)throw new TooBig("Repository exceeds the file finder limit; clone with Git instead");
+          }
+        }
+        return {paths:paths.sort()};
+      }));
+    }
     if (action === "tree") {
       const head = await at(q("v"));
       const path = clean(q("path"));
@@ -60,12 +78,12 @@ export async function browse(env: Env, trunk: string, action: string, id: string
       const load = async () => {
         const file = path ? await entryAt(objects, head.tree, path) : null;
         if (!file || isDir(file)) throw new Missing(`no file ${path} at v${head.version}`);
-        const text = await objects.text(file.sha);
-        if (action === "raw") return text;
-        const big = text.length > 1 << 20;
-        return { version: head.version, commit: head.commit, path, sha: file.sha, size: new TextEncoder().encode(text).length, text: big ? null : text };
+        const bytes = await objects.body(file.sha, "blob");
+        if (action === "raw") return bytes;
+        const content = blobText(bytes);
+        return { version: head.version, commit: head.commit, path, sha: file.sha, mode: file.mode, size: bytes.length, binary: content === null, text: bytes.length > 1 << 20 ? null : content };
       };
-      if (action === "raw") return text(await load() as string);
+      if (action === "raw") return new Response(await load() as Uint8Array, { headers: { "content-type": "application/octet-stream", "x-content-type-options": "nosniff" } });
       return cachedResponse(await cache(["blob", head, path], load));
     }
     if (action === "commits") {

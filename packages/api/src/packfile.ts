@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { inflateSync } from "node:zlib";
+import { deflateSync, inflateSync } from "node:zlib";
 import { fromHex, toHex, type ObjectType } from "./git";
 
 /** Git's packfile and its index (version 2), as the trunk publishes them:
@@ -12,8 +12,8 @@ import { fromHex, toHex, type ObjectType } from "./git";
  *  the rest of packing it does, and packing has to keep up with landing;
  *  packs come out bigger, and git reads them as it reads any other. */
 
-const TYPE = { commit: 1, tree: 2, blob: 3 } as const;
-const TYPES: Record<number, ObjectType> = { 1: "commit", 2: "tree", 3: "blob" };
+const TYPE = { commit: 1, tree: 2, blob: 3, tag: 4 } as const;
+const TYPES: Record<number, ObjectType> = { 1: "commit", 2: "tree", 3: "blob", 4: "tag" };
 const utf8 = new TextEncoder();
 /** An index's header and fan-out table, before its object names. */
 const NAMES = 8 + 256 * 4;
@@ -24,6 +24,12 @@ export interface PackEntry {
   sha: string;
   crc: number;
   data: Uint8Array;
+}
+
+/** Repository imports favor storage/transfer size over swarm packing speed. */
+export function compressedPackEntry(sha: string, type: ObjectType, body: Uint8Array): PackEntry {
+  const data = concat([objectHeader(TYPE[type], body.length), new Uint8Array(deflateSync(body))]);
+  return { sha, crc: crc32(data), data };
 }
 
 export function packEntry(sha: string, type: ObjectType, body: Uint8Array): PackEntry {

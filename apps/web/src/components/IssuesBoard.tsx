@@ -43,11 +43,13 @@ export function IssuesBoard({
   issues,
   onOpen,
   selected,
+  readOnly=false,
 }: {
   trunk: string;
   issues: Issue[];
   onOpen: (n: number) => void;
   selected?: number | null;
+  readOnly?:boolean;
 }) {
   const [filter, setFilter] = useState<IssueFilter>("all");
   const [query, setQuery] = useState("");
@@ -109,12 +111,13 @@ export function IssuesBoard({
             setAdding(!adding);
             setError(null);
           }}
+          disabled={readOnly}
           aria-expanded={adding}
         >
           <Plus size={14} aria-hidden /> New issue
         </Button>
       </header>
-      {adding && (
+      {adding && !readOnly && (
         <form onSubmit={add} className={styles.newIssue}>
           <Input
             autoFocus
@@ -122,13 +125,13 @@ export function IssuesBoard({
             placeholder="What needs doing?"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            disabled={busy}
+            disabled={busy||readOnly}
             required
           />
           <Button
             type="submit"
             variant="primary"
-            disabled={busy || !title.trim()}
+            disabled={busy || readOnly || !title.trim()}
           >
             {busy ? "Creating…" : "Create issue"}
           </Button>
@@ -137,7 +140,7 @@ export function IssuesBoard({
               setAdding(false);
               setError(null);
             }}
-            disabled={busy}
+            disabled={busy||readOnly}
           >
             Cancel
           </Button>

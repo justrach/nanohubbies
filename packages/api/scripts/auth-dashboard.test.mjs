@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { test, after } from "node:test";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { build } from "esbuild";
 
 const fixture = { attempts: [] };
@@ -31,7 +34,11 @@ const { outputFiles } = await build({
     },
   }],
 });
-const { default: api } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString("base64")}`);
+// Node dependencies may resolve native helpers relative to import.meta.url.
+const fixtureDir=await mkdtemp(join(tmpdir(),"nanohub-auth-test-"));
+after(()=>rm(fixtureDir,{recursive:true,force:true}));
+const fixtureModule=join(fixtureDir,"api.mjs");await writeFile(fixtureModule,outputFiles[0].text);
+const { default: api } = await import(pathToFileURL(fixtureModule).href);
 const env = { SESSION_SECRET: "offline-test", HUB: { idFromName: (id) => id, get: () => ({}) } };
 
 test("both sign-in entry points send new, returning and failed sign-ins to dashboard", async () => {
@@ -49,5 +56,13 @@ test("both sign-in entry points send new, returning and failed sign-ins to dashb
       const destination = new URL(response.headers.get("location"));
       assert.equal(destination.searchParams.get("login_provider"), provider === "github" ? "github" : null);
     }
+  }
+});
+
+test("only a normalized CLI code selects the fixed CLI consent return path", async()=>{
+  for(const code of ["abcd-efgh","ABCDEFGH","//evil.invalid","https://evil.invalid/?code=ABCD-EFGH","ABCD-EFGH&return=//evil.invalid","ABCD-EFGH\r\nX-Test: bad"]){
+    const response=await api.fetch(new Request(`http://localhost/api/auth/signin/codegraff?cli_code=${encodeURIComponent(code)}&return=https://evil.invalid`),env);
+    assert.equal(response.status,302);const expected=/^(abcd-efgh|ABCDEFGH)$/.test(code)?"/cli/authorize?code=ABCD-EFGH":"/dashboard",attempt=fixture.attempts.at(-1);
+    assert.equal(attempt.callbackURL,expected);assert.equal(attempt.newUserCallbackURL,expected);assert.equal(attempt.errorCallbackURL,expected);
   }
 });

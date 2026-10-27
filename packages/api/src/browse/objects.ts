@@ -45,10 +45,15 @@ export class TrunkObjects implements Objects {
     return obj.body;
   }
 
-  /** A blob as text. Trunks hold UTF-8 text files only. */
+  /** Text preview. Binary bytes remain available through raw and Git routes. */
   async text(sha: string): Promise<string> {
     return text(await this.body(sha, "blob"));
   }
+}
+
+export function blobText(bytes: Uint8Array): string | null {
+  if (bytes.includes(0)) return null;
+  try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); } catch { return null; }
 }
 
 /** Runs `fn` over `items`, a few at a time, keeping their order. */

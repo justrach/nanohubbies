@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-27T11:25:07.238606+00:00",
+  "productionCodegraff": true,
+  "hostedNanohub": false,
+  "buildSandboxId": "cnd_7e90ff39828e9dca68435f5d78c2df35c8ef4c9b",
+  "image": "sha256:bfaf7d13f131017f3073514fdc51a09ac46ba3275e29862e3a223f3413a64907",
+  "imagePlatform": "linux/amd64",
+  "manifestContextSha256": "f40d7ae72f2611920516a6fed45c6e42831b679935c4f595345b10368ee65004",
+  "source": "0d28e90d46e7e69b1b3680ff8adab7312126eb0d",
+  "gates": [
+    "install",
+    "unit",
+    "repository",
+    "cli",
+    "access",
+    "hosting",
+    "build",
+    "check"
+  ],
+  "linuxUnitTests": 256,
+  "linuxRepositoryUnitTests": 202,
+  "latestLocalUnitTests": 259,
+  "latestLocalHostingTests": 28,
+  "network": "none",
+  "credentialFreeCandidate": true,
+  "freshContainerOnBuildVm": true,
+  "freshRestoredVmVerified": false,
+  "gzipArchiveLoadVerifiedOnBuildVm": true,
+  "compressedArchiveBytes": 826656413,
+  "snapshotOutcomesBeforeCleanup": {
+    "includeDocker": "failed",
+    "smallWorkspace": "ready",
+    "uncompressedImageArchive": "failed",
+    "compressedImageArchive": "failed"
+  },
+  "allFourSnapshotsDeleted": true,
+  "buildSandboxDestroyed": true,
+  "registryPublished": false,
+  "unattendedHostedDispatcherActivated": false
+}

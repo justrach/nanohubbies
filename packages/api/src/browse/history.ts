@@ -2,7 +2,7 @@ import { GENERATED } from "../github/pulls";
 import { changedFiles, type Change } from "../trees";
 import type { Head } from "../types";
 import { gitDiff, unified } from "./diff";
-import { inTurn, parseCommit, type CommitInfo, type TrunkObjects } from "./objects";
+import { blobText, inTurn, parseCommit, type CommitInfo, type TrunkObjects } from "./objects";
 
 /** A landed version as the history lists it. */
 export interface CommitSummary {
@@ -68,7 +68,7 @@ const MAX_DIFF_BYTES = 8 << 20;
 
 /** What changed between two trees, file by file, with each file's diff while
  *  the page's budget lasts. `truncated` says what was left out. */
-export async function changesBetween(objects: TrunkObjects, from: string | null, to: string): Promise<{ files: ChangedFile[]; truncated: string[] }> {
+export async function changesBetween(objects: Pick<TrunkObjects,"body">, from: string | null, to: string): Promise<{ files: ChangedFile[]; truncated: string[] }> {
   const changed = (await changedFiles(objects, from, to)).sort((x, y) => (x.path < y.path ? -1 : 1));
   const truncated: string[] = [];
   if (changed.length > MAX_LISTED) truncated.push(`${(changed.length - MAX_LISTED).toLocaleString("en-US")} more changed files are not listed`);
@@ -87,7 +87,8 @@ export async function changesBetween(objects: TrunkObjects, from: string | null,
       generated: GENERATED.some((re) => re.test(c.path)),
     };
     if (i >= MAX_DIFFED || bytes > MAX_DIFF_BYTES) return file;
-    const [before, after] = await Promise.all([c.before ? objects.text(c.before.sha) : "", c.after ? objects.text(c.after.sha) : ""]);
+    const [before, after] = await Promise.all([c.before ? objects.body(c.before.sha, "blob").then(blobText) : "", c.after ? objects.body(c.after.sha, "blob").then(blobText) : ""]);
+    if (before === null || after === null) return file;
     bytes += before.length + after.length;
     if (before.length > MAX_SIDE_BYTES || after.length > MAX_SIDE_BYTES) return file;
     const p = unified(before, after);
@@ -105,7 +106,8 @@ export async function patchBetween(objects: TrunkObjects, from: string | null, t
   let bytes = 0;
   const side = async (e: Change["before"]) => {
     if (!e) return null;
-    const text = await objects.text(e.sha);
+    const text = blobText(await objects.body(e.sha, "blob"));
+    if (text === null || e.mode !== "100644") throw new PatchTooBig("Binary or mode changes require Git clone/fetch or git bundle export; text patches are not lossless");
     bytes += text.length;
     if (bytes > MAX_PATCH_BYTES) throw new PatchTooBig(`the patch would be over ${MAX_PATCH_BYTES >> 20} MB; clone the trunk with git instead`);
     return { sha: e.sha, text };

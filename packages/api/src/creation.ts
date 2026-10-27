@@ -30,15 +30,29 @@ export async function createTrunk(request: Request, env: Env, url: URL, trunk: s
   const room = env.ROOM.get(env.ROOM.idFromName(trunk));
   let initializing = false;
   try {
-    const body = await creationBody<{ files?: { path: string; text: string }[]; template?: string; repo?: string; background?: boolean; visibility?: "private" | "public" }>(request, limits?.bodyBytes ?? null);
+    const body = await creationBody<{ files?: { path: string; text: string }[]; template?: string; repo?: string; background?: boolean; visibility?: "private" | "public"; mode?: "git" | "snapshot";defaultBranch?:string }>(request, limits?.bodyBytes ?? null);
+    if (body.mode !== undefined && !["git", "snapshot"].includes(body.mode)) throw new Error("Unknown repository mode");
+    if(body.defaultBranch!==undefined&&typeof body.defaultBranch!=="string")throw Error("Choose a valid initial default branch name");
+    if(body.defaultBranch!==undefined&&body.mode!=="git")throw Error("Initial default branch applies to Git repositories only");
+    if (body.mode === "git" && (importing || !user || body.files || body.template)) throw new Error("Create an empty signed-in Git repository, then migrate using git push --mirror");
     if (body.visibility !== undefined && !["private", "public"].includes(body.visibility))
       throw new Error("visibility must be private or public");
     // Authenticated repository imports can contain private code. Establish the
     // boundary before downloading or seeding anything, never after publishing.
-    if (body.visibility === "private" || (importing && user)) {
+    if (body.mode === "git" || body.visibility === "private" || (importing && user)) {
       if (!user) throw new Error("sign in to create a private workspace");
       await hub.protectOwner(trunk, user.id, url.origin);
       await room.restrictTeam(trunk);
+    }
+    if (body.mode === "git") {
+      // Older receivers ignore a new optional init argument. A custom default
+      // must wait for the configuration-capable receiver before any init write.
+      if(body.defaultBranch!==undefined&&body.defaultBranch!=="main")await seq.repositoryConfiguration();
+      initializing = true;
+      const result = await seq.initRepository(trunk,body.defaultBranch??"main");
+      const info = { name: trunk, created: Date.now(), source: "git:lossless", owner };
+      if (ticket) await hub.complete(info, ticket); else await hub.add(info);
+      return Response.json(result, { status: 201 });
     }
     if (importing && body.background === true) {
       if (!user) throw new Error("sign in to copy a repository in the background");
