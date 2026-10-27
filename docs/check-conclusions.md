@@ -5,16 +5,16 @@ run's lifecycle state (`queued`, `running`, `waiting`, `complete`, `superseded`)
 Trusted runner completions retain the original conclusion without converting a
 skipped or neutral job into a successful execution.
 
-| Check conclusion | Ordinary required check | Display |
-| --- | --- | --- |
-| `success` | Satisfied | Succeeded |
-| `neutral` | Satisfied | Neutral |
-| `skipped` | Satisfied | Skipped |
-| `failure` | Blocked | Failed |
-| `cancelled` | Blocked | Cancelled |
-| `timed_out` | Blocked | Timed out |
-| `action_required` | Blocked | Action required |
-| `stale` | Blocked | Stale |
+| Check conclusion | Ordinary required check | Success-only required check | Display |
+| --- | --- | --- | --- |
+| `success` | Satisfied | Satisfied | Succeeded |
+| `neutral` | Satisfied | Blocked | Neutral |
+| `skipped` | Satisfied | Blocked | Skipped |
+| `failure` | Blocked | Blocked | Failed |
+| `cancelled` | Blocked | Blocked | Cancelled |
+| `timed_out` | Blocked | Blocked | Timed out |
+| `action_required` | Blocked | Blocked | Action required |
+| `stale` | Blocked | Blocked | Stale |
 
 This follows [GitHub's required-check conclusion behavior](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks).
 It does not make the native API a GitHub Checks REST endpoint. Native trusted
@@ -36,6 +36,45 @@ neutral/skipped cannot replace that receipt. Named required deployment
 environments also require their actual successful deployment reports. Deployment
 reports retain their separate `success`/`failure`/`cancelled` contract.
 
+## Success-only migration policy
+
+The original [Meld protection acceptance](https://github.com/justrach/nanohubbies/issues/2)
+and [CI acceptance](https://github.com/justrach/nanohubbies/issues/3) require a
+successful isolated check, with skipped results blocking landing. Set
+`successOnlyChecks: true` on the applicable branch protection, or select
+**Require Success for all required checks** under Settings → Rules.
+
+This explicit native extension applies to every named `checks` and `beforeOpen`
+requirement. Both the PR preview and final serialized writer use the same
+conclusion evaluator. It accepts only `success`, preserving source pins,
+current candidate/base binding and latest-attempt authority. It does not rewrite
+neutral/skipped reports, create a missing result, change runner permissions or
+waive deployment/version evidence. A newer queued, running, skipped, neutral,
+failed or cancelled rerun cannot inherit an older successful result for the same
+SHA. Invalid or unverifiable reports remain blocking.
+
+Ordinary existing policies omit the flag and retain GitHub-compatible behavior.
+Matching protections combine: one success-only rule makes the effective
+requirement strict; a more specific permissive rule cannot weaken it. Explicit
+`false` changes only that stored rule, while other matching requirements remain.
+
+The existing `protections:write` CLI grant supports full JSON export/edit. Keep
+`successOnlyChecks` when editing an export. A replacement that omits it from an
+already strict stored policy is rejected, including at the final serialized
+writer; choosing `false` must be explicit. Admin deletion remains available
+through the existing revision/confirmation flow. No new CLI release is needed.
+
+The stateful protection receiver advertises
+`successOnlyCheckConclusions: true`. Browser and CLI writers refuse either an
+explicit true or false on an older receiver with retryable 503, rather than
+letting it discard the new field. After enabling strict policies, retain an
+aware application on rollback: an earlier enforcement build does not implement
+this gate. Disabling or changing protection remains an explicit admin action.
+
+Run `bun run --filter @swarm/api test:success-only` for the new unit and real
+Worker/Git/standalone-CLI acceptance. See
+[validation](evidence/success-only-checks-validation.md).
+
 ## Runner behavior
 
 The trusted Codegraff dispatcher records an unexecuted dependency job as
@@ -45,6 +84,8 @@ sandbox cleanup still required. Failed prerequisites remain separate failed
 results. Protect the prerequisite's check name if that work must succeed: as on
 GitHub, requiring only its skipped dependent does not require the prerequisite.
 The supported workflow dialect still excludes arbitrary conditional expressions.
+Success-only mode also blocks a required skipped dependent; protect all required
+prerequisites or enable this mode for an aggregate gate.
 
 A deferred deployment may retain ordinary success/neutral/skipped checks, but no
 blocking result. Staging dispatch still performs its actual deployment and

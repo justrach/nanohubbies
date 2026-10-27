@@ -14,12 +14,14 @@ const defaults: Policy = {
   pullRequest: true,
   approvals: 1,
   checks: [],
+  successOnlyChecks:false,
   beforeOpen: [],
   preventForce: true,
   preventDelete: true,
   dismissStaleReviews: true,
 };
 const options = [
+  ["successOnlyChecks","Require Success for all required checks","Both pre-PR and merge checks must finish with Success. Neutral and skipped conclusions block."],
   ["requireSignedCommits","Require signed commits","Require verified SSH or OpenPGP signatures on introduced commits. Manage public keys in your account settings."],
   [
     "pullRequest",

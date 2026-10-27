@@ -180,6 +180,7 @@ other files are compared whole, which is coarser but never wrong.
 
 ## Docs
 
+- [Production readiness](docs/production-readiness.md): private-beta recommendation, verified paths and remaining release gates.
 - [Standalone Git hosting](docs/standalone-host.md): lossless migration, binary assets, protected branches and trusted CI/staging gates.
 
 - [How it works](docs/how-it-works.md): lives, the sequencer, pushing with

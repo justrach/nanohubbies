@@ -75,6 +75,11 @@ When a PR target moves, integrate it locally into the feature branch with an ord
 
 ## Trusted runners and pre-PR staging
 
+For the Meld cutover criteria, configure `successOnlyChecks: true` on each
+applicable protection. This makes skipped/neutral required results block both
+pre-PR and final merge gates; the ordinary default follows GitHub semantics.
+See [required check conclusions](check-conclusions.md#success-only-migration-policy).
+
 A human owner creates a runner with `POST /api/trunks/:trunk/ci/runners` (`{"name":"meld-staging"}`), receives its token once, and stores it in the runner secret store. `DELETE /api/trunks/:trunk/ci/:runnerId` revokes it. Ordinary agent and user tokens cannot submit trusted results.
 
 Branch updates enqueue a durable event keyed by branch/head/base inside the ref transaction. Events exist before a PR exists: `beforeOpen` blocks PR creation until its named checks succeed. Run a scheduled/service worker that calls:

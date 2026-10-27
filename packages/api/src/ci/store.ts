@@ -157,13 +157,13 @@ export class CIStore {
     run.results = results; run.staging = staging; run.deployments=deployments; run.state = "complete"; this.save(run);
     return run;
   }
-  require(branch: string, head: string, base: string, names: string[], pins: CheckSource[] = []) {
+  require(branch: string, head: string, base: string, names: string[], pins: CheckSource[] = [],successOnly=false) {
     if (!names.length) return;
     const row=this.sql.exec<{data:string}>("SELECT data FROM ci_runs WHERE event_key=? AND json_extract(data,'$.state')='complete'",`${branch}:${head}:${base}`).toArray()[0];
     const run:Run|undefined=row?JSON.parse(row.data):undefined;
     const sources = pins.length ? this.sources() : [];
     for (const name of names) {
-      const error = checkFailure(run,name,pins,sources);
+      const error = checkFailure(run,name,pins,sources,successOnly);
       if (error) throw new Error(`${error} for candidate ${head.slice(0, 7)} on base ${base.slice(0, 7)}`);
     }
     return run;

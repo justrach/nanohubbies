@@ -231,7 +231,7 @@ export class Sequencer extends DurableObject<Env> {
       new Repository(this.sql).audit({ actor, policy:result.find(p=>p.branch===policy.branch), previousPolicy,...(credentialId?{via:{kind:"cli",credentialId}}:{}) });
       return result;
   }
-  protectionConfiguration(){const p=new Policies(this.sql);return {policies:p.list(),revision:p.revision(),revisionTracking:"storage" as const,forcePushActors:true as const};}
+  protectionConfiguration(){const p=new Policies(this.sql);return {policies:p.list(),revision:p.revision(),revisionTracking:"storage" as const,forcePushActors:true as const,successOnlyCheckConclusions:true as const};}
   configureProtection(change:{policy?:BranchPolicy;branch:string;revision:number;credentialId:string},actor:string) {
     return this.ctx.storage.transactionSync(()=>{
       const policies=new Policies(this.sql);

@@ -3,6 +3,8 @@ export interface BranchPolicy {
   pullRequest: boolean;
   approvals: number;
   checks: string[];
+  /** Explicit stricter migration gate; ordinary GitHub-style checks also allow neutral/skipped. */
+  successOnlyChecks?: boolean;
   beforeOpen: string[];
   environments?: string[];
   /** Trusted CI registration, shared by a runner pool. Overlapping pins all apply. */

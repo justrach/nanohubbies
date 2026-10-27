@@ -98,7 +98,7 @@ export class ReviewStore {
       const c = command;
       matches(c.head); matches(c.base);
       if(!s.ciBase)throw Error("Push the repository default branch before opening a pull request");
-      ci.require(c.head.name, c.head.commit, s.ciBase, policies.get(c.base.name)?.beforeOpen ?? [], policies.get(c.base.name)?.checkSources);
+      ci.require(c.head.name, c.head.commit, s.ciBase, policies.get(c.base.name)?.beforeOpen ?? [], policies.get(c.base.name)?.checkSources,policies.get(c.base.name)?.successOnlyChecks);
       if (!c.title.trim() || c.title.length > 200 || c.body.length > 16000) throw new Error("Provide a title of up to 200 characters and body of up to 16000");
       if ((!this.git&&c.head.name === "main") || c.head.name === c.base.name) throw new Error("Choose a feature branch and a different base");
       if (s.pulls.length >= 500) throw new Error("This workspace has reached its 500 PR limit");
@@ -181,7 +181,7 @@ export class ReviewStore {
             if(missing)throw Error(`Requires code owner approval for ${missing.pattern} (CODEOWNERS line ${missing.line})`);
             p.codeOwners=decision;
           }
-          ci.require(p.head, c.head.commit, ciBase, policies.get(p.base)?.checks ?? [], policies.get(p.base)?.checkSources);
+          ci.require(p.head, c.head.commit, ciBase, policies.get(p.base)?.checks ?? [], policies.get(p.base)?.checkSources,policies.get(p.base)?.successOnlyChecks);
           if (this.git) {
             if (!c.candidate || c.candidate.commit !== c.head.commit || c.candidate.tree !== c.head.tree || c.candidate.base !== c.base.commit) throw new Error("Merge requires a fast-forward candidate containing the current target branch; merge it locally and push again");
             const deployments=deploymentGate(this.sql,p.base,c.head.commit,ciBase,c.request.owner?.id??"review",!!c.human,this.authority);

@@ -484,3 +484,18 @@ never retried automatically. Inspect `repo default-branch` before repeating it.
 
 See [the contract](default-branch.md#native-cli-selection) and
 [validation](evidence/cli-default-branch-validation.md).
+
+
+## Successful execution required for checks
+
+The existing 0.4.9 CLI supports the native `successOnlyChecks` protection field
+through `rules get` / `rules set`. It is an explicit opt-in for the stricter Meld
+migration gate: only `success` satisfies required pre-PR and merge checks;
+neutral/skipped reports remain visible and block. Matching rules combine, so a
+permissive exact rule cannot weaken a strict glob. The full export retains the
+field; omission from an existing strict policy is rejected. Explicit `false`
+uses the same admin grant and revision fence as other policy edits.
+
+The receiver must advertise `successOnlyCheckConclusions: true` before accepting
+the field. No credential gains new permissions, and no published CLI bytes
+change. See [the contract](check-conclusions.md#success-only-migration-policy).

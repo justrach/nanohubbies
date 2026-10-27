@@ -35,8 +35,8 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
   const policy = view.effectivePolicies?.[p.base] ?? view.policies?.find(rule => rule.branch === p.base);
   const currentRun = view.runs?.find(run => run.head === view.head.commit && run.base === (p.state === "merged" ? p.mergedCIBase??p.mergedBase : view.ciBase??base?.commit) && run.branch === p.head && run.state === "complete");
   const reportedSource = view.ciSources?.find(source=>source.id===currentRun?.runner);
-  const checkErrors = policy?.checks.map(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources)).filter((error):error is string=>!!error)??[];
-  const missing = policy?.checks.filter(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources))??[];
+  const checkErrors = policy?.checks.map(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources,policy.successOnlyChecks)).filter((error):error is string=>!!error)??[];
+  const missing = policy?.checks.filter(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources,policy.successOnlyChecks))??[];
   const ownershipBlocked=!!view.codeOwners?.required&&(!!view.codeOwners.error||view.codeOwners.missing>0);
   return <main className="mx-auto max-w-[1440px] space-y-5 px-5 py-8">
     <div className="flex items-center justify-between"><Link href={`/t/${trunk}/pulls`} className="text-xs text-muted hover:text-ink">← Pull requests</Link><Button size="sm" variant="ghost" onClick={() => router.refresh()}>Refresh</Button></div>

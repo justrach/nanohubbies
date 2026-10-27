@@ -147,12 +147,13 @@ export async function repositoryRoute(env: Env, request: Request, trunk: string,
     const match=/^"protection-(0|[1-9]\d{0,15})"$/.exec(condition),revision=match?Number(match[1]):NaN;
     if(!Number.isSafeInteger(revision))return Response.json({error:"Invalid protection revision"},{status:400});
     const body=await creationBody<BranchPolicy>(request,32*1024),branch=branchPattern(body.branch);
-    if(request.method==="PUT"&&Object.keys(body).some(k=>!["branch","pullRequest","approvals","checks","beforeOpen","checkSources","environments","preventForce","preventDelete","locked","requireLastPushApproval","requireConversationResolution","requireLinearHistory","requireCodeOwnerReview","requireSignedCommits","dismissStaleReviews","allowPush","allowDismiss","allowForcePush"].includes(k)))return Response.json({error:"Unknown branch protection field"},{status:400});
+    if(request.method==="PUT"&&Object.keys(body).some(k=>!["branch","pullRequest","approvals","checks","successOnlyChecks","beforeOpen","checkSources","environments","preventForce","preventDelete","locked","requireLastPushApproval","requireConversationResolution","requireLinearHistory","requireCodeOwnerReview","requireSignedCommits","dismissStaleReviews","allowPush","allowDismiss","allowForcePush"].includes(k)))return Response.json({error:"Unknown branch protection field"},{status:400});
     if(request.method==="DELETE"&&Object.keys(body).some(k=>k!=="branch"))return Response.json({error:"Deletion accepts only the exact branch pattern"},{status:400});
     let result;
     try{
       const configuration=await seq.protectionConfiguration();
-      if(configuration.revisionTracking!=="storage"||body.allowForcePush!==undefined&&!configuration.forcePushActors)return protectionUpdating();
+      if(request.method==="PUT"&&body.successOnlyChecks===undefined&&configuration.policies.find(policy=>policy.branch===branch)?.successOnlyChecks===true)return Response.json({error:"Include successOnlyChecks explicitly when replacing a success-only policy"},{status:400});
+      if(configuration.revisionTracking!=="storage"||body.allowForcePush!==undefined&&!configuration.forcePushActors||body.successOnlyChecks!==undefined&&!configuration.successOnlyCheckConclusions)return protectionUpdating();
       result=await seq.configureProtection({branch,revision,credentialId:user.cli.credentialId,...(request.method==="PUT"?{policy:body}:{})},user.id);
     }
     catch(error){if(missingProtectionMethod(error,"configureProtection")||missingProtectionMethod(error,"protectionConfiguration"))return protectionUpdating();throw error;}
@@ -192,9 +193,14 @@ export async function repositoryRoute(env: Env, request: Request, trunk: string,
   }
   if (action === "protection" && request.method === "PUT") {
     const policy = await creationBody<BranchPolicy>(request,32*1024); branchPattern(policy.branch);
-    if(policy.allowForcePush!==undefined){
-      try{if(!(await seq.protectionConfiguration()).forcePushActors)return protectionUpdating();}
-      catch(error){if(missingProtectionMethod(error,"protectionConfiguration"))return protectionUpdating();throw error;}
+    try{
+      const configuration=await seq.protectionConfiguration();
+      if(policy.successOnlyChecks===undefined&&configuration.policies.find(existing=>existing.branch===policy.branch)?.successOnlyChecks===true)return Response.json({error:"Include successOnlyChecks explicitly when replacing a success-only policy"},{status:400});
+      if(policy.allowForcePush!==undefined&&!configuration.forcePushActors||policy.successOnlyChecks!==undefined&&!configuration.successOnlyCheckConclusions)return protectionUpdating();
+    }catch(error){
+      if(!missingProtectionMethod(error,"protectionConfiguration"))throw error;
+      if(policy.allowForcePush!==undefined||policy.successOnlyChecks!==undefined)return protectionUpdating();
+      if((await seq.policies()).some(existing=>existing.branch===policy.branch&&existing.successOnlyChecks===true))return protectionUpdating();
     }
     return Response.json({ policies: await seq.setPolicy(policy, user!.id) });
   }

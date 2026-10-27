@@ -298,3 +298,10 @@ settings and graph revisions once on existing Git repositories without changing
 any pointer, ref or rule. Re-read before editing; old conditional exports fail.
 Keep a default-aware receiver on rollback. The separate `repository:default`
 permission is never inferred from a protection, ruleset or archive grant.
+
+
+Success-only check policy writes require `successOnlyCheckConclusions: true` on
+`protectionConfiguration`. Both browser and conditional CLI paths reject the
+new field on older receivers. Existing rows and their ordinary conclusion
+semantics are unchanged by deployment. Once enabled, keep an aware final
+writer on rollback; older enforcement code does not implement the new gate.

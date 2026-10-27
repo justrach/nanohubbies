@@ -165,8 +165,9 @@ registration metadata at `GET /api/repos/:owner/:repo/ci/runners` to the owner.
 
 This repository's workflow has separate unit, Git repository, CLI, access/vault,
 hosting/pool, and build jobs. The stable `check/check` job depends on all six and
-runs pinned tsrs. A failed prerequisite cancels that final gate, preventing it
-from reporting success when a test suite failed.
+runs pinned tsrs. A failed prerequisite skips that final job. Require each prerequisite check,
+or enable `successOnlyChecks` when requiring only the aggregate `check/check`: an
+ordinary GitHub-compatible check accepts a reported skipped conclusion.
 
 Logs are uploaded through a valid current runner lease into Nanohub R2, then read using current repository membership at `/api/repos/:owner/:repo/action-logs/:run/:attempt/:file.log`. They are served as private, non-cacheable plain text with `nosniff`. No separate log hosting service is needed. Completion is saved locally before uploads/callbacks for exact retry inspection. Actions shows candidate SHA/base, run state, individual jobs, sandbox IDs and private log links. Owners can rerun current checks; rerun clears prior staging approval. Runner revocation is available through the CI administration API.
 

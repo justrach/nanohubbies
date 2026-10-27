@@ -50,6 +50,7 @@ export class Policies {
       pullRequest: matches.some((p) => p.pullRequest),
       approvals: Math.max(...matches.map((p) => p.approvals)),
       checks: [...new Set(matches.flatMap((p) => p.checks))],
+      successOnlyChecks: matches.some(p=>p.successOnlyChecks===true),
       beforeOpen: [...new Set(matches.flatMap((p) => p.beforeOpen))],
       ...(matches.some(p=>p.checkSources?.length) ? {checkSources:[...new Map(matches.flatMap(p=>p.checkSources??[]).map(pin=>[`${pin.name}:${pin.runner}`,pin])).values()]} : {}),
       ...(matches.some(p=>p.environments?.length)?{environments:environmentNames(matches.flatMap(p=>p.environments??[]),100)}:{}),
@@ -102,6 +103,7 @@ export class Policies {
         p.requireCodeOwnerReview,
         p.requireSignedCommits,
         p.dismissStaleReviews,
+        p.successOnlyChecks,
       ].every((v) => v === undefined || typeof v === "boolean") ||
       ![p.allowPush,p.allowDismiss,p.allowForcePush].every(ids => ids === undefined ||
         (Array.isArray(ids) &&
@@ -116,6 +118,7 @@ export class Policies {
     )
       throw Error("Invalid branch policy");
     if(p.allowForcePush!==undefined&&!p.preventForce)throw Error("Selected force-push accounts require force-push blocking; omit the list to allow all writers");
+    if(p.successOnlyChecks===undefined&&this.list().find(existing=>existing.branch===p.branch)?.successOnlyChecks===true)throw Error("Include successOnlyChecks explicitly when replacing a success-only policy");
     branchPattern(p.branch);
     const environments=p.environments===undefined?undefined:new Environments(this.sql).resolve(p.environments);
     if (p.checkSources !== undefined) {
@@ -136,6 +139,7 @@ export class Policies {
       pullRequest: p.pullRequest,
       approvals: p.approvals,
       checks: [...new Set(p.checks)],
+      successOnlyChecks:p.successOnlyChecks??false,
       beforeOpen: [...new Set(p.beforeOpen)],
       ...(p.checkSources?.length ? {checkSources:p.checkSources.map(pin=>({name:pin.name,runner:pin.runner}))} : {}),
       ...(environments?.length?{environments}:{}),
