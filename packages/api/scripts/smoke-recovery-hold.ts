@@ -21,6 +21,7 @@ try {
   await mkdir(join(assetDirectory, "_next/static"), { recursive: true });
   await writeFile(join(assetDirectory, "nh/latest.json"), '{"synthetic":true}\n');
   await writeFile(join(assetDirectory, "_next/static/app.js"), "// Synthetic public fixture asset\n");
+  await writeFile(join(assetDirectory, "_next/static/app.css"), "body{color:#123456}\n");
   await writeFile(join(assetDirectory, "index.html"), "<!doctype html><title>Synthetic static page</title>");
   const output = await build({
     entryPoints: [resolve(import.meta.dirname, "../../../apps/web/worker.ts")], bundle: true,
@@ -31,7 +32,7 @@ try {
       plugin.onLoad({ filter: /.*/, namespace: "delegate" }, ({ path }) => ({ loader: "js", contents:
         ["Account", "Agent", "Driver", "Hub", "ImportJob", "Lane", "Packer", "Room", "Sequencer"].map(name => `export class ${name} {}`).join("\n") + `
           export default {fetch(request,env) {
-            if(${JSON.stringify(path)}==='next')return env.ASSETS.fetch(request);
+            if(${JSON.stringify(path)}==='next')return new Response('<!doctype html><title>Synthetic dynamic SSR</title>',{headers:{'Content-Type':'text/html'}});
             return new Response('synthetic API delegate');
           }};
         `,
@@ -48,11 +49,21 @@ try {
   port = Number(new URL(origin).port);
   stage = "normal delivery";
   const send = (path: string, method = "GET") => mf!.dispatchFetch(origin + path, { method });
-  const paths = ["/", "/nh/latest.json", "/_next/static/app.js", "/api/agent-help"];
-  for (const path of paths) {
+  const expected = [
+    { path: "/", text: "<!doctype html><title>Synthetic static page</title>", type: /text\/html/ },
+    { path: "/nh/latest.json", text: '{"synthetic":true}\n', type: /application\/json/ },
+    { path: "/_next/static/app.js", text: "// Synthetic public fixture asset\n", type: /javascript/ },
+    { path: "/_next/static/app.css", text: "body{color:#123456}\n", type: /text\/css/ },
+    { path: "/api/agent-help", text: "synthetic API delegate", type: /text\/plain/ },
+    { path: "/dynamic", text: "<!doctype html><title>Synthetic dynamic SSR</title>", type: /text\/html/ },
+  ];
+  const paths = expected.map(item => item.path);
+  for (const { path, text, type } of expected) {
     const response = await send(path);
     const body = await response.text();
     assert.equal(response.status, 200, path + ": " + (response.ok ? "" : body.slice(0, 1200)));
+    assert.equal(body, text, path + " must return the intended resource bytes, not an HTML fallback");
+    assert.match(response.headers.get("content-type")!, type, path + " has the correct MIME type");
   }
   for (const value of ["1", "false", ""]) {
     stage = "held delivery " + JSON.stringify(value);

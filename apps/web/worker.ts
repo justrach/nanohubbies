@@ -23,6 +23,13 @@ interface Legacy {
   LEGACY_ORIGIN?: string;
 }
 
+function cliDistributionResponse(res: Response) {
+  const headers = new Headers(res.headers);
+  headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 // Server components call the API in-process through this (src/server/api.ts):
 // the Next.js build is a separate bundle, so a module both import would be two
 // copies, and globalThis is the one place they share.
@@ -36,6 +43,13 @@ export default {
     const cliAuthorization=pathname==="/cli/authorize"||pathname==="/cli/authorize/";
     const cliDistribution=pathname==="/nh/install.mjs"||pathname==="/nh/latest.json"||/^\/nh\/releases\/\d+\.\d+\.\d+\/(nh\.mjs|SHA256SUMS)$/.test(pathname);
     if (pathname.startsWith("/api/") || pathname.startsWith("/git/")) return api.fetch(request, env, ctx);
+    // Worker-first routing reaches us even for static files. OpenNext handles
+    // application routes; matching assets must go to the assets binding first.
+    const assets = (env as Env & { ASSETS?: Fetcher }).ASSETS;
+    if (assets && (request.method === "GET" || request.method === "HEAD")) {
+      const asset = await assets.fetch(request);
+      if (asset.status !== 404) return cliDistribution ? cliDistributionResponse(asset) : asset;
+    }
     const { LEGACY: legacy, LEGACY_PATHS: paths = "", LEGACY_ORIGIN: origin } = env as Env & Legacy;
     const toLegacy = () => {
       if (!origin) return legacy!.fetch(request);
@@ -47,10 +61,7 @@ export default {
     }
     const res = await (next as NextHandler).fetch(request, env, ctx);
     if (!cliAuthorization && !cliDistribution && legacy && res.status === 404 && (request.method === "GET" || request.method === "HEAD")) return toLegacy();
-    if(cliDistribution) {
-      const headers=new Headers(res.headers);headers.set("Cache-Control","public, max-age=0, must-revalidate");headers.set("X-Content-Type-Options","nosniff");
-      return new Response(res.body,{status:res.status,statusText:res.statusText,headers});
-    }
+    if(cliDistribution) return cliDistributionResponse(res);
     if (/^\/[^/]+\/[^/]+(?:\/|$)/.test(pathname) || pathname.startsWith("/t/") || pathname === "/dashboard" || pathname === "/") {
       const headers = new Headers(res.headers);
       headers.set("Cache-Control", "private, no-store");

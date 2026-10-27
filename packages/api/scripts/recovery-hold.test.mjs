@@ -62,7 +62,14 @@ test("the actual web router holds before Next, assets, legacy and API delegation
     ` }));
   } }] });
   const { default: web } = await import(pathToFileURL(file).href);
-  const env = { NANOHUB_RECOVERY_HOLD: "1", LEGACY_PATHS: "/", LEGACY: { fetch() { globalThis.__recoveryRoutingCalls.push("legacy"); return new Response("legacy"); } } };
+  const env = { NANOHUB_RECOVERY_HOLD: "1", LEGACY_PATHS: "/", LEGACY: { fetch() { globalThis.__recoveryRoutingCalls.push("legacy"); return new Response("legacy"); } }, ASSETS: { fetch(request) {
+    const path = new URL(request.url).pathname;
+    globalThis.__recoveryRoutingCalls.push("assets:" + path);
+    if (path === "/nh/latest.json") return Response.json({ synthetic: true });
+    if (path === "/_next/static/app.css") return new Response("body{color:red}", { headers: { "Content-Type": "text/css" } });
+    if (path === "/asset-error") return new Response("Asset service unavailable", { status: 503 });
+    return new Response("not found", { status: 404 });
+  } } };
   for (const path of [...paths, "/missing"]) {
     const response = await web.fetch(new Request("https://host.invalid" + path), env, {});
     assert.equal(response.status, 503, path);
@@ -73,7 +80,14 @@ test("the actual web router holds before Next, assets, legacy and API delegation
   env.LEGACY_PATHS = "/legacy";
   assert.equal(await (await web.fetch(new Request("https://host.invalid/legacy"), env, {})).text(), "legacy");
   assert.equal(await (await web.fetch(new Request("https://host.invalid/missing"), env, {})).text(), "legacy");
-  assert.equal(await (await web.fetch(new Request("https://host.invalid/nh/latest.json"), env, {})).text(), "next");
-  assert.deepEqual(globalThis.__recoveryRoutingCalls, ["api", "legacy", "next", "legacy", "next"]);
+  const manifest = await web.fetch(new Request("https://host.invalid/nh/latest.json"), env, {});
+  assert.deepEqual(await manifest.json(), { synthetic: true });
+  assert.equal(manifest.headers.get("cache-control"), "public, max-age=0, must-revalidate");
+  assert.equal(manifest.headers.get("x-content-type-options"), "nosniff");
+  const css = await web.fetch(new Request("https://host.invalid/_next/static/app.css"), env, {});
+  assert.equal(await css.text(), "body{color:red}"); assert.equal(css.headers.get("content-type"), "text/css");
+  assert.equal(await (await web.fetch(new Request("https://host.invalid/git/private.git/HEAD"), env, {})).text(), "api");
+  assert.equal((await web.fetch(new Request("https://host.invalid/asset-error"), env, {})).status, 503);
+  assert.deepEqual(globalThis.__recoveryRoutingCalls, ["api", "assets:/legacy", "legacy", "assets:/missing", "next", "legacy", "assets:/nh/latest.json", "assets:/_next/static/app.css", "api", "assets:/asset-error"]);
   delete globalThis.__recoveryRoutingCalls;
 });
