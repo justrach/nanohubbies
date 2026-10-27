@@ -40,6 +40,11 @@ try{
  const afterLost=await f.json('GET','/fixture/import-transport');const recovered=await okay(['repo','import',source],{repo:'import-owner/api-copy',token:api.token});assert.equal(recovered.resumed,true);assert.deepEqual(await f.json('GET','/fixture/import-transport'),afterLost,'lost final acknowledgement never causes a second publication');
  assert.equal(await git('status','--porcelain=v1'),sourceBefore);assert.equal(await readFile(env.GIT_CONFIG_GLOBAL,'utf8'),globalBefore);
  for(const name of ['git-copy','api-copy'])assert.deepEqual(await f.json('GET',base(name)+'/agents',undefined,owner),[],'import must not create an agent');
+  const runner=await f.json('POST',base('git-copy')+'/ci/runners',{name:'ci-import-boundary'},owner);
+  const claimed=await f.json('POST',base('git-copy')+'/ci/claim',{}, {Authorization:'Bearer '+runner.token}),lease=claimed.run;assert.ok(lease?.readToken);
+  const ciRead={Authorization:'Bearer '+lease.readToken};assert.equal((await f.request('GET','/git/import-owner/git-copy.git/HEAD',undefined,ciRead)).status,200);
+  assert.equal((await f.request('GET','/git/import-owner/git-copy.git/nanohub-import',undefined,ciRead)).status,403);assert.equal((await upload('git-copy',lease.readToken)).status,403);
+  await f.json('DELETE',base('git-copy')+'/ci/'+runner.id,{},owner);assert.equal((await f.request('GET','/git/import-owner/git-copy.git/HEAD',undefined,ciRead)).status,401);
  const readDenied=await cli(['repo','import',source],{repo:'import-owner/denied-copy',token:read.token});assert.equal(readDenied.code,1);assert.match(readDenied.data.error,/contents:write/);
  assert.equal((await upload('denied-copy',read.token)).status,403);assert.equal((await upload('denied-copy',ordinary.token)).status,401);assert.equal((await upload('foreign',gitToken.token)).status,401);
  assert.equal((await f.request('GET',base('git-copy')+'/repository',undefined,basic(gitToken.token))).status,401,'Git import transport must not open application APIs');

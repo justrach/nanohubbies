@@ -1,0 +1,196 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T17:10:24.260Z",
+  "implementationCommit": "2b646d5b9f30cb4df67b173ac8c1a3a562f24b03",
+  "mainWorkerVersion": "9f7e3a05-e3d3-40d4-8b89-e4b53aac3739",
+  "previousMainWorkerVersion": "d8d8a177-a2db-469a-9b18-d6d630a0ade5",
+  "cli": {
+    "format": 1,
+    "version": "0.4.12",
+    "path": "/nh/releases/0.4.12/nh.mjs",
+    "bytes": 74001,
+    "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+  },
+  "productionReadOnlyVerification": {
+    "publicCliVersionAndImportHelp": true,
+    "assetChecks": 15,
+    "exactBytesAndMimeTypes": true,
+    "immutableOlderReleasesUnchanged": [
+      "0.4.8",
+      "0.4.9",
+      "0.4.10",
+      "0.4.11"
+    ],
+    "bindingsUnchanged": true,
+    "bindingCount": 27,
+    "subrequests": 50000,
+    "subrequestBudgetUnchanged": true,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "anonymousGitAccess": {
+      "checkedAt": "2026-10-27T17:09:27.990Z",
+      "scope": "anonymous private-Git access boundary only",
+      "status": 401,
+      "challenge": "Basic realm=\"nanohub\"",
+      "cacheControl": "private, no-store",
+      "productionCredentialCreated": false,
+      "browserAuthenticationChallengeHandled": false
+    },
+    "authenticatedProductionImportPerformed": false,
+    "newProductionCredentialIssued": false,
+    "productionRepositoryMutationPerformed": false,
+    "browserGitChallenge": "Browser navigation failed at HTTP authentication; no credential entered. Its generated error page prevented explicit tab close; tab is unmarked for automatic cleanup."
+  },
+  "localAcceptance": {
+    "apiUnitCases": 297,
+    "repositoryUnitCases": 228,
+    "completeWorkerGitChain": true,
+    "sourceAndBundledNativeImport": true,
+    "cliCases": 47,
+    "tsrsWorkspaces": 3,
+    "fullOpenNextBuild": true,
+    "wranglerDryRun": true,
+    "immutableUploadRetry": true,
+    "lostFinalResponseVerificationOnlyRecovery": true,
+    "alternateHostRefusedBeforeRequest": true,
+    "sourceAndGlobalHelpersUnchanged": true,
+    "additionalLocalCiReadLeaseAssertions": {
+      "path": "packages/api/scripts/smoke-cli-import.ts",
+      "sha256": "3bb24ec9fea372e5b4a0127ff49667a8da87e65fb07ec73537a2ec39d8640ec6",
+      "sourceAndBundledPass": true,
+      "description": "Added after the frozen Linux snapshot: active CI clone lease succeeds at HEAD, cannot discover/upload imports, and revocation denies clone. Production runtime unchanged."
+    }
+  },
+  "actualMeldImport": {
+    "checkedAt": "2026-10-27T16:47:49.566Z",
+    "hostedNanohub": false,
+    "scope": "actual bundled nh CLI; private full Meld Git graph; isolated local Worker/DO/D1/R2",
+    "sourceRefsSha256": "51d433c6ef7e1569fb3b18ac73499aad7cdf805f2073c317a6b2555d943eccc8",
+    "sourceRefs": 178,
+    "cli": {
+      "format": 1,
+      "version": "0.4.12",
+      "path": "/nh/releases/0.4.12/nh.mjs",
+      "bytes": 74001,
+      "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+    },
+    "import": {
+      "verified": true,
+      "objects": 18097,
+      "uploadedObjects": 18097,
+      "refs": 178,
+      "fsck": "strict",
+      "resumed": false,
+      "scope": "committed branches and tags only; external LFS and submodules rejected"
+    },
+    "verificationOnlyResume": true,
+    "importRequests": {
+      "objects": 160,
+      "refs": 1
+    },
+    "registeredAgents": 0,
+    "sourceUnchanged": true,
+    "revocationDenies": true,
+    "elapsedMs": 276692,
+    "completedAt": "2026-10-27T16:52:26.258Z",
+    "fixtureDestroyed": true,
+    "expandedBytes": 621196033,
+    "objectTypes": {
+      "commit": 957,
+      "tree": 7402,
+      "blob": 9738
+    },
+    "tags": 0,
+    "applicationCiRun": false,
+    "stagingDeployed": false,
+    "productionHostedImport": false
+  },
+  "linuxAcceptance": {
+    "source": "1372752c9c6459486c587ed3bf4038fcc4787005",
+    "sourceManifestSha256": "a0d613e3a397418c6a488db2753e4d0684a4999ee14856ab3bb556189414fa89",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "npmAndNpxAbsent": true,
+    "imageManifestDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "sandbox": {
+      "checkedAt": "2026-10-27T17:05:35.421Z",
+      "sandboxId": "cnd_0528eaab1e480327e8917e0aaffc3929e640ea43",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    },
+    "runtimeFilesMatchExecutedSource": [
+      {
+        "path": "bun.lock",
+        "sha256": "7dfba5945b3f6acbaf01df5b8fbbc6fe1c0ee05d1e4174d43ae7263c365829ba"
+      },
+      {
+        "path": "packages/api/package.json",
+        "sha256": "6a9d1480d5beb8b8b47821e36415ce64f625ef2a98ab178a0aabcce90792c3f5"
+      },
+      {
+        "path": "packages/api/src/abuse.ts",
+        "sha256": "4b4faef347ebb201c39c8d37aee680e78ed0095a0e72e16041959c30a96cc403"
+      },
+      {
+        "path": "packages/api/src/index.ts",
+        "sha256": "47267440d38257f5c0a47fdca904f255459e320e16b8c469ff162e1023c7b222"
+      },
+      {
+        "path": "packages/api/src/repository/git-import.ts",
+        "sha256": "8f095af4df48d44bd77a34c4dd6ea5f041c081557b405e60590763251ec59d8d"
+      },
+      {
+        "path": "packages/cli/package.json",
+        "sha256": "438452d6eb0984f5e0edaa98cd10a908cf3922043e2abfbb52e6b18209b1b788"
+      },
+      {
+        "path": "packages/cli/src/import.mjs",
+        "sha256": "2d2bc5a8f37b2d2cc0d205ce51f73c7bdf34b070f5fe5bd92d7252a7e6853ea2"
+      },
+      {
+        "path": "packages/cli/src/main.mjs",
+        "sha256": "01742725beec2eb47f1ee1677d4469cf7c86d4708f2818385090320aa89128c3"
+      },
+      {
+        "path": "packages/cli/src/migrate.mjs",
+        "sha256": "395c1c056dba9c530a23e9fda02329765062ca8c9a0e1272c492675a28d0f440"
+      },
+      {
+        "path": "tools/migrate-repository.mjs",
+        "sha256": "5c51b69cf476d8a8507aba31d612f7c97a2d7fa0f9c1fde407f414859d00d60d"
+      }
+    ],
+    "initialAllocationAttempt": {
+      "status": 429,
+      "deadlineMs": 300000,
+      "ownedSandboxAllocated": false
+    },
+    "retryPassed": true
+  },
+  "agentRegistrationRequired": false,
+  "applicationApiPrivilegesAddedToGitTokens": false,
+  "vaultDeployed": false,
+  "githubPushed": false,
+  "meldCutover": false
+}
