@@ -1,0 +1,56 @@
+{
+  "kind": "nanohub-local-cold-recovery",
+  "version": 1,
+  "completedAt": "2026-10-27T12:25:57.976Z",
+  "scope": "isolated Miniflare DO/D1/R2; Cloudflare Secrets Store simulated separately",
+  "liveCloudflareRestore": false,
+  "productionTrafficReadinessEstablished": false,
+  "checkpoint": {
+    "files": 78,
+    "bytes": 3307546,
+    "resources": [
+      "do",
+      "d1",
+      "r2"
+    ],
+    "providerValuesIncluded": false
+  },
+  "verified": {
+    "physicalLoss": true,
+    "checksumRefusalBeforeMutation": true,
+    "exactGitGraphAndBytes": true,
+    "policiesAndLocks": true,
+    "archiveFences": true,
+    "reviewsAndHunks": true,
+    "roomAndAgentHistory": true,
+    "d1IdentityAndCliRows": true,
+    "asOfCheckpointRevocations": true,
+    "laterCloudflareRotationRetained": true,
+    "idleVaultAlarmAbsent": true,
+    "olderCheckpointResurrectsAuthority": true,
+    "explicitReconciliationAndRestartDeniesAgain": true
+  },
+  "source": {
+    "baseCommit": "83c6b3c012da5aa9a0ff72143a971b141bbd4282",
+    "worktreeChangesIncluded": true,
+    "filesSha256": {
+      "packages/api/scripts/smoke-recovery.ts": "ef9398c8ba4f441a9eebf09468dd38d9f9712d611a05f2a98b62240a407e4ff7",
+      "packages/api/scripts/team/recovery.ts": "bfddca135fb55c968f9654bcbb71d17e658499dbeb69fbea0bcfac953534315c",
+      "packages/api/scripts/team/fixture.ts": "bc635b623e1b45a55d1410e75dbbc9120512622ef2c2bee033480c4b366b76bc"
+    }
+  },
+  "gates": {
+    "apiUnit": {
+      "passed": 267,
+      "failed": 0
+    },
+    "repositoryUnit": {
+      "passed": 210,
+      "failed": 0
+    },
+    "repositoryWorkerGitChain": "passed including cold recovery",
+    "focusedRecoveryAfterAdditionalInventoryAssertions": "passed",
+    "pinnedTsrs": "passed across all three workspaces",
+    "gitDiffCheck": "passed"
+  }
+}

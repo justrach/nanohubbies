@@ -247,6 +247,19 @@ export async function teamFixture(
     get origin() {
       return origin;
     },
+    /** Test-only cold storage operation. No live SQLite files are copied. */
+    async offlineStorage<T>(operation: (directory: string) => Promise<T>) {
+      await mf.dispose();
+      try {
+        return await operation(join(dir, "state"));
+      } finally {
+        mf = new Miniflare({
+          ...config,
+          resourcePersistencePath: join(dir, "state"),
+        });
+        origin = (await mf.ready).origin;
+      }
+    },
     async restart() {
       await mf.dispose();
       mf = new Miniflare({

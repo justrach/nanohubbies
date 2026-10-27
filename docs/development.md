@@ -266,6 +266,14 @@ creation. Never fall back to `archiveRepository` for a conditional CLI edit.
 cannot edit content or rules. `test:cli-archive` exercises source and standalone
 Bun modules, actual Git guards and interrupted transition/restart recovery.
 
+`bun run --filter @swarm/api test:recovery` performs an isolated cold DO/D1/R2
+storage-loss and restore drill. It is included in `test:repository`. It checks
+exact Git/metadata, policy and archive enforcement, revoked authority at the
+checkpoint and Cloudflare-owned secret retention. It also demonstrates that an
+older checkpoint revives later-revoked authority until explicit reconciliation.
+The fixture copies stopped Miniflare persistence only; it is not a production
+backup tool. See [recovery scope and the hosted release gate](recovery.md).
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.
