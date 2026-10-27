@@ -81,3 +81,8 @@ cross-service checkpoint consistency, independent current-authority recovery or
 safe public reopening. The private R2 backup is a controller file. No broad
 production readiness, RPO/RTO or whole-repository disaster recovery claim follows
 from this result. The primary-host migration and CI/staging gates remain open.
+
+A subsequent [hosted repository drill](hosted-repository-recovery-validation.md)
+extends this prerequisite with actual Git content, policies, reviews and explicit
+revocation reconciliation. Its remaining production boundaries are recorded
+separately.

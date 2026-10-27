@@ -1,0 +1,117 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T22:44:02.290Z",
+  "implementationCommit": "4ce6a4e5e3cba640adda2e725e8f3a95a7910231",
+  "scope": "Isolated hosted repository; in-place DO/D1 recovery and independently retained R2; normal traffic held",
+  "hosted": true,
+  "isolated": true,
+  "productionResourcesUsed": false,
+  "startedAt": "2026-10-27T22:35:47.740Z",
+  "finishedAt": "2026-10-27T22:43:39.691Z",
+  "checkpoints": [
+    {
+      "label": "before-revocations",
+      "durableObjects": 13,
+      "classes": 9,
+      "r2Objects": 15,
+      "r2Bytes": 18660
+    },
+    {
+      "label": "after-revocations",
+      "durableObjects": 13,
+      "classes": 9,
+      "r2Objects": 15,
+      "r2Bytes": 18660
+    }
+  ],
+  "git": {
+    "strictFsck": true,
+    "exactRefs": true,
+    "refs": 3,
+    "refsSha256": "b62ccc63b747caab15567f6832076c97a168220d06a745dfd2c606e6ca48a008",
+    "exactGraph": true,
+    "objects": 10,
+    "exactTree": true,
+    "executableMode": true,
+    "symlinkMode": true,
+    "annotatedTag": true,
+    "unicodeBranch": true,
+    "binaryBytes": 1048593,
+    "binarySha256": "5b14849bd9ae3d2a743c8ab2d892749e32fcc2d5bb19f7e233bde8040c209fdc"
+  },
+  "verified": {
+    "corruptionRejectedBeforeLoss": true,
+    "physicalApplicationLossObserved": true,
+    "exactMetadataReviewsAndArchive": true,
+    "exactGitGraphBinaryModesTags": true,
+    "protectedPushLockTagDeletionAndMergeDenied": true,
+    "currentCheckpointRevocationsRetained": true,
+    "olderCheckpointResurrectsAuthority": true,
+    "latestAuthorityReconciledAndDeniedAfterRestart": true,
+    "normalTrafficNeverReopened": true
+  },
+  "heldResponseChecks": 36,
+  "authorityChecks": [
+    "Removed collaborator",
+    "Revoked Git credential",
+    "Revoked D1 CLI credential",
+    "Revoked agent/MCP credential",
+    "Revoked runner registration",
+    "Forgotten synthetic Account tokens"
+  ],
+  "reconciliation": "Explicit replay of independently retained known operations, followed by forced restarts and repeated denials; not a general production authority service",
+  "recoveryPhases": [
+    "frozen",
+    "reconcile",
+    "frozen",
+    "frozen",
+    "verify",
+    "frozen",
+    "verify",
+    "frozen",
+    "verify",
+    "reconcile",
+    "frozen",
+    "verify",
+    "frozen"
+  ],
+  "bindingsIsolated": true,
+  "cleanup": {
+    "apiWorkerAbsent": true,
+    "gateWorkerAbsent": true,
+    "bucketAbsent": true,
+    "databaseAbsent": true,
+    "durableNamespacesRetired": true,
+    "privateIngressKeysRemoved": true,
+    "privateRepositoryGrantsRemoved": true,
+    "independentReadChecks": true,
+    "deletedObjects": 15
+  },
+  "runtimeTrace": {
+    "events": 586,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "localAcceptance": {
+    "pinnedTsrs": true,
+    "recoveryFixtureCases": 13,
+    "existingFixtureLifecycleCases": 19,
+    "proxyAndObservationCases": 5
+  },
+  "main": {
+    "version": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "versionUnchanged": true,
+    "normalTrafficEnabled": true,
+    "bindings": 27,
+    "subrequests": 50000
+  },
+  "actualSecretsStoreValuesExported": false,
+  "vaultAndWorkloadGrantRecoveryEstablished": false,
+  "namespaceLossRecoveryEstablished": false,
+  "generalProductionInventoryAndDrainingEstablished": false,
+  "independentLongTermBackupsEstablished": false,
+  "automaticCurrentAuthorityAcquisitionEstablished": false,
+  "safePublicReopeningEstablished": false,
+  "applicationRpoRtoEstablished": false,
+  "githubPushed": false
+}

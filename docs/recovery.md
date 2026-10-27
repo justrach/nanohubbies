@@ -190,7 +190,10 @@ not an application recovery-time objective.
 
 ### Hosted repository drill
 
-The next harness uses real application requests and native Git transport:
+The hosted repository harness uses real application requests and native Git transport.
+Its first [isolated live acceptance](evidence/hosted-repository-recovery-validation.md)
+passes physical application content loss and restore, policy enforcement and
+explicit known-authority reconciliation after an older restore:
 
 ```sh
 NANOHUB_LIVE_CLOUDFLARE=1 bun tools/verify-hosted-repository-recovery.mjs /absolute/account-config.jsonc /absolute/private-artifacts
@@ -204,7 +207,7 @@ normal routes remain closed. Its configured `seed`, `frozen`, `verify` and
 close that transport. Provider login flows, WebSockets and live-stream routes
 are unavailable. The harness does not run an Actions dispatcher or import job.
 
-The planned acceptance covers physical DO/D1/R2 content loss, complete Git
+The recorded acceptance covers physical DO/D1/R2 content loss, complete Git
 clone/fsck and binary/mode/tag comparison, repository addresses, protections,
 tag rules, archive fences, reviews/hunk threads, Room issues and MCP attribution.
 Constructor registration inventories successful real DO instances, including
