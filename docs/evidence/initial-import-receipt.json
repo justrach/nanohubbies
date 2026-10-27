@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-27T16:25:10.170Z",
+  "implementationCommit": "411dc970ff783afcb21877c106cce5202ff5559d",
+  "mainWorkerVersion": "d8d8a177-a2db-469a-9b18-d6d630a0ade5",
+  "previousMainWorkerVersion": "3730337d-2922-4317-8fa2-62ee31b4f62f",
+  "cli": {
+    "format": 1,
+    "version": "0.4.11",
+    "path": "/nh/releases/0.4.11/nh.mjs",
+    "bytes": 61139,
+    "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+  },
+  "cliBytesUnchanged": true,
+  "productionReadOnlyVerification": {
+    "publicCliVersionAndHelp": true,
+    "assetChecks": 15,
+    "exactAssetBytesAndTypes": true,
+    "bindingsUnchanged": true,
+    "bindingCount": 27,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "initialImportMaxRefs": 10000,
+    "subrequests": 50000,
+    "credentialsCreated": false,
+    "repositoryMutationsPerformed": false
+  },
+  "actualMeldMigration": {
+    "checkedAt": "2026-10-27T16:10:36.955Z",
+    "scope": "isolated real local Worker/DO/D1/R2; actual complete Meld branch/tag graph",
+    "hostedNanohub": false,
+    "sourceRefsSha256": "51d433c6ef7e1569fb3b18ac73499aad7cdf805f2073c317a6b2555d943eccc8",
+    "sourceRefs": 178,
+    "sourceShallow": false,
+    "migration": {
+      "verified": true,
+      "objects": 18097,
+      "refs": 178,
+      "fsck": "strict",
+      "scope": "committed branches and tags only; external LFS and submodules rejected"
+    },
+    "sourceUnchanged": true,
+    "elapsedMs": 304928,
+    "completedAt": "2026-10-27T16:15:41.883Z",
+    "fixtureDestroyed": true,
+    "sourceInventorySha256": "77d9d7786e00839ddc557467a16769d029ba6b9885a24e694d62e720d13dc669",
+    "expandedBytes": 621196033,
+    "largestObjectBytes": 3681359,
+    "objectTypes": {
+      "tree": 7402,
+      "blob": 9738,
+      "commit": 957
+    },
+    "branches": 178,
+    "tags": 0,
+    "meldApplicationTestsRun": false,
+    "productionHostedMigration": false
+  },
+  "localAcceptance": {
+    "apiUnitCases": 294,
+    "repositoryUnitCases": 225,
+    "completeWorkerGitChain": true,
+    "largeInitialAtomicPolicyRollback": true,
+    "independentFinalWriterNonemptyFence": true,
+    "ordinaryPushCapRetained": 100,
+    "oldReceiverPreflightBeforeObjectUpload": true,
+    "shallowSourceRefused": true,
+    "tsrsWorkspaces": 3,
+    "openNextBuild": true,
+    "wranglerDryRun": true
+  },
+  "linuxAcceptance": {
+    "source": "3f55045f1059a1272c204d60ef4f2c0f37c6054a",
+    "sourceManifestSha256": "5ec2522f62917be2c32aae7627ae51f5873474f3ceef85130a6546037cfcd70f",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "imageManifestDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "sandbox": {
+      "checkedAt": "2026-10-27T16:23:29.721Z",
+      "sandboxId": "cnd_8e5ee1984e4ff7c22d515ed95941f9e06bb95b13",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    },
+    "runtimeFilesMatchExecutedSource": [
+      {
+        "path": "apps/web/wrangler.jsonc",
+        "sha256": "a188613a235e7c09e4eb0c748e6a3ca6b79fc2c7ae407bff6193c4141925237e"
+      },
+      {
+        "path": "packages/api/package.json",
+        "sha256": "0c284298ee64051a029cb388697426b2aa0c5149af191f20d388aba412360511"
+      },
+      {
+        "path": "packages/api/scripts/migration-preflight.test.mjs",
+        "sha256": "c3a717e6e444ead8e09d309b62c86bd5c38da2005e46fdabfc551db45730527d"
+      },
+      {
+        "path": "packages/api/scripts/smoke-repository.ts",
+        "sha256": "7225b31948a65d7aca259f2c3de5113eab801359816e6403d44ffd6ff91af54a"
+      },
+      {
+        "path": "packages/api/scripts/team/worker.ts",
+        "sha256": "2b877e410ba9c6dfb176e71deba1a0ed7856ee94cfc89a8e4a0b9a3a5ba98627"
+      },
+      {
+        "path": "packages/api/src/repository/push.ts",
+        "sha256": "b34367dc9a869a8caae1431e0419fad6c83f357895d9f0ca02605af7b2dd1473"
+      },
+      {
+        "path": "packages/api/src/repository/ref-batch.ts",
+        "sha256": "c005cd2e611e67d361ed486ed8cfb26fe4950d85ac2b848261d355101b1258dd"
+      },
+      {
+        "path": "packages/api/src/repository/routes.ts",
+        "sha256": "411bd0c5ab0d48cfab0ee70bef6cf4902feead2d9dfb20de156e9632112abd3a"
+      },
+      {
+        "path": "packages/api/src/sequencer.ts",
+        "sha256": "c95a6674f9cc42418775314d5884de9ca733bbf0e8fc4fdd1ce18142ea347117"
+      },
+      {
+        "path": "packages/api/wrangler.jsonc",
+        "sha256": "4a288495199419a2a819d78567792eb069ce8f718fc20d314f62ab96cb93a9af"
+      },
+      {
+        "path": "tools/migrate-repository.mjs",
+        "sha256": "fa011a542d339cd5bf73a3c3a693afca8c49f08433fc096a9528c4d43f2bdaa5"
+      }
+    ]
+  },
+  "vaultDeployed": false,
+  "githubPushed": false,
+  "meldCutover": false
+}

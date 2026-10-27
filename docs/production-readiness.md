@@ -8,7 +8,7 @@ pending the original migration and CI/staging acceptance.
 
 | Area | Current evidence | Remaining release requirement |
 | --- | --- | --- |
-| Native Git hosting | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; clone/fsck; [parity contract](github-parity.md) | Complete the intended application's private-copy migration and compare every committed asset/ref before cutover |
+| Native Git hosting | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [complete Meld graph migration into a local Worker](evidence/initial-import-validation.md), with all 178 branches/18,097 objects and independent clone/fsck | Repeat actual application migration in an isolated hosted copy, verify resource capacity and preserve every committed asset/ref before cutover |
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md) | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract |
 | Native CLI | Published 0.4.11; source and bundled Git/API administration tests, including revision-checked [deployment environment administration](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes | Broader command parity remains open; public release operations need the checks below |
 | Cloudflare-owned secrets | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md) | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups |
@@ -18,12 +18,12 @@ pending the original migration and CI/staging acceptance.
 | Traffic and operations | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence |
 | Source and releases | Changes are committed locally and selected builds are deployed; source has not been pushed to GitHub | Source review/push and an automated repeatable release/rollback workflow |
 
-Current local acceptance passes 292 API unit tests, 223 repository unit cases
+Current local acceptance passes 294 API unit tests, 225 repository unit cases
 and the full real Worker/Git acceptance chain, plus pinned
 tsrs. The separate fresh Linux VM passes frozen offline install, all API and
 repository gates, 47 CLI cases, access/vault, 37 hosting/pool cases, production build and
 tsrs. The exact source, additional local assertions and limits are in the
-[runner CLI evidence](evidence/cli-runners-validation.md). The
+[initial import evidence](evidence/initial-import-validation.md). The
 [private registry evidence](evidence/private-toolchain-registry-validation.md)
 records retained image distribution and its earlier full-project run.
 Hosted reads prove
@@ -31,7 +31,7 @@ the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
 
-The current main Worker is `3730337d-2922-4317-8fa2-62ee31b4f62f`, with normal
+The current main Worker is `d8d8a177-a2db-469a-9b18-d6d630a0ade5`, with normal
 traffic enabled and the request hold available but off. The request hold's first
 corrected rollout was `1450c429-a969-483e-8383-c05d9ed8467c`. A first rollout exposed a static-asset delivery
 regression and was rolled back. The corrected Worker explicitly delegates
@@ -53,6 +53,10 @@ canary comparisons. It verifies the explicit owner-only scope is offered and
 unchecked, without issuing a production runner credential or claiming hosted
 callback acceptance. The configured Nanohub account key still lacks sandbox
 scope; isolated cloud acceptance uses a separate existing CI credential.
+The initial-import rollout retains the CLI bytes and all nine canary resources,
+and confirms an explicit 50,000-subrequest budget in hosted version metadata.
+The actual 178-branch Meld graph passes local complete migration and clone/fsck;
+hosted large-graph acceptance and actual application CI/staging are still open.
 
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security

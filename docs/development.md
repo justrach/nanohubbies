@@ -309,6 +309,13 @@ credential from its private file, and verifies revoked read leases/callbacks,
 requeue, archived cleanup, role demotion and provider outages. It creates no
 production grant or runner. The full repository gate includes both forms.
 
+Lossless migration preflight rejects shallow sources and checks the receiver's
+initial ref limit before upload. `smoke-repository.ts` covers a large atomic
+initial import, late ruleset denial with complete rollback, and HTTP/final-writer
+caps after population. The [actual Meld graph acceptance](evidence/initial-import-validation.md)
+records local object/ref/clone verification separately from hosted migration
+and application CI.
+
 
 Ruleset role bypass uses fresh Hub/native or provider evidence bound to the
 actor, with a maximum 30-second validity checked inside the final ref writer.

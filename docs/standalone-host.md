@@ -41,6 +41,11 @@ The graph/object bounds below still apply; local success must be followed by
 isolated hosted acceptance before a primary-host cutover. Free-plan limits are
 different and are not raised by this setting.
 
+The [actual Meld graph acceptance](evidence/initial-import-validation.md)
+preserves all 178 branches and 18,097 objects through a local receiver and an
+independent clone/fsck. The receipt distinguishes this from hosted migration,
+application CI and staging acceptance.
+
 Current boundaries:
 
 | Setting | Default | Maximum |
