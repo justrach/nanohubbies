@@ -1,0 +1,194 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T22:25:57.562Z",
+  "implementationCommit": "9a71ad177f55c8a64cb88f26acfc657403db79fc",
+  "scope": "Provider primitives on isolated real application classes; not full repository or namespace-loss recovery",
+  "hosted": true,
+  "isolated": true,
+  "productionResourcesUsed": false,
+  "startedAt": "2026-10-27T22:23:39.364Z",
+  "finishedAt": "2026-10-27T22:25:45.903Z",
+  "probeElapsedMs": 61620,
+  "applicationRtoEstablished": false,
+  "objects": [
+    {
+      "class": "SEQUENCER",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "AGENT",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "ROOM",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "DRIVER",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "HUB",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "IMPORT_JOB",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "ACCOUNT",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "LANE",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    },
+    {
+      "class": "PACKER",
+      "sqlAndTypedKv": true,
+      "binaryUnicodeNulAndExactInt64": true,
+      "lossObserved": true,
+      "restoredA": true,
+      "undoRestoredLoss": true,
+      "returnedToB": true
+    }
+  ],
+  "database": {
+    "lossObserved": true,
+    "restoredA": true,
+    "undoRestoredLoss": true,
+    "returnedToB": true
+  },
+  "r2": {
+    "bytes": 1048576,
+    "sha256": "fc2e808dd5b5eb227161730967deb76bf23703b930fd5d5f64b0bd83206b4ca2",
+    "corruptionRejectedBeforeWrite": true,
+    "lossObserved": true,
+    "restoredExactBytes": true,
+    "returnedToB": true
+  },
+  "heldResponseChecks": 48,
+  "normalTrafficRemainedHeld": true,
+  "bindingsIsolated": true,
+  "cleanup": {
+    "apiWorkerAbsent": true,
+    "gateWorkerAbsent": true,
+    "bucketAbsent": true,
+    "databaseAbsent": true,
+    "durableNamespacesRetired": true,
+    "privateKeysRemoved": true,
+    "independentReadChecks": true,
+    "deletedObjects": 1
+  },
+  "runtimeTrace": {
+    "events": 175,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "localAcceptance": {
+    "pinnedTsrs": true,
+    "recoveryFixtureCases": 7,
+    "existingHostedFixtureCases": 23
+  },
+  "main": {
+    "checkedAt": "2026-10-27T22:26:30.897Z",
+    "version": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "versionUnchanged": true,
+    "normalTrafficEnabled": true,
+    "bindingCount": 27,
+    "subrequests": 50000
+  },
+  "wholeRepositoryRecoveryEstablished": false,
+  "independentLongTermBackupsEstablished": false,
+  "currentAuthorityReconciliationEstablished": false,
+  "namespaceLossRecoveryEstablished": false,
+  "safePublicReopeningEstablished": false,
+  "githubPushed": false,
+  "sharedGitImportRegression": {
+    "scope": "Synthetic two-branch graph with binary bytes, Unicode branch and annotated tag; not a repeat of the full Meld graph run",
+    "implementationCommit": "9a71ad177f55c8a64cb88f26acfc657403db79fc",
+    "cli": {
+      "format": 1,
+      "version": "0.4.12",
+      "path": "/nh/releases/0.4.12/nh.mjs",
+      "bytes": 74001,
+      "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+    },
+    "startedAt": "2026-10-27T22:26:12.238Z",
+    "finishedAt": "2026-10-27T22:27:28.228Z",
+    "source": {
+      "refs": 3,
+      "refsSha256": "582aef4f9ff7c67b03cd5e0691a984e60cb9adf2593ba850cd29c68a9f28146d"
+    },
+    "import": {
+      "verified": true,
+      "objects": 8,
+      "uploadedObjects": 8,
+      "refs": 3,
+      "fsck": "strict",
+      "resumed": false,
+      "scope": "committed branches and tags only; external LFS and submodules rejected"
+    },
+    "importRequests": {
+      "objectUploads": 1,
+      "refPublications": 1
+    },
+    "verificationOnlyResumeZeroWrites": true,
+    "revokedDiscoveryStatus": 401,
+    "sourceUnchanged": true,
+    "registeredAgents": 0,
+    "cleanup": {
+      "apiAbsent": true,
+      "gateAbsent": true,
+      "bucketAbsent": true,
+      "databaseAbsent": true,
+      "explicitNineClassRetirement": true,
+      "privateKeysRemoved": true
+    },
+    "runtimeTrace": {
+      "events": 59,
+      "exitCode": 0,
+      "writeFailures": 0
+    }
+  }
+}

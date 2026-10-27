@@ -6,7 +6,7 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 
 | Capability | Implemented behavior | Remaining differences |
 | --- | --- | --- |
-| Repository storage | Standard Git objects and immutable IDs; UTF-8 branch/tag names with a full-ref byte bound, annotated/lightweight tags, binary files, executable modes and symlinks; atomic compare-and-swap and native `git push --atomic` negotiation; up to 10,000 atomic initial creations with independent empty-state fencing, ordinary updates capped at 100; [actual complete Meld graph verified locally](evidence/initial-import-validation.md) | HTTP transport only; heads/tags only; non-UTF-8 ref bytes, LFS and submodules rejected; hosted large-graph acceptance remains open; see [name contract](git-ref-names.md) |
+| Repository storage | Standard Git objects and immutable IDs; UTF-8 branch/tag names with a full-ref byte bound, annotated/lightweight tags, binary files, executable modes and symlinks; atomic compare-and-swap and native `git push --atomic` negotiation; up to 10,000 atomic initial creations with independent empty-state fencing, ordinary updates capped at 100; [actual complete Meld graph verified locally](evidence/initial-import-validation.md) | HTTP transport only; heads/tags only; non-UTF-8 ref bytes, LFS and submodules rejected; [pinned hosted full-graph acceptance passes](evidence/hosted-import-validation.md); application CI/staging and cutover remain open; see [name contract](git-ref-names.md) |
 | Default branch and PR targets | Choose an initial Git default or select an existing branch as owner/admin; native clone HEAD, browsing, new PR defaults and default-target rules follow it; existing PR targets and exact-name protections stay put | No branch rename or automatic retarget on selection; legacy snapshots retain main; see [default branch contract](default-branch.md) |
 | Git clients and agents | Repository-scoped expiring Git tokens work with ordinary HTTP Git clients without agent registration; optional agent tokens retain their own identities and API scope | Human hosted sign-in still uses the current Codegraff account flow; Git-only tokens intentionally cannot use application APIs |
 | Agent contributions | Optional stateless MCP work tracking through the official TypeScript SDK; credential-bound agent/owner, reported client/model labels, native Git ref observations, repository showcase and PR-linked history | Reported work is not vendor attestation, commit authorship or review approval; custom-header clients only, no MCP OAuth discovery or historical backfill; see [MCP contract](agent-mcp.md) |
@@ -932,8 +932,9 @@ This does not prove full GitHub parity or Meld migration/staging acceptance.
 A later [live cloud smoke](evidence/codegraff-live-validation.md) verifies actual
 Codegraff workflow execution against an isolated local Nanohub repository;
 the later [full Linux toolchain acceptance](evidence/codegraff-toolchain-validation.md)
-proves the image build and offline project gates. Unattended hosted CI,
-toolchain distribution and staging activation remain outstanding.
+proves the image build and offline project gates. [Private toolchain distribution](evidence/private-toolchain-registry-validation.md)
+and fresh offline Linux acceptance now pass. Unattended hosted CI and staging
+activation remain outstanding.
 Rules and protection administration is now under **Settings → Rules**, with a
 link from Branches. Staging approval is under Actions.
 

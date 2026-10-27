@@ -148,6 +148,10 @@ recovery, an RPO/RTO, or an automated revocation-safe reopening mechanism.
 
 ### Native provider recovery probe
 
+The first isolated live run [passes](evidence/native-recovery-validation.md) all
+nine DO classes, D1 and retained R2 bytes. This is provider-primitives evidence;
+the complete hosted repository gate above remains open.
+
 `bun run test:hosted-recovery` checks the isolated harness's authority, target
 bounds, checksum rejection and recovery configuration. To exercise the actual
 provider APIs, an operator can run:
