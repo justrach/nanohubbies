@@ -1,0 +1,127 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T04:20:29.229122Z",
+  "scope": "Local real Worker/SQLite DO/D1/Git enforcement plus isolated rendered UI component; not production acceptance",
+  "runtimeSource": {
+    "encoding": "SHA-256 of compact JSON array of sorted {path,sha256} records",
+    "sha256": "9750f3714622395cb0c60edc2abdb2c8c37c3d05359d8f72a2e7a93e3fd56fdd",
+    "files": [
+      {
+        "path": "apps/web/src/trunk/review/PullDetail.tsx",
+        "sha256": "f223e45935ef5feef48a01a227da5e56b55671990dbf9ec34e64ecc1719a1f0c"
+      },
+      {
+        "path": "apps/web/src/trunk/review/RelatedPullReviews.tsx",
+        "sha256": "d324a8682ad63ff0edae1b438e3b39ff111f8658c308dedd1975e3b62808c514"
+      },
+      {
+        "path": "packages/api/src/review/routes.ts",
+        "sha256": "ab91d169d5edcc00744ccd8ee447933c313343046e8b95536798d15b73b8041a"
+      },
+      {
+        "path": "packages/api/src/review/shared-head.ts",
+        "sha256": "462638adfe9f87c780ebd5b09112a0914ed33b95d97af1998a3ec6a8a90cc3f6"
+      },
+      {
+        "path": "packages/api/src/review/store.ts",
+        "sha256": "1740d5c30d4306196c3022232dacb33289b447a91c51e510991dde90f4bd34b9"
+      },
+      {
+        "path": "packages/api/src/review/types.ts",
+        "sha256": "dee79640bef4d94054cb382aa4551aeefd7aaee0f8a7700809d0dd8ae2882501"
+      },
+      {
+        "path": "packages/api/src/sequencer.ts",
+        "sha256": "5b5d8e683cdc2f0afd9f51eec9d41bd42b20b7ce883d38b05ce3c357eaac59ac"
+      }
+    ]
+  },
+  "regressionReproducedBeforeFix": {
+    "scope": "SQLite final ReviewStore merge, not a live production test",
+    "failedExpectedRejection": true,
+    "logSha256": "d56b53db18926c09e57d21b3d3ce4ca3c773358e4f281f81462793678ec3df89"
+  },
+  "verified": {
+    "sameLiveShaAcrossDifferentPrTargets": true,
+    "latestSubmittedPeerVerdict": true,
+    "dismissalDoesNotResurrectEarlierDecision": true,
+    "browserAndCliPendingReviews": true,
+    "emptyAndEarlierDiffDraftsStillPending": true,
+    "noPrivateDraftContentIdentityIdsOrCountsInBlockers": true,
+    "postPreviewBlockerReadAtFinalWriter": true,
+    "forgedHttpEvidenceIgnored": true,
+    "legacyFinalRpcEnforcesGuard": true,
+    "oldReceiverReturns503WithoutFallback": true,
+    "closedAndDifferentLiveShaPeersExcluded": true,
+    "sameTreeDifferentCommitDoesNotBlock": true,
+    "peerApprovalsAndThreadsDoNotTransfer": true,
+    "demotionDoesNotSilentlyClearRequests": true,
+    "revokedCliDraftStaysPrivateAndPeerClosureClearsBlocker": true,
+    "archiveLocksAndRestart": true,
+    "deniedMainRefUnchanged": true,
+    "protectedCliMergeAndIndependentCloneFsck": true
+  },
+  "localChecks": {
+    "api-unit": {
+      "exitCode": 0,
+      "unitCasesPassed": 323,
+      "logSha256": "087daeee0006d6f06a20c148786000fc33d3cb2e79648578ee56cce7dc910dc7"
+    },
+    "repository": {
+      "exitCode": 0,
+      "unitCasesPassed": 254,
+      "logSha256": "c035a16e5bcedeef2f0315aa2408d40473f9f9d27c31b6b2e90696f5a3c49507"
+    },
+    "shared-chain": {
+      "exitCode": 0,
+      "unitCasesPassed": 7,
+      "logSha256": "455609d78ec22e42b31a479101c0d869528cd006ee62225fff716f5ccba81495"
+    },
+    "productionNextBuild": {
+      "exitCode": 0,
+      "logSha256": "6c683fa51779565d3b85235d6cac101292bdb0cf6ba0c1fcbab0f7bf72d4790d"
+    },
+    "pinnedTsrs": [
+      "API",
+      "frontend",
+      "web Worker"
+    ],
+    "sourceAndPackagedCli": "0.4.13 candidate; both pass native flow"
+  },
+  "visual": {
+    "scope": "Isolated committed component using actual Tailwind CSS, Harness tokens and Geist font; not full page acceptance",
+    "desktopWidth": 1280,
+    "narrowWidth": 320,
+    "narrowScrollWidth": 320,
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "maxSyntheticPrNumber": 999999999,
+    "twelvePeerDisclosureExpanded": true,
+    "keyboardFocusAndLinkActivation": true,
+    "lightTextContrast": 5.46,
+    "lightLinkContrast": 5.69,
+    "darkTextContrast": 6.03,
+    "darkLinkContrast": 8.53,
+    "physicalDeviceAnd200PercentZoomTested": false,
+    "screenshots": [
+      {
+        "path": "docs/evidence/shared-head-reviews-mobile.png",
+        "sha256": "1da9f242852528c620337377bb9dc2799291ef117249e8ddbd3ba0a23c4ae074"
+      },
+      {
+        "path": "docs/evidence/shared-head-reviews-dark.png",
+        "sha256": "9a43c1351c7fe941e51ba1e07cd7030aac4f2ff44996c9c925f4c6c83ce3d813"
+      }
+    ],
+    "previewServerStopped": true,
+    "temporaryTabClosed": true,
+    "viewportOverrideReset": true
+  },
+  "productionDeployed": false,
+  "githubPushed": false,
+  "looseChecksImplemented": false,
+  "mergeStrategiesImplemented": false,
+  "productionTrafficReadinessEstablished": false
+}

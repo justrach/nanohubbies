@@ -23,6 +23,7 @@ import { Policies, type BranchPolicy } from "./repository/policy";
 import { CIStore, type CheckResult, type StagingEvidence } from "./ci/store";
 import { DurableObject } from "cloudflare:workers";
 import { ReviewStore } from "./review/store";
+import {sharedHeadReviewBlockers,sharedHeadReviewMessage} from "./review/shared-head";
 import { reviewWriter } from "./review/access";
 import { reviewerMembership } from "./review/reviewer-access";
 import type { ReviewerMembership } from "./review/reviewer-types";
@@ -431,13 +432,20 @@ export class Sequencer extends DurableObject<Env> {
     }
   }
 
+  /** New routes never downgrade to a receiver without shared-head review checks. */
+  async mergeReviewedPull(command:Extract<ReviewCommand,{op:"merge"}>) {
+    if(command.op!=="merge")throw Error("Expected a protected pull request merge");
+    return this.review(command);
+  }
+
   async reviewGate(number: number, head: string, anchor: string,origin:string) {
     const before=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),membership=await this.currentReviewers(before,number,origin);
     const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),p=s.pulls.find(p=>p.number===number);
     if (!p || p.anchor!==anchor || (p.state==="open"?s.branches.find(b=>b.name===p.head)?.commit:p.headCommit)!==head)
       return {ready:false,error:"PR changed while checking reviews; refresh",approvals:0,required:0};
     if(membership.expiresAt<=Date.now())return {ready:false,error:"Reviewer membership verification expired; refresh",approvals:0,required:0,reviewerAccess:membership.accounts};
-    return {...new Policies(this.sql,membership).reviewGate(p,s.reviews,head),reviewerAccess:membership.accounts};
+    const gate=new Policies(this.sql,membership).reviewGate(p,s.reviews,head),sharedHeadBlockers=sharedHeadReviewBlockers(this.sql,p,head,s),error=gate.error??sharedHeadReviewMessage(sharedHeadBlockers);
+    return {...gate,ready:gate.ready&&!error,error,sharedHeadBlockers,reviewerAccess:membership.accounts};
   }
 
   private async currentRulesetActor(actor:string,origin:string):Promise<RulesetActor|undefined> {

@@ -21,7 +21,9 @@ export interface Review {
   via?: {kind:"cli";credentialId:string};
   dismissed?: { actor: Owner; reason: string; at: number; kind?: "manual" | "stale" };
 }
-export interface ReviewGate { ready: boolean; error: string | null; approvals: number; required: number; reviewerAccess?:Record<string,import("./reviewer-types").ReviewerStatus> }
+/** Public merge status only; never includes private draft authors or content. */
+export interface SharedHeadReviewBlocker { number:number;changesRequested:boolean;pendingReview:boolean }
+export interface ReviewGate { ready: boolean; error: string | null; approvals: number; required: number; reviewerAccess?:Record<string,import("./reviewer-types").ReviewerStatus>;sharedHeadBlockers?:SharedHeadReviewBlocker[] }
 export interface ReviewSnapshot { defaultBranch?:string; ciBase?:string|null; archive?:import("../repository/archive-types").ArchiveState; canConfigure?: boolean; canProtect?: boolean; repositoryMode?:boolean; environments?:import("../deployments/types").DeploymentEnvironment[]; rulesets?:import("../repository/ruleset-types").Ruleset[]; branches: Branch[]; pulls: Pull[]; reviews: Review[]; policies?: import("../repository/types").BranchPolicy[]; effectivePolicies?: Record<string,import("../repository/types").BranchPolicy>; runs?: import("../ci/types").Run[]; ciSources?: import("../ci/types").RunnerSource[] }
 export type ReviewCommand =
   | { op: "snapshot" }

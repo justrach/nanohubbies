@@ -10,6 +10,7 @@ import { Policies } from "../repository/policy";
 import { CIStore } from "../ci/store";
 import { codeOwnerDecision } from "../repository/codeowners";
 import { dismissChangedApprovals, dismissAfterHeadChange } from "./stale";
+import {requireSharedHeadReviews} from "./shared-head";
 import type { ReviewerMembership } from "./reviewer-types";
 import type { ChangeRequest, Head, Submitted } from "../types";
 import { branchName, type Branch, type Pull, type Review, type ReviewCommand, type ReviewSnapshot } from "./types";
@@ -172,6 +173,7 @@ export class ReviewStore {
           const ciBase=this.main().commit;
           if(!this.membership||!Number.isFinite(this.membership.checkedAt)||!Number.isFinite(this.membership.expiresAt)||this.membership.checkedAt>Date.now()+1000||this.membership.expiresAt<=Date.now()||Date.now()-this.membership.checkedAt>30000)throw Error("Current reviewer membership evidence is required; refresh and retry");
           policies.reviews(p.base, p, s.reviews, c.head.commit);
+          requireSharedHeadReviews(this.sql,p,c.head.commit,s);
           if(policies.get(p.base)?.requireCodeOwnerReview) {
             if(!this.git||!c.codeOwners||!c.codeOwnerAccounts||c.codeOwners.head!==c.head.commit||c.codeOwners.base!==c.base.commit)
               throw Error("Current base/head CODEOWNERS evidence is required; refresh and retry");

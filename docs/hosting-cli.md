@@ -246,6 +246,11 @@ can read/edit that workspace. Existing browser drafts remain account-private
 and are not exposed to CLI credentials. Replacing a credential does not transfer
 its draft. Ordinary PR/list output excludes private CLI drafts.
 
+Protected merge status can report that a related open PR at the same commit has
+a pending review; it exposes the PR number and status, without the draft's
+author, credential or content. Submit/discard that review or close the related
+PR to clear the blocker. See [shared-head reviews](github-parity.md#reviews-on-another-pr-at-the-same-commit).
+
 A push or changed comparison leaves old feedback private. Submission uses the
 draft's original head and comparison; the CLI never replaces them with newer
 IDs to make a stale review pass. Inspect and discard the old draft before

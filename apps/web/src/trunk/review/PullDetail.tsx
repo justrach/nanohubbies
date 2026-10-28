@@ -14,6 +14,7 @@ import { field, Notice, useReviewAction } from "./shared";
 import { DismissReview } from "./DismissReview";
 import { PullFiles } from "./PullFiles";
 import { AgentContributions } from "../contributions/AgentContributions";
+import {RelatedPullReviews} from "./RelatedPullReviews";
 
 export type PullView = ReviewSnapshot & { pull: Pull; head: Branch; files: ChangedFile[]; truncated: string[];deployments?:import("@swarm/api/review").DeploymentGate;signatures?:import("@swarm/api/review").SignatureGate;pendingReview?:import("@swarm/api/review").PendingReview|null;discussion?:import("@swarm/api/review").PullDiscussion;codeOwners?:import("@swarm/api/review").CodeOwnerStatus;canDismissReviews?:boolean;reviewGate?:import("@swarm/api/review").ReviewGate };
 
@@ -79,6 +80,7 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
           <Button variant="ghost" disabled={readOnly || !user || action.busy} onClick={() => void run("close")}>Close</Button>
         </div>}
         {p.state==="open"&&view.reviewGate?.error&&<p className="text-sm text-muted" role="status">{view.reviewGate.error}</p>}
+        {p.state==="open"&&!!view.reviewGate?.sharedHeadBlockers?.length&&<RelatedPullReviews trunk={trunk} blockers={view.reviewGate.sharedHeadBlockers} />}
         {p.state === "open" && base?.commit !== p.anchor && <p className="text-xs text-muted">The base moved. Restack replays this layer on its latest commit; competing edits are left for you to resolve locally. Fetch the updated branch afterward.</p>}
       </Card>
       <Card className="p-5"><h2 className="mb-3 text-sm font-semibold text-ink">PR stack</h2><div className="space-y-2 text-xs">

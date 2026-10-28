@@ -9,6 +9,16 @@ const importPosts={objects:0,refs:0};
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
+  missingSharedHeadReceiver(missing:boolean) {
+    this.ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS fixture_merge_receiver (id INTEGER PRIMARY KEY, missing INTEGER NOT NULL)");
+    this.ctx.storage.sql.exec("INSERT INTO fixture_merge_receiver VALUES (1,?) ON CONFLICT(id) DO UPDATE SET missing=excluded.missing",Number(missing));
+  }
+  async mergeReviewedPull(command:Parameters<ProductionSequencer['mergeReviewedPull']>[0]) {
+    const sql=this.ctx.storage.sql;
+    if(sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_merge_receiver'").toArray().length&&sql.exec<{missing:number}>("SELECT missing FROM fixture_merge_receiver WHERE id=1").toArray()[0]?.missing)
+      throw Error('The RPC receiver does not implement the method "mergeReviewedPull".');
+    return super.mergeReviewedPull(command);
+  }
   legacyDefault(change:{branch:string;manualCounter?:boolean;rollback?:boolean}) {
     return this.ctx.storage.transactionSync(()=>{
       this.ctx.storage.sql.exec("UPDATE repository_config SET default_branch=? WHERE id=1",change.branch);
@@ -77,6 +87,18 @@ export default {
       const body=await request.json() as {trunk:string;updates:Parameters<Sequencer['updateRepository']>[0]};
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).updateRepository(body.updates));}
       catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
+    if(url.pathname==='/fixture/shared-head-receiver') {
+      const body=await request.json<{trunk:string;missing:boolean}>();
+      await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {missingSharedHeadReceiver:(missing:boolean)=>Promise<void>}).missingSharedHeadReceiver(body.missing);
+      return Response.json({configured:true});
+    }
+    if(url.pathname==='/fixture/direct-reviewed-merge') {
+      const body=await request.json<{trunk:string;number:number;actor:string}>(),seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk));
+      try {
+        const state=await seq.review({op:'snapshot'}),pull=state.pulls.find(pull=>pull.number===body.number)!,head=state.branches.find(branch=>branch.name===pull.head)!,base=state.branches.find(branch=>branch.name===pull.base)!,main=await seq.head();
+        return Response.json(await seq.review({op:'merge',number:pull.number,head,base:{...base,version:main.version},anchor:pull.anchor,human:true,origin:url.origin,candidate:{commit:head.commit,tree:head.tree,base:base.commit},request:{id:'fixture-direct-merge-'+pull.number,agent:'review',owner:{id:body.actor,name:'Fixture actor'},kind:'agent',life:0,intent:pull.title,base:main.version,reads:{strong:[],weak:[]},edits:[],issue:null,closes:false}}));
+      } catch(error) {return Response.json({error:(error as Error).message},{status:400});}
     }
     if(url.pathname==='/fixture/drop-runner-acknowledgement'){dropNextRunnerAcknowledgement=true;return Response.json({armed:true});}
     if(url.pathname==='/fixture/conditional-runner'){

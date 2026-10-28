@@ -14,7 +14,7 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 | Names and membership | Stable internal IDs, owner/repo namespaces, rename aliases, identity-bound invitations and reader/writer/admin roles | No organizations, teams, ownership transfer, email invitations or GitHub role/API equivalence |
 | Protection management | Owners and admins can add/edit/delete rules under Settings → Rules; same-origin browser session or separate explicit current-admin CLI grants for classic protections and rulesets; revision-checked CLI edits and audit retained; CI runner management through Actions or a separate owner-only CLI grant | No organization-level policy inheritance |
 | Pattern targeting | Exact names, `*`, `?`, `**`, positive ASCII character classes/ranges; rulesets support include/exclude, `~ALL`, `~DEFAULT_BRANCH`; overlapping rules compose | Not GitHub's classic single-rule precedence or complete fnmatch syntax; bounded pattern/class grammar. Backslash quoting and `[^set]` are unsupported in GitHub's documented ruleset grammar too |
-| PR/review requirements | Required PRs and independent human approvals from current writers; fresh native/external membership at preview and final merge; configurable stale dismissal or retained approvals; outstanding change requests remain blocking after pushes; merge UI reflects the server's current gate | No reviewer-team selection; strict policy remains the compatibility default |
+| PR/review requirements | Required PRs and independent human approvals from current writers; fresh native/external membership at preview and final merge; configurable stale dismissal or retained approvals; outstanding change requests remain blocking after pushes; pending/rejected reviews on another open PR at the same live head block protected merges; merge UI reflects the server's current gate | No reviewer-team selection; strict policy remains the compatibility default; shared-head review candidate awaits hosted rollout |
 | Review dismissal | Reason required; signed-in current writers only; optional stable-account restrictions intersect across matching rules; original review retained, actor/reason/time visible, atomic audit, idempotent retry | No team mapping; open PRs only; no implicit administrator bypass; historical reviews without tree evidence retain conservative exact-ID eligibility |
 | Code owner reviews | Base-branch CODEOWNERS, location priority, last-match ownership, changed-path coverage and required independent approvals from current writers; native @handle identity resolution and archived merge decision | Team/email identity mapping and automatic review requests are not implemented; unmatched individual handles have no assignment; unsupported owner kinds cannot silently waive a required group |
 | Last push approval | A fresh approval of the latest file-changing push and comparison base must come from someone other than that pusher; metadata-only commits preserve the reviewable-push identity | Agent pushes inherit the owning human's identity; legacy audit events are conservatively reviewable |
@@ -182,6 +182,42 @@ and a 1 MiB encoded draft limit; at most 1000 active drafts per repository. The
 existing 1000 public-comment/PR and 2000 review/repository limits still apply.
 Pending replies and attachments remain future work.
 See [pending-review validation](evidence/pending-review-validation.md).
+
+## Reviews on another PR at the same commit
+
+For a branch requiring PRs, approvals, latest-push approval or code owner review,
+another open PR whose current head branch points to the exact candidate commit
+can block merging. An undismissed latest Request changes verdict or any pending
+browser/CLI review on that peer must be resolved. This follows
+[GitHub's shared-head review restriction](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-pull-request-reviews-before-merging).
+The PR targets may differ; this remains repository-local.
+
+The final serialized writer re-reads live refs, peer PR state, submitted verdicts
+and pending-review existence. HTTP JSON cannot supply or clear that evidence.
+A blocker added after preview still rejects the merge. The UI links the related
+PRs; `nh pr view --json` includes `reviewGate.sharedHeadBlockers`, and native
+`nh pr merge` receives the same server denial. New routes use a dedicated merge
+RPC and return retryable 503 if an older receiver lacks it, without falling back
+to the older writer. The final legacy `review({op:"merge"})` RPC also enforces
+the rule on an upgraded receiver.
+
+Only a peer PR number and generic pending/requested-change flags become public
+merge status. Private draft authors, bodies, excerpts, comment IDs, credential
+IDs and counts stay private. Earlier-diff or empty pending reviews still count
+until submitted/discarded or their PR closes. Revoking a CLI credential does not
+publish or discard its private draft; closing the related PR clears that blocker
+if the credential can no longer access it.
+
+A different live commit does not block, even when its tree is identical. Closed
+and merged peers do not block. Comment-only feedback cannot clear a prior Request
+changes verdict; a later approval or explicit dismissal can. A dismissed latest
+review does not resurrect an older verdict. Peer approvals and conversations do
+not transfer to the current PR, whose own review/conversation gates still apply.
+Existing submitted change requests are not silently waived on reviewer demotion.
+
+The [local validation](evidence/shared-head-reviews-validation.md) covers real
+source/packaged CLI and Worker/Git behavior. This candidate is not deployed;
+strict/loose check modes, merge strategies and the other parity gaps remain open.
 
 ## Apply code suggestions
 

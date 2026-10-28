@@ -159,10 +159,15 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
           if (!await isAncestor(sha => reader.get(sha), base.commit, head.commit)) throw new Error("Target branch moved: merge its current head into the feature branch, push and rerun CI before merging");
           const main = await seq.head();
           const ownership=s.effectivePolicies?.[p.base]?.requireCodeOwnerReview?await codeOwnerEvidence(objects,base,head):undefined;
-          return json(await seq.review({ op: "merge", number: p.number, head, base:{...base,version:main.version}, anchor: p.anchor,
+          try { return json(await seq.mergeReviewedPull({ op: "merge", number: p.number, head, base:{...base,version:main.version}, anchor: p.anchor,
             codeOwners:ownership,origin:url.origin,
             candidate: { commit: head.commit, tree: head.tree, base: base.commit }, human:independent, proof:await repositoryProof(sha=>reader.get(sha),base.commit,head.commit,await seq.graphPlan(),`refs/heads/${p.base}`,verifySignature),
-            request: { id: `pr-${p.number}-${head.commit}-${base.commit}`, agent: "review", owner, kind: "agent", life: 0, intent: p.title, base: main.version, reads: { strong: [], weak: [] }, edits: [], issue: null, closes: false } }));
+            request: { id: `pr-${p.number}-${head.commit}-${base.commit}`, agent: "review", owner, kind: "agent", life: 0, intent: p.title, base: main.version, reads: { strong: [], weak: [] }, edits: [], issue: null, closes: false } })); }
+          catch(error) {
+            if(error instanceof Error&&(/mergeReviewedPull.*not a function/.test(error.message)||error.message.includes('does not implement the method "mergeReviewedPull"')))
+              return json({error:"Protected merge review checks are updating; refresh and retry shortly"},{status:503,headers:{"Retry-After":"5"}});
+            throw error;
+          }
         }
         const result = await replay(objects, p.anchorTree, head.tree, base.tree);
         if (operation === "restack") {
@@ -176,7 +181,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         if (main.commit !== base.commit) return json({ error: "Main changed; refresh and try again" }, { status: 409 });
         const edits = await mergeEdits(objects, result.patches, main.tree);
         if (!edits.length) throw new Error("These changes are already on main; close this PR");
-        const merged = await seq.review({ op: "merge", number: p.number, head, base: main, anchor: p.anchor,origin:url.origin,
+        const merged = await seq.mergeReviewedPull({ op: "merge", number: p.number, head, base: main, anchor: p.anchor,origin:url.origin,
           request: { id: `pr-${p.number}-${head.commit}-${main.commit}`, agent: "review", owner, kind: "agent", life: 0, intent: `Merge #${p.number}: ${p.title}`, base: main.version,
             reads: { strong: [], weak: [] }, edits, issue: null, closes: false } });
         const landed = merged.pulls.find((q) => q.number === p.number)!;
