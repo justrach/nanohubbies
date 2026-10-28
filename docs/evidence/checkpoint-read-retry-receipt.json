@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T14:38:08.108479+00:00",
+  "failedRun": {
+    "runId": "mvs79rxv-fe237605e0",
+    "implementationCommit": "dcc4a79fd744e7b594218929390822427083b0e6",
+    "startedAt": "2026-10-28T14:18:48.884Z",
+    "finishedAt": "2026-10-28T14:26:31.854Z",
+    "failure": "HTTP 500 from the private Vault checkpoint RPC while capturing the second checkpoint",
+    "stackIdentifies": "repository-probe.mjs snapshot -> object checkpoint -> private Vault recovery RPC",
+    "retryableFlagsRetained": false,
+    "causeProven": false,
+    "checkpointsCompleted": [
+      {
+        "label": "before-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 17,
+        "r2Bytes": 18847
+      }
+    ],
+    "acceptedGitCommitBetweenCheckpoints": true,
+    "physicalLossStarted": false,
+    "acceptancePassed": false,
+    "runtimeTrace": {
+      "events": 470,
+      "exitCode": 0,
+      "writeFailures": 0
+    },
+    "independentCleanup": {
+      "checkedAt": "2026-10-28T14:28:21.992Z",
+      "runId": "mvs79rxv-fe237605e0",
+      "providerRuntime": "node",
+      "apiAbsent": true,
+      "gateAbsent": true,
+      "vaultAbsent": true,
+      "bucketAbsent": true,
+      "databaseAbsent": true,
+      "providerEntryAbsent": true,
+      "requiredRetirementReceiptsVerified": true,
+      "originalProviderEntriesRetained": true,
+      "keysRemoved": true,
+      "main": {
+        "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+        "versionUnchanged": true
+      },
+      "productionVault": {
+        "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+        "versionUnchanged": true
+      },
+      "passed": true
+    },
+    "productionDuringRead": {
+      "checkedAt": "2026-10-28T14:22:15.244Z",
+      "status": 200,
+      "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+      "scope": "public production version read during isolated recovery drill; no repository credential"
+    }
+  },
+  "candidate": {
+    "sourceParent": "dcc4a79",
+    "runtimeFiles": [
+      {
+        "path": "tools/hosted-recovery-fixture/checkpoint.ts",
+        "sha256": "193b5ed6d3d2afd8d4ff77762f2a8095d54aa9c9f67688e3655bf35c4b251fe0"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/control.ts",
+        "sha256": "6957fc5be6dea2af586ed17471b523285fb49d1716186def012b0bfd23c1203e"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/vault.ts",
+        "sha256": "d34b2278be2db2bcdde14f5429a25b32daf7f83832f57e8c656245799013fe97"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/repository-probe.mjs",
+        "sha256": "7873fd59975912ba12a26f97c8f48529a031267d7ae931f040aa80ddd6619cdb"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/fixture.test.ts",
+        "sha256": "2d1cc251cb3233e0e094d846320568cf7a6fcee59da8f735f5e10f3632a11839"
+      }
+    ],
+    "onlyCheckpointReadRetried": true,
+    "freshStubEachAttempt": true,
+    "requiresExplicitRetryableTrue": true,
+    "rejectsOverloadedOrMalformedFlags": true,
+    "maxAttempts": 3,
+    "backoffMs": [
+      1000,
+      2000
+    ],
+    "originalErrorPreservedOnFailure": true,
+    "applicationAndStorageMutationsNotRetried": true,
+    "successfulReadAttemptCountsRetained": true,
+    "cloudAcceptancePassed": false
+  },
+  "validation": {
+    "pinnedTsrsPassed": true,
+    "operatorBindingPreflightPassed": true,
+    "lifecycleCases": 23,
+    "proxyAndObservationCases": 10,
+    "recoveryCases": 28,
+    "realCompilerCases": 2,
+    "totalCases": 63,
+    "controlEndpointReadRetryAndNoMutationReplayPassed": true,
+    "logs": [
+      {
+        "artifact": "checkpoint-read-retry-tests.log",
+        "sha256": "36bb47773c2a5c0fcc75f8436c202e31a501ac233104ab380bbea8b7c15a585a"
+      },
+      {
+        "artifact": "checkpoint-read-lifecycle-tests.log",
+        "sha256": "705dfaec67811b2574b4dad9a1d8d5ec02ed50796a8481118c5cc9c39d31a7f6"
+      }
+    ]
+  },
+  "evidenceHashes": [
+    {
+      "artifact": "operation.json",
+      "sha256": "f85c080533f1752554937372dade6523f4488b2b96e046eed2b26920244b1c89"
+    },
+    {
+      "artifact": "independent-final-observation.json",
+      "sha256": "aa895f52f5d80f424c03c5669d89cf3ca66fe44d89a70e76da01ec669f561bf7"
+    },
+    {
+      "artifact": "runtime-events.jsonl",
+      "sha256": "d4c41e2914012b2399bcca8ddb577e055e27e4b639617f608217c173e929931e"
+    }
+  ],
+  "primaryGuidance": "https://developers.cloudflare.com/durable-objects/best-practices/error-handling/",
+  "productionApplicationOrVaultDeployed": false,
+  "fullChangingGitRecoveryEstablished": false,
+  "githubPushed": false
+}

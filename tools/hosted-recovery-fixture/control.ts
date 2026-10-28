@@ -1,5 +1,6 @@
 /** Private disposable-fixture controls. Never imported by the production entrypoint. */
 import type { recoveryObject } from "./objects";
+import { readCheckpoint } from "./checkpoint";
 
 const bindings = new Set([
   "SEQUENCER",
@@ -149,10 +150,12 @@ export async function control(
   const namespace = (env as unknown as Record<string, DurableObjectNamespace>)[
     body.binding
   ];
-  const stub = namespace.get(
+  const fresh = () => namespace.get(
     byId ? namespace.idFromString(body.id) : namespace.idFromName(body.name),
   ) as unknown as RecoveryStub;
   const key = env.HOSTED_BACKEND_KEY!;
+  if (body.op === "checkpoint") return json(await readCheckpoint(fresh, key));
+  const stub = fresh();
   switch (body.op) {
     case "write":
       if (typeof body.value !== "string" || !marker.test(body.value))
@@ -162,8 +165,6 @@ export async function control(
       return json(await stub.fixtureRecoveryRead(key));
     case "inspect":
       return json(await stub.fixtureRecoveryInspect(key));
-    case "checkpoint":
-      return json(await stub.fixtureRecoveryCheckpoint(key));
     case "lose":
       return json(await stub.fixtureRecoveryLose(key));
     case "lose-inspect":

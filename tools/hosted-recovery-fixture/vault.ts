@@ -4,6 +4,7 @@ import {
   VaultService as ActualService,
 } from "../../packages/vault/src/index";
 import { recoveryObject } from "./objects";
+import { readCheckpoint } from "./checkpoint";
 export const Vault = recoveryObject(ActualVault, "VAULTS");
 type FixtureVault = InstanceType<ReturnType<typeof recoveryObject>>;
 export class VaultRecoveryService extends ActualService {
@@ -16,14 +17,14 @@ export class VaultRecoveryService extends ActualService {
     )
       throw Error("Fixture recovery access denied");
     if (!/^[a-f0-9]{64}$/.test(id)) throw Error("Invalid fixture object");
-    const object = this.env.VAULTS.get(
+    const fresh = () => this.env.VAULTS.get(
       this.env.VAULTS.idFromString(id),
     ) as unknown as FixtureVault;
+    if (op === "checkpoint") return readCheckpoint(fresh, key);
+    const object = fresh();
     switch (op) {
       case "inspect":
         return object.fixtureRecoveryInspect(key);
-      case "checkpoint":
-        return object.fixtureRecoveryCheckpoint(key);
       case "suspend-alarm":
         return object.fixtureRecoverySuspendAlarm(key);
       case "lose-inspect":

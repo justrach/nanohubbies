@@ -277,6 +277,9 @@ export async function runRepositoryRecoveryProbe({
       );
       const point = await object(entry, "checkpoint");
       assert.equal(point.id, entry.id);
+      assert.ok(Number.isInteger(point.readAttempts) && point.readAttempts >= 1 && point.readAttempts <= 3);
+      result.checkpointReadAttempts ??= [];
+      result.checkpointReadAttempts.push({ label, binding: entry.binding, attempts: point.readAttempts });
       points.push({ ...entry, bookmark: point.bookmark });
     }
     const database = await jsonControl({ op: "database-state" }),

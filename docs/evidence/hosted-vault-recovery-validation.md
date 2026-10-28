@@ -246,3 +246,37 @@ recovery/compiler cases pass, as does the project check across three workspaces
 (one unchanged workspace result is cached). The supported Node 24 preflight
 also passes. No dependency or production deployment is added. Complete hosted
 changing-Git acceptance remains pending.
+
+## Native checkpoint observation failure and bounded read retry
+
+The next run at `dcc4a79` passes the new binding preflight and accepts a Git
+commit after the first checkpoint. Capturing the second point fails with HTTP
+500. The stack identifies the private Vault checkpoint RPC, before physical
+application loss. The original provider exception/flags are not retained, so
+its cause and retryability remain unknown. The
+[checkpoint-read receipt](checkpoint-read-retry-receipt.json) preserves this
+failed gate and cleanup evidence.
+
+Independent reads at `2026-10-28T14:28:21Z` confirm all generated Workers, D1, R2
+and the synthetic provider entry absent; required class retirement receipts and
+original provider entries remain, private keys/grants are removed and production
+main/Vault versions are unchanged. A public production version read during the
+drill also returns HTTP 200 from the unchanged main Worker.
+
+The new private-fixture helper retries only a checkpoint observation explicitly
+marked `retryable === true`. Each attempt creates a fresh stub. Overload,
+malformed flags, authorization and unclassified failures stop immediately.
+Three attempts with one/two-second backoff are the maximum. Loss, restore
+scheduling, ref changes and other application/storage writes are not passed
+through this helper. Successful checkpoint responses retain the read-attempt
+count. This follows [Cloudflare's error-handling guidance](https://developers.cloudflare.com/durable-objects/best-practices/error-handling/),
+which distinguishes retryable idempotent operations from overload and recommends
+recreating a stub after exceptions. It does not retroactively classify the
+unobserved original exception.
+
+Pinned tsrs and **63 local cases** pass: 23 lifecycle, ten proxy/observation,
+28 recovery and two real-compiler cases. Tests include the actual private
+control handler, fresh stubs/backoff, bounded exhaustion, rejection of overload
+and malformed flags, and exactly one invocation of a failed mutating loss RPC.
+No production service is redeployed. Full hosted changing-Git recovery,
+including return to the newer point, remains a required unpassed gate.

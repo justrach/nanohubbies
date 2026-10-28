@@ -17,6 +17,7 @@ import { verifyRetainedBytes } from "./probe.mjs";
 import { createHash } from "node:crypto";
 import { verifiedR2Reconcile } from "./retained.mjs";
 import { waitForFixturePhase, recoveryFailureCode } from "./phase.mjs";
+import { readCheckpoint } from "./checkpoint";
 
 const key = "a".repeat(64),
   point = "12345678-12345678-12345678-" + "b".repeat(32);
@@ -787,4 +788,68 @@ test("recovery error diagnostics retain only known fence codes and discard confi
     Response.json(null), new Response(confidential), new Response("x".repeat(4097)),
     Response.json({ code: "fixture_frozen", padding: "x".repeat(4096) })])
     assert.equal(await recoveryFailureCode(response), null);
+});
+
+test("checkpoint reads recreate broken stubs and back off only for explicit retryable provider errors", async () => {
+  let stubs = 0; const delays: number[] = [];
+  const observed = await readCheckpoint(() => {
+    const instance = ++stubs;
+    return { fixtureRecoveryCheckpoint: async (provided: string) => {
+      assert.equal(provided, key);
+      if (instance < 3) throw Object.assign(Error("platform connection reset"), { retryable: true });
+      return { id: "owned", bookmark: point };
+    } };
+  }, key, async ms => { delays.push(ms); });
+  assert.deepEqual(observed, { id: "owned", bookmark: point, readAttempts: 3 });
+  assert.equal(stubs, 3);
+  assert.deepEqual(delays, [1000, 2000]);
+});
+
+test("checkpoint overload, authorization, unknown and malformed retry flags stop on the first attempt", async () => {
+  for (const error of [Error("Fixture recovery access denied"), Error("unknown"),
+    Object.assign(Error("overloaded"), { retryable: true, overloaded: true }),
+    Object.assign(Error("malformed retry flag"), { retryable: "true" }),
+    Object.assign(Error("malformed overload flag"), { retryable: true, overloaded: "false" })]) {
+    let stubs = 0;
+    await assert.rejects(() => readCheckpoint(() => {
+      stubs++; return { fixtureRecoveryCheckpoint: async () => { throw error; } };
+    }, key, async () => { throw Error("Unexpected retry"); }), value => value === error);
+    assert.equal(stubs, 1);
+  }
+});
+
+test("checkpoint retry exhaustion preserves the original failure and cannot invoke mutating RPC methods", async () => {
+  const error = Object.assign(Error("platform remains unavailable"), { retryable: true });
+  let stubs = 0, reads = 0;
+  await assert.rejects(() => readCheckpoint(() => {
+    stubs++;
+    return new Proxy({ fixtureRecoveryCheckpoint: async () => { reads++; throw error; } }, {
+      get(target, name) { assert.equal(name, "fixtureRecoveryCheckpoint"); return target.fixtureRecoveryCheckpoint; },
+    });
+  }, key, async () => {}), value => value === error);
+  assert.equal(stubs, 3); assert.equal(reads, 3);
+});
+
+test("control endpoint retries checkpoint reads through fresh stubs but never replays a failed loss operation", async () => {
+  let stubs = 0, losses = 0;
+  const reset = Object.assign(Error("platform reset"), { retryable: true });
+  const local: any = { ...env, SEQUENCER: {
+    idFromName: (name: string) => name,
+    get: () => {
+      const instance = ++stubs;
+      return {
+        fixtureRecoveryCheckpoint: async () => {
+          if (instance === 1) throw reset;
+          return { id: "owned", bookmark: point };
+        },
+        fixtureRecoveryLose: async () => { losses++; throw reset; },
+      };
+    },
+  } };
+  assert.deepEqual(await (await control(request({ binding: "SEQUENCER", name: "test", op: "checkpoint" }), local)).json(), {
+    id: "owned", bookmark: point, readAttempts: 2,
+  });
+  assert.equal(stubs, 2);
+  await assert.rejects(() => control(request({ binding: "SEQUENCER", name: "test", op: "lose" }), local), value => value === reset);
+  assert.equal(stubs, 3); assert.equal(losses, 1);
 });
