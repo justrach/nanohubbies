@@ -260,6 +260,25 @@ test("generated configuration cannot reuse arbitrary resource names and retireme
   ])
     assert.throws(() => fixturePlan({ ...identity, ...bad }));
 });
+test("a cleanup fence detaches an already deleted bucket while retaining the same owned gate and closed routing", async () => {
+  const plan = fixturePlan(identity),
+    closed = purgeConfiguration(plan, { bucketPresent: false });
+  assert.equal(closed.name, plan.gateName);
+  assert.equal(closed.services, undefined);
+  assert.equal(closed.r2_buckets, undefined);
+  assert.equal(closed.vars.HOSTED_PURGE_ONLY, "1");
+  assert.equal(purgeConfiguration(plan).r2_buckets[0].bucket_name, plan.bucket);
+  assert.throws(
+    () => purgeConfiguration(plan, { bucketPresent: "false" as any }),
+    /observation/,
+  );
+  const response = await gate.fetch(request("/__fixture/purge", true, "POST"), {
+    ...env,
+    HOSTED_PURGE_ONLY: "1",
+  } as any);
+  assert.equal(response.status, 409);
+  assert.equal(((await response.json()) as any).deleted, undefined);
+});
 test("hosted metadata rejects foreign buckets, databases, classes, service bindings and unexpected secrets", () => {
   const p = fixturePlan(identity),
     bindings = [
@@ -463,4 +482,23 @@ test("vault cleanup or observation failure retains keys and prevents bucket dele
     assert.ok(!f.events.includes("remove-keys"));
     assert.ok(!f.events.includes("purge"));
   }
+});
+test("resuming after bucket deletion passes actual absence to fencing and still removes database and gate", async () => {
+  const f = lifecycle({
+    api: false,
+    gate: true,
+    bucket: false,
+    database: true,
+  });
+  let observed: any;
+  f.ops.closeGate = async (value: any) => {
+    observed = value;
+    f.events.push("fence");
+  };
+  await cleanupFixture(f.record, f.ops);
+  assert.equal(observed.bucket, false);
+  assert.equal(f.record.cleanupNeeded, false);
+  assert.ok(!f.events.includes("purge"));
+  assert.ok(f.events.includes("delete:database"));
+  assert.ok(f.events.includes("delete:gate"));
 });

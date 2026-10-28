@@ -37,7 +37,8 @@ export async function cleanupFixture(record, ops) {
   // A purge-only gate has no service binding to the app. Recreate it if an
   // interrupted initial deployment left a bucket but no working control gate.
   if (observed.gate || observed.bucket) {
-    if (!(await attempt("apiGateClosed", ops.closeGate))) return unfinished();
+    if (!(await attempt("apiGateClosed", () => ops.closeGate(observed))))
+      return unfinished();
   }
   if (observed.api) {
     if (!(await attempt("durableNamespacesRetired", ops.retire)))

@@ -5,7 +5,7 @@ interface GateEnv {
   HOSTED_FIXTURE_EXPIRES?: string;
   HOSTED_PURGE_ONLY?: string;
   TARGET?: Fetcher;
-  OBJECTS: R2Bucket;
+  OBJECTS?: R2Bucket;
 }
 const reply = (value: unknown, status = 200) =>
   Response.json(value, {
@@ -25,6 +25,8 @@ export default {
     if (url.pathname === "/__fixture/purge" && request.method === "POST") {
       if (env.HOSTED_PURGE_ONLY !== "1")
         return reply({ error: "Close the API gate before purging" }, 409);
+      if (!env.OBJECTS)
+        return reply({ error: "Fixture bucket is not configured" }, 409);
       const page = await env.OBJECTS.list({ limit: 1000 });
       if (page.objects.length)
         await env.OBJECTS.delete(page.objects.map((object) => object.key));

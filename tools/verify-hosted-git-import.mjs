@@ -1037,10 +1037,18 @@ export async function verifyHostedGitImport(
             },
           }
         : {}),
-      closeGate: async () => {
+      closeGate: async (observed) => {
         record.gateRequested = true;
         await persist();
-        const value = await deploy(configPaths.purge);
+        const fenceConfig = observed.bucket
+          ? configPaths.purge
+          : join(directory, "detached-purge.json");
+        if (!observed.bucket)
+          await atomic(
+            fenceConfig,
+            purgeConfiguration(plan, { bucketPresent: false }),
+          );
+        const value = await deploy(fenceConfig);
         gateOrigin = ownedOrigin(value.output);
         record.gateOrigin = gateOrigin;
         const path = join(directory, "gate-secrets.json");
@@ -1048,11 +1056,11 @@ export async function verifyHostedGitImport(
           HOSTED_FIXTURE_KEY: keys.control,
           HOSTED_BACKEND_KEY: keys.backend,
         });
-        await wrangler(["secret", "bulk", path], configPaths.purge);
+        await wrangler(["secret", "bulk", path], fenceConfig);
         await rm(path);
         const fenced = await metadata(
-          await currentVersion(configPaths.purge),
-          configPaths.purge,
+          await currentVersion(fenceConfig),
+          fenceConfig,
         );
         assert.ok(
           !fenced.resources.bindings.some(
@@ -1063,7 +1071,13 @@ export async function verifyHostedGitImport(
           fenced.resources.bindings.find(
             (binding) => binding.name === "OBJECTS",
           )?.bucket_name,
-          plan.bucket,
+          observed.bucket ? plan.bucket : undefined,
+        );
+        assert.equal(
+          fenced.resources.bindings.filter(
+            (binding) => binding.type === "r2_bucket",
+          ).length,
+          observed.bucket ? 1 : 0,
         );
         assert.equal(
           fenced.resources.bindings.find(
@@ -1072,6 +1086,7 @@ export async function verifyHostedGitImport(
           "1",
         );
         await atomic(join(directory, "fenced-version.json"), fenced);
+        record.gateBucketBindingDetached = !observed.bucket;
       },
       retire: async () => {
         await deploy(configPaths.retired);

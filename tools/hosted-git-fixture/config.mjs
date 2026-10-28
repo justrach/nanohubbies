@@ -207,9 +207,15 @@ export function fixturePlan({
     },
   };
 }
-export function purgeConfiguration(plan) {
-  const { services, ...gate } = plan.gate;
-  return { ...gate, vars: { ...gate.vars, HOSTED_PURGE_ONLY: "1" } };
+export function purgeConfiguration(plan, { bucketPresent = true } = {}) {
+  if (typeof bucketPresent !== "boolean")
+    throw Error("Bucket observation must be explicit");
+  const { services, r2_buckets, ...gate } = plan.gate;
+  return {
+    ...gate,
+    ...(bucketPresent ? { r2_buckets } : {}),
+    vars: { ...gate.vars, HOSTED_PURGE_ONLY: "1" },
+  };
 }
 export function assertFixtureBindings(metadata, plan, kind) {
   const bindings = metadata.resources.bindings;
