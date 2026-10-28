@@ -194,5 +194,53 @@
     "actualRetained10013ErrorClassified": true,
     "subsequentStateSynthetic": true,
     "providerOperationsInvoked": false
+  },
+  "nodeControllerRun": {
+    "runId": "mvs9uu8k-54414d773e",
+    "implementation": "d3dee71ff2954294fbe5ec87ee3a52a7aea2b33e",
+    "controllerRuntime": {
+      "name": "node",
+      "version": "24.14.1"
+    },
+    "providerRuntime": "node",
+    "repositoryProbeStarted": false,
+    "acceptancePassed": false,
+    "failure": {
+      "message": "fetch failed",
+      "causeCode": "UND_ERR_CONNECT_TIMEOUT",
+      "phase": "initial HTTP preflight before repository seeding",
+      "causeEstablished": false
+    },
+    "cleanupNeeded": false,
+    "cleanupErrors": [],
+    "independentCleanupAt": "2026-10-28T15:34:05.247Z",
+    "independentCleanupPassed": true,
+    "hashes": {
+      "operation.json": "486e7f33dd86d3a21c98d68edc516ae64635fd3953f45f6cad2516057770c999",
+      "independent-final-observation.json": "b8df37f73aef996088efa149647b846b3a8b3cbeb0306f82b739da1b3a9ef6e3"
+    }
+  },
+  "subsequentReadOnlyConnectivity": {
+    "productionNode": {
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      "elapsedMs": 10537
+    },
+    "deletedOwnedHostNode": {
+      "status": 404,
+      "elapsedMs": 529
+    },
+    "productionBun": {
+      "status": 200,
+      "elapsedMs": 1074
+    },
+    "deletedOwnedHostBun": {
+      "status": 404,
+      "elapsedMs": 542
+    },
+    "deletedOwnedHostCurl": {
+      "status": 404
+    },
+    "runtimeCauseEstablished": false,
+    "fullRecoveryAcceptanceProven": false
   }
 }

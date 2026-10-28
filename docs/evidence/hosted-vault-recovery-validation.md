@@ -343,3 +343,18 @@ production versions unchanged. Separate Git checks at `15:29:56Z` pass strict
 fsck and exact checkpoint refs/graphs for both completed clones: three refs each,
 13 newer objects and ten older objects. The receipt retains these partial
 results without claiming successful return to the newer point.
+
+The fresh Node 24.14.1 controller run at `d3dee71` stops before repository
+seeding with `UND_ERR_CONNECT_TIMEOUT` on an initial HTTP fetch. It does not
+establish a fix for the preceding reset or any new recovery acceptance.
+Independent checks at `2026-10-28T15:34:05.247Z` again confirm all generated
+resources and keys absent, original provider entries retained and production
+versions unchanged. No destructive request from either failed run is replayed.
+
+Subsequent read-only connectivity checks are mixed: Node times out connecting
+to the public production host, then receives the expected 404 from the deleted
+owned test host. Bun receives 200 from production and 404 from that test host;
+curl also receives 404. These observations show intermittent connectivity, not
+its cause, nor evidence that a controller runtime change fixes it. Both runs
+are terminal and independently cleaned; no full gate is inferred from the
+successful read-only requests.
