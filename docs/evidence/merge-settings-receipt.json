@@ -1,0 +1,308 @@
+{
+  "format": 1,
+  "kind": "nanohub-local-repository-merge-settings",
+  "checkedAt": "2026-10-28T16:55:17.331577+00:00",
+  "sourceParent": "39d3614efae48313c01f275d6c32f4311ebed86b",
+  "scope": "Isolated local Workers/SQLite DO/D1/R2, real Git, source and portable Bun CLI, actual Next UI and OpenNext build",
+  "changedSourceFiles": [
+    {
+      "path": "apps/web/src/lib/cli-scopes.ts",
+      "sha256": "f719ff19e91d5b3a975add7299659ce9d64f91187097bf585c526e9aa98f1b78"
+    },
+    {
+      "path": "apps/web/src/settings/CliAuthorize.tsx",
+      "sha256": "36f574c35183477d523668e4d2b1ab6a02964dc350fdb34872203c39ea7575c3"
+    },
+    {
+      "path": "apps/web/src/trunk/review/MergeAction.tsx",
+      "sha256": "76cdfecd14e5bb4b2091abfb9ff5c5cf1d474a45b1e794c193f0a40d18183bfe"
+    },
+    {
+      "path": "apps/web/src/trunk/review/MergeControls.module.css",
+      "sha256": "ffd463b76363736734169050fc9c866bcbe6ec5be665edf407e04406a48637ef"
+    },
+    {
+      "path": "apps/web/src/trunk/review/ProtectionActivity.tsx",
+      "sha256": "eb4519dc1c903c8101af63391ea943e58c717e2ae3b93f72124b3a8d763e487e"
+    },
+    {
+      "path": "apps/web/src/trunk/review/PullDetail.tsx",
+      "sha256": "75723aeb496d08e2a09592e806f749df9f55b5b7cd4a8bd5220ec3e8abfe4f7a"
+    },
+    {
+      "path": "apps/web/src/trunk/review/merge-choices.ts",
+      "sha256": "d700d19a7223af6531be6800111a36b724b8c4c0f18d5118e00cc4bbf4586600"
+    },
+    {
+      "path": "apps/web/src/trunk/room/Collaborators.tsx",
+      "sha256": "01d1d75d7c48d41d18c4de43f524c19e37da69dc80760f5eff3eba6ec65474ee"
+    },
+    {
+      "path": "apps/web/src/trunk/room/RepositoryMergeSettings.tsx",
+      "sha256": "7dabf15c64c11deb2560c52d87543ec978384c05ef282ed0a305b5461d560a96"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "08942cfe691ad41ed8652c605f1c0fb4b660b455c4a1d37fe4d84d03cb43f660"
+    },
+    {
+      "path": "packages/api/package.json",
+      "sha256": "d1a69ce2a77d545ed7537f3d2d6f511c021556d95049314feddc79330dd5df45"
+    },
+    {
+      "path": "packages/api/scripts/merge-settings.test.mjs",
+      "sha256": "d379a11e9b4ba0c512f5ce20435cf05d2b872a02a9424ccb1137274a01085dc9"
+    },
+    {
+      "path": "packages/api/scripts/smoke-merge-settings.ts",
+      "sha256": "969a78231cc98477e5e772678cf1a71120ec12f11c717096260ce7d7fe3201a1"
+    },
+    {
+      "path": "packages/api/scripts/team/worker.ts",
+      "sha256": "e87bd9046d92e0855a4c21e8a0a741c396dcdda535b50f328d19671c67b05fd5"
+    },
+    {
+      "path": "packages/api/src/cli/credentials.ts",
+      "sha256": "daf9336c664d8c0a874f867a89c1d1d807bbdd3a27a1d66140c58b0c968929df"
+    },
+    {
+      "path": "packages/api/src/cli/routes.ts",
+      "sha256": "a06748c2efeace7a82289ce93d9454d6b6ddb6e2300b001b8805a786b5bc3afd"
+    },
+    {
+      "path": "packages/api/src/index.ts",
+      "sha256": "57bba77752d24018fb543e35d7ed680b2f3480baa688b74319ce7e7ed1c528fe"
+    },
+    {
+      "path": "packages/api/src/repository/activity-types.ts",
+      "sha256": "596f4800f9a87a7883c48fe0d87a72cd258954cb5103454134085dc433f57be0"
+    },
+    {
+      "path": "packages/api/src/repository/activity.ts",
+      "sha256": "213fffe3363acc3b9b8bdef6637c943b0fe1b967f9fde637f73ae90e765c37c3"
+    },
+    {
+      "path": "packages/api/src/repository/merge-settings-route.ts",
+      "sha256": "e6cbe72a2af3acf621a6ae452366f9afb8a3667b3d674287d8c9db43942ba1c9"
+    },
+    {
+      "path": "packages/api/src/repository/merge-settings-types.ts",
+      "sha256": "c2cbdba3ad3c9dea0b3f986ce556f0fb3e2142989845a0a5ec05a112f23ba8b7"
+    },
+    {
+      "path": "packages/api/src/repository/merge-settings.ts",
+      "sha256": "efbeb5c878e615834391f0b4ee15fb1210a9cbeffecff2dc706068deabe45ca6"
+    },
+    {
+      "path": "packages/api/src/repository/routes.ts",
+      "sha256": "46a0e55ff1247013dc48e1ee1bf501c74f6a99aa3480ba5bc591b5be5d4a94e1"
+    },
+    {
+      "path": "packages/api/src/repository/store.ts",
+      "sha256": "ef2763be8823e4a8bf7cca9c256ea8ae56c937e951154ee81fb7ac4ed753c295"
+    },
+    {
+      "path": "packages/api/src/review/routes.ts",
+      "sha256": "3ef17fd412ed0113a49925a287654ba3aeda2da406b3d55bc09366936615ff05"
+    },
+    {
+      "path": "packages/api/src/review/store.ts",
+      "sha256": "b1f39fd416b2503f88da231b89cbc26dfbbc84aea1026fc51306a1f235a7a463"
+    },
+    {
+      "path": "packages/api/src/review/types.ts",
+      "sha256": "c3df4dbbdcc61b0209e53c63564af0acf655eb7a5eceb258684218f7337dc49d"
+    },
+    {
+      "path": "packages/api/src/sequencer.ts",
+      "sha256": "883d05d52a38f4c6c3b7d0be5daf44596194f53aa0270df950e6f4cd92e37df4"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "sha256": "cd7be213edd67c3a52e518e5fe7bd86a37308bca17882fed6476b31df7d7ed78"
+    },
+    {
+      "path": "packages/cli/src/api.mjs",
+      "sha256": "67d7d93004696c6a3c4835d41b2c9ba170f92a6cfba0fe5636d1365cd3de74e7"
+    },
+    {
+      "path": "packages/cli/src/device.mjs",
+      "sha256": "5d0465201254e61088b4e53eeb2bdd68b49203c4f599e7be16d603ffc7a451c9"
+    },
+    {
+      "path": "packages/cli/src/main.mjs",
+      "sha256": "668b83f7a958bf9cb25e0f017a49578600857fb3fe462b89e548230a72d2e194"
+    },
+    {
+      "path": "packages/cli/src/merge-settings.mjs",
+      "sha256": "7f558114e1ffdbcea0ee899223a083acc57a4685f4ab61156d1d0e2b0640afa4"
+    },
+    {
+      "path": "packages/cli/test/device.test.mjs",
+      "sha256": "c28ae2f9ebaf2a1fba07663b010c90dfd4f5a3e94bf21c4b2e5486f637ec7d61"
+    },
+    {
+      "path": "packages/cli/test/merge-settings.test.mjs",
+      "sha256": "11c8ce23e12be65fc2c257737f424d7ed0c44ac7605404dbbd6204bf6385a217"
+    }
+  ],
+  "sourceComparisonAfterFinalRegression": "exact",
+  "tests": [
+    {
+      "name": "api-unit",
+      "command": "bun run --filter @swarm/api test:unit",
+      "exitCode": 0,
+      "passedCases": 348,
+      "log": "merge-settings-frozen-unit-20261029.log",
+      "logBytes": 55986,
+      "logSha256": "45a8ea90eb38c62b5967be3bc7c0cb74963f38fd44ce8bd004b83774fdbd24d3"
+    },
+    {
+      "name": "repository",
+      "command": "bun run test:repository",
+      "exitCode": 0,
+      "passedCases": 272,
+      "log": "merge-settings-frozen-repository-20261029.log",
+      "logBytes": 66961,
+      "logSha256": "c904d354d6df3614a0bfcdf1f8d68cfa3c74e4fabdc09ab12a2ea3427db90417"
+    },
+    {
+      "name": "cli",
+      "command": "bun run test:cli",
+      "exitCode": 0,
+      "passedCases": 59,
+      "log": "merge-settings-final-cli-20261029.log",
+      "logBytes": 9056,
+      "logSha256": "84a74884515d312f1729ca24d8f55b67d3463cff25d98a44485959e33c878cea"
+    },
+    {
+      "name": "types-and-operator-bindings",
+      "command": "bun run check",
+      "exitCode": 0,
+      "log": "merge-settings-final-check-20261029.log",
+      "logBytes": 10295,
+      "logSha256": "dbb4e091617e145e61acef2388f710ff1cef1a3886cc88284c8d847ff8553e09"
+    },
+    {
+      "name": "source-worker",
+      "command": "node scripts/smoke-merge-settings.ts",
+      "exitCode": 0,
+      "log": "merge-settings-final-source-20261029.log",
+      "logBytes": 252,
+      "logSha256": "a4f4ac042130a8065165a5ddfe0fe4b8208d3d78a28a20c55a40588fb33988f8"
+    },
+    {
+      "name": "packaged-worker",
+      "command": "node scripts/smoke-merge-settings.ts --bundle",
+      "exitCode": 0,
+      "log": "merge-settings-final-bundle-20261029.log",
+      "logBytes": 254,
+      "logSha256": "d912da63c3d5ac33d25e23e00d692ecbbc34672723329b181438e53d0b2d6b60"
+    },
+    {
+      "name": "production-build",
+      "command": "opennextjs-cloudflare build",
+      "exitCode": 0,
+      "log": "merge-settings-build-20261029.log",
+      "logBytes": 2938,
+      "logSha256": "d6e43b367e00c93bb5b32e372e856a0d17ad89a050d8daabc29fbd120e55de6f"
+    }
+  ],
+  "cli": {
+    "format": 1,
+    "version": "0.4.15",
+    "path": "/nh/releases/0.4.15/nh.mjs",
+    "bytes": 74141,
+    "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81"
+  },
+  "previousCliBytesUnchanged": true,
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "screenshots": [
+    {
+      "path": "docs/evidence/merge-settings/activity-desktop.png",
+      "sha256": "07356f715adda911ad35c8646181c19f84a9293f62fbd7ab7e624d06e9855415",
+      "bytes": 157106
+    },
+    {
+      "path": "docs/evidence/merge-settings/activity-mobile.png",
+      "sha256": "c5d326a83537064b03111eede6662d27eb902e8c9217478a99cf6fb87d3a4ac2",
+      "bytes": 116169
+    },
+    {
+      "path": "docs/evidence/merge-settings/activity-panel.png",
+      "sha256": "c8fc543b02719177132dbb38ca4adfce8fc8ee25d2305392b3123ae0ca28541d",
+      "bytes": 45269
+    },
+    {
+      "path": "docs/evidence/merge-settings/desktop-panel.png",
+      "sha256": "b6c1d15a46b4a2fe5e6ae7e8221bef42b3a490bfbc4c5687573af792c10ae781",
+      "bytes": 51746
+    },
+    {
+      "path": "docs/evidence/merge-settings/desktop.png",
+      "sha256": "262b8d5c13525d1c608941ed5fbf774cdc9e95add02c2e9a1ab88c3f89c9522c",
+      "bytes": 195845
+    },
+    {
+      "path": "docs/evidence/merge-settings/mobile-panel.png",
+      "sha256": "c21c14056e2108622ea23b331dc5c87775eb76ca4443fcd8a9d79edffd985c12",
+      "bytes": 40384
+    },
+    {
+      "path": "docs/evidence/merge-settings/mobile.png",
+      "sha256": "ea52be351119f1008cd238dc8a6059a4f316e686130a0400e5fdcf03929379c4",
+      "bytes": 146422
+    },
+    {
+      "path": "docs/evidence/merge-settings/pr-dark.png",
+      "sha256": "988e23906bc61030bc8fb0761ac6a68b98c31aac7da9915fe2e334a5758977d6",
+      "bytes": 108162
+    },
+    {
+      "path": "docs/evidence/merge-settings/pr-mobile.png",
+      "sha256": "66090035a54f3456d8df648618a9872d4a440b374ea7f1651a745f00762adc39",
+      "bytes": 72391
+    },
+    {
+      "path": "docs/evidence/merge-settings/pr-reader.png",
+      "sha256": "7d0daa5f6e9066bbdaa0830f8413e2edd3edc8705e360d383c70cb40ebec4b8a",
+      "bytes": 100106
+    },
+    {
+      "path": "docs/evidence/merge-settings/pr-unavailable.png",
+      "sha256": "43a8174957d471cac6bd70f02e2b4938f7440d22b47c2c0b11e8148395bd7019",
+      "bytes": 125249
+    },
+    {
+      "path": "docs/evidence/merge-settings/reader-settings.png",
+      "sha256": "eab94a754b5620edebc6b042bbee2801682aed1a1d31deb693966ae9a2703ae7",
+      "bytes": 113067
+    },
+    {
+      "path": "docs/evidence/merge-settings/stale-edit.png",
+      "sha256": "f49c3e81612ea75114eb807279982c7115b724781ed53083d8f7e6270d7c7241",
+      "bytes": 198719
+    }
+  ],
+  "designReview": {
+    "fullDisposition": "fix",
+    "materialFix": "Rename settings activity filter to Repository settings",
+    "followupDisposition": "ship",
+    "followupScope": "single listed fix resolved",
+    "detectorFindings": [],
+    "documentation": "merge-settings-design-review.md"
+  },
+  "cleanup": {
+    "ownedPreviewTabClosed": true,
+    "viewportReset": true,
+    "localApiAndNextPreviewServersTerminal": true,
+    "cloudResourcesCreated": false
+  },
+  "limits": {
+    "deployed": false,
+    "sourcePushed": false,
+    "frozenLinuxReleaseGatesRun": false,
+    "productionMergeSettingsMutated": false,
+    "productionTrafficReadinessEstablished": false
+  }
+}

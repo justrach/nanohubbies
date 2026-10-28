@@ -1,5 +1,6 @@
 import {ArchiveStore,assertRepositoryWritable,type ArchiveChange} from "./repository/archive";
 import {rulesetActor} from './repository/actor';
+import {MergeSettingsStore,type MergeSettingsInput} from './repository/merge-settings';
 import type {RulesetActor} from './repository/bypass';
 import {currentRulesetActor} from './repository/bypass';
 import {DeploymentRequests} from "./deployments/requests";
@@ -117,6 +118,15 @@ export class Sequencer extends DurableObject<Env> {
   repositoryImportLimit(){return INITIAL_IMPORT_MAX_REFS;}
   repositoryConfiguration(){const repo=new Repository(this.sql);return {mode:repo.mode()?"git" as const:"snapshot" as const,...repo.configuration(),branches:repo.refs().filter(ref=>ref.name.startsWith("refs/heads/")).map(ref=>({...ref,name:ref.name.slice(11)}))};}
   defaultBranchConfiguration(){return {...this.repositoryConfiguration(),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
+  mergeSettingsConfiguration(){const repo=new Repository(this.sql),configuration=new MergeSettingsStore(this.sql).get();return {mode:repo.mode()?"git" as const:"snapshot" as const,...configuration,...(!repo.mode()?{allowedMethods:["fast-forward" as const],defaultMethod:"fast-forward" as const}:{}),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
+  async configureMergeSettings(input:MergeSettingsInput&{revision:number;origin:string;credentialId?:string},actor:string) {
+    const trunk=this.meta<string>("trunk");if(!trunk)throw Error("Repository identity unavailable");
+    const authority=await rulesetActor(this.env,trunk,actor,input.origin);
+    return this.ctx.storage.transactionSync(()=>{
+      if(!currentRulesetActor(authority,actor)||!['owner','admin'].includes(authority?.role??''))throw Error('Current repository admin access required to change merge settings');
+      return new MergeSettingsStore(this.sql).set(input,input.revision,actor,input.credentialId?{kind:'cli',credentialId:input.credentialId}:undefined);
+    });
+  }
   async configureRepositoryDefault(input:{branch:string;commit:string;revision:number;credentialId:string;origin:string},actor:string){
     const trunk=this.meta<string>("trunk");if(!trunk)throw Error("Repository identity unavailable");
     const authority=await rulesetActor(this.env,trunk,actor,input.origin);
@@ -440,6 +450,13 @@ export class Sequencer extends DurableObject<Env> {
 
   async mergePullWithMethod(command:Extract<ReviewCommand,{op:"merge"}>) {
     if(command.op!=="merge"||!command.candidate?.method||command.candidate.method==="fast-forward"||!command.proof?.merge)throw Error("Generated merge requires its method and object-derived evidence");
+    return this.review(command);
+  }
+
+  /** New routes require a receiver that enforces repository merge settings. */
+  async mergePullWithSettings(command:Extract<ReviewCommand,{op:"merge"}>) {
+    if(command.op!=="merge"||!Number.isSafeInteger(command.mergeSettingsRevision)||(command.mergeSettingsRevision??-1)<0)
+      throw Error('Current merge settings revision is required');
     return this.review(command);
   }
 

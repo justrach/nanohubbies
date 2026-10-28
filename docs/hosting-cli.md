@@ -281,7 +281,9 @@ nh pr merge 12 -R owner/repository --rebase
 nh pr merge 12 -R owner/repository --method fast-forward
 ```
 
-Omitting the method preserves the existing fast-forward behavior. Choose one
+In published CLI 0.4.14, omitting the method uses fast-forward. The local 0.4.15
+candidate instead observes the repository default when the server advertises
+merge settings, retaining fast-forward on older servers. Choose one
 flag or one `--method` value. `--message` is available only with merge/squash,
 must be nonempty without NUL and is limited to 64 KiB UTF-8. The browser editor
 has a 16,000-character input limit. Rebase preserves the original messages.
@@ -305,6 +307,28 @@ See [behavioral validation](evidence/merge-methods-validation.md) and
 [release evidence](evidence/merge-methods-release-validation.md). Generated Git
 merges and private-review mutations are covered by local and frozen Linux
 Worker tests; this release's production checks preserve existing canary state.
+
+### Repository merge configuration (local CLI 0.4.15)
+
+`nh repo merge-settings -R owner/repo --json` reads allowed methods, the default
+and its revision. A current admin with the separate explicit `repository:merge`
+permission can replace the configuration:
+
+```sh
+nh auth login -R owner/repo --scopes repository:merge
+nh repo merge-settings -R owner/repo --json
+nh repo edit -R owner/repo --allow-merge-methods fast-forward,squash \
+  --default-merge-method squash --revision 0
+```
+
+Use the observed revision; `0` is an example. Both settings flags are required,
+and the default must be enabled. Default login grants exclude this permission.
+Archived repositories, changed roles, stale revisions and older receivers are
+refused. A lost response is not retried: inspect `repo merge-settings` before
+another edit. Ordinary merge requests bind the observed settings revision and
+generated methods also bind the current target SHA. Branch protections remain
+independent. See [the full contract](merge-settings.md) and [local validation](evidence/merge-settings-validation.md).
+This version is built locally; the published version remains 0.4.14.
 
 ## Branch protections from the CLI
 

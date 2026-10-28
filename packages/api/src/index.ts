@@ -285,7 +285,7 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext,
   if(action==="deployment-requests")return deploymentRequestRoute(env,request,trunk,rawAgent,agentAction,user,teamAccess);
   if (action === "collaborators") return collaboratorRoute(env,request,trunk,rawAgent,user,teamAccess);
   if (action === "secrets") return secretRoute(env,request,trunk,user,teamAccess);
-  if (["repository", "protection", "rulesets", "environments", "ci","default-branch"].includes(action)) return repositoryRoute(env, request, trunk, action, rawAgent, user, teamAccess, agentAction);
+  if (["repository", "protection", "rulesets", "environments", "ci","default-branch","merge-settings"].includes(action)) return repositoryRoute(env, request, trunk, action, rawAgent, user, teamAccess, agentAction);
   if (action === "releases") return releaseRoute(env, request, trunk, rawAgent, agentAction, user, teamAccess);
   if (action === "team") return teamRoute(env, request, trunk, user, teamAccess);
   if (teamAccess && action?.startsWith("benchmark")) return json({ error: "Benchmarks cannot impersonate agents in a team workspace" }, 403);

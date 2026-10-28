@@ -59,6 +59,15 @@ Worker integration proves queued candidates and attempts remain unchanged.
 This correction passes 340 API unit cases, 264 repository cases and the full
 Worker/Git acceptance chain, plus hosting integration and pinned tsrs.
 
+The next local candidate adds [repository merge settings](merge-settings.md)
+to the UI, final writer and CLI 0.4.15. Its [local acceptance](evidence/merge-settings-validation.md)
+passes 348 API unit cases, 272 repository cases with the full Worker/Git chain,
+59 CLI cases, pinned tsrs and the Next/OpenNext production build. Latest reader
+permission hints are additionally verified by source and packaged Worker tests.
+These changes are not deployed or pushed. They do not close the operational
+release requirements above; CLI 0.4.14 and the recorded main Worker remain the
+deployed release.
+
 The earlier main Worker was `993b659a-8d24-442b-92b4-f5270a94029a`. The request hold's first
 corrected rollout was `1450c429-a969-483e-8383-c05d9ed8467c`. A first rollout exposed a static-asset delivery
 regression and was rolled back. The corrected Worker explicitly delegates

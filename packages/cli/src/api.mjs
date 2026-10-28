@@ -1,6 +1,7 @@
 import {rulesetCommand} from './rulesets.mjs';
 import {archiveCommand} from './archive.mjs';
 import {defaultBranchCommand} from './default-branch.mjs';
+import {mergeSettingsCommand} from './merge-settings.mjs';
 import {environmentCommand} from './environments.mjs';
 import {runnerCommand} from './runners.mjs';
 import {pendingCommand,inlineSelection} from './pending.mjs';
@@ -10,7 +11,7 @@ export async function apiRequest(origin,path,token,{method='GET',body,revision,r
  if(!/^nhc_[a-f0-9]{64}$/.test(token??''))throw Error('CLI API access needs an nhc_ credential. Run auth login --with-api-token.');
  const target=new URL(path,origin);if(target.origin!==origin||!target.pathname.startsWith('/api/cli/'))throw Error('CLI API request must stay on the selected host');
  if(revision!==undefined&&(!Number.isSafeInteger(revision)||revision<0))throw Error('Use a current valid resource revision');
- let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':/\/pending-review(?:\/submit)?$/.test(path)?'The API response was lost. Inspect pr draft and the pull request before repeating this operation.':/\/environments(?:\/[a-zA-Z0-9-]+)?$/.test(path)?'The API response was lost. Inspect env list or env export before repeating the edit.':/\/ci\/(?:runners|[a-f0-9-]{36})$/.test(path)?'The API response was lost. Inspect runner list or use runner recover with the saved private file.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
+ let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':/\/pending-review(?:\/submit)?$/.test(path)?'The API response was lost. Inspect pr draft and the pull request before repeating this operation.':/\/environments(?:\/[a-zA-Z0-9-]+)?$/.test(path)?'The API response was lost. Inspect env list or env export before repeating the edit.':/\/ci\/(?:runners|[a-f0-9-]{36})$/.test(path)?'The API response was lost. Inspect runner list or use runner recover with the saved private file.':path.endsWith('/merge-settings')?'The API response was lost. Inspect repo merge-settings before repeating the edit.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
  const text=await response.text();if(text.length>4*1024*1024)throw Error('CLI API response exceeded the display limit');
  let data;try{data=JSON.parse(text);}catch{throw Error(`CLI API returned a non-JSON response (HTTP ${response.status})`);}
  if(!response.ok)throw new CliApiError(redact(data.error??`CLI API returned HTTP ${response.status}`),response.status);return data;
@@ -49,7 +50,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
   output({authenticated:true,...identity},`${identity.user.name}: ${identity.credential.scopes.join(', ')}; expires ${new Date(identity.credential.expiresAt).toISOString()}`);return;
  }
  const token=await stored(),base=apiPath(target),get=path=>request(base+path,token),post=(path,body,method='POST')=>request(base+path,token,{method,body});
- if(group==='repo')return ['default-branch','edit'].includes(action)?defaultBranchCommand({action,pos,opts,base,token,request,output}):archiveCommand({action,pos,opts,base,token,request,output});
+ if(group==='repo')return action==='merge-settings'||action==='edit'&&(opts['allow-merge-methods']!==undefined||opts['default-merge-method']!==undefined)?mergeSettingsCommand({action,pos,opts,base,token,request,output}):['default-branch','edit'].includes(action)?defaultBranchCommand({action,pos,opts,base,token,request,output}):archiveCommand({action,pos,opts,base,token,request,output});
  if(group==='ruleset')return rulesetCommand({action,pos,opts,base,token,request,output,readFile:readProtectionFile});
  if(group==='env')return environmentCommand({action,pos,opts,base,token,request,output,readFile:readProtectionFile});
  if(group==='runner')return runnerCommand({action,pos,opts,target,base,token,request,output,cwd});
@@ -120,10 +121,15 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
  }
  if(action==='merge'||action==='close') {
   let payload=observed;
-  if(action==='merge'&&opts.method&&opts.method!=='fast-forward') {
-   if(!data.mergeMethods?.includes(opts.method))throw Error('The selected merge method is unavailable under this repository policy or server version');
-   const base=data.branches?.find(branch=>branch.name===p.base);if(!base)throw Error('Cannot observe the current target branch; refresh before merging');
-   payload={...observed,method:opts.method,targetBase:base.commit,...(opts.message!==undefined?{message:opts.message}:{})};
+  if(action==='merge') {
+   const settings=data.mergeSettings,method=opts.method??settings?.defaultMethod??'fast-forward';
+   if(settings&&(!Number.isSafeInteger(settings.revision)||settings.revision<0||!Array.isArray(settings.allowedMethods)||!settings.allowedMethods.includes(method)))throw Error('Current merge settings are unavailable; inspect the pull request again');
+   if(data.mergeMethods&&!data.mergeMethods.includes(method)||method!=='fast-forward'&&!data.mergeMethods?.includes(method))throw Error('The selected merge method is unavailable under this repository policy or server version');
+   if(settings)payload={...payload,method,mergeSettingsRevision:settings.revision};
+   if(method!=='fast-forward'){
+    const base=data.branches?.find(branch=>branch.name===p.base);if(!base)throw Error('Cannot observe the current target branch; refresh before merging');
+    payload={...payload,method,targetBase:base.commit,...(opts.message!==undefined?{message:opts.message}:{})};
+   }
   }
   result=await post(`/pulls/${number}/${action}`,payload);const pull=result.pulls.find(row=>row.number===Number(number));
   output({pull},`${pull.state==='merged'?'Merged':'Closed'} #${number}.`);return;

@@ -5,6 +5,7 @@ import {Environments} from "../deployments/store";
 import {deploymentGate} from "../deployments/requirements";
 import type { RuleObserver } from "../repository/insight-types";
 import { Repository } from "../repository/store";
+import {MergeSettingsStore} from '../repository/merge-settings';
 import { Rulesets } from "../repository/rulesets";
 import { Policies } from "../repository/policy";
 import { CIStore } from "../ci/store";
@@ -30,7 +31,8 @@ export class ReviewStore {
     return {archive:new ArchiveStore(this.sql).state(),defaultBranch,ciBase:repo?repo.refs().find(ref=>ref.name===`refs/heads/${defaultBranch}`)?.commit??null:this.main().commit,
       branches: this.branches(),
       repositoryMode:this.git,
-      mergeMethods:this.git?["fast-forward","merge","squash","rebase"]:["fast-forward"],
+      mergeMethods:this.git?new MergeSettingsStore(this.sql).get().allowedMethods:["fast-forward"],
+      mergeSettings:this.git?new MergeSettingsStore(this.sql).get():undefined,
       environments:this.git?new Environments(this.sql).list():[],
       rulesets:this.git?new Rulesets(this.sql).plan().rulesets:[],
       policies: new Policies(this.sql).list(),
@@ -189,6 +191,7 @@ export class ReviewStore {
           if (this.git) {
             if (!c.candidate || c.candidate.tree !== c.head.tree || c.candidate.base !== c.base.commit) throw new Error("Merge requires the exact reviewed tree and current target branch; refresh and retry");
             const method=c.candidate.method??"fast-forward";
+            new MergeSettingsStore(this.sql).require(method,c.mergeSettingsRevision);
             if(method==="fast-forward") {
               if(c.candidate.commit!==c.head.commit||c.proof?.merge)throw Error("Fast-forward merge requires the reviewed head commit");
             } else {

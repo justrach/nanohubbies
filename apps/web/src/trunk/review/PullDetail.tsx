@@ -76,9 +76,9 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
       <Card className="space-y-4 p-5"><h2 className="text-sm font-semibold text-ink">{p.state === "merged" ? `Merged into ${p.base}` : p.state === "closed" ? "Closed without merging" : "Ready for review"}</h2>
         <p className="text-xs leading-5 text-muted">{p.state === "merged" ? `Merged as ${p.mergedCommit?.slice(0,10)}. Dependent PRs now target ${p.base}.` : p.state === "closed" ? "The final diff is retained below." : !view.repositoryMode&&p.base !== "main" ? `Merge the PR for ${p.base} first. This diff includes only this layer’s changes.` : `Merge updates ${p.base} through its current protection and conflict checks.`}</p>
         {p.state === "open" && <div className="flex flex-wrap gap-2">
-          <MergeAction key={p.number} readOnly={readOnly||!user} methods={view.mergeMethods??["fast-forward"]} disabled={readOnly || !user || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || !!policy?.locked || ownershipBlocked || view.deployments?.ready===false || !!view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} busy={action.busy} signedRequired={!!view.signatures?.required} onMerge={(method,message)=>void run("merge",method==="fast-forward"?{}:{method,targetBase:base?.commit,...(message!==undefined?{message}:{})})}/>
-          <Button disabled={readOnly || !user || action.busy || base?.commit === p.anchor} onClick={() => void run("restack")}>Restack onto {p.base}</Button>
-          <Button variant="ghost" disabled={readOnly || !user || action.busy} onClick={() => void run("close")}>Close</Button>
+          <MergeAction key={`${trunk}/${p.number}/${view.mergeSettings?.revision??"legacy"}`} defaultMethod={view.mergeSettings?.defaultMethod} readOnly={readOnly||!user||view.canMerge===false} permissionDenied={!readOnly&&!!user&&view.canMerge===false} methods={view.mergeMethods??["fast-forward"]} disabled={readOnly || !user || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || !!policy?.locked || ownershipBlocked || view.deployments?.ready===false || !!view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} busy={action.busy} signedRequired={!!view.signatures?.required} onMerge={(method,message)=>void run("merge",{method,...(view.mergeSettings?{mergeSettingsRevision:view.mergeSettings.revision}:{}),...(method!=="fast-forward"?{targetBase:base?.commit}:{}),...(message!==undefined?{message}:{})})}/>
+          <Button disabled={readOnly || !user || view.canManagePulls===false || action.busy || base?.commit === p.anchor} onClick={() => void run("restack")}>Restack onto {p.base}</Button>
+          <Button variant="ghost" disabled={readOnly || !user || view.canManagePulls===false || action.busy} onClick={() => void run("close")}>Close</Button>
         </div>}
         {p.state==="open"&&view.reviewGate?.error&&<p className="text-sm text-muted" role="status">{view.reviewGate.error}</p>}
         {p.state==="open"&&!!view.reviewGate?.sharedHeadBlockers?.length&&<RelatedPullReviews trunk={trunk} blockers={view.reviewGate.sharedHeadBlockers} />}
@@ -104,10 +104,11 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
         {!readOnly&&view.canDismissReviews&&p.state==="open"&&!r.dismissed&&r.verdict!=="COMMENT"&&<DismissReview trunk={trunk} pull={p.number} review={r.id} author={r.author.name}/>}
       </li>)}</ul>
       {view.pendingReview&&<p className="mt-4 text-sm text-muted">Your inline feedback is pending. <a href="#pending-review" className="underline">Finish your review</a> to publish it with a decision.</p>}
-      {!readOnly && user && p.state === "open" && !view.pendingReview && <form className="mt-4 space-y-3" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); void run("reviews", { verdict: form.get("verdict"), body: form.get("body") }); }}>
+      {!readOnly && user && view.canReview!==false && p.state === "open" && !view.pendingReview && <form className="mt-4 space-y-3" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); void run("reviews", { verdict: form.get("verdict"), body: form.get("body") }); }}>
         <label className="block space-y-1 text-xs text-muted">Review<textarea className={field} name="body" rows={3} maxLength={16000} placeholder="Leave feedback on this revision" /></label>
         <div className="flex flex-wrap gap-3"><select aria-label="Review decision" className={field + " max-w-56"} name="verdict"><option value="COMMENT">Comment</option><option value="APPROVE">Approve</option><option value="REQUEST_CHANGES">Request changes</option></select><Button disabled={action.busy} type="submit">Submit review</Button></div>
       </form>}
+      {!readOnly&&user&&view.canReview===false&&p.state==="open"&&<p className="mt-4 text-sm text-muted">Repository write access is required to submit a review.</p>}
     </Card></section>
   </main>;
 }

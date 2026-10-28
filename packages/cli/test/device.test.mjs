@@ -51,3 +51,7 @@ test('archive administration is excluded from default login and requested separa
  const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);expect(JSON.parse(f.requests[0].options.body).scopes).not.toContain('repository:archive');
  const g=fixture();await run(['auth','login','-R','team/project','--scopes','read,repository:archive','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','repository:archive']);
 });
+test('merge settings administration never joins default login scopes and can be requested explicitly',async()=>{
+ const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);expect(JSON.parse(f.requests[0].options.body).scopes).not.toContain('repository:merge');
+ const g=fixture();await run(['auth','login','-R','team/project','--scopes','repository:merge','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','repository:merge']);
+});

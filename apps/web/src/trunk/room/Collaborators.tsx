@@ -9,6 +9,7 @@ import {RepositoryArchive} from "./RepositoryArchive";
 import {useTrunk} from "../context";
 import { RepositoryIdentity } from "./RepositoryIdentity";
 import {RepositoryDefaultBranch} from "./RepositoryDefaultBranch";
+import {RepositoryMergeSettings} from './RepositoryMergeSettings';
 import { RepositorySecrets } from "./RepositorySecrets";
 type Role = "reader" | "writer" | "admin" | "owner";
 type Members = {
@@ -223,6 +224,7 @@ export function Collaborators({ trunk }: { trunk: string }) {
       </Card></fieldset>
       {data?.currentRole === "owner" && <RepositoryIdentity trunk={trunk} />}
       {data&&<RepositoryDefaultBranch trunk={trunk} canEdit={["owner","admin"].includes(data.currentRole??"")}/>}
+      {data&&<RepositoryMergeSettings trunk={trunk} canEdit={["owner","admin"].includes(data.currentRole??"")}/>}
       {data?.canManage && <RepositorySecrets trunk={trunk} />}
       <RepositoryArchive trunk={trunk}/>
     </div>

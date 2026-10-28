@@ -1,9 +1,9 @@
 import type {User} from "../auth";
 
-export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","environments:write","runners:write"] as const;
+export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write"] as const;
 export type CliScope=typeof cliScopes[number];
 export const cliScopeWrites=(scope:CliScope)=>scope!=="read"&&scope!=="contents:read";
-export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","environments:write"].includes(scope);
+export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write"].includes(scope);
 export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 /** Lifecycle control remains delegable while archived, so an admin can reopen.
  * This exception grants neither content writes nor other settings access. */

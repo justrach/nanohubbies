@@ -14,6 +14,7 @@ export { refName } from "./ref-name";
 import { dismissAfterHeadChange } from "../review/stale";
 import {defaultBranch,defaultRef} from "./default-branch";
 import {reviewedMergeHead} from "../review/merge-evidence";
+import {MergeSettingsStore} from './merge-settings';
 
 export interface GitRef { name: string; commit: string; tree: string; updatedAt: number }
 export class Repository {
@@ -79,6 +80,7 @@ export class Repository {
     if(this.authority&&(!currentRulesetActor(this.authority,actor)||!['owner','admin','writer'].includes(this.authority.role??'')))throw Error('Current repository write membership is required; refresh and retry');
     assertRepositoryWritable(this.sql);
     if (!this.mode()) throw new Error("This workspace uses text snapshot mode");
+    if(merge){const settings=new MergeSettingsStore(this.sql).get();if(!settings.allowedMethods.includes(proof?.merge?.method??'fast-forward'))throw Error('The selected merge method is disabled for this repository');}
     refName(name);
     const current = this.refs().find(r => r.name === name);
     if ((current?.commit ?? null) !== old) throw new Error("Ref changed; fetch and retry");

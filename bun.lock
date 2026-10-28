@@ -62,7 +62,7 @@
     },
     "packages/cli": {
       "name": "@nanohub/cli",
-      "version": "0.4.14",
+      "version": "0.4.15",
       "bin": {
         "nh": "bin/nh.mjs",
         "nanohub": "bin/nh.mjs",

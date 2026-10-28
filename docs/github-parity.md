@@ -91,8 +91,15 @@ Automatic rebase currently requires a linear feature history of at most 200
 commits and 16 MiB of commit metadata. It drops originally empty commits,
 preserves raw author/timezone/message/encoding bytes, changes the committer and
 never copies invalidated signatures. Nonlinear features need a local rebase or
-merge/squash. Repository method allowlists/defaults, automatic coauthor trailers
-and server signing remain parity gaps.
+merge/squash. Automatic coauthor trailers and server signing remain parity gaps.
+
+The local candidate adds repository method allowlists/defaults in Settings and
+CLI 0.4.15, with a separate current-admin grant, storage revisions and a final
+merge-writer recheck. It preserves all four methods and fast-forward until an
+explicit edit; new clients honor the selected repository default. This feature
+is locally verified and built, but is not deployed. See the [settings contract](merge-settings.md)
+and [local evidence](evidence/merge-settings-validation.md). GitHub message
+templates and branch-specific merge-method rules remain open.
 
 The final writer distinguishes reviewed head H from generated result M. Current
 review/CODEOWNERS/conversation/shared-head and trusted CI gates still bind to H.

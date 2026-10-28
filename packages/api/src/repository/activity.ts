@@ -19,7 +19,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
   }
   const filters = {
     all: "1",
-    settings:"json_type(data, '$.defaultBranch') IS NOT NULL",
+    settings:"(json_type(data, '$.defaultBranch') IS NOT NULL OR json_type(data, '$.mergeSettings') IS NOT NULL)",
     archive:"json_type(data, '$.archive') IS NOT NULL",
     rulesets: "(json_type(data, '$.ruleset') IS NOT NULL OR json_type(data, '$.removedRuleset') IS NOT NULL)",
     protections: "(json_type(data, '$.policy') IS NOT NULL OR json_type(data, '$.removedPolicy') IS NOT NULL)",
@@ -38,6 +38,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
     const event: RepositoryEvent = { id: row.id, at: data.at, actor: data.actor };
     if(data.via?.kind==="cli"&&typeof data.via.credentialId==="string")event.via={kind:"cli",credentialId:data.via.credentialId};
     if(data.defaultBranch)event.defaultBranch=data.defaultBranch;
+    if(data.mergeSettings)event.mergeSettings=data.mergeSettings;
     if(data.runnerRegistration&&typeof data.runnerRegistration.id==='string'&&typeof data.runnerRegistration.name==='string'&&typeof data.runnerRegistration.revoked==='boolean')event.runnerRegistration={id:data.runnerRegistration.id,name:data.runnerRegistration.name,revoked:data.runnerRegistration.revoked};
     for (const key of ["ref", "old", "next", "merge", "force", "human", "bypassedRulesets", "bypassRole", "ruleset", "previousRuleset", "removedRuleset", "restoredFrom", "policy", "previousPolicy", "removedPolicy", "stagingApproval", "retry", "head", "base", "dismissal", "environment", "previousEnvironment", "removedEnvironment", "deploymentRequest", "deploymentReview", "deploymentAuthorization", "archive"] as const)
       if (key in data) Object.assign(event, { [key]: data[key] });

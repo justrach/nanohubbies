@@ -75,9 +75,11 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="GET"&&resource==="protection")scope="read";
   if(method==="GET"&&resource==="archive")scope="read";
   if(method==="GET"&&resource==="default-branch")scope="read";
+  if(method==='GET'&&resource==='merge-settings')scope='read';
   if(['GET','POST'].includes(method)&&resource==='ci/runners'||method==='DELETE'&&/^ci\/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resource))scope='runners:write';
   if(method==="GET"&&/^environments(?:\/[a-zA-Z0-9-]{8,80}(?:\/configuration)?)?$/.test(resource)||method==="POST"&&resource==="environments"||["PUT","DELETE"].includes(method)&&/^environments\/[a-zA-Z0-9-]{8,80}$/.test(resource))scope="environments:write";
   if(method==="PUT"&&resource==="default-branch")scope="repository:default";
+  if(method==='PUT'&&resource==='merge-settings')scope='repository:merge';
   if(method==="POST"&&resource==="archive")scope="repository:archive";
   if(["PUT","DELETE"].includes(method)&&resource==="protection")scope="protections:write";
   if(method==="GET"&&/^pulls\/[1-9]\d{0,8}(\/comments)?$/.test(resource))scope="read";

@@ -40,7 +40,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
     // Apply the same view to GET snapshots and mutation responses. A writer
     // must not learn bypass identities by creating a branch or review.
     if(value && typeof value === "object" && "rulesets" in value && Array.isArray(value.rulesets))
-      return Response.json({...value,archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},init);
+      return Response.json({...value,canMerge:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:merge")),canReview:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("reviews:write")),canManagePulls:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:write")),archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},init);
     return Response.json(value,init);
   };
   const objects = new TrunkObjects(env, trunk, 16000);
@@ -151,7 +151,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
       }
       if (method === "POST" && operation === "close") return json(await seq.review({ op: "close", number: p.number }));
       if (method === "POST" && ["reviews", "restack", "merge"].includes(operation ?? "")) {
-        const body = await creationBody<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"];method?:MergeMethod;targetBase?:string;message?:string }>(request,operation==="merge"?512*1024:64*1024);
+        const body = await creationBody<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"];method?:MergeMethod;targetBase?:string;message?:string;mergeSettingsRevision?:number }>(request,operation==="merge"?512*1024:64*1024);
         if (operation === "merge" && p.state === "merged") return json(s);
         if (body.commit !== head.commit || body.anchor !== p.anchor) return json({ error: "PR changed; refresh and review its latest diff" }, { status: 409 });
         if (operation === "reviews") return json(await seq.review({ op: "review", number: p.number, author: actor!, body: body.body ?? "", verdict: body.verdict ?? "COMMENT", commit: head.commit, anchor: p.anchor, independent:independent||!!user?.cli,origin:url.origin,...(user?.cli?{via:{kind:"cli" as const,credentialId:user.cli.credentialId}}:{}) }));
@@ -159,9 +159,12 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         if(operation==="merge"&&!s.repositoryMode&&body.method&&body.method!=="fast-forward")return json({error:"Generated merge methods require Git repository mode"},{status:400});
         const base = branch(p.base);
         if (operation === "merge" && await seq.repositoryMode()) {
-          const method=body.method??"fast-forward";
+          const mergeSettings=s.mergeSettings;
+          if(!mergeSettings)return json({error:'Repository merge settings are updating; refresh and retry shortly'},{status:503});
+          if(body.mergeSettingsRevision!==undefined&&body.mergeSettingsRevision!==mergeSettings.revision)return json({error:'Merge settings changed; refresh the pull request before merging'},{status:409});
+          const method=body.method??mergeSettings.defaultMethod;
           if(!["fast-forward","merge","squash","rebase"].includes(method))return json({error:"Choose fast-forward, merge, squash or rebase"},{status:400});
-          if(method!=="fast-forward"&&(!s.mergeMethods?.includes(method)))return json({error:"Merge methods are updating; refresh and retry shortly"},{status:503});
+          if(!mergeSettings.allowedMethods.includes(method))return json({error:'The selected merge method is disabled for this repository'},{status:409});
           if(method!=="fast-forward"&&body.targetBase!==base.commit)return json({error:"Target branch changed; refresh before choosing a merge method"},{status:409});
           if(body.message!==undefined&&(typeof body.message!=="string"||method==="rebase"||method==="fast-forward"))return json({error:"Custom merge messages apply only to merge commits and squash merges"},{status:400});
           const reader = new ObjectReader(env.OBJECTS, trunk, async () => (await env.PACKER.get(env.PACKER.idFromName(trunk)).list()).packs);
@@ -170,16 +173,16 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
           const ownership=s.effectivePolicies?.[p.base]?.requireCodeOwnerReview?await codeOwnerEvidence(objects,base,head):undefined;
           const prepared=method==="fast-forward"?null:await buildMerge(sha=>reader.get(sha),{method,base:base.commit,head:head.commit,tree:head.tree,owner:owner!,author:p.author,message:body.message??(method==="squash"?`${p.title} (#${p.number})${p.body?`\n\n${p.body}`:""}`:`Merge pull request #${p.number} from ${p.head}\n\n${p.title}`)});
           const overlay=new Map(prepared?.objects.map(object=>[object.sha,{type:"commit" as const,body:object.raw.slice(object.raw.indexOf(0)+1)}])??[]),get=async(sha:string)=>overlay.get(sha)??await reader.get(sha);
-          const candidate=prepared?.candidate??{commit:head.commit,tree:head.tree,base:base.commit};
+          const candidate=prepared?.candidate??{commit:head.commit,tree:head.tree,base:base.commit,method:'fast-forward' as const};
           const proof=await repositoryProof(get,base.commit,candidate.commit,await seq.graphPlan(),`refs/heads/${p.base}`,verifySignature);
           if(prepared){proof.merge=prepared.evidence;await publishObjects(env,trunk,prepared.objects);}
           const command={ op: "merge" as const, number: p.number, head, base:{...base,version:main.version}, anchor: p.anchor,
-            codeOwners:ownership,origin:url.origin,
+            codeOwners:ownership,origin:url.origin,mergeSettingsRevision:mergeSettings.revision,
             candidate, human:independent, proof,
             request: { id: `pr-${p.number}-${head.commit}-${base.commit}`, agent: "review", owner, kind: "agent" as const, life: 0, intent: p.title, base: main.version, reads: { strong: [], weak: [] }, edits: [], issue: null, closes: false } };
-          try { return json(await (prepared?seq.mergePullWithMethod(command):seq.mergeReviewedPull(command))); }
+          try { return json(await seq.mergePullWithSettings(command)); }
           catch(error) {
-            if(error instanceof Error&&(/merge(?:ReviewedPull|PullWithMethod).*not a function/.test(error.message)||error.message.includes('does not implement the method "mergeReviewedPull"')||error.message.includes('does not implement the method "mergePullWithMethod"')))
+            if(error instanceof Error&&(/merge(?:ReviewedPull|PullWithMethod|PullWithSettings).*not a function/.test(error.message)||['mergeReviewedPull','mergePullWithMethod','mergePullWithSettings'].some(name=>error.message.includes(`does not implement the method "${name}"`))))
               return json({error:"Protected merge review checks are updating; refresh and retry shortly"},{status:503,headers:{"Retry-After":"5"}});
             throw error;
           }

@@ -1,0 +1,22 @@
+/* Scoped specificity keeps workspace-wide compact controls from shrinking the
+   merge form's touch targets and native-select text on narrow screens. */
+.controls :global(button.nh-button) {
+  height: auto;
+  min-height: 44px;
+  padding-block: 8px;
+  white-space: normal;
+  font-size: 14px;
+}
+.controls .input {
+  min-height: 44px;
+  font-size: 16px;
+}
+.controls summary {
+  min-height: 44px;
+  padding-block: 10px;
+}
+@media (min-width: 640px) {
+  .controls :global(button.nh-button) { min-height: 32px; padding-block: 6px; font-size: 13px; }
+  .controls .input { min-height: 36px; font-size: 14px; }
+  .controls summary { min-height: 32px; padding-block: 4px; }
+}

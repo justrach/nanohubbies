@@ -11,6 +11,7 @@ import { RulesetRestore } from "./RulesetRestore";
 function title(event: RepositoryEvent) {
   if(event.runnerRegistration)return `${event.runnerRegistration.revoked?'Revoked':'Registered'} runner “${event.runnerRegistration.name}”`;
   if(event.defaultBranch)return `Default branch changed from ${event.defaultBranch.previous} to ${event.defaultBranch.next}`;
+  if(event.mergeSettings)return `Merge methods changed to ${event.mergeSettings.next.allowedMethods.join(', ')}; default ${event.mergeSettings.next.defaultMethod}`;
   if(event.archive)return `${event.archive.archived?"Archived":"Unarchived"} repository · revision ${event.archive.revision}`;
   if(event.deploymentReview)return `${event.deploymentReview.decision==="approve"?"Approved":"Rejected"} deployment to “${event.deploymentReview.environment}”`;
   if(event.deploymentAuthorization)return `Authorized deployment to “${event.deploymentAuthorization.environment}”`;
@@ -68,7 +69,7 @@ export function ProtectionActivity({ trunk, onRestored }: { trunk: string; onRes
         <label className="space-y-1 text-xs text-muted">Activity<select className={field} name="kind" defaultValue="all">
           <option value="all">All activity</option><option value="rulesets">Ruleset changes</option><option value="protections">Branch protections</option>
           <option value="refs">Accepted ref updates</option><option value="bypasses">Ruleset bypasses</option><option value="ci">Actions approvals and retries</option>
-          <option value="reviews">Review dismissals</option><option value="environments">Deployment environments</option><option value="archive">Repository archive</option><option value="settings">Default branch changes</option>
+          <option value="reviews">Review dismissals</option><option value="environments">Deployment environments</option><option value="archive">Repository archive</option><option value="settings">Repository settings</option>
         </select></label>
         <label className="min-w-44 flex-1 space-y-1 text-xs text-muted">Exact ref<input className={field} name="ref" maxLength={150} placeholder="refs/heads/main" /></label>
         <label className="w-28 space-y-1 text-xs text-muted">Ruleset ID<input className={field} name="ruleset" type="number" min={1} step={1} placeholder="Any" /></label>

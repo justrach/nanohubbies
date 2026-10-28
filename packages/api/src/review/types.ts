@@ -1,5 +1,6 @@
 import type { ChangeRequest, Head, Owner } from "../types";
 export type {MergeMethod} from "./merge-types";
+export type {MergeSettings,MergeSettingsInput} from '../repository/merge-settings-types';
 
 export interface Branch { name: string; commit: string; tree: string; updatedAt: number }
 export interface Pull {
@@ -26,7 +27,7 @@ export interface Review {
 /** Public merge status only; never includes private draft authors or content. */
 export interface SharedHeadReviewBlocker { number:number;changesRequested:boolean;pendingReview:boolean }
 export interface ReviewGate { ready: boolean; error: string | null; approvals: number; required: number; reviewerAccess?:Record<string,import("./reviewer-types").ReviewerStatus>;sharedHeadBlockers?:SharedHeadReviewBlocker[] }
-export interface ReviewSnapshot { mergeMethods?:import("./merge-types").MergeMethod[]; defaultBranch?:string; ciBase?:string|null; archive?:import("../repository/archive-types").ArchiveState; canConfigure?: boolean; canProtect?: boolean; repositoryMode?:boolean; environments?:import("../deployments/types").DeploymentEnvironment[]; rulesets?:import("../repository/ruleset-types").Ruleset[]; branches: Branch[]; pulls: Pull[]; reviews: Review[]; policies?: import("../repository/types").BranchPolicy[]; effectivePolicies?: Record<string,import("../repository/types").BranchPolicy>; runs?: import("../ci/types").Run[]; ciSources?: import("../ci/types").RunnerSource[] }
+export interface ReviewSnapshot { canMerge?:boolean; canReview?:boolean; canManagePulls?:boolean; mergeSettings?:import("../repository/merge-settings-types").MergeSettings; mergeMethods?:import("./merge-types").MergeMethod[]; defaultBranch?:string; ciBase?:string|null; archive?:import("../repository/archive-types").ArchiveState; canConfigure?: boolean; canProtect?: boolean; repositoryMode?:boolean; environments?:import("../deployments/types").DeploymentEnvironment[]; rulesets?:import("../repository/ruleset-types").Ruleset[]; branches: Branch[]; pulls: Pull[]; reviews: Review[]; policies?: import("../repository/types").BranchPolicy[]; effectivePolicies?: Record<string,import("../repository/types").BranchPolicy>; runs?: import("../ci/types").Run[]; ciSources?: import("../ci/types").RunnerSource[] }
 export type ReviewCommand =
   | { op: "snapshot" }
   | { op: "branch"; name: string; old: string | null; next: { commit: string; tree: string } | null; source?: Branch; fastForward?: boolean; actor?: string; human?:boolean; origin?:string; proof?:import("../repository/types").RefProof;
@@ -37,7 +38,7 @@ export type ReviewCommand =
   | { op: "dismiss"; number: number; reviewId: number; actor: Owner; reason: string; human: boolean; origin: string }
   | { op: "compare"; number: number; head: Branch; base: Branch; previousAnchor: string; anchor: string; anchorTree: string }
   | { op: "restack"; number: number; head: Branch; base: Branch; anchor: string; next: { commit: string; tree: string }; actor?:string; human?:boolean; origin?:string; proof?:import("../repository/types").RefProof }
-  | { op: "merge"; number: number; head: Branch; base: Head; anchor: string; request: ChangeRequest; human?:boolean; candidate?: { commit: string; tree: string; base: string;method?:import("./merge-types").MergeMethod }; proof?:import("../repository/types").RefProof;
+  | { op: "merge"; number: number; head: Branch; base: Head; anchor: string; request: ChangeRequest; human?:boolean; mergeSettingsRevision?:number; candidate?: { commit: string; tree: string; base: string;method?:import("./merge-types").MergeMethod }; proof?:import("../repository/types").RefProof;
       codeOwners?:import("../repository/codeowner-types").CodeOwnerEvidence;codeOwnerAccounts?:Record<string,string|null>;origin?:string };
 
 export { branchName, tagName, MAX_REF_BYTES, patternLines } from "../repository/ref-name";

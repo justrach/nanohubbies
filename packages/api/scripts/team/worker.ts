@@ -1,6 +1,7 @@
 /** Test-only entrypoint. It is never referenced by either Wrangler config. */
 import api,{Sequencer as ProductionSequencer,Room as ProductionRoom} from "../../src/index";
 import type {ArchiveChange} from "../../src/repository/archive-types";
+import {MergeSettingsStore,type MergeSettingsInput} from '../../src/repository/merge-settings';
 import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
 let dropNextRunnerAcknowledgement=false;
@@ -24,6 +25,20 @@ export class Sequencer extends ProductionSequencer {
     if(sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_merge_receiver'").toArray().length&&sql.exec<{missing:number}>("SELECT missing FROM fixture_merge_receiver WHERE id=1").toArray()[0]?.missing)
       throw Error('The RPC receiver does not implement the method "mergePullWithMethod".');
     return super.mergePullWithMethod(command);
+  }
+  async mergePullWithSettings(command:Parameters<ProductionSequencer['mergePullWithSettings']>[0]) {
+    const sql=this.ctx.storage.sql;
+    if(sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_merge_receiver'").toArray().length&&sql.exec<{missing:number}>("SELECT missing FROM fixture_merge_receiver WHERE id=1").toArray()[0]?.missing)
+      throw Error('The RPC receiver does not implement the method "mergePullWithSettings".');
+    if(sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_merge_settings_race'").toArray().length){
+      const pending=sql.exec<{data:string}>('SELECT data FROM fixture_merge_settings_race WHERE id=1').toArray()[0];
+      if(pending)this.ctx.storage.transactionSync(()=>{sql.exec('DELETE FROM fixture_merge_settings_race');const store=new MergeSettingsStore(sql);store.set(JSON.parse(pending.data),store.get().revision,'race-fixture');});
+    }
+    return super.mergePullWithSettings(command);
+  }
+  mergeSettingsBeforeMerge(input:MergeSettingsInput) {
+    this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS fixture_merge_settings_race (id INTEGER PRIMARY KEY, data TEXT NOT NULL)');
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO fixture_merge_settings_race VALUES (1,?)',JSON.stringify(input));
   }
   legacyDefault(change:{branch:string;manualCounter?:boolean;rollback?:boolean}) {
     return this.ctx.storage.transactionSync(()=>{
@@ -105,6 +120,16 @@ export default {
         const state=await seq.review({op:'snapshot'}),pull=state.pulls.find(pull=>pull.number===body.number)!,head=state.branches.find(branch=>branch.name===pull.head)!,base=state.branches.find(branch=>branch.name===pull.base)!,main=await seq.head();
         return Response.json(await seq.review({op:'merge',number:pull.number,head,base:{...base,version:main.version},anchor:pull.anchor,human:true,origin:url.origin,candidate:{commit:head.commit,tree:head.tree,base:base.commit},request:{id:'fixture-direct-merge-'+pull.number,agent:'review',owner:{id:body.actor,name:'Fixture actor'},kind:'agent',life:0,intent:pull.title,base:main.version,reads:{strong:[],weak:[]},edits:[],issue:null,closes:false}}));
       } catch(error) {return Response.json({error:(error as Error).message},{status:400});}
+    }
+    if(url.pathname==='/fixture/merge-settings-before-merge'){
+      const body=await request.json<{trunk:string;settings:MergeSettingsInput}>();
+      await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {mergeSettingsBeforeMerge:(input:MergeSettingsInput)=>Promise<void>}).mergeSettingsBeforeMerge(body.settings);
+      return Response.json({configured:true});
+    }
+    if(url.pathname==='/fixture/conditional-merge-settings'){
+      const body=await request.json<MergeSettingsInput&{trunk:string;revision:number;actor:string}>();
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureMergeSettings({...body,origin:url.origin,credentialId:'fixture-direct'},body.actor));}
+      catch(error){return Response.json({error:String(error)},{status:400});}
     }
     if(url.pathname==='/fixture/drop-runner-acknowledgement'){dropNextRunnerAcknowledgement=true;return Response.json({armed:true});}
     if(url.pathname==='/fixture/conditional-runner'){

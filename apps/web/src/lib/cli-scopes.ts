@@ -9,6 +9,7 @@ export const cliPermissions=[
   ["protections:write","Change or remove branch protection rules (repository admins only)"],
   ["repository:archive","Archive or unarchive this repository (repository admins only)"],
   ["repository:default","Change the default branch (repository admins only)"],
+  ['repository:merge','Change allowed merge methods and the default (repository admins only)'],
   ["environments:write","Manage deployment environments, reviewers and source restrictions (repository admins only)"],
   ["runners:write","Register runners and issue or revoke their CI credentials (repository owner only)"],
 ] as const;

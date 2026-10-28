@@ -13,6 +13,8 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   repo view [-R OWNER/REPO]                  Open repository in your browser
   repo default-branch [-R OWNER/REPO]        Read default branch, heads and settings revision
   repo edit --default-branch BRANCH         Select an existing branch (explicit admin permission)
+  repo merge-settings [-R OWNER/REPO]       Read allowed methods, default and settings revision
+  repo edit --allow-merge-methods METHODS   Set comma-separated methods with --default-merge-method and --revision
   repo archive-status [-R OWNER/REPO]        Read archive state and current revision
   repo archive --revision N --confirm NAME  Archive a repository (explicit admin permission)
   repo unarchive --revision N --confirm NAME Reopen it while preserving branch rules
@@ -30,7 +32,7 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   pr comment NUMBER --path FILE --line N   Inline feedback; --body TEXT [--side left|right]
   pr resolve NUMBER --thread ID            Resolve a conversation (--reopen to reopen)
   pr close NUMBER / pr merge NUMBER        Close or merge with all server protections
-  pr merge NUMBER --merge|--squash|--rebase Choose generated history (default: fast-forward)
+  pr merge NUMBER --merge|--squash|--rebase Choose generated history (otherwise use repository default)
   pr merge NUMBER --method METHOD          Explicit fast-forward, merge, squash or rebase
   pr merge NUMBER --squash --message TEXT   Custom merge/squash commit message
   run list [-R OWNER/REPO]                   List Actions runs (--web for deployment reviews)
@@ -83,6 +85,8 @@ protections:write grant; ruleset edits/export require rulesets:write. Both requi
 your current repository admin role. Archive and unarchive require the separate
 repository:archive permission; it remains available to admins while archived.
 Default branch edits require repository:default and an active repository.
+Merge-method edits require repository:merge, your current admin role and the
+revision from repo merge-settings. Branch protections still apply to every merge.
 Environment administration requires environments:write and your current admin role.
 Runner administration requires runners:write and your current owner role.
 Issued runner credentials have an independent lifetime and last until revoked.
@@ -114,7 +118,7 @@ export function address(value,origin,trunk=false) {
  return {repository:trunk?null:value,trunk:trunk?value:null,origin,gitUrl:`${origin}/git/${value}.git`,url:trunk?`${origin}/t/${value}`:`${origin}/${value}`};
 }
 function options(args) {
- const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','edit','remove','method','message'].map(k=>['--'+k,k]))};
+ const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','edit','remove','method','message','allow-merge-methods','default-merge-method'].map(k=>['--'+k,k]))};
  for(let i=0;i<args.length;i++){
   if(args[i]==='--'){positionals.push(...args.slice(i+1));break;}
   const arg=args[i],equal=arg.indexOf('='),flag=equal>=0?arg.slice(0,equal):arg;if(names[flag]){if(values[names[flag]]!==undefined||equal<0&&(!args[i+1]||args[i+1].startsWith('-')))throw Error(`Provide one value for ${flag}`);values[names[flag]]=equal>=0?arg.slice(equal+1):args[++i];}
@@ -126,7 +130,7 @@ function options(args) {
 export async function run(args,{execute=processRun,write=console.log,progress=console.error,readProtectionFile=protectionFile,readToken=async()=>{if(process.stdin.isTTY)throw Error('Pipe one credential to the token login option');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>1024)throw Error('Expected one credential on stdin');}return value;},readCredential=async()=>{if(process.stdin.isTTY)throw Error('Git invokes this credential helper through a pipe');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>16384)throw Error('Git credential request is too large');}return value;},platform=process.platform,cwd=process.cwd(),fetcher=fetch,environment=process.env,wait,now}={}) {
  if(!args.length||args[0]==='--help'||args[0]==='help'){write(help);return;}
  if(args[0]==='--version'){write('nh '+cliPackage.version);return;}
- const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
+ const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo merge-settings','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
  const opts=options(rest),pos=[...opts.positionals];let origin=hostOrigin(opts.host??'https://nanohub.sh'),target;
  const mergeFlags=['merge','squash','rebase'].filter(flag=>opts[flag]);
@@ -145,12 +149,13 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  const pendingMode=group==='pr'&&(action==='draft'||action==='comment'&&opts.draft||action==='review'&&opts.pending);
  if(opts.draft&&!(group==='pr'&&action==='comment')||opts.pending&&!(group==='pr'&&action==='review')||[opts.edit,opts.remove,opts.discard].some(v=>v!==undefined)&&!(group==='pr'&&action==='draft'))throw Error('Draft options only apply to pr draft, pr comment --draft or pr review --pending');
  if(pendingMode&&[opts['reply-to'],opts.thread,opts.reopen].some(v=>v!==undefined))throw Error('Pending reviews accept root hunk comments; replies and resolution use published threads');
- if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action)||group==='runner'&&action==='revoke'))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration or pending review revisions');
+ if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)||group==='runner'&&action==='revoke'))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration or pending review revisions');
  if(opts['token-file']!==undefined&&!(group==='runner'&&['create','recover'].includes(action)))throw Error('--token-file only applies to runner create or recover');
  if(group==='runner'&&(opts.web||opts.print||opts.file!==undefined||opts.revision!==undefined))throw Error('Runner administration uses native runner commands and --token-file');
  if(group==='env'&&(opts.web||opts.print))throw Error('Environment commands use the native API; use rules view for browser settings');
- if(group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action)&&(opts.web||opts.print))throw Error('Repository administration uses the native API; use repo view to open the repository');
+ if(group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)&&(opts.web||opts.print))throw Error('Repository administration uses the native API; use repo view to open the repository');
  if(opts['default-branch']!==undefined&&!(group==='repo'&&action==='edit'))throw Error('--default-branch only applies to repo edit');
+ if([opts['allow-merge-methods'],opts['default-merge-method']].some(value=>value!==undefined)&&!(group==='repo'&&action==='edit'))throw Error('Merge settings options only apply to repo edit');
  if(group==='ruleset'&&(opts.web||opts.print))throw Error('Ruleset commands use the native API; use rules view for browser settings');
  if(group==='rules'&&action!=='view'&&(opts.web||opts.print))throw Error('Use rules view to open protection settings in the browser');
  if(opts.git&&group!=='auth'&&!(group==='repo'&&['clone','import'].includes(action)))throw Error('--git only applies to auth commands, repo clone or repo import');
@@ -182,7 +187,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
   output({...target,gitConfigured:true,message:`Git now uses the scoped CLI credential in this checkout.${environment.NANOHUB_API_TOKEN?' Keep NANOHUB_API_TOKEN available for Git operations.':''}`});return;
  }
  if(group==='auth'&&action==='login'&&!opts['with-token']&&!opts['with-api-token']&&!opts.web&&!opts.print&&!opts.git)return browserLogin({target,opts,pos,git,execute,write,progress,platform,cwd,fetcher,environment,wait,now});
- if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||['ruleset','env','runner'].includes(group)||group==='repo'&&['archive-status','archive','unarchive','default-branch','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment,cwd});
+ if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||['ruleset','env','runner'].includes(group)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment,cwd});
  if(group==='repo'&&action==='clone'){
   if(pos.length>1)throw Error('Use at most one destination directory');const directory=pos[0]??basename(target.repository??target.trunk);if(!directory||directory.startsWith('-'))throw Error('Use a destination directory that does not start with a dash');
   let selectedHelper=helper,cli=false;

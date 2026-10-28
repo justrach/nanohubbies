@@ -16,6 +16,7 @@ export interface RepositoryEvent {
   via?:{kind:"cli";credentialId:string};
   runnerRegistration?:{id:string;name:string;revoked:boolean};
   defaultBranch?:{previous:string;next:string;commit:string;revision:number};
+  mergeSettings?:{previous:import('./merge-settings-types').MergeSettings;next:import('./merge-settings-types').MergeSettings};
   ref?: string;
   old?: string | null;
   next?: string | null;
