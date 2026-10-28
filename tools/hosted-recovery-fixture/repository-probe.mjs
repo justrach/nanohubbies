@@ -12,6 +12,7 @@ import { classes } from "../hosted-git-fixture/config.mjs";
 import { gitProxy } from "../hosted-git-fixture/proxy.mjs";
 import { verifyRetainedBytes } from "./probe.mjs";
 import { syntheticValue } from "./vault-lifecycle.mjs";
+import { verifiedR2Reconcile } from "./retained.mjs";
 
 const exec = promisify(execFile),
   hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -50,6 +51,7 @@ export async function runRepositoryRecoveryProbe({
   };
   const cookies = {},
     proxies = new Map();
+  const retainedSnapshots = [];
   let mcp;
   const credentials = {};
   const savePrivate = () =>
@@ -237,6 +239,13 @@ export async function runRepositoryRecoveryProbe({
     return point;
   };
   const snapshot = async (label) => {
+    const repositoryRefs = (await api("GET", base + "/repository")).refs;
+    const gitRefText = await git(
+      source,
+      "for-each-ref",
+      "--format=%(refname) %(objectname)",
+    );
+    const gitObjectList = await git(source, "rev-list", "--objects", "--all");
     await closeProxies();
     await setPhase("frozen");
     await held();
@@ -309,7 +318,17 @@ export async function runRepositoryRecoveryProbe({
         );
       result.providerValuesAbsentFromApplicationBackup = true;
     }
-    const captured = { label, points, d1Bookmark, database, files, retained };
+    const captured = {
+      label,
+      points,
+      d1Bookmark,
+      database,
+      files,
+      retained,
+      repositoryRefs,
+      gitRefText,
+      gitObjectList,
+    };
     await writeFile(
       join(directory, label + ".json"),
       JSON.stringify(captured, null, 2),
@@ -323,6 +342,7 @@ export async function runRepositoryRecoveryProbe({
       r2Bytes: files.reduce((n, x) => n + x.bytes, 0),
     });
     await persist();
+    retainedSnapshots.push(captured);
     return captured;
   };
   const validate = async (snapshot) => {
@@ -343,6 +363,22 @@ export async function runRepositoryRecoveryProbe({
     await closeProxies();
     await setPhase("frozen");
     await held();
+    for (const point of retainedSnapshots) await validate(point);
+    const extras = await verifiedR2Reconcile(
+      await objects(false),
+      snapshot.files,
+      retainedSnapshots.flatMap((point) => point.files),
+      async (key) =>
+        Buffer.from(
+          await (await control({ op: "object-get", key })).arrayBuffer(),
+        ),
+    );
+    if (!lose)
+      for (const key of extras) {
+        await jsonControl({ op: "object-delete", key });
+        result.backedExtraR2ObjectsRemoved =
+          (result.backedExtraR2ObjectsRemoved ?? 0) + 1;
+      }
     if (lose) {
       result.lossStartedAt = new Date().toISOString();
       await persist();
@@ -408,6 +444,11 @@ export async function runRepositoryRecoveryProbe({
     }
     await held();
     await setPhase("verify");
+    assert.deepEqual(
+      (await api("GET", base + "/repository")).refs,
+      snapshot.repositoryRefs,
+      "Git refs match the selected checkpoint",
+    );
     assert.deepEqual(
       await jsonControl({ op: "database-state" }),
       snapshot.database,
@@ -532,7 +573,7 @@ export async function runRepositoryRecoveryProbe({
     await git(source, "checkout", "-b", branch);
     await writeFile(join(source, "README.md"), "Candidate\nReview this hunk\n");
     await git(source, "commit", "-am", "Recovery candidate");
-    const commit = await git(source, "rev-parse", "HEAD");
+    let commit = await git(source, "rev-parse", "HEAD");
     await transport(
       credentials.git,
       "push",
@@ -673,6 +714,26 @@ export async function runRepositoryRecoveryProbe({
     const old = await snapshot("before-revocations");
     await stage("revoke-current-authority");
     await setPhase("reconcile");
+    if (plan.vault) {
+      await writeFile(
+        join(source, "README.md"),
+        "Candidate\nReview this hunk\nNewer than the first checkpoint\n",
+      );
+      await git(
+        source,
+        "commit",
+        "-am",
+        "Accepted change after the older recovery point",
+      );
+      commit = await git(source, "rev-parse", "HEAD");
+      await transport(
+        credentials.git,
+        "push",
+        "$REMOTE",
+        "HEAD:refs/heads/" + branch,
+      );
+      result.acceptedGitCommitBetweenCheckpoints = true;
+    }
     const ledger = {
       repository: trunk,
       owner: "codegraff:recovery-owner",
@@ -858,6 +919,31 @@ export async function runRepositoryRecoveryProbe({
     await persist();
     await stage("older-checkpoint-authority-hazard");
     await restore(old);
+    if (plan.vault) {
+      assert.notEqual(old.gitRefText, current.gitRefText);
+      const olderClone = join(directory, "older-clone");
+      await transport(
+        credentials.git,
+        "clone",
+        "--mirror",
+        "$REMOTE",
+        olderClone,
+      );
+      await git(olderClone, "fsck", "--strict");
+      assert.equal(
+        await git(
+          olderClone,
+          "for-each-ref",
+          "--format=%(refname) %(objectname)",
+        ),
+        old.gitRefText,
+      );
+      assert.equal(
+        await git(olderClone, "rev-list", "--objects", "--all"),
+        old.gitObjectList,
+      );
+      result.olderGitGraphVerified = true;
+    }
     await api("GET", base + "/branches", undefined, "writer");
     await request("/git/" + trunk + ".git/HEAD", {
       principal: basic(credentials.git),
@@ -949,6 +1035,32 @@ export async function runRepositoryRecoveryProbe({
         metadata,
       );
       await freshProviderRead("B");
+      const returnedCredential = await api("POST", base + "/git-tokens", {
+          label: "Return-path clone verification",
+        }),
+        returnedClone = join(directory, "returned-clone");
+      await transport(
+        returnedCredential,
+        "clone",
+        "--mirror",
+        "$REMOTE",
+        returnedClone,
+      );
+      await git(returnedClone, "fsck", "--strict");
+      assert.equal(
+        await git(
+          returnedClone,
+          "for-each-ref",
+          "--format=%(refname) %(objectname)",
+        ),
+        current.gitRefText,
+      );
+      assert.equal(
+        await git(returnedClone, "rev-list", "--objects", "--all"),
+        current.gitObjectList,
+      );
+      await api("DELETE", "/api/tokens/" + returnedCredential.id);
+      result.newerReturnCloneVerified = true;
       const idle = await api("GET", base + "/secrets");
       assert.equal(idle.nextCleanupAt, null);
       assert.equal(idle.grants.length, 0);

@@ -15,6 +15,7 @@ import {
 } from "../hosted-git-fixture/config.mjs";
 import { verifyRetainedBytes } from "./probe.mjs";
 import { createHash } from "node:crypto";
+import { verifiedR2Reconcile } from "./retained.mjs";
 
 const key = "a".repeat(64),
   point = "12345678-12345678-12345678-" + "b".repeat(32);
@@ -649,4 +650,78 @@ test("suspending a cleanup alarm requires authority and returns its prior schedu
     previousAlarm: 123,
   });
   assert.equal(alarm, null);
+});
+
+test("R2 rollback identifies newer packs only after every live object has a retained return copy", async () => {
+  const original = Buffer.from("old pack"),
+    newer = Buffer.from("new pack");
+  const file = (key: string, bytes: Buffer) => ({
+    key,
+    bytes: bytes.length,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  });
+  const old = file("old.pack", original),
+    added = file("new.pack", newer),
+    data: any = { "old.pack": original, "new.pack": newer };
+  assert.deepEqual(
+    await verifiedR2Reconcile(
+      [
+        { key: old.key, size: old.bytes },
+        { key: added.key, size: added.bytes },
+      ],
+      [old],
+      [old, added],
+      async (key: string) => data[key],
+    ),
+    ["new.pack"],
+  );
+  assert.deepEqual(
+    await verifiedR2Reconcile(
+      [{ key: old.key, size: old.bytes }],
+      [old, added],
+      [old, added],
+      async (key: string) => data[key],
+    ),
+    [],
+  );
+});
+test("R2 rollback rejects an unretained extra before the caller can delete any previously verified pack", async () => {
+  const bytes = Buffer.from("known"),
+    known = {
+      key: "known.pack",
+      bytes: bytes.length,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+    };
+  let deleted = 0;
+  await assert.rejects(async () => {
+    const keys = await verifiedR2Reconcile(
+      [
+        { key: "known.pack", size: bytes.length },
+        { key: "unknown.pack", size: 1 },
+      ],
+      [],
+      [known],
+      async () => bytes,
+    );
+    deleted += keys.length;
+  }, /no retained return copy/);
+  assert.equal(deleted, 0);
+});
+test("R2 restore refuses to overwrite a desired key with live bytes not retained in any checkpoint", async () => {
+  const bytes = Buffer.from("known"),
+    known = {
+      key: "same.pack",
+      bytes: bytes.length,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+    };
+  await assert.rejects(
+    () =>
+      verifiedR2Reconcile(
+        [{ key: "same.pack", size: 5 }],
+        [known],
+        [known],
+        async () => Buffer.from("newer"),
+      ),
+    /no verified retained return copy/,
+  );
 });

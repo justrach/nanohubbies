@@ -266,3 +266,11 @@ the fixture Vault and then deletes only its synthetic provider entry before R2
 purge. A Vault observation/cleanup failure keeps the keys and prevents bucket
 deletion. Resume with the same script's `--cleanup` option. Production Vault,
 main Worker and existing provider entries remain separate from the fixture.
+
+The extended Git return check accepts a new feature-branch commit between the
+two checkpoints. Each point retains its own refs, graph and R2 inventory. Before
+restoring, every current R2 object's bytes must match a verified retained copy;
+unknown or changed unretained content stops recovery while closed. Only backed
+objects absent from the selected checkpoint may be removed. Independent clones
+verify the older graph and the later return to the newer graph, in addition to
+the authority and provider-value checks.
