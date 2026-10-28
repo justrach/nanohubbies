@@ -438,6 +438,11 @@ export class Sequencer extends DurableObject<Env> {
     return this.review(command);
   }
 
+  async mergePullWithMethod(command:Extract<ReviewCommand,{op:"merge"}>) {
+    if(command.op!=="merge"||!command.candidate?.method||command.candidate.method==="fast-forward"||!command.proof?.merge)throw Error("Generated merge requires its method and object-derived evidence");
+    return this.review(command);
+  }
+
   async reviewGate(number: number, head: string, anchor: string,origin:string) {
     const before=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),membership=await this.currentReviewers(before,number,origin);
     const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),p=s.pulls.find(p=>p.number===number);

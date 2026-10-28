@@ -11,6 +11,7 @@ import { CIStore } from "../ci/store";
 import { codeOwnerDecision } from "../repository/codeowners";
 import { dismissChangedApprovals, dismissAfterHeadChange } from "./stale";
 import {requireSharedHeadReviews} from "./shared-head";
+import {reviewedMergeHead} from "./merge-evidence";
 import type { ReviewerMembership } from "./reviewer-types";
 import type { ChangeRequest, Head, Submitted } from "../types";
 import { branchName, type Branch, type Pull, type Review, type ReviewCommand, type ReviewSnapshot } from "./types";
@@ -29,6 +30,7 @@ export class ReviewStore {
     return {archive:new ArchiveStore(this.sql).state(),defaultBranch,ciBase:repo?repo.refs().find(ref=>ref.name===`refs/heads/${defaultBranch}`)?.commit??null:this.main().commit,
       branches: this.branches(),
       repositoryMode:this.git,
+      mergeMethods:this.git?["fast-forward","merge","squash","rebase"]:["fast-forward"],
       environments:this.git?new Environments(this.sql).list():[],
       rulesets:this.git?new Rulesets(this.sql).plan().rulesets:[],
       policies: new Policies(this.sql).list(),
@@ -58,7 +60,7 @@ export class ReviewStore {
       return b;
     };
     const matches = (b: Branch) => {
-      if (branch(b.name).commit !== b.commit) throw new Error(`${b.name} changed; refresh and try again`);
+      if (branch(b.name).commit !== b.commit||branch(b.name).tree!==b.tree) throw new Error(`${b.name} changed; refresh and try again`);
     };
     const write = (name: string, next: { commit: string; tree: string }, actor:string) => {
       this.sql.exec(
@@ -185,11 +187,18 @@ export class ReviewStore {
           }
           ci.require(p.head, c.head.commit, ciBase, policies.get(p.base)?.checks ?? [], policies.get(p.base)?.checkSources,policies.get(p.base)?.successOnlyChecks);
           if (this.git) {
-            if (!c.candidate || c.candidate.commit !== c.head.commit || c.candidate.tree !== c.head.tree || c.candidate.base !== c.base.commit) throw new Error("Merge requires a fast-forward candidate containing the current target branch; merge it locally and push again");
+            if (!c.candidate || c.candidate.tree !== c.head.tree || c.candidate.base !== c.base.commit) throw new Error("Merge requires the exact reviewed tree and current target branch; refresh and retry");
+            const method=c.candidate.method??"fast-forward";
+            if(method==="fast-forward") {
+              if(c.candidate.commit!==c.head.commit||c.proof?.merge)throw Error("Fast-forward merge requires the reviewed head commit");
+            } else {
+              if(!c.proof?.merge||c.proof.merge.method!==method||c.proof.merge.tree!==c.head.tree||reviewedMergeHead(c.proof,c.base.commit,c.candidate.commit)!==c.head.commit)throw Error("Generated merge requires current object-derived head/base/tree evidence");
+            }
             const deployments=deploymentGate(this.sql,p.base,c.head.commit,ciBase,c.request.owner?.id??"review",!!c.human,this.authority);
             new Repository(this.sql,this.observe,this.authority).update(`refs/heads/${p.base}`, c.base.commit, c.candidate, true, c.request.owner?.id ?? "review", true, c.proof,c.human,undefined,ciBase);
             p.deployments=deployments;
-            p.state = "merged"; p.mergedCommit = c.head.commit; p.mergedVersion = p.base===s.defaultBranch?this.main().version:null;
+            p.state = "merged"; p.mergedCommit = c.candidate.commit; p.mergedVersion = p.base===s.defaultBranch?this.main().version:null;
+            if(method!=="fast-forward")p.mergeMethod=method;
           } else {
             if (policies.get(p.base)?.checks.length) throw new Error("Exact-candidate CI requires Git repository mode");
             const result = land(c.request);

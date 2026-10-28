@@ -29,6 +29,7 @@ export interface BranchPolicy {
 export interface CheckSource { name: string; runner: string }
 /** Computed from Git objects in trusted routes, never accepted from JSON. */
 export interface RefProof {
+  merge?:import("../review/merge-types").GeneratedMergeEvidence;
   old: string | null;
   next: string;
   linear: boolean;

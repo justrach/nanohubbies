@@ -21,7 +21,7 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 | Hunk review and conversation resolution | Bounded file-by-file PR reviewer; line/range and hunk comments, replies, resolve/reopen, original-code excerpts for earlier revisions; unresolved PR-scoped threads block final merge across pushes and deleted files | New inline writes require signed-in human writers; legacy version comments retain their commit scope; dismissing a review does not resolve conversations |
 | Code suggestions | Insert selected after-side code into a suggestion; preview and apply one or up to 50 non-overlapping suggestions as one protected commit; atomic ref, resolution and retry receipt; stale approval and CI behavior follows ordinary branch writes | Current exact head/comparison and root comments only; regular UTF-8 text files up to 1 MiB; no offset suggestion syntax or automatic reanchoring; generated commits use pseudonymous account identities and are unsigned |
 | Signed commits | Account-bound public SSH/OpenPGP keys; current verified committer email or stable account noreply address; cryptographic checks across introduced history; classic protection and `required_signatures` rulesets; immutable repository verification records survive key/email removal | S/MIME and hardware SSH formats, fork-network receipt sharing, automatic verification of every unprotected push, and server signing of web-generated commits remain open; SSH signing does not enable SSH transport |
-| Pending reviews | Private browser reviewer-scoped and CLI credential-scoped drafts; multi-file collection, editing/removal/discard; atomic publication of all comments with Comment/Approve/Request changes; optimistic draft revisions and idempotent submission receipts | Exact head/comparison required at submission; stale drafts stay private and must be discarded before starting on a new diff; pending replies and attachments are not supported; CLI draft candidate 0.4.13 is locally validated and awaits rollout |
+| Pending reviews | Private browser reviewer-scoped and CLI credential-scoped drafts; multi-file collection, editing/removal/discard; atomic publication of all comments with Comment/Approve/Request changes; optimistic draft revisions and idempotent submission receipts | Exact head/comparison required at submission; stale drafts stay private and must be discarded before starting on a new diff; pending replies and attachments are not supported; CLI candidate 0.4.14 includes locally validated drafts and awaits rollout |
 | Required deployments | Named case-insensitive environments, optional trusted runner source, exact candidate/current-default workflow-base terminal deployment evidence; required account reviewers, self-approval prevention and durable wait timers; classic and `required_deployments` rulesets; current source/revision checks in the final writer; merge-time receipts retained | Reviewer teams, explicit environment admin bypass, `jobs.environment`, pending/in-progress/inactive statuses and environment-scoped secret release remain open |
 | Required checks | Separate trusted runner credentials, exact head/current-default workflow-base results, strict up-to-date PR target, optional checks before opening a PR; success/neutral/skipped satisfy ordinary named checks; explicit success-only mode blocks neutral/skipped as required for Meld; other terminal conclusions block; source pins and revocation checked at PR open and final merge | Runner registrations are the native source identity rather than GitHub Apps; legacy staging still requires verified successful deployment evidence; no loose check mode, merge queue or code scanning gates; see [conclusion contract](check-conclusions.md) |
 | Force push/deletion | Server-side force-push and deletion blocks; selected account force exceptions with independent ordinary-write permissions; allowed deletions are independent of PR requirements; tag replacement is configurable through rulesets | Default branch and branches with open PRs cannot be deleted; any tag replacement is treated as a force update |
@@ -34,7 +34,7 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 | Deployment source restrictions | No restriction, protected branches, or separate branch/tag patterns; empty selection blocks all; canonical source refs and annotated-tag targets; checks at request, review, authorization, completion and required-deployment merge | Native path-aware glob syntax; the current default commit remains the trusted workflow base; no fork deployment model |
 | Branch lock | Blocks push, HTTP branch mutation, restack and merge, including owners/admins | No read-only fork synchronization exception |
 | Allowed pushers | Stable account allowlist, applied to create/update/delete and PR merge; overlapping allowlists intersect; empty list blocks everyone | No teams/apps or bypass roles; membership remains a prerequisite |
-| Linear history | Checks every introduced commit against previous-ref ancestry; merge commits below the tip are rejected; applies to push, HTTP branch creation, restack and PR merge | Git mode only; does not provide squash/rebase merge services |
+| Linear history | Checks every introduced commit against previous-ref ancestry; merge commits below the tip are rejected; applies to push, HTTP branch creation, restack and PR merge | Git mode only; strict squash/rebase candidate is locally validated; nonlinear automatic rebasing and method settings remain open |
 | Actions execution | Trusted controller reads accepted-base workflow, creates a fresh Codegraff VM per job, transfers a credential-free Git bundle, runs an isolated candidate, records private logs and cleans up | Explicit limited workflow dialect; expressions, matrices, arbitrary marketplace actions, services, reusable workflows, scheduled events, cache and artifact actions are not supported yet |
 | Runner pool | Configurable concurrent candidates/jobs, shared per-process sandbox cap across repositories under one Codegraff account; atomic leases; named registrations and immediate revoke/reassignment | Provider capacity/credit still bounds actual allocations; repository credentials remain separately scoped; project CI still requires its sandbox-scoped key, verified toolchain image and running dispatcher; the real Bun cloud smoke uses the existing CI account configuration |
 | Secrets | Private on-demand service with Cloudflare Secrets Store bindings, scoped references, bounded/revocable grants and audit; Cloudflare retains values when runtime idles | Static binding changes require deployment; values managed directly in Cloudflare; no GitHub-compatible secret upload API or automatic candidate injection |
@@ -71,6 +71,49 @@ Additional signature formats, merge queues, organizational policies and full Act
 Omit `allowPush` to allow all existing writers who satisfy other rules. An explicit empty list blocks all accounts. Allowed pushers cannot bypass PRs, approvals or checks. Owners and admins can change policy, but cannot bypass it during a ref update. Overlapping rules union required checks, take the maximum approval count, enable any requested restriction and intersect configured pusher lists. Removing one rule leaves overlapping rules enforced.
 
 All ref changes re-read policy inside the sequencer's final serialized transaction. Trusted routes derive linear-history evidence from Git objects and bind it to the exact old/new refs; user JSON cannot assert that evidence. Approved PR merges still pass locks, pusher restrictions and graph checks. Legacy text snapshot landing also observes locks, push restrictions and review gates, while Git mode rejects text submissions entirely.
+
+## Git pull request merge methods
+
+The local candidate adds explicit merge-commit, squash and rebase choices in the
+PR view and CLI 0.4.14. The existing fast-forward default remains unchanged.
+Every method requires the head to contain the current target commit; loose
+checks and divergent three-way merges remain open work.
+
+| Method | Result |
+| --- | --- |
+| Fast-forward | Move the target to the exact existing reviewed commit |
+| Merge commit | New commit with target/head parents and the reviewed tree |
+| Squash | One new commit with the target as parent and the reviewed tree |
+| Rebase | New linear commits preserving original authors/messages and final reviewed tree |
+
+These follow the [GitHub merge-method shapes](https://docs.github.com/en/pull-requests/reference/pull-request-merges).
+Automatic rebase currently requires a linear feature history of at most 200
+commits and 16 MiB of commit metadata. It drops originally empty commits,
+preserves raw author/timezone/message/encoding bytes, changes the committer and
+never copies invalidated signatures. Nonlinear features need a local rebase or
+merge/squash. Repository method allowlists/defaults, automatic coauthor trailers
+and server signing remain parity gaps.
+
+The final writer distinguishes reviewed head H from generated result M. Current
+review/CODEOWNERS/conversation/shared-head and trusted CI gates still bind to H.
+The generated result must have H's exact tree; its actual graph separately
+passes current linear-history, signature, file and metadata restrictions.
+Classic/ruleset required deployments may use H's successful deployment only
+through that trusted old/new/tree-bound proof, with the current workflow base.
+Ordinary pushes cannot supply such proof or inherit that deployment mapping.
+
+Generated commits are unsigned. Where signing is required, choose fast-forward
+with a verified signed head; generated methods cannot waive it. A merge commit
+cannot satisfy linear history; squash/rebase may. Locks, allowed pushers,
+archive, current membership and ref compare-and-swap apply at final mutation.
+The source branch is never rewritten. Merge records retain H, M, method, target
+and workflow base; the reviewed diff remains based on H.
+
+Custom merge/squash messages are optional, bounded at 64 KiB UTF-8. Rebase keeps
+the original messages. New methods use a dedicated RPC; an older receiver
+returns retryable 503 without falling back to another strategy. Lost responses
+never trigger an automatic mutation retry. See [local validation](evidence/merge-methods-validation.md).
+This candidate is not deployed or pushed to GitHub.
 
 ## Repository-wide archive
 
@@ -217,7 +260,7 @@ Existing submitted change requests are not silently waived on reviewer demotion.
 
 The [local validation](evidence/shared-head-reviews-validation.md) covers real
 source/packaged CLI and Worker/Git behavior. This candidate is not deployed;
-strict/loose check modes, merge strategies and the other parity gaps remain open.
+loose check mode, divergent merge strategies and the other parity gaps remain open.
 
 ## Apply code suggestions
 

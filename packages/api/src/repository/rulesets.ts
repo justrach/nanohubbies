@@ -1,4 +1,5 @@
 import {assertRepositoryWritable} from "./archive";
+import {reviewedMergeHead} from "../review/merge-evidence";
 import {rulesetBypass,type RulesetActor} from './bypass';
 import {Environments,environmentNames} from "../deployments/store";
 import type { RefProof } from "./types";
@@ -170,7 +171,7 @@ export class Rulesets {
         if(rule.type==="required_deployments"&&next) {
           const base=deploymentBase===undefined?defaultCommit(this.sql):deploymentBase;
           if(!base)fail("Current deployment base is unavailable",true);
-          else {const gate=new Environments(this.sql).gate(rule.parameters.required_deployment_environments,next,base);for(const status of gate.environments)if(!status.ready)fail(status.error!);}
+          else {const gate=new Environments(this.sql).gate(rule.parameters.required_deployment_environments,merge?reviewedMergeHead(proof,old,next):next,base);for(const status of gate.environments)if(!status.ready)fail(status.error!);}
         }
         if(rule.type==="creation"&&!old&&next)fail("creation is restricted");
         if(rule.type==="update"&&old&&next)fail("updates are restricted");

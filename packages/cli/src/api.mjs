@@ -119,7 +119,13 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
   output({discussion:result},`${opts.reopen?'Reopened':'Resolved'} thread ${opts.thread}.`);return;
  }
  if(action==='merge'||action==='close') {
-  result=await post(`/pulls/${number}/${action}`,observed);const pull=result.pulls.find(row=>row.number===Number(number));
+  let payload=observed;
+  if(action==='merge'&&opts.method&&opts.method!=='fast-forward') {
+   if(!data.mergeMethods?.includes(opts.method))throw Error('The selected merge method is unavailable under this repository policy or server version');
+   const base=data.branches?.find(branch=>branch.name===p.base);if(!base)throw Error('Cannot observe the current target branch; refresh before merging');
+   payload={...observed,method:opts.method,targetBase:base.commit,...(opts.message!==undefined?{message:opts.message}:{})};
+  }
+  result=await post(`/pulls/${number}/${action}`,payload);const pull=result.pulls.find(row=>row.number===Number(number));
   output({pull},`${pull.state==='merged'?'Merged':'Closed'} #${number}.`);return;
  }
  throw Error('Unsupported native CLI command');

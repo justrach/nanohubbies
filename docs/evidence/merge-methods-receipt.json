@@ -1,0 +1,253 @@
+{
+  "format": 1,
+  "kind": "nanohub-local-strict-merge-methods",
+  "checkedAt": "2026-10-28T12:49:42.423965+00:00",
+  "sourceParent": "5c3f957c3343761d2f5f53e1459a0bb4f7e8e411",
+  "scope": "Local isolated Workers, SQLite Durable Objects, D1, R2, real Git, source/portable CLI and interactive component preview",
+  "methods": [
+    "fast-forward",
+    "merge",
+    "squash",
+    "rebase"
+  ],
+  "runtimeFiles": [
+    {
+      "path": "apps/web/src/trunk/review/MergeAction.tsx",
+      "sha256": "772021fff5d89f9279290833a2d18384ac384282df9e6ff017bead8207690e78"
+    },
+    {
+      "path": "apps/web/src/trunk/review/PullDetail.tsx",
+      "sha256": "98083510f86f95c8351eac25db424a539b009d9fa87551269036c21e8667aaf9"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "1b06fba8f80bd0633479bac9c50f5e47d0018c0482388c0b37268187014e5faf"
+    },
+    {
+      "path": "packages/api/package.json",
+      "sha256": "5f0c19a4cbe20a1fed633a40b55b797db4ee6ce0099fb4eb10d3179f4c61a589"
+    },
+    {
+      "path": "packages/api/scripts/merge-methods.test.mjs",
+      "sha256": "d1dbfd2f6666a50464d12e14da7667ef6007351bd5738a320dd7cc2b0b1dfb97"
+    },
+    {
+      "path": "packages/api/scripts/smoke-merge-methods.ts",
+      "sha256": "125b110cbddc462ff9beff5e883452151573437775bd2f687ff9c5e244a9b133"
+    },
+    {
+      "path": "packages/api/scripts/team/worker.ts",
+      "sha256": "0f1a1fa252353a4a96199372a4600d3c3cf6c127cf933a20ed36a56dc64cc60b"
+    },
+    {
+      "path": "packages/api/src/repository/policy.ts",
+      "sha256": "9cf952171632290a57c0c52da75236f6c9df76556a823702a6135ed4ebb59e4d"
+    },
+    {
+      "path": "packages/api/src/repository/rulesets.ts",
+      "sha256": "bc64dbc2ffc3b0d445729f9ca4ef702c3df2b8b044ed26ce3914a9d8ce8e1e01"
+    },
+    {
+      "path": "packages/api/src/repository/store.ts",
+      "sha256": "4321dfee919f0eefd2e2c19dfbadbecf374ee979f30df53699f63a97c1c0734b"
+    },
+    {
+      "path": "packages/api/src/repository/types.ts",
+      "sha256": "fcde83e47aa690098afed771d8b19718316e9b50e041a2284e45ac8748c6aed1"
+    },
+    {
+      "path": "packages/api/src/review/merge-evidence.ts",
+      "sha256": "f6965580f779d9cc2f0ed2b7999ce63abb81fdc046566ae3c3207e2bee491a91"
+    },
+    {
+      "path": "packages/api/src/review/merge-methods.ts",
+      "sha256": "9475e03e136a23f8b687eceed8654250adefdc9d0fc2b224fdf8b5871e6b8e16"
+    },
+    {
+      "path": "packages/api/src/review/merge-types.ts",
+      "sha256": "768c278b2934b42867cb0806f2d6a0036357094c60277346e748474358e4a3c4"
+    },
+    {
+      "path": "packages/api/src/review/routes.ts",
+      "sha256": "bc3c574388f00534508578a37db2a926c0ef2b968f56bcaf6639b70490cbae9a"
+    },
+    {
+      "path": "packages/api/src/review/store.ts",
+      "sha256": "87d6361e8727db57a659b042a8df941a0c23ef4f16002321334490754b7d85de"
+    },
+    {
+      "path": "packages/api/src/review/types.ts",
+      "sha256": "19fd3f8adbbc5237d9e02d02750fbf3f3342c1d8f1bdead0423c97e9a0194b48"
+    },
+    {
+      "path": "packages/api/src/sequencer.ts",
+      "sha256": "863ffc0ab2e7d3aebea7d44097cbb6401bea85ef4d4fdc64814fc16910dbaa06"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "sha256": "29694a20825361a38648152215f55e05e0d81b5f6cbdfe4ff13831b7a8da8959"
+    },
+    {
+      "path": "packages/cli/scripts/build.mjs",
+      "sha256": "fd7ab5a083847524b9d691db4f11c3b766c23927402a6a16f1c73f2497a491be"
+    },
+    {
+      "path": "packages/cli/src/api.mjs",
+      "sha256": "4bbfd1fc3b1a998c7d2305f39afacea25d480d3c410546654e9ba8ee01e3259e"
+    },
+    {
+      "path": "packages/cli/src/main.mjs",
+      "sha256": "df07250e227f195cb31e4183105c8ced6ef0f37c145304d93d84a4ef51092159"
+    },
+    {
+      "path": "packages/cli/test/build.test.mjs",
+      "sha256": "1464e6579b1579091f64c41a81ba981851862ca9e976065adeb927a70444c299"
+    },
+    {
+      "path": "packages/cli/test/merge-methods.test.mjs",
+      "sha256": "d36ffbfa94bf3aac959673e32dc0b75060e57649155ae911e50b40d7c4203b2c"
+    }
+  ],
+  "candidateCli": {
+    "format": 1,
+    "version": "0.4.14",
+    "path": "/nh/releases/0.4.14/nh.mjs",
+    "bytes": 70056,
+    "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+  },
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "buildReproducibility": {
+    "runtime": "1.4.4",
+    "workingDirectories": [
+      "repository",
+      "packages/api",
+      "apps/web",
+      "unrelated temporary directory"
+    ],
+    "cliAndInstallerBytesEqual": true,
+    "regressionFailedBeforeCorrection": true,
+    "syntaxMinified": false,
+    "identifiersMinified": false
+  },
+  "checks": [
+    {
+      "log": "api-unit.log",
+      "sha256": "5f01d5e1a4f50eb4a542a0c1f3ae5c530fbf2aaf8fbad6e49660c0c43caad4e0",
+      "command": "bun run --filter @swarm/api test:unit",
+      "scope": "330 API unit cases; before builder-only correction",
+      "observedExitCode": 0
+    },
+    {
+      "log": "repository.log",
+      "sha256": "2434da1ccdad44471486abee3a787ca9543694d9bbe8a72cfce97aef543a3fb6",
+      "command": "bun run --filter @swarm/api test:repository",
+      "scope": "261 repository unit cases and full Worker/Git/CLI/recovery chain; before builder-only correction",
+      "observedExitCode": 0
+    },
+    {
+      "log": "methods-final.log",
+      "sha256": "9683a3906d043724398f9d79fb7954d9529f9f8e7d25d2843ab603c1c8e217a6",
+      "command": "bun run --filter @swarm/api test:merge-methods",
+      "scope": "7 graph/evidence cases plus all three source and packaged methods; before builder-only correction",
+      "observedExitCode": 0
+    },
+    {
+      "log": "cli-reproducible.log",
+      "sha256": "5b3dda06df5867a5d8d1cad75820f5749fca2005919c82dc2118679c4f135e86",
+      "command": "bun test packages/cli/test",
+      "scope": "53 CLI cases including corrected release reproducibility, concurrent publication and real installer execution",
+      "observedExitCode": 0
+    },
+    {
+      "log": "packaged-reproducible.log",
+      "sha256": "9cb0fb807b71fb09e3bac64cfc7ef451c8144b37636b39cf3b235aa86c65ca2e",
+      "command": "node scripts/smoke-merge-methods.ts --bundle",
+      "scope": "All three merge methods through final standalone bytes against isolated Workers and real Git",
+      "observedExitCode": 0
+    },
+    {
+      "log": "web-build-reproducible.log",
+      "sha256": "947ed34503f234fabf253763fad835d7236e41287ea6c650b3723883d8372e45",
+      "command": "bun run build (apps/web)",
+      "scope": "Final production Next build and CLI artifact checksum equal to packaged smoke",
+      "observedExitCode": 0
+    },
+    {
+      "log": "tsrs-api-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "command": "tsrs --noEmit -p packages/api/tsconfig.json",
+      "scope": "Pinned API type check after final build",
+      "observedExitCode": 0
+    },
+    {
+      "log": "tsrs-web-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "command": "tsrs --noEmit -p apps/web/tsconfig.json",
+      "scope": "Pinned frontend type check after final build",
+      "observedExitCode": 0
+    },
+    {
+      "log": "tsrs-web-worker-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "command": "tsrs --noEmit -p apps/web/tsconfig.worker.json",
+      "scope": "Pinned web Worker type check after final build",
+      "observedExitCode": 0
+    }
+  ],
+  "verified": {
+    "strictCurrentBaseAncestry": true,
+    "exactReviewedTree": true,
+    "actualResultGraphPolicy": true,
+    "reviewedHeadCiAndDeployments": true,
+    "oldReceiver503WithoutFallback": true,
+    "independentCloneStrictFsck": true,
+    "binaryExecutableSymlink": true,
+    "sourceBranchUnchanged": true,
+    "revokedCliDenied": true
+  },
+  "ui": {
+    "scope": "Actual interactive component with project CSS and Geist font; isolated synthetic callback fixture",
+    "captures": [
+      {
+        "path": "docs/evidence/merge-methods-mobile.png",
+        "sha256": "d241898fb711a5967a336a69180b62a4d0aa4e39e03d52b81cf7a6d8fa69a80c"
+      },
+      {
+        "path": "docs/evidence/merge-methods-signed-dark.png",
+        "sha256": "094b25d6ca94501e39b6274cecaef204c6ec2954bafa67c85caf5b7591035e83"
+      },
+      {
+        "path": "docs/evidence/merge-methods-large-text.png",
+        "sha256": "1d8c70d8e637677dd8af10393f5a7ab16123fca03360ed95ffabaeeab6d69bd1"
+      }
+    ],
+    "mobile": {
+      "viewport": 320,
+      "documentWidth": 320,
+      "inputFontPx": 16,
+      "buttonHeightPx": 44
+    },
+    "enlargedText": {
+      "rootFontPx": 32,
+      "buttonHeightPx": 178,
+      "buttonScrollHeightPx": 176,
+      "buttonClientHeightPx": 176
+    },
+    "physicalDeviceTested": false,
+    "browserZoomTested": false,
+    "temporaryPreviewServerAndTabsClosed": true
+  },
+  "productionDeployed": false,
+  "githubPushed": false,
+  "changingGitCloudRecoveryEstablished": false,
+  "unattendedActionsEstablished": false,
+  "applicationStagingEstablished": false,
+  "productionTrafficReadinessEstablished": false,
+  "limitations": [
+    "Generated commits are unsigned",
+    "Target must be an ancestor of reviewed head; divergent three-way merges and loose checks remain open",
+    "Automatic rebase requires linear history and is limited to 200 commits / 16 MiB metadata",
+    "Repository method allowlists/defaults and server signing remain open",
+    "Fresh hosted release acceptance remains pending"
+  ]
+}

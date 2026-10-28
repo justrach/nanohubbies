@@ -30,6 +30,9 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   pr comment NUMBER --path FILE --line N   Inline feedback; --body TEXT [--side left|right]
   pr resolve NUMBER --thread ID            Resolve a conversation (--reopen to reopen)
   pr close NUMBER / pr merge NUMBER        Close or merge with all server protections
+  pr merge NUMBER --merge|--squash|--rebase Choose generated history (default: fast-forward)
+  pr merge NUMBER --method METHOD          Explicit fast-forward, merge, squash or rebase
+  pr merge NUMBER --squash --message TEXT   Custom merge/squash commit message
   run list [-R OWNER/REPO]                   List Actions runs (--web for deployment reviews)
   runner list                              List runner registrations (owner permission)
   runner create NAME --token-file FILE      Save a private CI credential and register it
@@ -111,11 +114,11 @@ export function address(value,origin,trunk=false) {
  return {repository:trunk?null:value,trunk:trunk?value:null,origin,gitUrl:`${origin}/git/${value}.git`,url:trunk?`${origin}/t/${value}`:`${origin}/${value}`};
 }
 function options(args) {
- const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','edit','remove'].map(k=>['--'+k,k]))};
+ const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','edit','remove','method','message'].map(k=>['--'+k,k]))};
  for(let i=0;i<args.length;i++){
   if(args[i]==='--'){positionals.push(...args.slice(i+1));break;}
   const arg=args[i],equal=arg.indexOf('='),flag=equal>=0?arg.slice(0,equal):arg;if(names[flag]){if(values[names[flag]]!==undefined||equal<0&&(!args[i+1]||args[i+1].startsWith('-')))throw Error(`Provide one value for ${flag}`);values[names[flag]]=equal>=0?arg.slice(equal+1):args[++i];}
-  else if(['--with-token','--with-api-token','--print','--json','--api','--git','--web','--reopen','--no-browser','--draft','--pending','--discard'].includes(arg))values[arg.slice(2)]=true;
+  else if(['--with-token','--with-api-token','--print','--json','--api','--git','--web','--reopen','--no-browser','--draft','--pending','--discard','--merge','--squash','--rebase'].includes(arg))values[arg.slice(2)]=true;
   else if(arg.startsWith('-'))throw Error(`Unknown option: ${arg}`);else positionals.push(arg);
  }
  if(values.repo&&values.trunk)throw Error('Choose --repo or --trunk');return{...values,positionals};
@@ -126,6 +129,12 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
  const opts=options(rest),pos=[...opts.positionals];let origin=hostOrigin(opts.host??'https://nanohub.sh'),target;
+ const mergeFlags=['merge','squash','rebase'].filter(flag=>opts[flag]);
+ if((mergeFlags.length||opts.method!==undefined||opts.message!==undefined)&&!(group==='pr'&&action==='merge'))throw Error('Merge method/message options only apply to pr merge');
+ if(mergeFlags.length>1||mergeFlags.length&&opts.method!==undefined)throw Error('Choose one merge method');
+ if(mergeFlags.length)opts.method=mergeFlags[0];
+ if(opts.method!==undefined&&!['fast-forward','merge','squash','rebase'].includes(opts.method))throw Error('Choose fast-forward, merge, squash or rebase');
+ if(opts.message!==undefined&&(!['merge','squash'].includes(opts.method)||!opts.message.trim()||opts.message.includes('\0')||new TextEncoder().encode(opts.message).length>65536))throw Error('--message requires merge/squash and nonempty text of at most 64 KiB without NUL');
  const helper=opts.helper??(platform==='darwin'?'osxkeychain':'manager');
  if(!['osxkeychain','manager','libsecret','cache'].includes(helper))throw Error('Choose an OS credential helper or the in-memory cache; plaintext storage is unsupported');
  const git=async(argv,input='',directory=cwd,selectedHelper=helper)=>{const gitArgs=['-c','credential.helper=','-c',`credential.helper=${selectedHelper}`,'-c','credential.useHttpPath=true'];const value=await execute('git',[...gitArgs,...argv],{cwd:directory,input,env:{...process.env,...environment,GIT_TERMINAL_PROMPT:'0'}});if(value.code!==0)throw Error(`Git ${argv[0]} failed. Check repository access and the ${helper} credential helper.`);return value.stdout;};

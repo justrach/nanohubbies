@@ -6,6 +6,7 @@ import { matchesBranch, branchPattern } from "./pattern";
 import type { BranchPolicy, RefProof } from "./types";
 import { CIStore } from "../ci/store";
 import {defaultCommit} from "./default-branch";
+import {reviewedMergeHead} from "../review/merge-evidence";
 export type { BranchPolicy } from "./types";
 
 /** Only authenticated settings routes call set(). Final writes read SQL again. */
@@ -183,7 +184,7 @@ export class Policies {
     const p = this.get(branch);
     if (!p) return;
     if (p.locked) throw Error(`${branch}: branch is locked`);
-    if(next&&p.environments?.length){const base=deploymentBase===undefined?defaultCommit(this.sql):deploymentBase;if(!base)throw Error("Current deployment base is unavailable");new Environments(this.sql).require(p.environments,next,base);}
+    if(next&&p.environments?.length){const base=deploymentBase===undefined?defaultCommit(this.sql):deploymentBase;if(!base)throw Error("Current deployment base is unavailable");new Environments(this.sql).require(p.environments,reviewedMergeHead(proof,old,next),base);}
     if(old&&next&&p.requireSignedCommits&&(!proof||proof.old!==old||proof.next!==next||!proof.signatures?.verified))throw Error(`${branch}: requires verified signed commits${proof?.signatures?.reason?`; ${proof.signatures.reason}`:"; retry with current signature evidence"}`);
     if (p.allowPush !== undefined && !p.allowPush.includes(actor))
       throw Error(

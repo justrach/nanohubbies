@@ -19,6 +19,12 @@ export class Sequencer extends ProductionSequencer {
       throw Error('The RPC receiver does not implement the method "mergeReviewedPull".');
     return super.mergeReviewedPull(command);
   }
+  async mergePullWithMethod(command:Parameters<ProductionSequencer['mergePullWithMethod']>[0]) {
+    const sql=this.ctx.storage.sql;
+    if(sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_merge_receiver'").toArray().length&&sql.exec<{missing:number}>("SELECT missing FROM fixture_merge_receiver WHERE id=1").toArray()[0]?.missing)
+      throw Error('The RPC receiver does not implement the method "mergePullWithMethod".');
+    return super.mergePullWithMethod(command);
+  }
   legacyDefault(change:{branch:string;manualCounter?:boolean;rollback?:boolean}) {
     return this.ctx.storage.transactionSync(()=>{
       this.ctx.storage.sql.exec("UPDATE repository_config SET default_branch=? WHERE id=1",change.branch);

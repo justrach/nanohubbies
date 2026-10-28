@@ -21,6 +21,8 @@ import { pendingReviewRoute } from "./pending-route";
 import { suggestionRoute } from "./suggestion-route";
 import {applies} from "../repository/rulesets";
 import {signatureGate} from "../signing/gate";
+import {buildMerge} from "./merge-methods";
+import type {MergeMethod} from "./merge-types";
 
 /** Called only after the workspace's ordinary authorization boundary. */
 export async function reviewRoute(env: Env, request: Request, trunk: string, action: string, id: string | undefined, operation: string | undefined, user: User | null, access:TeamAccess|null = null, tail: string[] = []) {
@@ -140,31 +142,44 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
       if (method === "GET" && !operation) {
         const authority:RulesetActor|undefined=humanWriter&&access?{actor:user!.id,role:access.proof.role==='member'?'writer':access.proof.role,checkedAt:access.proof.verifiedAt,expiresAt:access.proof.verifiedAt+30000}:undefined;
         const signatureRequired=!!s.effectivePolicies?.[p.base]?.requireSignedCommits||!!s.rulesets?.some(rule=>applies(rule,`refs/heads/${p.base}`,s.defaultBranch)&&rule.rules.some(r=>r.type==="required_signatures")&&!rulesetBypass(rule,user?.id??"",humanWriter,true,authority));
+        const linearRequired=!!s.effectivePolicies?.[p.base]?.requireLinearHistory||!!s.rulesets?.some(rule=>applies(rule,`refs/heads/${p.base}`,s.defaultBranch)&&rule.rules.some(r=>r.type==="required_linear_history")&&!rulesetBypass(rule,user?.id??"",humanWriter,true,authority));
         const signatures=s.repositoryMode&&p.state==="open"?await signatureGate(env,trunk,head,branch(p.base),signatureRequired):undefined;
         const codeOwners=s.repositoryMode?(p.state==="open"?await seq.codeOwnersStatus(p.number,await codeOwnerEvidence(objects,branch(p.base),head),url.origin):p.codeOwners):undefined;
         const deployments=s.repositoryMode?(p.state==="open"?await seq.deploymentGate(p.base,head.commit,branch(p.base).commit,user?.id??"",humanWriter,p.head,url.origin):p.deployments):undefined;
         const allowed=s.effectivePolicies?.[p.base]?.allowDismiss;
-        return json({ ...s, pull: p, head, codeOwners,signatures,deployments,canDismissReviews:writable&&humanWriter&&(allowed===undefined||allowed.includes(user!.id)),pendingReview:humanWriter?(await seq.pendingReview({op:"get",number:p.number,actor:{id:user!.id,origin:url.origin}})).pending:null,discussion:{...await seq.pullComments({op:"list",number:p.number}),canComment:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("reviews:write"))&&p.state==="open"},reviewGate:await seq.reviewGate(p.number,head.commit,p.anchor,url.origin), ...(await changesBetween(objects, p.anchorTree, head.tree)) });
+        return json({ ...s, mergeMethods:s.mergeMethods?.filter(method=>method!=="merge"||!linearRequired), pull: p, head, codeOwners,signatures,deployments,canDismissReviews:writable&&humanWriter&&(allowed===undefined||allowed.includes(user!.id)),pendingReview:humanWriter?(await seq.pendingReview({op:"get",number:p.number,actor:{id:user!.id,origin:url.origin}})).pending:null,discussion:{...await seq.pullComments({op:"list",number:p.number}),canComment:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("reviews:write"))&&p.state==="open"},reviewGate:await seq.reviewGate(p.number,head.commit,p.anchor,url.origin), ...(await changesBetween(objects, p.anchorTree, head.tree)) });
       }
       if (method === "POST" && operation === "close") return json(await seq.review({ op: "close", number: p.number }));
       if (method === "POST" && ["reviews", "restack", "merge"].includes(operation ?? "")) {
-        const body = await request.json<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"] }>();
+        const body = await creationBody<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"];method?:MergeMethod;targetBase?:string;message?:string }>(request,operation==="merge"?512*1024:64*1024);
         if (operation === "merge" && p.state === "merged") return json(s);
         if (body.commit !== head.commit || body.anchor !== p.anchor) return json({ error: "PR changed; refresh and review its latest diff" }, { status: 409 });
         if (operation === "reviews") return json(await seq.review({ op: "review", number: p.number, author: actor!, body: body.body ?? "", verdict: body.verdict ?? "COMMENT", commit: head.commit, anchor: p.anchor, independent:independent||!!user?.cli,origin:url.origin,...(user?.cli?{via:{kind:"cli" as const,credentialId:user.cli.credentialId}}:{}) }));
         if (operation === "merge" && !s.repositoryMode&&p.base !== "main") return json({ error: "Merge the parent PR first" }, { status: 409 });
+        if(operation==="merge"&&!s.repositoryMode&&body.method&&body.method!=="fast-forward")return json({error:"Generated merge methods require Git repository mode"},{status:400});
         const base = branch(p.base);
         if (operation === "merge" && await seq.repositoryMode()) {
+          const method=body.method??"fast-forward";
+          if(!["fast-forward","merge","squash","rebase"].includes(method))return json({error:"Choose fast-forward, merge, squash or rebase"},{status:400});
+          if(method!=="fast-forward"&&(!s.mergeMethods?.includes(method)))return json({error:"Merge methods are updating; refresh and retry shortly"},{status:503});
+          if(method!=="fast-forward"&&body.targetBase!==base.commit)return json({error:"Target branch changed; refresh before choosing a merge method"},{status:409});
+          if(body.message!==undefined&&(typeof body.message!=="string"||method==="rebase"||method==="fast-forward"))return json({error:"Custom merge messages apply only to merge commits and squash merges"},{status:400});
           const reader = new ObjectReader(env.OBJECTS, trunk, async () => (await env.PACKER.get(env.PACKER.idFromName(trunk)).list()).packs);
           if (!await isAncestor(sha => reader.get(sha), base.commit, head.commit)) throw new Error("Target branch moved: merge its current head into the feature branch, push and rerun CI before merging");
           const main = await seq.head();
           const ownership=s.effectivePolicies?.[p.base]?.requireCodeOwnerReview?await codeOwnerEvidence(objects,base,head):undefined;
-          try { return json(await seq.mergeReviewedPull({ op: "merge", number: p.number, head, base:{...base,version:main.version}, anchor: p.anchor,
+          const prepared=method==="fast-forward"?null:await buildMerge(sha=>reader.get(sha),{method,base:base.commit,head:head.commit,tree:head.tree,owner:owner!,author:p.author,message:body.message??(method==="squash"?`${p.title} (#${p.number})${p.body?`\n\n${p.body}`:""}`:`Merge pull request #${p.number} from ${p.head}\n\n${p.title}`)});
+          const overlay=new Map(prepared?.objects.map(object=>[object.sha,{type:"commit" as const,body:object.raw.slice(object.raw.indexOf(0)+1)}])??[]),get=async(sha:string)=>overlay.get(sha)??await reader.get(sha);
+          const candidate=prepared?.candidate??{commit:head.commit,tree:head.tree,base:base.commit};
+          const proof=await repositoryProof(get,base.commit,candidate.commit,await seq.graphPlan(),`refs/heads/${p.base}`,verifySignature);
+          if(prepared){proof.merge=prepared.evidence;await publishObjects(env,trunk,prepared.objects);}
+          const command={ op: "merge" as const, number: p.number, head, base:{...base,version:main.version}, anchor: p.anchor,
             codeOwners:ownership,origin:url.origin,
-            candidate: { commit: head.commit, tree: head.tree, base: base.commit }, human:independent, proof:await repositoryProof(sha=>reader.get(sha),base.commit,head.commit,await seq.graphPlan(),`refs/heads/${p.base}`,verifySignature),
-            request: { id: `pr-${p.number}-${head.commit}-${base.commit}`, agent: "review", owner, kind: "agent", life: 0, intent: p.title, base: main.version, reads: { strong: [], weak: [] }, edits: [], issue: null, closes: false } })); }
+            candidate, human:independent, proof,
+            request: { id: `pr-${p.number}-${head.commit}-${base.commit}`, agent: "review", owner, kind: "agent" as const, life: 0, intent: p.title, base: main.version, reads: { strong: [], weak: [] }, edits: [], issue: null, closes: false } };
+          try { return json(await (prepared?seq.mergePullWithMethod(command):seq.mergeReviewedPull(command))); }
           catch(error) {
-            if(error instanceof Error&&(/mergeReviewedPull.*not a function/.test(error.message)||error.message.includes('does not implement the method "mergeReviewedPull"')))
+            if(error instanceof Error&&(/merge(?:ReviewedPull|PullWithMethod).*not a function/.test(error.message)||error.message.includes('does not implement the method "mergeReviewedPull"')||error.message.includes('does not implement the method "mergePullWithMethod"')))
               return json({error:"Protected merge review checks are updating; refresh and retry shortly"},{status:503,headers:{"Retry-After":"5"}});
             throw error;
           }

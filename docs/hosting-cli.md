@@ -215,7 +215,7 @@ Existing Git-only and registered-agent credentials gain no CLI API rights.
 
 ### Private pending reviews
 
-CLI **0.4.13** adds private batch reviews. This candidate is locally validated;
+CLI **0.4.13** adds private batch reviews, included in the current 0.4.14 candidate. This is locally validated;
 the deployed CLI remains 0.4.12 until a separately verified rollout. Like
 [GitHub pending reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request),
 comments remain private until submitted together with Comment, Approve or
@@ -268,6 +268,40 @@ payload cannot reuse it. See [validation](evidence/cli-pending-validation.md).
 Dedicated CLI draft RPC entrypoints prevent an older browser-only receiver from
 ignoring credential isolation during deployment propagation. Such a receiver
 cannot read or mutate a browser draft on the CLI's behalf; retry after rollout.
+
+## Merge methods from the CLI
+
+The locally validated **0.4.14 candidate** adds explicit history choices:
+
+```sh
+nh pr merge 12 -R owner/repository --merge
+nh pr merge 12 -R owner/repository --squash --message "Handle empty input (#12)"
+nh pr merge 12 -R owner/repository --rebase
+nh pr merge 12 -R owner/repository --method fast-forward
+```
+
+Omitting the method preserves the existing fast-forward behavior. Choose one
+flag or one `--method` value. `--message` is available only with merge/squash,
+must be nonempty without NUL and is limited to 64 KiB UTF-8. The browser editor
+has a 16,000-character input limit. Rebase preserves the original messages.
+
+The CLI first observes the exact PR head/comparison, advertised methods and
+current target SHA, then sends one conditional request. A changed target fails;
+the CLI does not silently retarget, change method or retry after a lost answer.
+Inspect `nh pr view --json` to distinguish the original `headCommit` from
+`mergedCommit` and `mergeMethod`. Old receiver/policy capabilities are checked
+before requesting a generated method.
+
+These methods preserve the exact reviewed tree and currently require an
+up-to-date feature branch. Reviews, same-head peer blockers, CI, deployments and
+all branch/ruleset restrictions remain enforced. Generated commits are unsigned;
+signing requirements need fast-forward. Automatic rebase requires linear
+feature history and is bounded at 200 commits/16 MiB of commit metadata.
+Neither the source ref nor its existing Git objects are rewritten.
+
+The candidate includes the private reviews added in 0.4.13. The published CLI
+remains 0.4.12; fresh hosted release validation and deployment are still pending.
+See [validation](evidence/merge-methods-validation.md).
 
 ## Branch protections from the CLI
 

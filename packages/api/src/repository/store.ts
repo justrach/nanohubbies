@@ -13,6 +13,7 @@ import { refName, newRefName } from "./ref-name";
 export { refName } from "./ref-name";
 import { dismissAfterHeadChange } from "../review/stale";
 import {defaultBranch,defaultRef} from "./default-branch";
+import {reviewedMergeHead} from "../review/merge-evidence";
 
 export interface GitRef { name: string; commit: string; tree: string; updatedAt: number }
 export class Repository {
@@ -81,6 +82,7 @@ export class Repository {
     refName(name);
     const current = this.refs().find(r => r.name === name);
     if ((current?.commit ?? null) !== old) throw new Error("Ref changed; fetch and retry");
+    if(proof?.merge){if(!merge||!next||next.tree!==proof.merge.tree)throw Error("Generated merge evidence cannot authorize an ordinary push or a different tree");reviewedMergeHead(proof,old,next.commit);}
     if (!old && next) newRefName(name);
     if (next && !old && this.refs().some(r => r.name.startsWith(name + "/") || name.startsWith(r.name + "/"))) throw new Error("Conflicting ref name");
     if (next && !old && this.refs().length >= 10_000) throw new Error("Repository ref limit reached");

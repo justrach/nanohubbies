@@ -3,7 +3,7 @@
 import {useTrunk} from "../context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GitPullRequest, GitMerge, ArrowDown } from "lucide-react";
+import { GitPullRequest, ArrowDown } from "lucide-react";
 import type { Branch, Pull, ReviewSnapshot } from "@swarm/api/review";
 import { checkFailure, conclusionLabel } from "@swarm/api/review";
 import { Button } from "@/components/controls";
@@ -15,6 +15,7 @@ import { DismissReview } from "./DismissReview";
 import { PullFiles } from "./PullFiles";
 import { AgentContributions } from "../contributions/AgentContributions";
 import {RelatedPullReviews} from "./RelatedPullReviews";
+import {MergeAction} from "./MergeAction";
 
 export type PullView = ReviewSnapshot & { pull: Pull; head: Branch; files: ChangedFile[]; truncated: string[];deployments?:import("@swarm/api/review").DeploymentGate;signatures?:import("@swarm/api/review").SignatureGate;pendingReview?:import("@swarm/api/review").PendingReview|null;discussion?:import("@swarm/api/review").PullDiscussion;codeOwners?:import("@swarm/api/review").CodeOwnerStatus;canDismissReviews?:boolean;reviewGate?:import("@swarm/api/review").ReviewGate };
 
@@ -75,7 +76,7 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
       <Card className="space-y-4 p-5"><h2 className="text-sm font-semibold text-ink">{p.state === "merged" ? `Merged into ${p.base}` : p.state === "closed" ? "Closed without merging" : "Ready for review"}</h2>
         <p className="text-xs leading-5 text-muted">{p.state === "merged" ? `Merged as ${p.mergedCommit?.slice(0,10)}. Dependent PRs now target ${p.base}.` : p.state === "closed" ? "The final diff is retained below." : !view.repositoryMode&&p.base !== "main" ? `Merge the PR for ${p.base} first. This diff includes only this layer’s changes.` : `Merge updates ${p.base} through its current protection and conflict checks.`}</p>
         {p.state === "open" && <div className="flex flex-wrap gap-2">
-          <Button variant="primary" disabled={readOnly || !user || action.busy || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || policy?.locked || ownershipBlocked || view.deployments?.ready===false || view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} onClick={() => void run("merge")}><GitMerge size={14} />{action.busy ? "Working…" : "Merge pull request"}</Button>
+          <MergeAction key={p.number} readOnly={readOnly||!user} methods={view.mergeMethods??["fast-forward"]} disabled={readOnly || !user || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || !!policy?.locked || ownershipBlocked || view.deployments?.ready===false || !!view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} busy={action.busy} signedRequired={!!view.signatures?.required} onMerge={(method,message)=>void run("merge",method==="fast-forward"?{}:{method,targetBase:base?.commit,...(message!==undefined?{message}:{})})}/>
           <Button disabled={readOnly || !user || action.busy || base?.commit === p.anchor} onClick={() => void run("restack")}>Restack onto {p.base}</Button>
           <Button variant="ghost" disabled={readOnly || !user || action.busy} onClick={() => void run("close")}>Close</Button>
         </div>}

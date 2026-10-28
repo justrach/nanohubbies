@@ -30,7 +30,10 @@ export async function buildDistribution(
       entrypoints: [entry],
       target: "bun",
       format: "esm",
-      minify: false,
+      // Bun's readable module-path comments depend on the caller's cwd. Strip
+      // whitespace/comments so API and web builds publish identical releases;
+      // keep identifiers and syntax unchanged for the portable Bun module.
+      minify: { whitespace: true, syntax: false, identifiers: false },
       sourcemap: "none",
     });
     if (!built.success)
