@@ -9,9 +9,11 @@ const observations = [
   ["secrets-store", "secret", "list"],
 ];
 export function wranglerArguments(args, runtime = "node") {
-  if (!["node", "bun"].includes(runtime))
-    throw Error("Unknown fixture provider runtime");
-  return ["x", ...(runtime === "bun" ? ["--bun"] : []), "wrangler", ...args];
+  if (runtime !== "node")
+    throw Error(
+      "Wrangler fixtures require the supported Node.js runtime; use bun x without --bun",
+    );
+  return ["x", "wrangler", ...args];
 }
 export const isProviderObservation = (args) =>
   observations.some((prefix) => prefix.every((value, i) => args[i] === value));

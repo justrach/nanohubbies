@@ -14,16 +14,13 @@ test("provider runtime is explicit and cannot introduce arbitrary CLI switches",
     "versions",
     "list",
   ]);
-  assert.deepEqual(wranglerArguments(["versions", "list"], "bun"), [
-    "x",
-    "--bun",
-    "wrangler",
-    "versions",
-    "list",
-  ]);
+  assert.throws(
+    () => wranglerArguments(["versions", "list"], "bun"),
+    /supported Node.js runtime/,
+  );
   assert.throws(
     () => wranglerArguments(["versions", "list"], "--foreign-config"),
-    /Unknown fixture/,
+    /supported Node.js runtime/,
   );
 });
 
