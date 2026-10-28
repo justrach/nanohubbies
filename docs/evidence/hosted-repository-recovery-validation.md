@@ -131,3 +131,8 @@ Full return-path operations, measured production RPO/RTO, safe public reopening,
 traffic/security acceptance and the original application CI/staging/cutover
 checks remain release gates. This passing drill strengthens private-beta
 evidence without establishing broad production-traffic readiness.
+
+The later [Vault-inclusive drill](hosted-vault-recovery-validation.md) adds the
+separate service and workload-grant recovery on the same Git graph, including
+a return to the current authorization/Vault checkpoint. Changing Git graphs
+between checkpoints are a separate pending hosted gate.

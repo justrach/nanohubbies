@@ -161,7 +161,9 @@ export async function verifyHostedGitImport(
       : purpose === "storage-recovery"
         ? "isolated native storage recovery primitives; all nine actual DO classes, D1 and retained R2 bytes; normal requests held; full repository recovery acceptance remains separate"
         : "isolated full app on Cloudflare; real DO/D1/R2; actual private Git graph",
-    productionResourcesUsed: false,
+    productionResourcesUsed: purpose === "vault-recovery",
+    productionApplicationResourcesUsed: false,
+    sharedAccountSecretsStoreUsed: purpose === "vault-recovery",
     resources: {
       apiName: plan.apiName,
       gateName: plan.gateName,

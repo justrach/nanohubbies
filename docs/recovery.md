@@ -230,6 +230,11 @@ same command with `--cleanup /absolute/private-artifacts/<run-id>`.
 
 ### Vault-inclusive hosted drill
 
+The [recorded Vault acceptance](evidence/hosted-vault-recovery-validation.md) passes
+the two authorization/vault points on an unchanged Git graph. The later extension
+with a Git commit between points passes local checks but still needs hosted
+acceptance after two control-API connectivity failures during provisioning.
+
 The vault extension runs the repository acceptance with a separate disposable
 Vault Worker and its real Secrets Store binding:
 
@@ -237,7 +242,7 @@ Vault Worker and its real Secrets Store binding:
 NANOHUB_LIVE_CLOUDFLARE=1 bun tools/verify-hosted-vault-recovery.mjs /absolute/account-config.jsonc /absolute/private-artifacts
 ```
 
-Cloudflare currently permits one Secrets Store per account. The harness discovers
+Cloudflare currently [permits one Secrets Store per account](https://developers.cloudflare.com/secrets-store/manage-secrets/). The harness discovers
 that existing store, creates one uniquely named synthetic test entry, and never
 creates or deletes the account store. All mutation/deletion targets are checked
 against the generated name and observed entry ID. Other entries are observed as

@@ -1,0 +1,155 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-27T23:03:06.529Z",
+  "implementationCommit": "3e8e9e31ecd01364add82d0aebd6b7a7f740f6cd",
+  "scope": "Isolated real Cloudflare repository plus separate Vault; two authorization/vault checkpoints on the same Git graph; not a changing-Git-point cloud acceptance",
+  "hosted": true,
+  "isolated": true,
+  "startedAt": "2026-10-27T22:53:30.822Z",
+  "finishedAt": "2026-10-27T23:02:43.911Z",
+  "checkpoints": [
+    {
+      "label": "before-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 17,
+      "r2Bytes": 18845
+    },
+    {
+      "label": "after-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 17,
+      "r2Bytes": 18845
+    }
+  ],
+  "git": {
+    "strictFsck": true,
+    "exactRefsGraphTree": true,
+    "refs": 3,
+    "refsSha256": "c5911636664e4152393c9c48732622d24c468e2370c7627de060fded1b36b695",
+    "objects": 10,
+    "executableMode": true,
+    "symlinkMode": true,
+    "unicodeBranch": true,
+    "annotatedTag": true,
+    "binaryBytes": 1048593,
+    "binarySha256": "5b14849bd9ae3d2a743c8ab2d892749e32fcc2d5bb19f7e233bde8040c209fdc"
+  },
+  "verified": {
+    "vaultSeededThroughApplication": true,
+    "providerValuesAbsentFromApplicationBackup": true,
+    "providerRotationWithoutVaultRedeploy": true,
+    "corruptionRejectedBeforeLoss": true,
+    "physicalApplicationLossObserved": true,
+    "exactMetadataReviewsAndArchive": true,
+    "currentRestoreRetainsLatestProviderValue": true,
+    "exactGitGraphBinaryModesTags": true,
+    "protectedPushLockTagDeletionAndMergeDenied": true,
+    "currentCheckpointRevocationsRetained": true,
+    "olderWorkloadGrantRevivesButValueRemainsCurrent": true,
+    "olderCheckpointResurrectsAuthority": true,
+    "disconnectReconnectRetainsProviderValue": true,
+    "fullRepositoryReturnPathVerified": true,
+    "idleVaultHasNoAlarm": true,
+    "workloadRevocationDeniedAfterRestart": true,
+    "latestAuthorityReconciledAndDeniedAfterRestart": true,
+    "normalTrafficNeverReopened": true
+  },
+  "heldResponseChecks": 44,
+  "vaultJanitorAlarmSuspendedDuringCheckpoint": true,
+  "runtimeEvictionObserved": false,
+  "secretValues": "Synthetic revisions only; retained R2/D1 copies contain neither; DO recovery remains native in Cloudflare",
+  "cleanup": {
+    "apiAbsent": true,
+    "gateAbsent": true,
+    "vaultAbsent": true,
+    "bucketAbsent": true,
+    "databaseAbsent": true,
+    "syntheticProviderSecretAbsent": true,
+    "otherProviderEntriesRetained": true,
+    "existingProviderEntryCount": 1,
+    "accountStoreRetained": true,
+    "explicitTenClassRetirement": true,
+    "privateKeysAndGrantsRemoved": true
+  },
+  "deletedR2Objects": 17,
+  "runtimeTrace": {
+    "events": 719,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "localAcceptanceAtTestedCommit": {
+    "pinnedTsrs": true,
+    "recoveryFixtureCases": 17,
+    "lifecycleCases": 21,
+    "proxyAndObservationCases": 5
+  },
+  "main": {
+    "version": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "versionUnchanged": true,
+    "normalTrafficEnabled": true,
+    "bindings": 27,
+    "subrequests": 50000
+  },
+  "productionVault": {
+    "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "versionUnchanged": true
+  },
+  "laterPublicMainObservation": {
+    "checkedAt": "2026-10-28T00:53:34.455Z",
+    "status": 200,
+    "expectedWorkerVersion": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "expectedVersionPresent": true
+  },
+  "changingGitExtension": {
+    "implementationCommit": "e677947d88fdf5f7aad10fec371797eb5f0cffdf",
+    "localAcceptance": {
+      "pinnedTsrs": true,
+      "recoveryFixtureCases": 20,
+      "lifecycleCases": 21,
+      "proxyAndObservationCases": 5
+    },
+    "addsAcceptedCommitBetweenCheckpoints": true,
+    "requiresRetainedCopyBeforeOverwriteOrDelete": true,
+    "cloudAcceptancePassed": false,
+    "preflightFailures": [
+      {
+        "startedAt": "2026-10-28T00:34:08.210Z",
+        "finishedAt": "2026-10-28T00:36:09.186Z",
+        "phase": "pre-application resource provisioning",
+        "error": "Wrangler fetch failed; control API connectivity",
+        "acceptancePassed": false,
+        "cleanupConfirmed": true,
+        "applicationOrVaultDeployed": false,
+        "providerEntryRequested": false,
+        "independentLateDatabaseAbsenceCheck": true,
+        "independentBucketAbsenceCheck": true
+      },
+      {
+        "startedAt": "2026-10-28T00:40:16.931Z",
+        "finishedAt": "2026-10-28T00:41:02.156Z",
+        "phase": "pre-application resource provisioning",
+        "error": "Wrangler fetch failed; control API connectivity",
+        "acceptancePassed": false,
+        "cleanupConfirmed": true,
+        "applicationOrVaultDeployed": false,
+        "providerEntryRequested": false,
+        "independentLateDatabaseAbsenceCheck": true,
+        "independentBucketAbsenceCheck": false
+      }
+    ],
+    "nextGate": "Rerun changing-Git checkpoints after Cloudflare control API connectivity recovers"
+  },
+  "independentLongTermBackupServiceEstablished": false,
+  "namespaceLossRecoveryEstablished": false,
+  "generalProductionDrainingEstablished": false,
+  "automaticCurrentAuthorityAcquisitionEstablished": false,
+  "safePublicReopeningEstablished": false,
+  "productionRpoRtoEstablished": false,
+  "githubPushed": false,
+  "productionApplicationResourcesUsed": false,
+  "sharedAccountSecretsStoreUsed": true,
+  "existingProviderValuesRead": false,
+  "expiryCheckPresentInVaultImplementation": true
+}
