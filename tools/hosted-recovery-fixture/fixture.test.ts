@@ -16,6 +16,7 @@ import {
 import { verifyRetainedBytes } from "./probe.mjs";
 import { createHash } from "node:crypto";
 import { verifiedR2Reconcile } from "./retained.mjs";
+import { waitForFixturePhase, recoveryFailureCode } from "./phase.mjs";
 
 const key = "a".repeat(64),
   point = "12345678-12345678-12345678-" + "b".repeat(32);
@@ -724,4 +725,66 @@ test("R2 restore refuses to overwrite a desired key with live bytes not retained
       ),
     /no verified retained return copy/,
   );
+});
+
+test("private phase observations expose only held configuration/version without touching application state", async () => {
+  const version = "11111111-1111-1111-1111-111111111111";
+  let appCalls = 0;
+  const app = { fetch: async () => { appCalls++; throw Error("Unexpected application access"); } };
+  const input = () => new Request("https://fixture.example/__fixture/repository", {
+    method: "POST", body: JSON.stringify({ op: "phase" }),
+  });
+  const full = { ...env, HOSTED_REPO_RECOVERY: "1", HOSTED_REPO_PHASE: "frozen",
+    CF_VERSION_METADATA: { id: version },
+    AUTH_DB: new Proxy({}, { get() { throw Error("Unexpected database access"); } }),
+  };
+  assert.deepEqual(await (await repositoryRoute(input(), full, {} as any, app))?.json(), {
+    phase: "frozen", version, normalTrafficHeld: true,
+  });
+  for (const overrides of [{ NANOHUB_RECOVERY_HOLD: "0" }, { HOSTED_FIXTURE_EXPIRES: "0" }])
+    assert.equal((await repositoryRoute(input(), { ...full, ...overrides }, {} as any, app))?.status, 404);
+  assert.equal(appCalls, 0);
+});
+
+test("phase barrier waits for both data-plane phase and exact deployed version using read-only bounded observations", async () => {
+  const version = "11111111-1111-1111-1111-111111111111", old = "22222222-2222-2222-2222-222222222222";
+  const states = [{ phase: "frozen", version: old }, { phase: "verify", version: old },
+    { phase: "frozen", version }, { phase: "verify", version }];
+  const budgets: number[] = []; let time = 0;
+  const observed = await waitForFixturePhase(async (budget: number) => {
+    budgets.push(budget); return { ...states.shift(), normalTrafficHeld: true };
+  }, { phase: "verify", version }, { now: () => time, sleep: async (ms: number) => { time += ms; } });
+  assert.deepEqual(observed, { attempts: 4, phase: "verify", version });
+  assert.ok(budgets.every((b, i) => b > 0 && b <= 90000 && (!i || b < budgets[i - 1])));
+});
+
+test("phase barrier refuses missing holds, malformed metadata, failed reads and deadline expiry without retrying application work", async () => {
+  const version = "11111111-1111-1111-1111-111111111111", expected = { phase: "verify", version };
+  for (const state of [{ phase: "verify", version, normalTrafficHeld: false },
+    { phase: "unknown", version, normalTrafficHeld: true }, { phase: "verify", version: null, normalTrafficHeld: true }]) {
+    let reads = 0;
+    await assert.rejects(() => waitForFixturePhase(async () => { reads++; return state; }, expected), /Invalid fixture phase/);
+    assert.equal(reads, 1);
+  }
+  let reads = 0;
+  await assert.rejects(() => waitForFixturePhase(async () => { reads++; throw Error("Read transport failed"); }, expected), /Read transport failed/);
+  assert.equal(reads, 1);
+  let time = 0;
+  await assert.rejects(() => waitForFixturePhase(async () => ({ phase: "frozen", version, normalTrafficHeld: true }), expected,
+    { timeoutMs: 1500, now: () => time, sleep: async (ms: number) => { time += ms; } }), /did not reach/);
+  time = 0;
+  await assert.rejects(() => waitForFixturePhase(async () => { time = 2000; return { ...expected, normalTrafficHeld: true }; }, expected,
+    { timeoutMs: 1500, now: () => time }), /exceeded its deadline/);
+  for (const input of [{ ...expected, phase: "unknown" }, { ...expected, version: "not-a-version" }])
+    await assert.rejects(() => waitForFixturePhase(async () => { throw Error("Unexpected request"); }, input), /Invalid expected/);
+});
+
+test("recovery error diagnostics retain only known fence codes and discard confidential, malformed or oversized response bodies", async () => {
+  const confidential = "synthetic confidential application data";
+  for (const code of ["fixture_frozen", "recovery_hold"])
+    assert.equal(await recoveryFailureCode(Response.json({ code, error: confidential }, { status: 503 })), code);
+  for (const response of [Response.json({ code: confidential, error: confidential }),
+    Response.json(null), new Response(confidential), new Response("x".repeat(4097)),
+    Response.json({ code: "fixture_frozen", padding: "x".repeat(4096) })])
+    assert.equal(await recoveryFailureCode(response), null);
 });

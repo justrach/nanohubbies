@@ -1,0 +1,130 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T13:32:09.217012+00:00",
+  "failedRun": {
+    "runId": "mvs4vx1l-7d67f895e3",
+    "implementationCommit": "ddb6df291209803617aebed8202c75e9b6ce9fe8",
+    "startedAt": "2026-10-28T13:12:03.082Z",
+    "finishedAt": "2026-10-28T13:21:59.634Z",
+    "providerRuntime": "node",
+    "acceptancePassed": false,
+    "failure": "HTTP 503 on the repository read after restoring the newer checkpoint; response code/body was not retained",
+    "checkpoints": [
+      {
+        "label": "before-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 17,
+        "r2Bytes": 18845
+      },
+      {
+        "label": "after-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 19,
+        "r2Bytes": 20440
+      }
+    ],
+    "verifiedBeforeFailure": {
+      "vaultSeededThroughApplication": true,
+      "providerValuesAbsentFromApplicationBackup": true,
+      "acceptedGitCommitBetweenCheckpoints": true,
+      "providerRotationWithoutVaultRedeploy": true,
+      "corruptionRejectedBeforeLoss": true,
+      "physicalApplicationLossObserved": true
+    },
+    "olderGitGraphVerified": false,
+    "newerReturnCloneVerified": false,
+    "runtimeTrace": {
+      "events": 589,
+      "exitCode": 0,
+      "writeFailures": 0
+    },
+    "cleanupNeeded": false,
+    "independentCleanup": {
+      "checkedAt": "2026-10-28T13:24:43.790Z",
+      "runId": "mvs4vx1l-7d67f895e3",
+      "providerRuntime": "node",
+      "apiAbsent": true,
+      "gateAbsent": true,
+      "vaultAbsent": true,
+      "bucketAbsent": true,
+      "databaseAbsent": true,
+      "providerEntryAbsent": true,
+      "requiredRetirementReceiptsVerified": true,
+      "originalProviderEntriesRetained": true,
+      "keysRemoved": true,
+      "main": {
+        "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+        "versionUnchanged": true
+      },
+      "productionVault": {
+        "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+        "versionUnchanged": true
+      },
+      "passed": true
+    }
+  },
+  "guardCandidate": {
+    "runtimeFiles": [
+      {
+        "path": "tools/hosted-recovery-fixture/phase.mjs",
+        "sha256": "3e5ffe5ec3f0c1aa37f612a793575e13b397574e868814faffc7214b2fe241d6"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/repository-control.ts",
+        "sha256": "786c52f87af29e16b40d561b380463a336f6860f192e849ad03f1de5af7b2c3c"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/repository-probe.mjs",
+        "sha256": "48d4eb72d28aa7b22e156ec26d4f76df79085c27eaa0600c323607c578f6f38e"
+      },
+      {
+        "path": "tools/verify-hosted-git-import.mjs",
+        "sha256": "8d1e5fe040b41c44d886c00b50ced161850e2f6c0c3499ffe7e5d18927e2b1e4"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/fixture.test.ts",
+        "sha256": "b50807125559817f2b1acd3e0a608a6b4d79055cf8dadd363494fde247cd2cf1"
+      }
+    ],
+    "dataPlanePhaseAndVersionRequired": true,
+    "normalTrafficMustRemainHeld": true,
+    "readinessObservationsOnlyRetried": true,
+    "applicationAndStorageWritesNotRetried": true,
+    "phaseTimeoutMs": 90000,
+    "errorBodyByteLimit": 4096,
+    "allowedDiagnosticCodes": [
+      "fixture_frozen",
+      "recovery_hold"
+    ],
+    "original503CauseProven": false,
+    "cloudAcceptancePassed": false,
+    "localAcceptance": {
+      "pinnedTsrs": true,
+      "lifecycleCases": 23,
+      "proxyAndObservationCases": 10,
+      "recoveryCases": 24,
+      "supportedNodeHelperCheck": true
+    }
+  },
+  "evidenceHashes": [
+    {
+      "artifact": "operation.json",
+      "sha256": "209524409516f5afb29883f89d85c70b9962f49c30e56492bc22fcb75c0b9ab6"
+    },
+    {
+      "artifact": "independent-final-observation.json",
+      "sha256": "a4215d84763637d94a652cc9447d27820f8fce50f610dd434db0b45145798b72"
+    },
+    {
+      "artifact": "runtime-events.jsonl",
+      "sha256": "b426328e8294d03717ac091a9b0f260c8c95e6a03e7d8ce974f85b37542db6d5"
+    }
+  ],
+  "productionMainVersion": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+  "productionVaultVersion": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+  "productionApplicationOrVaultDeployed": false,
+  "existingProviderValuesRead": false,
+  "githubPushed": false
+}

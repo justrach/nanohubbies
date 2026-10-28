@@ -13,6 +13,7 @@ import { gitProxy } from "../hosted-git-fixture/proxy.mjs";
 import { verifyRetainedBytes } from "./probe.mjs";
 import { syntheticValue } from "./vault-lifecycle.mjs";
 import { verifiedR2Reconcile } from "./retained.mjs";
+import { recoveryFailureCode } from "./phase.mjs";
 
 const exec = promisify(execFile),
   hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -87,10 +88,10 @@ export async function runRepositoryRecoveryProbe({
         await wait(seconds * 1000);
         continue;
       }
-      assert.ok(
-        expected === undefined ? response.ok : response.status === expected,
-        `Repository fixture HTTP ${response.status}: ${path}`,
-      );
+      if (expected === undefined ? !response.ok : response.status !== expected) {
+        const code = await recoveryFailureCode(response);
+        assert.fail(`Repository fixture HTTP ${response.status}${code ? ` (${code})` : ""}: ${path}`);
+      }
       return response;
     }
   }

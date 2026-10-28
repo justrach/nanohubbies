@@ -35,6 +35,7 @@ import {
   assertVaultBindings,
   syntheticValue,
 } from "./hosted-recovery-fixture/vault-lifecycle.mjs";
+import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -367,7 +368,7 @@ export async function verifyHostedGitImport(
   };
   const call = async (
     path,
-    { method = "GET", body, cookie = false, expectedStatus } = {},
+    { method = "GET", body, cookie = false, expectedStatus, timeoutMs = 120000 } = {},
   ) => {
     const response = await fetch(gateOrigin + path, {
       method,
@@ -378,7 +379,7 @@ export async function verifyHostedGitImport(
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       redirect: "error",
-      signal: AbortSignal.timeout(120000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (
       expectedStatus === undefined
@@ -678,6 +679,14 @@ export async function verifyHostedGitImport(
       if (["repository-recovery", "vault-recovery"].includes(purpose)) {
         const { runRepositoryRecoveryProbe } =
           await import("./hosted-recovery-fixture/repository-probe.mjs");
+        const observePhase = (phase) => waitForFixturePhase(
+          async (timeoutMs) => (await call("/__fixture/repository", {
+            method: "POST", body: { op: "phase" }, timeoutMs,
+          })).json(),
+          { phase, version: record.apiVersion },
+        );
+        record.recoverySeedObservation = await observePhase("seed");
+        await persist();
         const setPhase = async (phase) => {
           assert.ok(["seed", "frozen", "verify", "reconcile"].includes(phase));
           plan.api.vars.HOSTED_REPO_PHASE = phase;
@@ -686,10 +695,12 @@ export async function verifyHostedGitImport(
           record.apiVersion = await currentVersion(configPaths.api);
           const state = await metadata(record.apiVersion, configPaths.api);
           assertFixtureBindings(state, plan, "api");
+          const observed = await observePhase(phase);
           record.recoveryPhases ??= [];
           record.recoveryPhases.push({
             phase,
             version: record.apiVersion,
+            dataPlaneObservation: observed,
             at: new Date().toISOString(),
           });
           await persist();

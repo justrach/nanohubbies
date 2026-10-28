@@ -94,6 +94,12 @@ export async function repositoryRoute(
   );
   if (!input || typeof input !== "object" || Array.isArray(input))
     return json({ error: "Invalid fixture control body" }, 400);
+  if (path === "/__fixture/repository" && input.op === "phase")
+    return json({
+      phase: env.HOSTED_REPO_PHASE ?? null,
+      version: env.CF_VERSION_METADATA?.id ?? null,
+      normalTrafficHeld: env.NANOHUB_RECOVERY_HOLD === "1",
+    });
   if (path.endsWith("-session")) {
     if (!["seed", "verify", "reconcile"].includes(env.HOSTED_REPO_PHASE ?? ""))
       return json({ code: "fixture_frozen" }, 503);

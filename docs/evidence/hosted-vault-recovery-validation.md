@@ -155,3 +155,39 @@ one/three-second backoff for recognized connectivity failures. Mutations,
 authorization denials and explicit missing-resource responses are not retried
 by that helper. Unknown mutation outcomes require fresh observations and the
 resumable cleanup path. No production application/Vault deployment occurred.
+
+## Restore failure and data-plane phase guard — October 28
+
+A later supported-Node run at controller commit `ddb6df2` reaches the recovery
+probe. It captures distinct Git points with 17/19 retained R2 objects and accepts
+a Git commit between them. Both points cover 15 Durable Objects across ten
+classes. Corrupt retained bytes are refused before loss; physical application
+loss and a provider-side rotation without Vault redeployment are observed.
+
+Acceptance then fails: the repository read after restoring the newer point
+returns HTTP 503. The original response body/code is not retained, so the cause
+is unproven. Older-history clone and newer-return clone checks are not reached.
+The [guard receipt](recovery-phase-guard-receipt.json) records this failed gate
+without converting partial results into a successful recovery claim.
+
+Independent provider reads at `2026-10-28T13:24:43Z` confirm all three Workers,
+the database, bucket and generated provider entry absent, ten class retirement
+receipts present, original provider entries retained and private keys/grants
+removed. Production main remains `c5be9de5-8aa1-4a54-bcd9-5f4e067a542a`; production
+Vault remains `02dcb88b-5c99-49d9-a4b6-cb95451e6bb5`.
+
+The controller previously checked deployment metadata before advancing a phase,
+without observing the data plane. The new candidate adds a private, read-only
+phase/version observation, both before seeding and after each phase deployment.
+It waits at most 90 seconds for the exact deployed version and phase with the
+ordinary traffic hold still present. Unknown configuration, failed reads and
+timeouts stop the drill closed. Only those metadata observations are polled;
+application and storage writes are not retried. Future failures retain only the
+known `fixture_frozen`/`recovery_hold` codes from a bounded error body, never
+arbitrary application messages or credentials.
+
+Pinned tsrs and **57 fixture cases** pass: 23 lifecycle, ten proxy/observation
+and 24 recovery cases. A supported Node 24 helper check also passes. This closes
+a harness readiness/diagnostic gap and addresses a possible deployment
+propagation race; it does not prove the original 503 cause or successful hosted
+changing-Git recovery. Fresh cloud acceptance remains required.
