@@ -467,6 +467,18 @@ export class Sequencer extends DurableObject<Env> {
     });
   }
 
+  // Distinct entrypoints fail closed on older deployed receivers, which know
+  // only account-scoped browser drafts and would ignore a new optional field.
+  async cliPendingReview(command:PendingCommand) {
+    if(!command.actor.via)throw Error("CLI credential identity required");
+    return this.pendingReview(command);
+  }
+
+  async cliSubmitPendingReview(command:SubmitPending) {
+    if(!command.actor.via)throw Error("CLI credential identity required");
+    return this.submitPendingReview(command);
+  }
+
   async pendingReview(command:PendingCommand) {
     if(!await reviewWriter(this.env,this.meta<string>("trunk")!,command.actor.origin,command.actor.id))throw Error("Pending review requires a signed-in repository writer");
     return this.ctx.storage.transactionSync(()=>{
@@ -482,7 +494,7 @@ export class Sequencer extends DurableObject<Env> {
       const reviews=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()),s=reviews.snapshot(),pull=s.pulls.find(p=>p.number===command.number);
       if(!pull)throw Error("No such pull request");
       return new PendingReviews(this.sql).submit(command,pull,s.branches.find(b=>b.name===pull.head),draft=>{
-        const next=reviews.run({op:"review",number:pull.number,author:draft.author,commit:command.commit,anchor:command.anchor,verdict:command.verdict,body:command.body,independent:true,batch:{id:draft.id,comments:draft.comments.map(c=>c.id)}},()=>{throw Error("Unexpected review landing");});
+        const next=reviews.run({op:"review",number:pull.number,author:draft.author,commit:command.commit,anchor:command.anchor,verdict:command.verdict,body:command.body,independent:true,origin:command.actor.origin,...(command.actor.via?{via:command.actor.via}:{}),batch:{id:draft.id,comments:draft.comments.map(c=>c.id)}},()=>{throw Error("Unexpected review landing");});
         return next.reviews.at(-1)!;
       });
     });

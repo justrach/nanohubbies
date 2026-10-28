@@ -3,13 +3,14 @@ import {archiveCommand} from './archive.mjs';
 import {defaultBranchCommand} from './default-branch.mjs';
 import {environmentCommand} from './environments.mjs';
 import {runnerCommand} from './runners.mjs';
+import {pendingCommand,inlineSelection} from './pending.mjs';
 const redact=value=>String(value).replace(/nh(?:ci|c|g|d)_[a-f0-9]{32,}/gi,'[redacted]');
 export class CliApiError extends Error {constructor(message,status){super(message);this.status=status;}}
 export async function apiRequest(origin,path,token,{method='GET',body,revision,revisionType='protection',fetcher=fetch}={}) {
  if(!/^nhc_[a-f0-9]{64}$/.test(token??''))throw Error('CLI API access needs an nhc_ credential. Run auth login --with-api-token.');
  const target=new URL(path,origin);if(target.origin!==origin||!target.pathname.startsWith('/api/cli/'))throw Error('CLI API request must stay on the selected host');
  if(revision!==undefined&&(!Number.isSafeInteger(revision)||revision<0))throw Error('Use a current valid resource revision');
- let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':/\/environments(?:\/[a-zA-Z0-9-]+)?$/.test(path)?'The API response was lost. Inspect env list or env export before repeating the edit.':/\/ci\/(?:runners|[a-f0-9-]{36})$/.test(path)?'The API response was lost. Inspect runner list or use runner recover with the saved private file.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
+ let response;try{response=await fetcher(target.href,{method,redirect:'error',credentials:'omit',signal:AbortSignal.timeout(30000),headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4',...(revision===undefined?{}:{'If-Match':`"${revisionType}-${revision}"`})},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error(method==='GET'?'CLI API request failed. Check --host and network access.':/\/pending-review(?:\/submit)?$/.test(path)?'The API response was lost. Inspect pr draft and the pull request before repeating this operation.':/\/environments(?:\/[a-zA-Z0-9-]+)?$/.test(path)?'The API response was lost. Inspect env list or env export before repeating the edit.':/\/ci\/(?:runners|[a-f0-9-]{36})$/.test(path)?'The API response was lost. Inspect runner list or use runner recover with the saved private file.':path.endsWith('/default-branch')?'The API response was lost. Inspect repo default-branch before repeating the edit.':path.endsWith('/archive')?'The API response was lost. Inspect repo archive-status before repeating the operation.':path.endsWith('/protection')?'The API response was lost. Inspect rules get or rules list before repeating the edit.':/\/rulesets(?:\/\d+)?$/.test(path)?'The API response was lost. Inspect ruleset list or ruleset export before repeating the edit.':'The API response was lost. Inspect the pull request before repeating this operation.');}
  const text=await response.text();if(text.length>4*1024*1024)throw Error('CLI API response exceeded the display limit');
  let data;try{data=JSON.parse(text);}catch{throw Error(`CLI API returned a non-JSON response (HTTP ${response.status})`);}
  if(!response.ok)throw new CliApiError(redact(data.error??`CLI API returned HTTP ${response.status}`),response.status);return data;
@@ -88,6 +89,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
   const p=data.pulls.reduce((latest,pull)=>!latest||pull.number>latest.number?pull:latest,null);output({pull:p},`Created #${p.number}: ${p.title}`);return;
  }
  const number=pos.shift();if(!/^[1-9]\d{0,8}$/.test(number??'')||pos.length)throw Error('Choose one positive pull request number');
+ if(action==='draft'||action==='comment'&&opts.draft||action==='review'&&opts.pending)return pendingCommand({action,number,opts,get,post,output});
  const data=await get(`/pulls/${number}`),p=data.pull;
  if(action==='view') {
   output(data,`#${p.number} ${p.title}\n${p.state} · ${p.head} → ${p.base}\nHead: ${data.head.commit}\n\n${p.body}\n\nReview: ${data.reviewGate?.ready?'ready':data.reviewGate?.error??'not ready'}\n${target.url}/pulls/${number}`);return;
@@ -107,9 +109,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
   if(!opts.body?.trim())throw Error('Provide --body for the inline comment');
   const body={...observed,id:crypto.randomUUID(),body:opts.body};
   if(opts['reply-to'])body.replyTo=opts['reply-to'];else {
-   const side={left:'LEFT',right:'RIGHT'}[opts.side??'right'],line=Number(opts.line),startLine=Number(opts['start-line']??opts.line);
-   if(!opts.path||!side||!Number.isSafeInteger(line)||!Number.isSafeInteger(startLine)||line<1||startLine<1||startLine>line||line-startLine>200)throw Error('Select --path FILE --line N [--start-line N] [--side left|right] within one hunk');
-   Object.assign(body,{path:opts.path,side,line,startLine});
+   Object.assign(body,inlineSelection(opts));
   }
   result=await post(`/pulls/${number}/comments`,body);output({id:body.id,discussion:result},`Posted inline comment ${body.id} on #${number}.`);return;
  }

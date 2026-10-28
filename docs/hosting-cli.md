@@ -208,10 +208,61 @@ review is an explicitly delegated account review, marked **via CLI**, rather
 than proof that a human typed it. Self-approvals still cannot count; fresh writer
 membership, CODEOWNERS, stale-review, latest-push and conversation gates apply.
 CLI credentials never receive browser-only ruleset bypass, unrelated administrator APIs,
-secrets or private pending drafts. Runner administration requires its separate
+secrets or private browser drafts. Runner administration requires its separate
 explicit owner-only permission described below. Git transport requires
 the separate, explicit content scopes described above.
 Existing Git-only and registered-agent credentials gain no CLI API rights.
+
+### Private pending reviews
+
+CLI **0.4.13** adds private batch reviews. This candidate is locally validated;
+the deployed CLI remains 0.4.12 until a separately verified rollout. Like
+[GitHub pending reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request),
+comments remain private until submitted together with Comment, Approve or
+Request changes. The server publishes the verdict, anchored comments and retry
+receipt in one SQLite transaction.
+
+```sh
+nh pr draft 12 -R owner/repository --json
+nh pr comment 12 -R owner/repository --draft --revision 0 --path src/parser.ts --line 24 --body "Check empty input"
+nh pr draft 12 -R owner/repository --json
+nh pr draft 12 -R owner/repository --edit COMMENT-ID --revision 1 --body "Clarify the empty-input behavior"
+nh pr comment 12 -R owner/repository --draft --revision 2 --path src/reader.ts --start-line 8 --line 10 --body "Handle this range too"
+nh pr review 12 -R owner/repository --pending --revision 3 --verdict request-changes --body "Two issues to address"
+```
+
+Use the revision returned by `pr draft` or the preceding accepted operation;
+0 starts a new draft. `pr draft --remove COMMENT-ID --revision N` removes one
+comment; `pr draft --discard --revision N` discards the review. Edits and
+publication require the exact observed revision. Draft comments use the same
+201-line, single-visible-hunk limit as published comments, with at most 100
+comments and 1 MiB of retained draft data. Pending replies are unsupported.
+
+Every explicit pending-review read or write requires **reviews:write** and
+current repository writer access. Ordinary `read`, Git-only and agent tokens
+cannot inspect it. Each CLI credential owns a separate private workspace under
+its bound account; neither a sibling credential nor the same account's browser
+can read/edit that workspace. Existing browser drafts remain account-private
+and are not exposed to CLI credentials. Replacing a credential does not transfer
+its draft. Ordinary PR/list output excludes private CLI drafts.
+
+A push or changed comparison leaves old feedback private. Submission uses the
+draft's original head and comparison; the CLI never replaces them with newer
+IDs to make a stale review pass. Inspect and discard the old draft before
+starting on the new diff. Reads remain available to current writers while
+archived, but every draft mutation and publication is denied. Demotion,
+membership removal, credential expiry or revocation denies draft access.
+
+Published reviews and threads identify the owning account and issuing CLI
+credential. Self-approval, current independent reviewers, CODEOWNERS and
+conversation-resolution rules still apply. A lost response never triggers an
+automatic write retry: inspect `pr draft` and the public PR first. Exact server
+submission retries return the original receipt; another credential or changed
+payload cannot reuse it. See [validation](evidence/cli-pending-validation.md).
+
+Dedicated CLI draft RPC entrypoints prevent an older browser-only receiver from
+ignoring credential isolation during deployment propagation. Such a receiver
+cannot read or mutate a browser draft on the CLI's behalf; retry after rollout.
 
 ## Branch protections from the CLI
 
@@ -301,6 +352,12 @@ Worker/D1/Git fixtures: creation, list/view/diff, close, account review, hunk
 comment/resolution and protected merge; scope/origin/repository isolation,
 private-draft exclusion, membership removal/demotion, archive/lock/bypass refusal,
 credential restart persistence, revocation and expiry, plus exact clone/fsck.
+
+`bun run --filter @swarm/api test:cli-pending` additionally tests source and
+standalone bundled CLI collection, editing/removal/discard, per-credential and
+browser privacy, exact revisions/hunks, atomic publication and provenance,
+stale pushes, restart, scope/demotion/expiry/revocation, archive and protected
+merge followed by independent Git clone/fsck.
 
 `smoke-cli-device.ts` covers real Worker/D1 code consent, reduction, denial,
 expiry, competing actors/polls, lost response recovery, non-resurrection after

@@ -74,3 +74,36 @@ test('pending feedback limits and closed-review checks fail without publishing o
   assert.equal(f.state().reviews.length,0);
  }finally{f.db.close();}
 });
+test('CLI private workspaces and submission receipts are isolated from browser and sibling credentials',()=>{
+ const f=fixture();try{
+  f.add();
+  const cli={...actor,via:{kind:'cli',credentialId:'11111111-1111-4111-8111-111111111111'}},other={...actor,via:{kind:'cli',credentialId:'22222222-2222-4222-8222-222222222222'}};
+  assert.equal(f.get(cli),null);assert.equal(f.get(other),null);
+  const command={op:'add',number:1,actor:cli,author,reviewId:'cli-pending-review',revision:0,commit:f.head().commit,anchor:f.pull().anchor,comment:{...f.comment('cli-pending-comment'),via:cli.via}};
+  f.store.run(command,f.pull(),f.head());assert.equal(f.get(cli).id,command.reviewId);assert.equal(f.get().id,'pending-review-1');assert.equal(f.get(other),null);
+  for(const person of [actor,other])assert.throws(()=>f.store.run({op:'discard',number:1,actor:person,reviewId:command.reviewId,revision:1},f.pull(),f.head()),/changed|No pending/);
+  assert.throws(()=>f.store.run({...command,reviewId:'wrong-cli-provenance',comment:{...command.comment,via:other.via}},f.pull(),f.head()),/changed|Invalid pending/);
+  const submit={number:1,actor:cli,reviewId:command.reviewId,revision:1,commit:f.head().commit,anchor:f.pull().anchor,verdict:'REQUEST_CHANGES',body:'Reviewed privately'};
+  const result=f.submit(submit);assert.equal(f.get(cli),null);assert.equal(f.get().comments.length,1);
+  assert.deepEqual(f.submit(submit),result);assert.equal(f.state().reviews.length,1);
+  for(const person of [actor,other])assert.throws(()=>f.submit({...submit,actor:person}),/already used/);
+  const comment=f.sql.exec('SELECT data FROM pull_comments WHERE id = ?',command.comment.id).toArray()[0];assert.equal(JSON.parse(comment.data).via.credentialId,cli.via.credentialId);
+ }finally{f.db.close();}
+});
+test('delegated draft routes never fall back to browser RPCs on an older receiver',async()=>{
+ const built=await build({entryPoints:[new URL('../src/review/pending-route.ts',import.meta.url).pathname],bundle:true,platform:'node',format:'esm',write:false});
+ const {pendingReviewRoute}=await import('data:text/javascript;base64,'+Buffer.from(built.outputFiles[0].text).toString('base64'));
+ let browserCalls=0;const legacy={pendingReview(){browserCalls++;return {pending:{id:'browser-private-review'}};},submitPendingReview(){browserCalls++;throw Error('Must never publish a browser draft');}};
+ const env={SEQUENCER:{idFromName:name=>name,get:()=>legacy}},user={id:'codegraff:writer',name:'Writer',cli:{credentialId:'11111111-1111-4111-8111-111111111111',scopes:['read','reviews:write']}};
+ const pull={number:1,anchor:sha('a')},head={commit:sha('b')},identity={reviewId:'cli-private-review',revision:1};
+ for(const[method,body,submit]of [
+  ['GET',undefined,false],['PATCH',{...identity,commentId:'private-comment',body:'Edit'},false],['DELETE',identity,false],
+  ['POST',{...identity,commit:head.commit,anchor:pull.anchor,verdict:'APPROVE',body:'Private'},true]
+ ]) {
+  const request=new Request('http://localhost/api/trunks/fixture/pulls/1/pending-review',{method,headers:{Origin:'http://localhost','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+  const response=await pendingReviewRoute(env,request,'fixture',pull,head,{},user,true,submit);assert.equal(response.status,503);assert.ok(!(await response.text()).includes('browser-private-review'));
+ }
+ assert.equal(browserCalls,0);
+ const response=await pendingReviewRoute(env,new Request('http://localhost/api/trunks/fixture/pulls/1/pending-review'),'fixture',pull,head,{}, {...user,cli:undefined},true,false);
+ assert.equal((await response.json()).pending.id,'browser-private-review');assert.equal(browserCalls,1,'Old browser drafts remain readable by their browser owner');
+});

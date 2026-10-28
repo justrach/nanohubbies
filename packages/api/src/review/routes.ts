@@ -129,7 +129,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         }
       }
       if (operation === "comments") return pullCommentRoute(env, request, trunk, p, head, objects, user, accountWriter);
-      if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,humanWriter,tail[0]==="submit");
+      if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,accountWriter,tail[0]==="submit");
       if (suggestionOperation) return suggestionRoute(env,request,trunk,p,head,objects,user,humanWriter);
       if (method === "GET" && operation === "file") {
         const before = url.searchParams.get("side") === "base", path = url.searchParams.get("path") ?? "";

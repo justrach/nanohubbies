@@ -1,0 +1,124 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T03:54:36.536408Z",
+  "scope": "Local real Worker/SQLite DO/D1/Git acceptance for private CLI batch reviews; not hosted release acceptance",
+  "cliCandidate": {
+    "format": 1,
+    "version": "0.4.13",
+    "path": "/nh/releases/0.4.13/nh.mjs",
+    "bytes": 79252,
+    "sha256": "aac87d7489d4fa377c8b417cc42bb7194e6871c3d8a179d2cd0412855973178d"
+  },
+  "runtimeSource": {
+    "encoding": "SHA-256 of compact JSON array of sorted {path,sha256} records",
+    "sha256": "0879b3e63c7ccc24c832abaf37efb5b36d7487b5340066362cc5ba2bca1c75a9",
+    "files": [
+      {
+        "path": "bun.lock",
+        "sha256": "ab1594ad8f6392ee7d465185c919cf954b7c2cdf95d0f50d22d107f97839fca1"
+      },
+      {
+        "path": "packages/api/package.json",
+        "sha256": "c00ee5c1729b82ae32ce421c8363deb88c935a72a470b5eec2c061cc41a0c453"
+      },
+      {
+        "path": "packages/api/src/cli/routes.ts",
+        "sha256": "1b954b4301cf7ef6104d033495bfed233fc7ef9f05b85fdaf15e7893cd723cbd"
+      },
+      {
+        "path": "packages/api/src/review/pending-route.ts",
+        "sha256": "22a23a85241b0611488ee020c8acd38b70a3e4bbac25e2012a577ab40ebd852f"
+      },
+      {
+        "path": "packages/api/src/review/pending.ts",
+        "sha256": "99e4a0388b3ded429e328003c252dba87c67e52505a6afe63daa0927f6ab7456"
+      },
+      {
+        "path": "packages/api/src/review/routes.ts",
+        "sha256": "269fea7d388adb7bc4b5f6754718ecbe768f66271f617f33bb2741f36180f3df"
+      },
+      {
+        "path": "packages/api/src/sequencer.ts",
+        "sha256": "a84d9bae203c2c571ddfdee20fbe2e8b359ac9751140487b632c1cf65265dae2"
+      },
+      {
+        "path": "packages/cli/package.json",
+        "sha256": "af38b2a8c9002dad77b7a10b777cafd34c080ee6b47a7c1d4878c0fb243bfe4c"
+      },
+      {
+        "path": "packages/cli/src/api.mjs",
+        "sha256": "839e72ff9aa92d6522f4b8760a7178899aa114461b2a0256935b004db8cbeec3"
+      },
+      {
+        "path": "packages/cli/src/main.mjs",
+        "sha256": "c7d10e63716937a224da75fb93e31ca10532a41253d815fae29eaafe05b1663a"
+      },
+      {
+        "path": "packages/cli/src/pending.mjs",
+        "sha256": "dcb279cd63f0ab88c08b13a7c1cac60196d0a531f2769052b0f841e03d768669"
+      }
+    ]
+  },
+  "verified": {
+    "credentialAndBrowserDraftIsolation": true,
+    "readRequiresExplicitReviewScopeAndCurrentWriter": true,
+    "serverDerivedBoundedHunkAnchors": true,
+    "revisionCheckedEditsRemovalDiscard": true,
+    "workerRestartPersistence": true,
+    "atomicVerdictThreadsAndReceipt": true,
+    "accountAndCredentialProvenance": true,
+    "exactRetryWithoutDuplicatePublication": true,
+    "crossCredentialReceiptReuseDenied": true,
+    "stalePushAndForgedRefreshDenied": true,
+    "demotionExpiryRevocationDenied": true,
+    "archiveAllowsReadButBlocksMutations": true,
+    "selfApprovalCannotCount": true,
+    "requestChangesAndConversationGatesApply": true,
+    "protectedMergeAndIndependentCloneFsck": true,
+    "olderReceiverCannotAccessBrowserDraftForCli": true,
+    "lostResponseNeverAutomaticallyRetriesMutation": true
+  },
+  "localChecks": {
+    "pinnedApiTsrsPassed": true,
+    "cliUnitCasesPassed": 50,
+    "frozenOfflineInstallPassed": true,
+    "api-unit-final": {
+      "exitCode": 0,
+      "unitCasesPassed": 316,
+      "logSha256": "86911f832f7d77e116ff607c49840708717a0414c20bd3644d48598d020992bd"
+    },
+    "repository-final": {
+      "exitCode": 0,
+      "unitCasesPassed": 247,
+      "logSha256": "66f55984415264b4275d86a189db13a10a00398ebef7cf03b2c7ecaad0484f04",
+      "workerGitAcceptanceChainPassed": true
+    },
+    "privateReviewChain": {
+      "exitCode": 0,
+      "pendingUnitCasesPassed": 8,
+      "sourceAndPackagedCliPassed": true,
+      "logSha256": "8f8c0dc9154aa7e506bedcc8ad1a3b596ad8410d29ea4d0f20a6d4ed98bee995"
+    }
+  },
+  "production": {
+    "featureDeployed": false,
+    "cliPublished": false,
+    "lastPublishedCliVersion": "0.4.12",
+    "publicRead": {
+      "checkedAt": "2026-10-28T03:50:40.023Z",
+      "status": 200,
+      "expectedWorkerVersion": "993b659a-8d24-442b-92b4-f5270a94029a",
+      "expectedVersionPresent": true
+    },
+    "productionCredentialsUsedForAcceptance": false,
+    "githubPushed": false,
+    "trafficReadinessEstablished": false
+  },
+  "remaining": [
+    "Fresh hosted candidate release acceptance",
+    "Changing-Git checkpoint cloud recovery",
+    "Unattended Actions and hosted callbacks",
+    "Actual application staging/cutover acceptance",
+    "Capacity, operational monitoring and recovery release gates"
+  ]
+}
