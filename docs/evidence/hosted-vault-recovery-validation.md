@@ -280,3 +280,43 @@ control handler, fresh stubs/backoff, bounded exhaustion, rejection of overload
 and malformed flags, and exactly one invocation of a failed mutating loss RPC.
 No production service is redeployed. Full hosted changing-Git recovery,
 including return to the newer point, remains a required unpassed gate.
+
+## Phase-only asset session failure reconciliation
+
+The run at `647bcd2` captures both distinct Git checkpoints and restores the
+newer point after physical application-state loss. Exact Git graph/binary/mode/tag
+checks pass and the restored application still reads the latest provider value.
+All 30 checkpoint observations succeed on their first attempt; this run does not
+exercise the checkpoint-read retry on an actual provider exception.
+
+Before older-point rollback starts, the next phase deployment stops at the
+owned Worker's `/assets-upload-session` endpoint with Cloudflare error 10013.
+Older rollback and return to newer therefore remain unpassed. Independent reads
+at `2026-10-28T14:54:04.798Z` confirm all generated resources and private keys gone,
+original provider entries retained, required namespace retirement receipts
+present and production main/Vault versions unchanged. The
+[phase deployment receipt](recovery-phase-deploy-receipt.json) retains the failed
+gate and cleanup hashes.
+
+The installed Wrangler 4.151.0 deploy path awaits `syncAssets` before its Worker
+code upload and deployment requests. The controller now permits one retry only
+for that exact asset-session error, only for its already-existing generated
+repository/Vault recovery app. Before the first attempt it verifies the current
+version and owned binding graph. Before retrying it independently re-reads the
+active version and complete immutable resource metadata, including bindings,
+script and runtime settings. The previous version, complete resource hash and
+traffic hold must be unchanged. A private proof receipt must persist before the
+second attempt. Success requires one valid version acknowledgement, matching
+active provider version, target phase and the existing data-plane phase barrier.
+
+Authentication, transport/timeouts, killed or truncated CLI execution,
+post-upload acknowledgements, unknown outcomes, changed metadata, failed reads
+or failed receipt persistence stop closed. A second failed attempt stops too.
+Initial deployments, secret changes, restoration, Git writes and resource
+deletion do not use this helper. The generic provider wrapper still retries
+only its allowlisted observations. Ten new fault-injection cases pass under
+both Bun and Node. All **73 local cases** pass (23 lifecycle, ten proxy/provider,
+28 recovery, ten phase-deployment and two compiler cases); both fixture tsrs
+checks and the five-operator binding/syntax preflight pass. The project check
+also passes with three unchanged workspace results cached. These local results
+do not substitute for complete fresh hosted recovery acceptance.

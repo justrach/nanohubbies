@@ -10,6 +10,7 @@ const operators = [
   "tools/verify-hosted-git-import.mjs",
   "tools/hosted-recovery-fixture/repository-probe.mjs",
   "tools/hosted-recovery-fixture/phase.mjs",
+  "tools/hosted-recovery-fixture/phase-deploy.mjs",
 ];
 // --noResolve does not follow @types/node's reference graph. Supply the Node
 // declarations used by these operators explicitly, without traversing app code.

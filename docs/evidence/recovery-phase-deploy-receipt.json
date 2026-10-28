@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "kind": "held-recovery-phase-deployment-reconciliation",
+  "checkedAt": "2026-10-28T15:08:32.515212+00:00",
+  "priorRun": {
+    "runId": "mvs834uq-1c0bf6388f",
+    "implementation": "647bcd2868e57c41a42c6430e4a51f60d53178d0",
+    "acceptancePassed": false,
+    "phase": "older-checkpoint-authority-hazard",
+    "newerGitAndProviderValueVerified": true,
+    "checkpointReadAttempts": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "failure": "Cloudflare operation failed: 049-deploy; inspect its private log",
+    "failedStep": "049-deploy",
+    "endpoint": "owned-script/assets-upload-session",
+    "providerCode": 10013,
+    "cleanupNeeded": false,
+    "cleanupErrors": [],
+    "independentCleanupAt": "2026-10-28T14:54:04.798Z",
+    "independentCleanupPassed": true,
+    "hashes": {
+      "operation.json": "10386f61a8c24a5407217c667c85a2719beb4118aa604ff0291bfe787f6f32c1",
+      "049-deploy.log": "964310c61321acdbade7844f09e0307ab5d4ea68cd9ffe3a39ab16b0b65adbdf",
+      "independent-final-observation.json": "6d6c8099d4f9ceff1b351eb2bcad4962c1847f9f2e7878b8d572d113458494a5"
+    }
+  },
+  "providerOrdering": {
+    "wranglerVersion": "4.151.0",
+    "source": "wrangler/wrangler-dist/cli.js",
+    "sourceSha256": "fdc72018f9cdd5cecff191ec00876825ac90620113996c9bf7d343914fbc842d",
+    "syncAssetsAwaitedBeforeWorkerCodeUploadAndDeployment": true
+  },
+  "retryScope": {
+    "existingOwnedRecoveryAppPhaseOnly": true,
+    "maximumAttempts": 2,
+    "backoffMs": 1000,
+    "exactEndpointAndCode": true,
+    "unchangedPreviousVersionAndCompleteResources": true,
+    "normalTrafficHeld": true,
+    "privateProofPersistedBeforeRetry": true,
+    "acknowledgedActiveTargetVersionAndPhaseRequired": true,
+    "dataPlaneBarrierRetained": true,
+    "genericProviderMutationRetriesAdded": false
+  },
+  "localValidation": {
+    "phaseDeployCasesBun": 10,
+    "phaseDeployCasesNode": 10,
+    "totalFixtureRecoveryCompilerCases": 73,
+    "fixtureTsrsChecks": 2,
+    "operatorFiles": 5,
+    "operatorFullJsTypeCheck": false,
+    "projectCheck": {
+      "passed": true,
+      "workspaceTasks": 3,
+      "cachedWorkspaceTasks": 3
+    }
+  },
+  "freshHostedAcceptancePassed": false,
+  "productionDeploymentChanged": false
+}

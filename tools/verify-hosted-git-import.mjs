@@ -36,6 +36,7 @@ import {
   syntheticValue,
 } from "./hosted-recovery-fixture/vault-lifecycle.mjs";
 import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
+import { deployHeldFixturePhase } from "./hosted-recovery-fixture/phase-deploy.mjs";
 import { checkOperatorBindings } from "./check-operator-bindings.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
@@ -299,6 +300,8 @@ export async function verifyHostedGitImport(
         code: typeof error.code === "number" ? error.code : 1,
         stdout: error.stdout ?? "",
         stderr: error.stderr ?? "",
+        executionUncertain: error.killed === true || Boolean(error.signal) ||
+          error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER",
         timedOut:
           isProviderObservation(args) &&
           error.killed === true &&
@@ -319,7 +322,7 @@ export async function verifyHostedGitImport(
       throw Error(
         "Cloudflare operation failed: " + name + "; inspect its private log",
       );
-    return result;
+    return { ...result, step: name };
   };
   const wrangler = async (
     args,
@@ -692,17 +695,37 @@ export async function verifyHostedGitImport(
         await persist();
         const setPhase = async (phase) => {
           assert.ok(["seed", "frozen", "verify", "reconcile"].includes(phase));
+          const observeDeployment = async () => {
+            const version = await currentVersion(configPaths.api);
+            const state = await metadata(version, configPaths.api);
+            assert.equal(await currentVersion(configPaths.api), version,
+              "Fixture deployment changed during observation");
+            return { version, metadata: state };
+          };
+          const previous = await observeDeployment();
+          assert.equal(previous.version, record.apiVersion);
+          assertFixtureBindings(previous.metadata, plan, "api");
+          const previousPhase = plan.api.vars.HOSTED_REPO_PHASE;
           plan.api.vars.HOSTED_REPO_PHASE = phase;
           await saveConfigs();
-          await deploy(configPaths.api);
-          record.apiVersion = await currentVersion(configPaths.api);
-          const state = await metadata(record.apiVersion, configPaths.api);
-          assertFixtureBindings(state, plan, "api");
+          const deployed = await deployHeldFixturePhase({
+            accountId, runId, purpose, worker: plan.apiName, phase, previousPhase, previous,
+            deployOnce: () => wrangler(["deploy"], configPaths.api, { allowFailure: true }),
+            observe: observeDeployment,
+            recordRetry: async (proof) => {
+              record.recoveryPhaseDeployRetries ??= [];
+              record.recoveryPhaseDeployRetries.push({ ...proof, at: new Date().toISOString() });
+              await persist();
+            },
+          });
+          record.apiVersion = deployed.version;
+          assertFixtureBindings(deployed.metadata, plan, "api");
           const observed = await observePhase(phase);
           record.recoveryPhases ??= [];
           record.recoveryPhases.push({
             phase,
             version: record.apiVersion,
+            deployAttempts: deployed.attempts,
             dataPlaneObservation: observed,
             at: new Date().toISOString(),
           });
