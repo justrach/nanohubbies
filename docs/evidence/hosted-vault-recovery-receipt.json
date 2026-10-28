@@ -139,7 +139,65 @@
         "independentBucketAbsenceCheck": false
       }
     ],
-    "nextGate": "Rerun changing-Git checkpoints after Cloudflare control API connectivity recovers"
+    "nextGate": "Rerun changing-Git checkpoints after Cloudflare control API connectivity recovers",
+    "cleanupHardening": {
+      "implementationCommit": "9cc2190",
+      "localAcceptance": {
+        "pinnedTsrs": true,
+        "lifecycleCases": 23,
+        "proxyAndObservationCases": 10,
+        "recoveryFixtureCases": 20
+      },
+      "readOnlyObservationAttempts": 3,
+      "readOnlyObservationTimeoutSeconds": 30,
+      "mutationsAutomaticallyRetried": false,
+      "deletedBucketBindingDetachedOnCleanupResume": true,
+      "supportedWranglerRuntime": "node",
+      "packageRunner": "bun x",
+      "experimentalBunOverrideRemoved": true
+    },
+    "laterAttempts": [
+      {
+        "startedAt": "2026-10-28T01:01:25.820Z",
+        "cleanupFinishedAt": "2026-10-28T02:20:12.504Z",
+        "phase": "provider metadata discovery before application/Vault deployment",
+        "error": "Wrangler fetch failed; cleanup subsequently exposed deleted-bucket binding error 10085, fixed by c01df26",
+        "providerEntryRequested": false,
+        "recoveryProbeStarted": false,
+        "cloudAcceptancePassed": false,
+        "cleanupConfirmed": true,
+        "deletedBucketBindingDetached": true,
+        "independentObservation": {
+          "checkedAt": "2026-10-28T02:21:21.618Z",
+          "providerRuntime": "bun (experimental; subsequently removed)",
+          "allOwnedResourcesAbsent": true,
+          "originalProviderEntriesRetained": true,
+          "privateKeysRemoved": true
+        }
+      },
+      {
+        "startedAt": "2026-10-28T02:21:20.392Z",
+        "cleanupFinishedAt": "2026-10-28T03:36:43.447Z",
+        "phase": "application deployment after separate Vault provisioning and asset upload",
+        "error": "Wrangler fetch failed; experimental Bun runtime reported unsupported",
+        "providerEntryRequested": true,
+        "applicationDeploymentOutcomeInitiallyUnknown": true,
+        "recoveryProbeStarted": false,
+        "cloudAcceptancePassed": false,
+        "cleanupConfirmed": true,
+        "deletedBucketBindingDetached": true,
+        "explicitTenClassRetirement": true,
+        "independentObservation": {
+          "checkedAt": "2026-10-28T03:39:31.685Z",
+          "providerRuntime": "node",
+          "allOwnedResourcesAbsent": true,
+          "syntheticProviderEntryAbsent": true,
+          "requiredRetirementReceiptsVerified": true,
+          "originalProviderEntriesRetained": true,
+          "privateKeysRemoved": true
+        }
+      }
+    ]
   },
   "independentLongTermBackupServiceEstablished": false,
   "namespaceLossRecoveryEstablished": false,

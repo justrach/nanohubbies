@@ -116,3 +116,42 @@ evidence for that newer controller or for changing-Git-point recovery. Long-term
 backup operations, namespace-loss recovery, general production draining,
 independent current-authority acquisition, measured RPO/RTO, safe public reopening
 and actual application CI/staging/cutover also remain release requirements.
+
+## Later attempts and resumable cleanup
+
+Two further attempts on October 28 still did not reach the recovery probe.
+The first stopped at provider-entry metadata discovery with `fetch failed`,
+before requesting a provider entry or deploying the application/Vault. During
+cleanup, a lost control-plane response left the bucket already deleted. A
+subsequent fence deployment tried to bind that deleted bucket and failed with
+Cloudflare error 10085. Commit `c01df26` corrects this isolated-fixture resume
+path: observe actual resources and deploy the purge-only gate without an R2
+binding when the bucket is already absent. The purge endpoint cannot report
+successful deletion without a bucket binding. Cleanup then completed, with an
+independent all-resources-absent observation at `2026-10-28T02:21:21Z`.
+
+The next attempt provisioned the synthetic provider entry and separate Vault,
+uploaded application assets and then lost the application deployment response
+with another `fetch failed`. Recovery checkpoints were never reached. Cleanup
+observed the possible deployment, explicitly retired all nine application
+classes and the Vault class, deleted the synthetic provider entry and removed
+all three Workers, bucket and database. A supported-Node observer independently
+confirms absence, required retirement receipts, retention of pre-existing
+provider entries and removal of private key files at
+`2026-10-28T03:39:31Z`.
+
+That second attempt experimentally ran Wrangler under Bun. Wrangler reported
+this runtime unsupported, and a bucket observation returned an incomplete
+success response that the strict verifier correctly refused as absence proof.
+Cleanup finished using Wrangler's supported Node runtime. Commit `9cc2190`
+removes the experimental override; Bun still launches the commands through
+`bun x`, without npm. These attempts establish cleanup behavior, not successful
+changing-Git recovery.
+
+The current fixture checks pass pinned tsrs plus **53 cases**: 23 lifecycle,
+10 proxy/provider-observation and 20 recovery cases. Read-only provider
+observations have a three-attempt limit, 30-second per-attempt timeout and
+one/three-second backoff for recognized connectivity failures. Mutations,
+authorization denials and explicit missing-resource responses are not retried
+by that helper. Unknown mutation outcomes require fresh observations and the
+resumable cleanup path. No production application/Vault deployment occurred.

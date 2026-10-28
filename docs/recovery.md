@@ -182,6 +182,20 @@ remove the gate and private keys. If cleanup is interrupted, run the same script
 with `--cleanup /absolute/private-artifacts/<run-id>` and the explicit live
 opt-in. Keep the private receipt until all owned resources are confirmed absent.
 
+Read-only provider observations retry recognized connectivity failures at most
+three times, with a 30-second attempt timeout and one/three-second backoff.
+Authorization failures, explicit absence responses and mutations are not retried
+by this helper. A lost mutation response is an unknown outcome that cleanup
+must resolve from provider state. Run Wrangler on its supported Node runtime
+through `bun x`; forcing Wrangler to run under Bun is rejected by the harness.
+
+When resuming after partial deletion, cleanup observes whether the bucket still
+exists before fencing ingress. If it is already absent, the purge-only gate
+configuration omits the deleted R2 binding. Its purge endpoint refuses to
+produce deletion counts without a binding. Database/Worker cleanup can then
+finish without reattaching a deleted bucket. Private keys remain until owned
+resources are confirmed absent; no authorization error counts as absence.
+
 This is an implementation-level prerequisite for the full hosted gate above.
 It does not prove whole-repository consistency, lost-namespace recovery,
 long-term backup retention, current-authority reconciliation, alarm/socket/job
