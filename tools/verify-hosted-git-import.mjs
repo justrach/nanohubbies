@@ -168,6 +168,9 @@ export async function verifyHostedGitImport(
     format: 1,
     startedAt: new Date().toISOString(),
     providerRuntime,
+    controllerRuntime: process.versions.bun
+      ? { name: "bun", version: process.versions.bun }
+      : { name: "node", version: process.versions.node },
     runId,
     accountId,
     scope: ["repository-recovery", "vault-recovery"].includes(purpose)

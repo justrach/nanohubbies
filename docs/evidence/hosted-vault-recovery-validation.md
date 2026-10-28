@@ -320,3 +320,26 @@ both Bun and Node. All **73 local cases** pass (23 lifecycle, ten proxy/provider
 checks and the five-operator binding/syntax preflight pass. The project check
 also passes with three unchanged workspace results cached. These local results
 do not substitute for complete fresh hosted recovery acceptance.
+
+The fresh `b32ed7a` run passes 13 phase deployments and data-plane observations,
+all on their first attempt. No actual provider failure exercises the new
+conditional deploy retry. The newer checkpoint restores successfully; the
+older rollback passes clone/fsck and exact refs/graphs, removes only two backed
+newer R2 objects and reproduces old credential resurrection with the latest
+provider value retained. Reconciliation denies the independently known revoked
+access again, including after restart, and preserves the selected older Git
+point. Disconnect/reconnect also retains the current provider value.
+
+The final return to the newer point stops on a connection reset during a
+mutating DO restore-scheduling control request. The outcome is unknown; the
+controller does not retry that mutation. The full gate remains failed. The
+controller used Bun 1.4.4; Wrangler subprocesses used supported Node. This
+identifies the runtimes, not the cause of the connection reset. The controller
+now records its own runtime separately from Wrangler's runtime for future runs.
+
+Independent checks at `2026-10-28T15:28:52.968Z` confirm all generated resources
+absent, original provider entries retained, private keys/grants removed and
+production versions unchanged. Separate Git checks at `15:29:56Z` pass strict
+fsck and exact checkpoint refs/graphs for both completed clones: three refs each,
+13 newer objects and ten older objects. The receipt retains these partial
+results without claiming successful return to the newer point.

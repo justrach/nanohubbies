@@ -86,5 +86,113 @@
     }
   },
   "freshHostedAcceptancePassed": false,
-  "productionDeploymentChanged": false
+  "productionDeploymentChanged": false,
+  "freshRun": {
+    "runId": "mvs92mk3-b3df5e4bd7",
+    "implementation": "b32ed7aeb9bf366e249e7e92b1670017ef2d5d3b",
+    "startedAt": "2026-10-28T15:09:14.548Z",
+    "finishedAt": "2026-10-28T15:28:41.312Z",
+    "controllerRuntime": {
+      "name": "bun",
+      "version": "1.4.4"
+    },
+    "providerRuntime": "node",
+    "acceptancePassed": false,
+    "phase": "return-to-current-repository-checkpoint",
+    "completedPhaseDeployments": 13,
+    "phaseDeployAttempts": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "phaseRetriesExercised": 0,
+    "checkpoints": [
+      {
+        "label": "before-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 17,
+        "r2Bytes": 18845
+      },
+      {
+        "label": "after-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 19,
+        "r2Bytes": 20441
+      }
+    ],
+    "verifiedFlags": {
+      "vaultSeededThroughApplication": true,
+      "providerValuesAbsentFromApplicationBackup": true,
+      "acceptedGitCommitBetweenCheckpoints": true,
+      "providerRotationWithoutVaultRedeploy": true,
+      "corruptionRejectedBeforeLoss": true,
+      "physicalApplicationLossObserved": true,
+      "exactMetadataReviewsAndArchive": true,
+      "currentRestoreRetainsLatestProviderValue": true,
+      "exactGitGraphBinaryModesTags": true,
+      "protectedPushLockTagDeletionAndMergeDenied": true,
+      "currentCheckpointRevocationsRetained": true,
+      "olderGitGraphVerified": true,
+      "olderWorkloadGrantRevivesButValueRemainsCurrent": true,
+      "olderCheckpointResurrectsAuthority": true,
+      "disconnectReconnectRetainsProviderValue": true
+    },
+    "backedExtraR2ObjectsRemoved": 2,
+    "failure": {
+      "code": "ECONNRESET",
+      "during": "mutating DO restore-scheduling request while returning to newer point",
+      "outcome": "unknown; no mutation retry",
+      "causeEstablished": false
+    },
+    "cleanupNeeded": false,
+    "cleanupErrors": [],
+    "independentCleanupAt": "2026-10-28T15:28:52.968Z",
+    "independentCleanupPassed": true,
+    "partialGit": {
+      "checkedAt": "2026-10-28T15:29:56.867489+00:00",
+      "fullGatePassed": false,
+      "clones": [
+        {
+          "folder": "restored-clone",
+          "checkpoint": "after-revocations",
+          "strictFsck": true,
+          "exactCheckpointRefsAndGraph": true,
+          "refs": 3,
+          "objects": 13,
+          "refsSha256": "d12925d809302d480dea6d51ac165f3557c5908c8ed5cb5a743fdf47f9308713"
+        },
+        {
+          "folder": "older-clone",
+          "checkpoint": "before-revocations",
+          "strictFsck": true,
+          "exactCheckpointRefsAndGraph": true,
+          "refs": 3,
+          "objects": 10,
+          "refsSha256": "b991358930b6e171d26bac8e68404349fb454bfbefa8f96571a05ea82b2543cc"
+        }
+      ]
+    },
+    "hashes": {
+      "operation.json": "94408508e094180cd63776d3ab665dd3a3344f96ef8b3df0d249d0488efa84ff",
+      "independent-final-observation.json": "b2cb8a548da05bba9e5cd93ee759ed0eb740ccc2644a6108e5fee3c0678aaadf",
+      "independent-partial-git.json": "d36652417aaa97712a45c4244e7b7ad1df172fc1ddb10f5b4782717ef8ae736d"
+    }
+  },
+  "retainedOriginalErrorFormatTest": {
+    "actualRetained10013ErrorClassified": true,
+    "subsequentStateSynthetic": true,
+    "providerOperationsInvoked": false
+  }
 }
