@@ -23,7 +23,10 @@ import { cleanupFixture } from "./hosted-git-fixture/cleanup.mjs";
 import { gitProxy } from "./hosted-git-fixture/proxy.mjs";
 import { bucketExists } from "./hosted-git-fixture/observations.mjs";
 import { startTrace } from "./hosted-git-fixture/trace.mjs";
-import { observeWithRetries } from "./hosted-git-fixture/provider-retry.mjs";
+import {
+  observeWithRetries,
+  isProviderObservation,
+} from "./hosted-git-fixture/provider-retry.mjs";
 import {
   metadataRows,
   listProviderSecrets,
@@ -271,7 +274,12 @@ export async function verifyHostedGitImport(
         {
           cwd: join(root, "apps/web"),
           env: { ...process.env, CI: "1", WRANGLER_SEND_METRICS: "false" },
-          timeout: args[0] === "deploy" ? 8 * 60000 : 3 * 60000,
+          timeout:
+            args[0] === "deploy"
+              ? 8 * 60000
+              : isProviderObservation(args)
+                ? 30000
+                : 3 * 60000,
           maxBuffer: 16 << 20,
         },
       );
@@ -281,7 +289,14 @@ export async function verifyHostedGitImport(
         code: typeof error.code === "number" ? error.code : 1,
         stdout: error.stdout ?? "",
         stderr: error.stderr ?? "",
+        timedOut:
+          isProviderObservation(args) &&
+          error.killed === true &&
+          error.signal === "SIGTERM" &&
+          error.code !== "ERR_CHILD_PROCESS_STDIO_MAXBUFFER",
       };
+      if (result.timedOut)
+        result.stderr += "\nProvider observation exceeded local timeout\n";
     }
     await writeFile(
       join(directory, name + ".log"),

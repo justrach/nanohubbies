@@ -85,6 +85,38 @@ test("provider read retries are bounded and do not disguise access denials or mi
     assert.equal(attempts, 1);
   }
 });
+test("provider observations retry actual CLI API-timeout text and locally killed read attempts", async () => {
+  for (const failure of [
+    {
+      code: 1,
+      stdout: "",
+      stderr: "The request to Cloudflare's API timed out.",
+    },
+    { code: 1, stdout: "", stderr: "", timedOut: true },
+  ]) {
+    let calls = 0;
+    const result = await observeWithRetries(
+      ["versions", "list"],
+      async () =>
+        ++calls === 1 ? failure : { code: 0, stdout: "[]", stderr: "" },
+      async () => {},
+    );
+    assert.equal(calls, 2);
+    assert.equal(result.code, 0);
+    let writes = 0;
+    await observeWithRetries(
+      ["deploy"],
+      async () => {
+        writes++;
+        return failure;
+      },
+      async () => {
+        throw Error("Write retry");
+      },
+    );
+    assert.equal(writes, 1);
+  }
+});
 
 test("runtime trace drops request credentials and arbitrary console/exception content", () => {
   const secret = "private-control-and-git-credential";

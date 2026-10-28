@@ -8,14 +8,10 @@ const observations = [
   ["secrets-store", "store", "list"],
   ["secrets-store", "secret", "list"],
 ];
+export const isProviderObservation = (args) =>
+  observations.some((prefix) => prefix.every((value, i) => args[i] === value));
 export function transientObservation(args, result) {
-  if (
-    !result.code ||
-    !observations.some((prefix) =>
-      prefix.every((value, i) => args[i] === value),
-    )
-  )
-    return false;
+  if (!result.code || !isProviderObservation(args)) return false;
   const message = result.stdout + "\n" + result.stderr;
   if (
     /\b(?:10000|10006|10007|401|403)\b|unauthorized|authentication|permission denied/i.test(
@@ -23,7 +19,8 @@ export function transientObservation(args, result) {
     )
   )
     return false;
-  return /fetch failed|connect(?:ion)?[^\n]*tim(?:ed? ?out|eout)|ECONNRESET|ECONNREFUSED|ETIMEDOUT|UND_ERR_/i.test(
+  if (result.timedOut === true) return true;
+  return /fetch failed|request to Cloudflare's API timed out|connect(?:ion)?[^\n]*tim(?:ed? ?out|eout)|ECONNRESET|ECONNREFUSED|ETIMEDOUT|UND_ERR_/i.test(
     message,
   );
 }
