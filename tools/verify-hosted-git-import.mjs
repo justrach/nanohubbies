@@ -26,6 +26,7 @@ import { startTrace } from "./hosted-git-fixture/trace.mjs";
 import {
   observeWithRetries,
   isProviderObservation,
+  wranglerArguments,
 } from "./hosted-git-fixture/provider-retry.mjs";
 import {
   metadataRows,
@@ -55,6 +56,9 @@ export async function verifyHostedGitImport(
     throw Error(
       "Set NANOHUB_LIVE_CLOUDFLARE=1 for explicitly isolated hosted acceptance",
     );
+  const providerRuntime =
+    process.env.NANOHUB_FIXTURE_WRANGLER_RUNTIME ?? "node";
+  wranglerArguments([], providerRuntime);
   assert.ok(
     [
       "git-import",
@@ -158,6 +162,7 @@ export async function verifyHostedGitImport(
   const record = previous ?? {
     format: 1,
     startedAt: new Date().toISOString(),
+    providerRuntime,
     runId,
     accountId,
     scope: ["repository-recovery", "vault-recovery"].includes(purpose)
@@ -205,6 +210,7 @@ export async function verifyHostedGitImport(
       controllerCommit: (
         await exec("git", ["rev-parse", "HEAD"], { cwd: root })
       ).stdout.trim(),
+      providerRuntime,
       previouslyReportedClean: record.cleanupNeeded === false,
     });
     record.cleanupNeeded = true;
@@ -270,7 +276,7 @@ export async function verifyHostedGitImport(
     try {
       const answer = await exec(
         "bun",
-        ["x", "wrangler", ...args, "--config", config],
+        wranglerArguments([...args, "--config", config], providerRuntime),
         {
           cwd: join(root, "apps/web"),
           env: { ...process.env, CI: "1", WRANGLER_SEND_METRICS: "false" },
@@ -303,7 +309,7 @@ export async function verifyHostedGitImport(
       result.stdout + "\n" + result.stderr,
       { mode: 0o600 },
     );
-    record.steps.push({ step: name, code: result.code });
+    record.steps.push({ step: name, code: result.code, providerRuntime });
     await persist();
     if (result.code && !allowFailure)
       throw Error(

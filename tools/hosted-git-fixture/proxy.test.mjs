@@ -5,7 +5,27 @@ import { gzipSync, brotliCompressSync } from "node:zlib";
 import { gitProxy } from "./proxy.mjs";
 import { bucketExists } from "./observations.mjs";
 import { safeTrace } from "./trace.mjs";
-import { observeWithRetries } from "./provider-retry.mjs";
+import { observeWithRetries, wranglerArguments } from "./provider-retry.mjs";
+
+test("provider runtime is explicit and cannot introduce arbitrary CLI switches", () => {
+  assert.deepEqual(wranglerArguments(["versions", "list"]), [
+    "x",
+    "wrangler",
+    "versions",
+    "list",
+  ]);
+  assert.deepEqual(wranglerArguments(["versions", "list"], "bun"), [
+    "x",
+    "--bun",
+    "wrangler",
+    "versions",
+    "list",
+  ]);
+  assert.throws(
+    () => wranglerArguments(["versions", "list"], "--foreign-config"),
+    /Unknown fixture/,
+  );
+});
 
 test("provider observation retries transport failures and preserves explicit missing-resource evidence", async () => {
   let calls = 0;
