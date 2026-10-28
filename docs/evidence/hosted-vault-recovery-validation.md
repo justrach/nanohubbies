@@ -191,3 +191,31 @@ and 24 recovery cases. A supported Node 24 helper check also passes. This closes
 a harness readiness/diagnostic gap and addresses a possible deployment
 propagation race; it does not prove the original 503 cause or successful hosted
 changing-Git recovery. Fresh cloud acceptance remains required.
+
+## Distinct Git points expose a stale reconciliation assertion
+
+The next hosted run at `f563f7d` passes the new phase/version observations and
+does not reproduce the 503. It restores the newer Git point after loss, then
+rolls back to the older point. Independent local verification of the two clones
+passes `git fsck --strict` and exact checkpoint refs/graphs: three refs each,
+with **10 older objects and 13 newer objects**. The rollback removes two R2
+objects only after matching retained return copies. Older credential
+resurrection is demonstrated while the Cloudflare value remains current.
+
+The drill then fails its ref comparison after known-authority reconciliation:
+it still expects the newer point while the selected older point is correctly
+present. This assertion came from the earlier same-Git-point drill. The
+[checkpoint invariant receipt](recovery-checkpoint-invariant-receipt.json)
+preserves the failure, partial clone evidence, phase observations and independent
+cleanup; it does not claim the return to the newer point passed.
+
+The correction requires exact **older checkpoint refs** through authorization
+reconciliation. It also requires distinct refs and object graphs before the
+changing-Git drill starts loss, so an identical-point fixture cannot satisfy
+this gate. The later restore and independent newer-return clone remain
+mandatory. Pinned tsrs, all 24 recovery cases and Node syntax checks pass; a new
+complete hosted run is still required.
+
+Independent reads at `2026-10-28T13:52:17Z` confirm all generated resources gone,
+required class retirement receipts present, original provider entries retained,
+private keys/grants removed and both production Worker versions unchanged.

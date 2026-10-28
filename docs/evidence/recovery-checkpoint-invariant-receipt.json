@@ -1,0 +1,253 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T13:53:35.037775+00:00",
+  "runId": "mvs5mqec-01baa63e27",
+  "implementationCommit": "f563f7d45ca0ffb08563e5b4ca920ae164091c2b",
+  "startedAt": "2026-10-28T13:32:54.181Z",
+  "finishedAt": "2026-10-28T13:50:10.269Z",
+  "acceptancePassed": false,
+  "failure": "After known-authority reconciliation, the drill compared selected older refs against the newer point; it had not reached return-to-newer restoration",
+  "original503Recurred": false,
+  "original503CauseProven": false,
+  "checkpointSummaries": [
+    {
+      "label": "before-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 17,
+      "r2Bytes": 18844
+    },
+    {
+      "label": "after-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 19,
+      "r2Bytes": 20439
+    }
+  ],
+  "independentPartialGit": {
+    "checkedAt": "2026-10-28T13:52:35.001Z",
+    "partialAcceptanceOnly": true,
+    "clones": {
+      "older": {
+        "strictFsck": true,
+        "exactCheckpointRefs": true,
+        "exactCheckpointGraph": true,
+        "refs": 3,
+        "objects": 10
+      },
+      "newer": {
+        "strictFsck": true,
+        "exactCheckpointRefs": true,
+        "exactCheckpointGraph": true,
+        "refs": 3,
+        "objects": 13
+      }
+    },
+    "distinctCheckpointHistories": true,
+    "returnToNewerPointVerified": false
+  },
+  "backedExtraR2ObjectsRemoved": 2,
+  "verifiedBeforeFailure": {
+    "vaultSeededThroughApplication": true,
+    "providerValuesAbsentFromApplicationBackup": true,
+    "acceptedGitCommitBetweenCheckpoints": true,
+    "providerRotationWithoutVaultRedeploy": true,
+    "corruptionRejectedBeforeLoss": true,
+    "physicalApplicationLossObserved": true,
+    "exactMetadataReviewsAndArchive": true,
+    "currentRestoreRetainsLatestProviderValue": true,
+    "exactGitGraphBinaryModesTags": true,
+    "protectedPushLockTagDeletionAndMergeDenied": true,
+    "currentCheckpointRevocationsRetained": true,
+    "olderGitGraphVerified": true,
+    "olderWorkloadGrantRevivesButValueRemainsCurrent": true,
+    "olderCheckpointResurrectsAuthority": true
+  },
+  "phaseObservations": [
+    {
+      "phase": "frozen",
+      "version": "e1ab8f86-54dc-4d29-955e-fefdd56a2947",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "e1ab8f86-54dc-4d29-955e-fefdd56a2947"
+      },
+      "at": "2026-10-28T13:35:29.841Z"
+    },
+    {
+      "phase": "reconcile",
+      "version": "83620296-624d-48b6-b1bb-db17313d5f7c",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "reconcile",
+        "version": "83620296-624d-48b6-b1bb-db17313d5f7c"
+      },
+      "at": "2026-10-28T13:37:00.346Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "fb1b7ef2-5c45-45ca-96fd-46935d963f46",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "fb1b7ef2-5c45-45ca-96fd-46935d963f46"
+      },
+      "at": "2026-10-28T13:38:02.368Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "3c381c8d-5fc5-4035-a207-2eb03b52ddea",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "3c381c8d-5fc5-4035-a207-2eb03b52ddea"
+      },
+      "at": "2026-10-28T13:39:30.131Z"
+    },
+    {
+      "phase": "verify",
+      "version": "62266b8f-71e1-4fa6-ac85-9609a0ccf5da",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "62266b8f-71e1-4fa6-ac85-9609a0ccf5da"
+      },
+      "at": "2026-10-28T13:40:55.568Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "85ed9212-6fa5-4eaa-bcde-62b28b29d41e",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "85ed9212-6fa5-4eaa-bcde-62b28b29d41e"
+      },
+      "at": "2026-10-28T13:41:22.243Z"
+    },
+    {
+      "phase": "verify",
+      "version": "0a9894e0-02a9-4a63-a564-20fc3f9a4e68",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "0a9894e0-02a9-4a63-a564-20fc3f9a4e68"
+      },
+      "at": "2026-10-28T13:42:37.583Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "ab5c747a-c25e-42a4-a6c2-937d6bf42307",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "ab5c747a-c25e-42a4-a6c2-937d6bf42307"
+      },
+      "at": "2026-10-28T13:44:12.836Z"
+    },
+    {
+      "phase": "verify",
+      "version": "7aace90b-5855-423c-b7f4-afd54f52a453",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "7aace90b-5855-423c-b7f4-afd54f52a453"
+      },
+      "at": "2026-10-28T13:46:01.941Z"
+    },
+    {
+      "phase": "reconcile",
+      "version": "f6548168-777f-4172-9e7f-1dcaf53c2eed",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "reconcile",
+        "version": "f6548168-777f-4172-9e7f-1dcaf53c2eed"
+      },
+      "at": "2026-10-28T13:47:15.202Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "1a1ba433-8e4a-4aff-8c65-00f1363084c8",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "1a1ba433-8e4a-4aff-8c65-00f1363084c8"
+      },
+      "at": "2026-10-28T13:47:56.624Z"
+    },
+    {
+      "phase": "verify",
+      "version": "c971375f-3ce2-42c2-8d79-8fa41a0547b3",
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "c971375f-3ce2-42c2-8d79-8fa41a0547b3"
+      },
+      "at": "2026-10-28T13:48:58.270Z"
+    }
+  ],
+  "seedObservation": {
+    "attempts": 1,
+    "phase": "seed",
+    "version": "fa578689-9245-41b0-814a-26d079ba953a"
+  },
+  "runtimeTrace": {
+    "events": 1134,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "independentCleanup": {
+    "checkedAt": "2026-10-28T13:52:17.934Z",
+    "runId": "mvs5mqec-01baa63e27",
+    "providerRuntime": "node",
+    "apiAbsent": true,
+    "gateAbsent": true,
+    "vaultAbsent": true,
+    "bucketAbsent": true,
+    "databaseAbsent": true,
+    "providerEntryAbsent": true,
+    "requiredRetirementReceiptsVerified": true,
+    "originalProviderEntriesRetained": true,
+    "keysRemoved": true,
+    "main": {
+      "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+      "versionUnchanged": true
+    },
+    "productionVault": {
+      "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+      "versionUnchanged": true
+    },
+    "passed": true
+  },
+  "candidateCorrection": {
+    "path": "tools/hosted-recovery-fixture/repository-probe.mjs",
+    "sha256": "31b2f558806fdab8bf9603710d146b49578349a43516a66f525f2c5040c849c8",
+    "requiresDistinctCheckpointRefsAndGraphs": true,
+    "authorityReconciliationMustKeepSelectedOlderRefs": true,
+    "returnToNewerCloneStillRequired": true,
+    "cloudAcceptancePassed": false,
+    "localRecoveryCases": 24,
+    "pinnedTsrsPassed": true,
+    "nodeSyntaxPassed": true
+  },
+  "evidenceHashes": [
+    {
+      "artifact": "operation.json",
+      "sha256": "fdf13441ec3bb6b506d85d27df190376ec690eb7ecd3bbdaefbdb95b126e504e"
+    },
+    {
+      "artifact": "independent-final-observation.json",
+      "sha256": "ece61242adf4eedb8e7d8ce646fd678c0adaf65504e8ebd3a99a70016d8dcd42"
+    },
+    {
+      "artifact": "independent-partial-git.json",
+      "sha256": "bf9676687f7aa3cdf7256fd396729c84076f8f30107a48398a919e569bdf484e"
+    },
+    {
+      "artifact": "runtime-events.jsonl",
+      "sha256": "0bf939175f77a4c3f6bb5e3faa05be58372ef3bb54fffed1147173739c3341e5"
+    }
+  ],
+  "productionApplicationOrVaultDeployed": false,
+  "githubPushed": false
+}
