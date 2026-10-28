@@ -123,6 +123,21 @@ remain open. This does not activate an unattended dispatcher.
 
 The `--watch` process polls idle queues every five seconds. It does not install a system service or schedule a Codex automation. Run it under your existing service manager. CI leases last two hours; job deadlines are also capped by the remaining lease. The sandbox lease bounds abandoned allocations. Each job receipt records the sandbox ID and `cleanupNeeded`; an operator can retry `DELETE /v1/sandboxes/:id` with the trusted gateway key after a controller crash or failed cleanup. Explicit capacity/preparation responses (429/503) retry within the allocation deadline; ambiguous timeouts do not retry creation automatically. SIGINT/SIGTERM stops claiming and drains in-flight jobs through cleanup.
 
+Before claiming a candidate, Codegraff dispatchers verify the account key through
+the read-only sandbox-list endpoint. Missing scope, rejected authentication,
+malformed responses or unavailable connectivity leave the candidate queued;
+they do not publish a failed candidate check. Concurrent repository workers
+share this check in the dispatcher process. Success is cached for five minutes,
+failure for five seconds, with separate entries when the key changes. The cache
+retains only key fingerprints and safe results; account inventory is discarded.
+Explicit Docker and trusted pipeline backends keep their existing behavior.
+
+This proves sandbox API access at the observation time, not VM capacity/credit,
+image availability, repository-token validity, hosted callbacks or staging
+activation. Provider requests still enforce current authorization. The
+[access-preflight evidence](evidence/runner-preflight-validation.md) records the
+real configured Nanohub key rejection and the unchanged-queue integration test.
+
 ### Shared Nanohub account pool
 
 There is no one-runner-per-repository restriction. Several worker processes may

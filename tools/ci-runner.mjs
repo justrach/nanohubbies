@@ -12,6 +12,7 @@ import { join, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {toolchain} from './toolchain.mjs';
 import { runFleet } from './runner-pool.mjs';
+import { verifySandboxAccess } from './sandbox-access.mjs';
 
 export function runProcess(command, args, options={}) {
   return new Promise((resolve,reject)=>{
@@ -77,6 +78,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
     return response.json();
   }
   if(config.stagingEnvironment!==undefined&&(typeof config.stagingEnvironment!=="string"||!config.stagingEnvironment||config.stagingEnvironment.length>255||config.stagingEnvironment!==config.stagingEnvironment.trim()||/[\x00-\x1f\x7f]/.test(config.stagingEnvironment)))throw Error("Use a configured staging environment name");
+  if(config.backend==='codegraff')await verifySandboxAccess(process.env.CODEGRAFF_API_KEY);
   const claimed=await api('/claim',{});if(!claimed.run)return {idle:true};
   const run=claimed.run,dir=await mkdtemp(join(tmpdir(),'nanohub-ci-')),source=join(dir,'source');
   const artifacts=join(config.artifacts,run.id,`${run.attempt}`);await mkdir(artifacts,{recursive:true});

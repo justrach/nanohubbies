@@ -53,6 +53,11 @@ unit cases, 261 repository cases and 53 CLI cases. Fifteen live asset checks,
 27 preserved bindings and nine authenticated canary comparisons pass. The
 configured Nanohub Actions account last returned HTTP 403 for missing sandbox
 scope; separate CI-account acceptance does not activate its hosted dispatcher.
+The trusted dispatcher now [checks sandbox access before claiming candidates](evidence/runner-preflight-validation.md).
+Live rejection with that configured key makes zero Nanohub requests; real
+Worker integration proves queued candidates and attempts remain unchanged.
+This correction passes 340 API unit cases, 264 repository cases and the full
+Worker/Git acceptance chain, plus hosting integration and pinned tsrs.
 
 The earlier main Worker was `993b659a-8d24-442b-92b4-f5270a94029a`. The request hold's first
 corrected rollout was `1450c429-a969-483e-8383-c05d9ed8467c`. A first rollout exposed a static-asset delivery

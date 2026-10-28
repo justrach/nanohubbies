@@ -7,6 +7,8 @@ const execute = promisify(execFile);
 const projectRoot = resolve(import.meta.dirname, "..");
 const operators = [
   "tools/check-operator-bindings.mjs",
+  "tools/ci-runner.mjs",
+  "tools/sandbox-access.mjs",
   "tools/verify-hosted-git-import.mjs",
   "tools/hosted-recovery-fixture/repository-probe.mjs",
   "tools/hosted-recovery-fixture/phase.mjs",

@@ -10,6 +10,52 @@ test('invalid private toolchain configuration is rejected before claiming a host
  await assert.rejects(runOnce({...config,backend:'codegraff',imageSnapshot:'snp_fixture'},'synthetic-unused-token'),/cannot be combined/);
 });
 function adapter(){return {dispatch:async c=>{assert.equal(c.idempotencyKey,'event');return {runId:'deploy-1'};},wait:async()=>({state:'success',candidate:head,kind:'deployment'}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};}
+test('unverified sandbox credentials stop before claiming a candidate or reporting a failed check',async()=>{
+ const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY;
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',backend:'codegraff',image:'registry.invalid/toolchain@sha256:'+'c'.repeat(64),artifacts:'/var/lib/nanohub'};
+ try {
+  for(const [index,status,body] of [[0,403,{error:{type:'insufficient_scope',message:'private-body'}}],[1,401,{error:'private-body'}],[2,503,{error:'private-body'}],[3,200,'malformed-private-body']]){
+   const calls=[];process.env.CODEGRAFF_API_KEY=`preflight-synthetic-key-${index}`;
+   globalThis.fetch=async(url,options)=>{
+    calls.push(String(url));assert.equal(String(url),'https://gateway.codegraff.com/v1/sandboxes');
+    assert.equal(options.method,'GET');assert.equal(options.headers.Authorization,`Bearer preflight-synthetic-key-${index}`);
+    return status===200?new Response(body):Response.json(body,{status});
+   };
+   await assert.rejects(runOnce(config,'unused-repository-token'),error=>{
+    assert.match(error.message,/no CI job was claimed/);assert.ok(!error.message.includes('private-body'));
+    return true;
+   });
+   assert.deepEqual(calls,['https://gateway.codegraff.com/v1/sandboxes']);
+  }
+ } finally {globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
+});
+test('successful sandbox access permits normal claims, shares verification across repositories and does not allocate a VM',async()=>{
+ const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY,calls=[];
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',backend:'codegraff',image:'registry.invalid/toolchain@sha256:'+'c'.repeat(64),artifacts:'/var/lib/nanohub'};
+ try {
+  process.env.CODEGRAFF_API_KEY='preflight-shared-valid-key';
+  globalThis.fetch=async(url,options)=>{
+   calls.push([String(url),options.method]);
+   if(String(url)==='https://gateway.codegraff.com/v1/sandboxes')return Response.json({sandboxes:[]});
+   assert.match(String(url),/\/ci\/claim$/);return Response.json({run:null});
+  };
+  assert.deepEqual(await runOnce(config,'unused-repository-token'),{idle:true});
+  assert.deepEqual(await runOnce({...config,repository:'alice/other'},'unused-other-token'),{idle:true});
+  assert.deepEqual(calls,[['https://gateway.codegraff.com/v1/sandboxes','GET'],['https://never-contact.invalid/api/repos/alice/repo/ci/claim','POST'],['https://never-contact.invalid/api/repos/alice/other/ci/claim','POST']]);
+  assert.ok(!calls.some(([url,method])=>url==='https://gateway.codegraff.com/v1/sandboxes'&&method==='POST'));
+ } finally {globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
+});
+test('explicit Docker and trusted pipeline runners do not require Codegraff account access',async()=>{
+ const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY,calls=[];
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',image:'registry.invalid/toolchain@sha256:'+'c'.repeat(64),artifacts:'/var/lib/nanohub'};
+ try {
+  delete process.env.CODEGRAFF_API_KEY;
+  globalThis.fetch=async(url,options)=>{calls.push(String(url));assert.equal(options.method,'POST');assert.equal(String(url),'https://never-contact.invalid/api/repos/alice/repo/ci/claim');return Response.json({run:null});};
+  assert.deepEqual(await runOnce({...config,backend:'docker'},'unused-repository-token'),{idle:true});
+  assert.deepEqual(await runOnce({...config,pipelineAdapter:'/etc/nanohub/trusted-adapter.mjs'},'unused-repository-token'),{idle:true});
+  assert.equal(calls.length,2);
+ } finally {globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
+});
 test('a deployment must succeed before version and real acceptance count',async()=>{
   for(const patch of [{state:'failure',candidate:head,kind:'deployment'},{state:'success',candidate:base,kind:'deployment'},{state:'success',candidate:head,kind:'checks'}]){
     await assert.rejects(stagingGate({...adapter(),wait:async()=>patch},context,version(head)),/deployment job/);

@@ -208,18 +208,26 @@ try {
   const uploads: Buffer[] = [];
   const deletedSandboxes=new Set<string>();
   let sandboxes = 0,
-    destroyed = 0;
+    destroyed = 0,
+    sandboxAccessReads = 0,
+    ciClaims = 0;
   globalThis.fetch = async (input: any, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.startsWith("https://gateway.codegraff.com/v1/")) {
       assert.equal(
         new Headers(init?.headers).get("authorization"),
-        "Bearer synthetic-codegraff-fixture-key",
+        `Bearer ${process.env.CODEGRAFF_API_KEY}`,
       );
       const route = new URL(url).pathname,
         body = init?.body ? JSON.parse(String(init.body)) : null;
       let result: any = {};
-      if (route === "/v1/sandboxes") {
+      if (route === "/v1/sandboxes" && init?.method === "GET") {
+        sandboxAccessReads++;
+        if (process.env.CODEGRAFF_API_KEY === "synthetic-no-sandbox-scope-key")
+          return Response.json({ error: { type: "insufficient_scope" } }, { status: 403 });
+        result = { sandboxes: [] };
+      } else if (route === "/v1/sandboxes") {
+        assert.equal(init?.method, "POST");
         sandboxes++;
         result = { id: "fixture-sandbox-" + sandboxes };
       } else if (init?.method === "DELETE") {
@@ -244,24 +252,38 @@ try {
       url.startsWith(f.origin),
       "Direct Actions cannot use a GitHub transport mirror",
     );
+    if (new URL(url).pathname.endsWith("/ci/claim")) ciClaims++;
     return nativeFetch(input, init);
   };
   process.env.CODEGRAFF_API_KEY = "synthetic-codegraff-fixture-key";
   try {
+    const runnerConfig = {
+      origin: f.origin,
+      repository: "alice/renamed.git-data",
+      backend: "codegraff",
+      image: "registry.invalid/fixture@sha256:" + "a".repeat(64),
+      artifacts: join(f.dir, "controller"),
+    };
+    process.env.CODEGRAFF_API_KEY = "synthetic-no-sandbox-scope-key";
+    await assert.rejects(runOnce(runnerConfig, runner.token), /sandbox scope.*no CI job was claimed/);
+    assert.equal(ciClaims, 0);
+    assert.equal(sandboxes, 0);
+    assert.equal(uploads.length, 0);
+    assert.deepEqual(
+      (await f.json("GET", base + "/repository", undefined, alice)).runs[0], retry,
+      "Unverified runner must leave the real queued candidate and attempt unchanged",
+    );
+    process.env.CODEGRAFF_API_KEY = "synthetic-codegraff-fixture-key";
     const completed = await runOnce(
-      {
-        origin: f.origin,
-        repository: "alice/renamed.git-data",
-        backend: "codegraff",
-        image: "registry.invalid/fixture@sha256:" + "a".repeat(64),
-        artifacts: join(f.dir, "controller"),
-      },
+      runnerConfig,
       runner.token,
     );
     assert.equal(completed.state, "complete");
     assert.equal(completed.results[0].name, "check/test");
     assert.equal(completed.results[0].state, "success");
     assert.equal(completed.results[0].execution.provider, "codegraff");
+    assert.equal(sandboxAccessReads, 2);
+    assert.equal(ciClaims, 1);
     assert.equal(sandboxes, 1);
     assert.equal(destroyed, 1);
     for (const file of uploads)

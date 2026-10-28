@@ -1,0 +1,97 @@
+{
+  "format": 1,
+  "kind": "sandbox-access-before-candidate-claim",
+  "checkedAt": "2026-10-28T15:44:57.494876+00:00",
+  "implementationBase": "d5556e6",
+  "sourceHashes": {
+    "tools/sandbox-access.mjs": "9f8eeb7eeafe66013c011aef666c5c2ed59099d103f2a652e83de86aadc99242",
+    "tools/ci-runner.mjs": "f6c5bb73aca45009bf48711f913941bd6f9e8c751d8d5849ee226e66c8db5e43",
+    "tools/check-operator-bindings.mjs": "17af734c3e438f83d1056afa1ddfaebaae874b0fae6af8fee3ad80fa68718e7e",
+    "packages/api/scripts/sandbox-access.test.mjs": "44e91470a33288634f694b4a6cf26d87fb8cde55d89916a5c54eb84e545f5827",
+    "packages/api/scripts/ci-runner.test.mjs": "22e57cbd63b601a1c7acbd63c287dc66c50cb33fde14890bb4e2a228258b968e",
+    "packages/api/scripts/smoke-namespaces.ts": "5d1c208ec36b78cb25c40535a4a13ea6edfcb49c9021874b5a05314d0d9e5c50",
+    "packages/api/package.json": "ffa635d60e1a399505f7a3faf8c36e8746430bd266c7c6627a1b27db4081663f"
+  },
+  "behavior": {
+    "providerRequest": "GET /v1/sandboxes",
+    "beforeCandidateClaim": true,
+    "concurrentSingleFlight": true,
+    "successCacheMs": 300000,
+    "failureCacheMs": 5000,
+    "maximumCachedFingerprints": 16,
+    "credentialValuesCached": false,
+    "accountInventoryRetained": false,
+    "dockerAndTrustedPipelineUnaffected": true
+  },
+  "validation": {
+    "focusedNodeCases": 15,
+    "focusedBunCases": 15,
+    "hostingUnitCases": 44,
+    "hostingWorkerGitIntegration": true,
+    "repositoryUnitCases": 264,
+    "repositoryFullWorkerGitCliChain": true,
+    "projectCheckPassed": true,
+    "workspaceTasks": 3,
+    "cachedWorkspaceTasks": 1,
+    "operatorFiles": 7,
+    "operatorFullJsTypeCheck": false,
+    "apiUnitCases": 340
+  },
+  "initialHostingAttempt": {
+    "passed": false,
+    "failure": "GET /sandboxes incorrectly counted as VM creation by existing gateway double",
+    "fixtureCorrectedToSeparateGetAndPost": true,
+    "subsequentFullCommandPassed": true
+  },
+  "liveConfiguredKeyRejection": {
+    "checkedAt": "2026-10-28T15:41:22.495Z",
+    "configuredNanohubKeyUsed": true,
+    "keyReplaced": false,
+    "resourcesCreated": false,
+    "status": 403,
+    "code": "sandbox_scope_required",
+    "safeFailure": true,
+    "gatewayReads": 1,
+    "nanohubRequests": 0
+  },
+  "subsequentReadOnlyConnectivity": {
+    "checkedAt": "2026-10-28T15:39:40.298Z",
+    "runtime": "24.14.1",
+    "readOnly": true,
+    "results": [
+      {
+        "host": "nanohub.sh",
+        "attempt": 1,
+        "status": 200,
+        "elapsedMs": 1676
+      },
+      {
+        "host": "nanohub.sh",
+        "attempt": 2,
+        "status": 200,
+        "elapsedMs": 1328
+      },
+      {
+        "host": "nh-vault-recovery-mvs9uu8k-54414d773e-gate.rachpradhan.workers.dev",
+        "attempt": 1,
+        "status": 404,
+        "elapsedMs": 945
+      },
+      {
+        "host": "nh-vault-recovery-mvs9uu8k-54414d773e-gate.rachpradhan.workers.dev",
+        "attempt": 2,
+        "status": 404,
+        "elapsedMs": 501
+      }
+    ]
+  },
+  "privateLogHashes": {
+    "runner-preflight-repository-20261029.log": "79504b8bba90339386b7b15299cb2829c6a4438cfcf8531717d878758f98e966",
+    "runner-preflight-hosting-20261029.log": "69c32818db4ef5be9a4967d74bf0b1644375404511a06466f7f43e9315829332",
+    "runner-preflight-20261029.json": "a801ae21799e04b682e648fd8d2a36d507e811e93dfeed9b985a457cd054179d",
+    "runner-preflight-unit-20261029.log": "b381cbfd29cc3683b1fe03b98b878ff6b0a095776748b0150ac784079cb0b336"
+  },
+  "unattendedHostedActionsProven": false,
+  "fullHostedChangingGitRecoveryProven": false,
+  "productionMutationsPerformed": false
+}
