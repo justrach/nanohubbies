@@ -242,5 +242,71 @@
     },
     "runtimeCauseEstablished": false,
     "fullRecoveryAcceptanceProven": false
+  },
+  "subsequentNodeRun": {
+    "runId": "mvsag67j-4ecb308cee",
+    "implementation": "4ee6539b8644792defabf054ab87d1725a939554",
+    "controllerRuntime": {
+      "name": "node",
+      "version": "24.14.1"
+    },
+    "providerRuntime": "node",
+    "acceptancePassed": false,
+    "completedCheckpoints": 0,
+    "successfulCheckpointReads": 3,
+    "completedPhaseBarriers": 1,
+    "phaseDeployRetriesExercised": 0,
+    "physicalLossStarted": false,
+    "failure": {
+      "message": "fetch failed",
+      "causeCode": "ECONNRESET",
+      "causeEstablished": false,
+      "exactInterruptedRequestIdentified": false,
+      "phase": "first snapshot capture"
+    },
+    "runtimeTrace": {
+      "events": 144,
+      "exitCode": null,
+      "writeFailures": 0
+    },
+    "cleanupNeeded": false,
+    "cleanupErrors": [],
+    "independentCleanupAt": "2026-10-28T15:53:58.124Z",
+    "independentCleanupPassed": true,
+    "hashes": {
+      "operation.json": "93b1aedece03bab7640df0100f6f20de3dd232a34c281181711cc8a93817bb3c",
+      "independent-final-observation.json": "ff3fef7f882476be2a42a02624a2a2aac0cadd77496e8f133731e604aca0a183"
+    }
+  },
+  "laterReadOnlyConnectivity": {
+    "checkedAt": "2026-10-28T15:39:40.298Z",
+    "runtime": "24.14.1",
+    "readOnly": true,
+    "results": [
+      {
+        "host": "nanohub.sh",
+        "attempt": 1,
+        "status": 200,
+        "elapsedMs": 1676
+      },
+      {
+        "host": "nanohub.sh",
+        "attempt": 2,
+        "status": 200,
+        "elapsedMs": 1328
+      },
+      {
+        "host": "nh-vault-recovery-mvs9uu8k-54414d773e-gate.rachpradhan.workers.dev",
+        "attempt": 1,
+        "status": 404,
+        "elapsedMs": 945
+      },
+      {
+        "host": "nh-vault-recovery-mvs9uu8k-54414d773e-gate.rachpradhan.workers.dev",
+        "attempt": 2,
+        "status": 404,
+        "elapsedMs": 501
+      }
+    ]
   }
 }

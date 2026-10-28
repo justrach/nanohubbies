@@ -358,3 +358,20 @@ curl also receives 404. These observations show intermittent connectivity, not
 its cause, nor evidence that a controller runtime change fixes it. Both runs
 are terminal and independently cleaned; no full gate is inferred from the
 successful read-only requests.
+
+At `4ee6539`, four read-only Node checks return the expected production 200 and
+deleted-test-host 404 responses. A further immediate two-host check also passes
+before starting fresh isolated resources. The ensuing Node controller run
+passes provisioning and its first phase/version barrier, then stops during the
+first snapshot after three successful checkpoint reads. The fetch cause is
+`read ECONNRESET`. No complete checkpoint or destructive-loss phase is reached;
+the exact interrupted request is not identified by the retained Node stack.
+The failed gate is preserved rather than classified as an eligible mutation
+retry. The new dispatcher access check does not run inside this recovery probe
+and does not resolve the transport failure.
+
+Independent checks at `2026-10-28T15:53:58.124Z` confirm all generated resources,
+provider entry and private keys absent, original provider entries and required
+retirement receipts retained, and production main/Vault versions unchanged.
+The trace retains 144 events with zero write failures. This attempt is terminal
+and cleaned; full changing-Git recovery acceptance remains unpassed.
