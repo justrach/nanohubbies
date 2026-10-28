@@ -219,3 +219,30 @@ complete hosted run is still required.
 Independent reads at `2026-10-28T13:52:17Z` confirm all generated resources gone,
 required class retirement receipts present, original provider entries retained,
 private keys/grants removed and both production Worker versions unchanged.
+
+## Operator binding preflight
+
+The first `c188939` attempt stops at D1 creation with Cloudflare authentication
+error 10000. The existing login subsequently verifies with D1 write scope. A
+second attempt creates both checkpoints but stops before physical loss: the new
+assertion incorrectly references `older`, while the captured snapshot variable
+is named `old`. Syntax checks and the TypeScript-only fixture check do not catch
+that JavaScript name error. The [binding-preflight receipt](operator-binding-preflight-receipt.json)
+records both failed attempts and independent all-resources-absent observations;
+neither is counted as recovery acceptance.
+
+The reference now uses `old` consistently. A pinned tsrs binding/syntax preflight
+checks the four critical Node operator modules before a fresh recovery run can
+create provider resources. It also runs in the project check and recovery test
+commands. Cleanup skips this preflight so a source error cannot prevent cleanup.
+The compiler reproduces all three unresolved references before correction and
+passes afterward. Two real-compiler regression cases cover ordinary references,
+object shorthand, corrected bindings and missing inputs.
+
+This is explicitly a scope-only JavaScript check using `--noResolve`, with the
+used Node declaration files supplied directly. Other JavaScript type errors are
+outside its claim. Full API/Worker tsrs checks remain separate. All 26
+recovery/compiler cases pass, as does the project check across three workspaces
+(one unchanged workspace result is cached). The supported Node 24 preflight
+also passes. No dependency or production deployment is added. Complete hosted
+changing-Git acceptance remains pending.

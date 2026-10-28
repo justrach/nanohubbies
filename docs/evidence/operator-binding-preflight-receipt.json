@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-28T14:18:07.465551+00:00",
+  "sourceParent": "c188939",
+  "failedAttempts": [
+    {
+      "runId": "mvs6dkjb-42460a62df",
+      "implementationCommit": "c188939b9e9f564963fa0d2f27789c1a38e06c9b",
+      "startedAt": "2026-10-28T13:53:46.296Z",
+      "finishedAt": "2026-10-28T13:53:55.476Z",
+      "failure": "Cloudflare D1 creation returned authentication error 10000; no recovery probe started",
+      "acceptancePassed": false,
+      "physicalLossStarted": false,
+      "independentCleanup": {
+        "checkedAt": "2026-10-28T13:59:04.128Z",
+        "runId": "mvs6dkjb-42460a62df",
+        "providerRuntime": "node",
+        "apiAbsent": true,
+        "gateAbsent": true,
+        "vaultAbsent": true,
+        "bucketAbsent": true,
+        "databaseAbsent": true,
+        "providerEntryAbsent": true,
+        "requiredRetirementReceiptsVerified": true,
+        "originalProviderEntriesRetained": true,
+        "keysRemoved": true,
+        "main": {
+          "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+          "versionUnchanged": true
+        },
+        "productionVault": {
+          "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+          "versionUnchanged": true
+        },
+        "passed": true
+      },
+      "operationSha256": "3bd9fa66a5fc919f5bf7102f29ad636697337da9b76e6973129e99ab367bf3df",
+      "independentObservationSha256": "fcf33fc30bc87f42243935442e881a28134cb5a645775a296457e1b689e51825"
+    },
+    {
+      "runId": "mvs6l0dy-c2bd23ed19",
+      "implementationCommit": "c188939b9e9f564963fa0d2f27789c1a38e06c9b",
+      "startedAt": "2026-10-28T13:59:33.431Z",
+      "finishedAt": "2026-10-28T14:06:49.375Z",
+      "failure": "New assertion used older instead of the declared old snapshot; failed before starting physical loss",
+      "acceptancePassed": false,
+      "physicalLossStarted": false,
+      "independentCleanup": {
+        "checkedAt": "2026-10-28T14:11:36.461Z",
+        "runId": "mvs6l0dy-c2bd23ed19",
+        "providerRuntime": "node",
+        "apiAbsent": true,
+        "gateAbsent": true,
+        "vaultAbsent": true,
+        "bucketAbsent": true,
+        "databaseAbsent": true,
+        "providerEntryAbsent": true,
+        "requiredRetirementReceiptsVerified": true,
+        "originalProviderEntriesRetained": true,
+        "keysRemoved": true,
+        "main": {
+          "version": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+          "versionUnchanged": true
+        },
+        "productionVault": {
+          "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+          "versionUnchanged": true
+        },
+        "passed": true
+      },
+      "operationSha256": "c4ca800fa04a06797bc2694aff4cea4b48e9b9f732d3d14fcff4dd11733065b3",
+      "independentObservationSha256": "b464900429bfc02442e9311bb62ce264f823904f32ddec7e5445a994d2c518d5"
+    }
+  ],
+  "correction": {
+    "snapshotVariable": "old",
+    "preflightBeforeProviderMutation": true,
+    "cleanupExemptFromBindingPreflight": true,
+    "compiler": "pinned tsrs",
+    "checkedOperatorFiles": 4,
+    "scopeOnly": true,
+    "fullTypeCheck": false,
+    "missingNamesAndShorthandRejected": true,
+    "syntaxErrorsRejected": true,
+    "noNewDependency": true,
+    "runtimeFiles": [
+      {
+        "path": "package.json",
+        "sha256": "53bbe0c37808c7f40470646503baa2bba5c3fd8131e9445dacc6d7823924e231"
+      },
+      {
+        "path": "tools/check-operator-bindings.mjs",
+        "sha256": "b63da3e940e04726b4a1cf277ec09e8acd59402b7cb96fd26c41bfa30a02faf2"
+      },
+      {
+        "path": "tools/operator-bindings.test.mjs",
+        "sha256": "1c548ae8199eb6dcf7ce4bcda34ac536669d64bd4b3866b1f96cd430abe2e205"
+      },
+      {
+        "path": "tools/verify-hosted-git-import.mjs",
+        "sha256": "766a1edbf4c4762bf650bdc1f48cf19985e374d1dd0b53e5e93dbc3d679cc7e5"
+      },
+      {
+        "path": "tools/hosted-recovery-fixture/repository-probe.mjs",
+        "sha256": "4b2531936efd76983315ac2f8cd8e27bf5e828bf27480a19f53a09269e47e4fe"
+      }
+    ]
+  },
+  "validation": {
+    "beforeFixUnresolvedReferenceDiagnostics": 3,
+    "preflightPassesAfterCorrection": true,
+    "realCompilerRegressionCases": 2,
+    "recoveryCases": 24,
+    "projectCheckPassed": true,
+    "workspaceCheckTasks": 3,
+    "workspaceCheckTasksCached": 1,
+    "supportedNode24PreflightPassed": true,
+    "logs": [
+      {
+        "artifact": "operator-name-isolated-before.log",
+        "sha256": "dd8e9ddd71d7b9c16b6f19fdb9974b71fc334aaa8f63e8ea88b21e8cf45789c5"
+      },
+      {
+        "artifact": "operator-binding-final-tests.log",
+        "sha256": "a15d99ae10397190c0622dde58288dca938042e162a07b6e36e01f3b75439aba"
+      },
+      {
+        "artifact": "operator-binding-full-check.log",
+        "sha256": "078dde1197ad50141bf07087d65ac32552e09d88c3246d48af89d6ce14bca752"
+      }
+    ]
+  },
+  "fullChangingGitCloudAcceptancePassed": false,
+  "productionApplicationOrVaultDeployed": false,
+  "githubPushed": false
+}

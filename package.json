@@ -10,14 +10,15 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "check": "turbo run check",
+    "check": "bun run check:operators && turbo run check",
+    "check:operators": "bun tools/check-operator-bindings.mjs",
     "preview": "bun run --filter @swarm/web preview",
     "test:repository": "bun run --filter @swarm/api test:repository",
     "nh": "bun packages/cli/bin/nh.mjs",
     "nanohub": "bun packages/cli/bin/nh.mjs",
     "test:cli": "bun run --filter @nanohub/cli test",
     "test:hosted-fixture": "tsrs --noEmit -p tools/hosted-git-fixture/tsconfig.json && bun test tools/hosted-git-fixture/fixture.test.ts && node --test tools/hosted-git-fixture/proxy.test.mjs",
-    "test:hosted-recovery": "tsrs --noEmit -p tools/hosted-recovery-fixture/tsconfig.json && bun test tools/hosted-recovery-fixture/fixture.test.ts"
+    "test:hosted-recovery": "bun run check:operators && tsrs --noEmit -p tools/hosted-recovery-fixture/tsconfig.json && bun test tools/hosted-recovery-fixture/fixture.test.ts tools/operator-bindings.test.mjs"
   },
   "devDependencies": {
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",

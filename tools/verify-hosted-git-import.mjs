@@ -36,6 +36,7 @@ import {
   syntheticValue,
 } from "./hosted-recovery-fixture/vault-lifecycle.mjs";
 import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
+import { checkOperatorBindings } from "./check-operator-bindings.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -68,6 +69,8 @@ export async function verifyHostedGitImport(
       "vault-recovery",
     ].includes(purpose),
   );
+  if (!cleanupDirectory && ["repository-recovery", "vault-recovery"].includes(purpose))
+    await checkOperatorBindings({ root });
   let saved, previous;
   if (cleanupDirectory) {
     if (!isAbsolute(cleanupDirectory))

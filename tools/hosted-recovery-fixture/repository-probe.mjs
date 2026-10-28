@@ -836,8 +836,8 @@ export async function runRepositoryRecoveryProbe({
     );
     const current = await snapshot("after-revocations");
     if (plan.vault) {
-      assert.notDeepEqual(older.repositoryRefs, current.repositoryRefs, "Changing-Git recovery requires distinct checkpoint refs");
-      assert.notEqual(older.gitObjectList, current.gitObjectList, "Changing-Git recovery requires distinct checkpoint graphs");
+      assert.notDeepEqual(old.repositoryRefs, current.repositoryRefs, "Changing-Git recovery requires distinct checkpoint refs");
+      assert.notEqual(old.gitObjectList, current.gitObjectList, "Changing-Git recovery requires distinct checkpoint graphs");
     }
     await stage("reject-corrupt-repository-backup");
     const retained = current.files.find((x) => x.bytes > 0),
@@ -1017,7 +1017,7 @@ export async function runRepositoryRecoveryProbe({
     assert.equal(finalPull.discussion.comments[0].resolved, false);
     assert.deepEqual(
       (await api("GET", base + "/repository")).refs,
-      older.repositoryRefs,
+      old.repositoryRefs,
       "Authority reconciliation must preserve the selected older Git checkpoint",
     );
     if (plan.vault) {
