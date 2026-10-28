@@ -5,6 +5,86 @@ import { gzipSync, brotliCompressSync } from "node:zlib";
 import { gitProxy } from "./proxy.mjs";
 import { bucketExists } from "./observations.mjs";
 import { safeTrace } from "./trace.mjs";
+import { observeWithRetries } from "./provider-retry.mjs";
+
+test("provider observation retries transport failures and preserves explicit missing-resource evidence", async () => {
+  let calls = 0;
+  const sleeps = [];
+  const result = await observeWithRetries(
+    ["versions", "list", "--json"],
+    async () =>
+      ++calls === 1
+        ? { code: 1, stdout: "", stderr: "fetch failed" }
+        : { code: 1, stdout: "", stderr: "Worker does not exist [code:10007]" },
+    async (ms) => {
+      sleeps.push(ms);
+    },
+  );
+  assert.equal(calls, 2);
+  assert.deepEqual(sleeps, [1000]);
+  assert.match(result.stderr, /10007/);
+});
+test("provider writes and restores never retry an unknown transport outcome", async () => {
+  for (const args of [
+    ["deploy"],
+    ["delete", "owned-worker", "--force"],
+    ["secret", "bulk", "private-file"],
+    ["r2", "bucket", "create", "owned-bucket"],
+    ["d1", "create", "owned-database"],
+    ["d1", "time-travel", "restore", "owned-database"],
+    ["secrets-store", "secret", "create", "store"],
+    ["secrets-store", "secret", "delete", "store"],
+    ["secrets-store", "secret", "update", "store"],
+  ]) {
+    let calls = 0;
+    await observeWithRetries(
+      args,
+      async () => {
+        calls++;
+        return { code: 1, stdout: "", stderr: "fetch failed" };
+      },
+      async () => {
+        throw Error("Mutation retry");
+      },
+    );
+    assert.equal(calls, 1);
+  }
+});
+test("provider read retries are bounded and do not disguise access denials or missing resources", async () => {
+  let calls = 0;
+  const sleeps = [];
+  const result = await observeWithRetries(
+    ["d1", "list", "--json"],
+    async () => {
+      calls++;
+      return { code: 1, stdout: "", stderr: "fetch failed" };
+    },
+    async (ms) => {
+      sleeps.push(ms);
+    },
+  );
+  assert.equal(calls, 3);
+  assert.deepEqual(sleeps, [1000, 3000]);
+  assert.equal(result.code, 1);
+  for (const stderr of [
+    "Authentication failed [code:10000]",
+    "Bucket missing [code:10006]",
+    "Permission denied [403]",
+  ]) {
+    let attempts = 0;
+    await observeWithRetries(
+      ["r2", "bucket", "info", "owned"],
+      async () => {
+        attempts++;
+        return { code: 1, stdout: "", stderr };
+      },
+      async () => {
+        throw Error("Unexpected retry");
+      },
+    );
+    assert.equal(attempts, 1);
+  }
+});
 
 test("runtime trace drops request credentials and arbitrary console/exception content", () => {
   const secret = "private-control-and-git-credential";

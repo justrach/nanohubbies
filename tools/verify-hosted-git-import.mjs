@@ -23,6 +23,7 @@ import { cleanupFixture } from "./hosted-git-fixture/cleanup.mjs";
 import { gitProxy } from "./hosted-git-fixture/proxy.mjs";
 import { bucketExists } from "./hosted-git-fixture/observations.mjs";
 import { startTrace } from "./hosted-git-fixture/trace.mjs";
+import { observeWithRetries } from "./hosted-git-fixture/provider-retry.mjs";
 import {
   metadataRows,
   listProviderSecrets,
@@ -198,6 +199,9 @@ export async function verifyHostedGitImport(
     record.cleanupReconciliations ??= [];
     record.cleanupReconciliations.push({
       at: new Date().toISOString(),
+      controllerCommit: (
+        await exec("git", ["rev-parse", "HEAD"], { cwd: root })
+      ).stdout.trim(),
       previouslyReportedClean: record.cleanupNeeded === false,
     });
     record.cleanupNeeded = true;
@@ -245,7 +249,7 @@ export async function verifyHostedGitImport(
     }
   };
   await saveConfigs();
-  const wrangler = async (
+  const wranglerOnce = async (
     args,
     config = configPaths.api,
     { allowFailure = false } = {},
@@ -289,6 +293,22 @@ export async function verifyHostedGitImport(
     if (result.code && !allowFailure)
       throw Error(
         "Cloudflare operation failed: " + name + "; inspect its private log",
+      );
+    return result;
+  };
+  const wrangler = async (
+    args,
+    config = configPaths.api,
+    { allowFailure = false } = {},
+  ) => {
+    const result = await observeWithRetries(args, () =>
+      wranglerOnce(args, config, { allowFailure: true }),
+    );
+    if (result.code && !allowFailure)
+      throw Error(
+        "Cloudflare operation failed: " +
+          record.steps.at(-1).step +
+          "; inspect its private log",
       );
     return result;
   };
