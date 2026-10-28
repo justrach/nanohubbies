@@ -1,8 +1,10 @@
 # Strict merge methods — 2026-10-28 JST
 
 The local candidate adds merge-commit, squash and rebase choices to the existing
-fast-forward path, browser controls and CLI 0.4.14. The candidate is not deployed
-or pushed. The [receipt](merge-methods-receipt.json) pins runtime-source hashes,
+fast-forward path, browser controls and CLI 0.4.14. At this local checkpoint the
+candidate is not deployed or pushed; the subsequent
+[release validation](merge-methods-release-validation.md) records deployment.
+The [receipt](merge-methods-receipt.json) pins runtime-source hashes,
 test logs, standalone CLI bytes and component captures.
 
 ## Exact content and final restrictions
@@ -105,6 +107,7 @@ automatic rebasing and server signing remain open. Automatic rebase is limited
 to 200 commits and 16 MiB of commit metadata. Dependent branches may need a local
 restack after squash/rebase because original head refs are preserved.
 
-Fresh hosted release acceptance is pending. These local tests do not establish
-changing-Git cloud recovery, unattended Actions, actual application staging or
-production traffic readiness.
+The subsequent [release checks](merge-methods-release-validation.md) add frozen
+Linux acceptance, production delivery and real installer validation. These local
+tests do not establish changing-Git cloud recovery, unattended Actions, actual
+application staging or production traffic readiness.

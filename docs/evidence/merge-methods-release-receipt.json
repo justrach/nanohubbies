@@ -1,0 +1,427 @@
+{
+  "format": 1,
+  "kind": "nanohub-merge-methods-release",
+  "checkedAt": "2026-10-28T13:08:53.847045+00:00",
+  "runtimeImplementation": "f7e501e449da09fe43e655fe3d067f74995e5781",
+  "frozenSource": "986ec5906cda9fae72eb23d89ac90a33c2cb9b59",
+  "sourceManifestSha256": "bf19432b09a95ec9a3b2724a5df77a9df3adddfa30ce46bfeaf18586e7c513fa",
+  "allSourceFilesMatchBeforeRollout": 956,
+  "runtimeFiles": [
+    {
+      "path": "apps/web/src/trunk/review/MergeAction.tsx",
+      "sha256": "772021fff5d89f9279290833a2d18384ac384282df9e6ff017bead8207690e78"
+    },
+    {
+      "path": "apps/web/src/trunk/review/PullDetail.tsx",
+      "sha256": "98083510f86f95c8351eac25db424a539b009d9fa87551269036c21e8667aaf9"
+    },
+    {
+      "path": "bun.lock",
+      "sha256": "1b06fba8f80bd0633479bac9c50f5e47d0018c0482388c0b37268187014e5faf"
+    },
+    {
+      "path": "packages/api/package.json",
+      "sha256": "5f0c19a4cbe20a1fed633a40b55b797db4ee6ce0099fb4eb10d3179f4c61a589"
+    },
+    {
+      "path": "packages/api/scripts/merge-methods.test.mjs",
+      "sha256": "d1dbfd2f6666a50464d12e14da7667ef6007351bd5738a320dd7cc2b0b1dfb97"
+    },
+    {
+      "path": "packages/api/scripts/smoke-merge-methods.ts",
+      "sha256": "125b110cbddc462ff9beff5e883452151573437775bd2f687ff9c5e244a9b133"
+    },
+    {
+      "path": "packages/api/scripts/team/worker.ts",
+      "sha256": "0f1a1fa252353a4a96199372a4600d3c3cf6c127cf933a20ed36a56dc64cc60b"
+    },
+    {
+      "path": "packages/api/src/repository/policy.ts",
+      "sha256": "9cf952171632290a57c0c52da75236f6c9df76556a823702a6135ed4ebb59e4d"
+    },
+    {
+      "path": "packages/api/src/repository/rulesets.ts",
+      "sha256": "bc64dbc2ffc3b0d445729f9ca4ef702c3df2b8b044ed26ce3914a9d8ce8e1e01"
+    },
+    {
+      "path": "packages/api/src/repository/store.ts",
+      "sha256": "4321dfee919f0eefd2e2c19dfbadbecf374ee979f30df53699f63a97c1c0734b"
+    },
+    {
+      "path": "packages/api/src/repository/types.ts",
+      "sha256": "fcde83e47aa690098afed771d8b19718316e9b50e041a2284e45ac8748c6aed1"
+    },
+    {
+      "path": "packages/api/src/review/merge-evidence.ts",
+      "sha256": "f6965580f779d9cc2f0ed2b7999ce63abb81fdc046566ae3c3207e2bee491a91"
+    },
+    {
+      "path": "packages/api/src/review/merge-methods.ts",
+      "sha256": "9475e03e136a23f8b687eceed8654250adefdc9d0fc2b224fdf8b5871e6b8e16"
+    },
+    {
+      "path": "packages/api/src/review/merge-types.ts",
+      "sha256": "768c278b2934b42867cb0806f2d6a0036357094c60277346e748474358e4a3c4"
+    },
+    {
+      "path": "packages/api/src/review/routes.ts",
+      "sha256": "bc3c574388f00534508578a37db2a926c0ef2b968f56bcaf6639b70490cbae9a"
+    },
+    {
+      "path": "packages/api/src/review/store.ts",
+      "sha256": "87d6361e8727db57a659b042a8df941a0c23ef4f16002321334490754b7d85de"
+    },
+    {
+      "path": "packages/api/src/review/types.ts",
+      "sha256": "19fd3f8adbbc5237d9e02d02750fbf3f3342c1d8f1bdead0423c97e9a0194b48"
+    },
+    {
+      "path": "packages/api/src/sequencer.ts",
+      "sha256": "863ffc0ab2e7d3aebea7d44097cbb6401bea85ef4d4fdc64814fc16910dbaa06"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "sha256": "29694a20825361a38648152215f55e05e0d81b5f6cbdfe4ff13831b7a8da8959"
+    },
+    {
+      "path": "packages/cli/scripts/build.mjs",
+      "sha256": "fd7ab5a083847524b9d691db4f11c3b766c23927402a6a16f1c73f2497a491be"
+    },
+    {
+      "path": "packages/cli/src/api.mjs",
+      "sha256": "4bbfd1fc3b1a998c7d2305f39afacea25d480d3c410546654e9ba8ee01e3259e"
+    },
+    {
+      "path": "packages/cli/src/main.mjs",
+      "sha256": "df07250e227f195cb31e4183105c8ced6ef0f37c145304d93d84a4ef51092159"
+    },
+    {
+      "path": "packages/cli/test/build.test.mjs",
+      "sha256": "1464e6579b1579091f64c41a81ba981851862ca9e976065adeb927a70444c299"
+    },
+    {
+      "path": "packages/cli/test/merge-methods.test.mjs",
+      "sha256": "d36ffbfa94bf3aac959673e32dc0b75060e57649155ae911e50b40d7c4203b2c"
+    }
+  ],
+  "evidenceHashes": [
+    {
+      "artifact": "source-manifest.json",
+      "sha256": "14c7ba80944cce734c68b47d401102b645f52daa6f379a74d520c4cbd6a90a5a"
+    },
+    {
+      "artifact": "gate.json",
+      "sha256": "eea2b0eeaf63f5039ff1b362b650821eb0271d8b5076e4f0780a75e2f1d01af8"
+    },
+    {
+      "artifact": "linux/toolchain-full.log",
+      "sha256": "897bf5abcd3cb7c0a488d4dc4882c35a73414e64c5e64725e83a33db1d88629e"
+    },
+    {
+      "artifact": "independent-cleanup.json",
+      "sha256": "3c9193ab34eecf25d87febd8fe590867f6cc75dcc785f3c654e12f8b92bab8ff"
+    },
+    {
+      "artifact": "linux-retry-1/receipt.json",
+      "sha256": "df56a8ae9cd28c9f4482158f718f7653e646275ae414dae4782c44326fda9885"
+    },
+    {
+      "artifact": "linux-retry-1/toolchain-full.log",
+      "sha256": "7be5fbf4b74447558902a1129a32855e1eed626591371ad1283e5795abf74018"
+    },
+    {
+      "artifact": "independent-retry-cleanup.json",
+      "sha256": "4595cb0a6ffddc00d2defbe3fb0e3d6b2301d673729023ea8f2e59f7ac838cd1"
+    },
+    {
+      "artifact": "worker-build-full.log",
+      "sha256": "d42d429961f82e23371c1d3fd8b674e6b7fdefe2623348ee4d005339820088a1"
+    },
+    {
+      "artifact": "dry-run.log",
+      "sha256": "dd8376fbf4ba7e0ed864f22e156e15f7bd96536775f946763dcda046cb1cb886"
+    },
+    {
+      "artifact": "deploy-operation.json",
+      "sha256": "eed290127297cf97ca67bd6ecd2996d8ce2f09a62c3dcbf0ef6dcf1ab96e1ad8"
+    },
+    {
+      "artifact": "verify-public.log",
+      "sha256": "e44db8da47e201a738b447a8e1ae86468815640e4ee2f1dc590ef1c8efc8cac5"
+    },
+    {
+      "artifact": "preservation.json",
+      "sha256": "945f3e930cdc395c839d3428d68168523976b5875358247bb0fa259f283f7778"
+    },
+    {
+      "artifact": "installer.json",
+      "sha256": "0ef55138019bbc50ef398fe858c91fcfc3409078386219df7a066a19b7f61dd5"
+    },
+    {
+      "artifact": "ui.json",
+      "sha256": "634241c29377a19687cad08dcb19e0da8a824156560152d301ca3d3597075b8d"
+    },
+    {
+      "artifact": "anonymous-git.json",
+      "sha256": "123a4185bc7a91befd9f4e732d4d303ff8b294b1ca2c13a9fb5e8b20eb36c070"
+    },
+    {
+      "artifact": "nanohub-account-scope.json",
+      "sha256": "11b59919ea72f51b91a86e70a59aee7251c4e90b891f8e39706be3682ccc7b72"
+    }
+  ],
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "registryProvider": "cloudflare",
+    "separateTrustedCiKey": true,
+    "nanohubAccountKeyReplaced": false,
+    "sandboxId": "cnd_b24b570c38fe2b46357abb5dcaf2e5245d1fac84",
+    "cleanupDeleted": true,
+    "independentObservation": {
+      "checkedAt": "2026-10-28T13:01:52.544Z",
+      "sandboxId": "cnd_b24b570c38fe2b46357abb5dcaf2e5245d1fac84",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    }
+  },
+  "firstAttempt": {
+    "candidateTestsStarted": false,
+    "failure": "Private registry credential issuance failed before candidate upload",
+    "followupDiagnosis": "Wrangler reported an expired OAuth token whose refresh endpoint could not be reached; a later refresh succeeded",
+    "independentObservation": {
+      "checkedAt": "2026-10-28T12:52:36.823Z",
+      "sandboxId": "cnd_cc8578bd6b52dac1136be03d34fc34259e3cc1d2",
+      "state": "destroyed",
+      "deletionConfirmed": true
+    }
+  },
+  "production": {
+    "workerVersion": "c5be9de5-8aa1-4a54-bcd9-5f4e067a542a",
+    "previousWorkerVersion": "993b659a-8d24-442b-92b4-f5270a94029a",
+    "cli": {
+      "format": 1,
+      "version": "0.4.14",
+      "path": "/nh/releases/0.4.14/nh.mjs",
+      "bytes": 70056,
+      "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+    },
+    "assetChecks": [
+      {
+        "path": "/nh/latest.json",
+        "bytes": 179,
+        "contentType": "application/json",
+        "sha256": "22da3bffb58c6d4e0df86c1133cdd39d23aaaa616dc597341ad22bd82c74dbc4"
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "contentType": "text/javascript",
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c"
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "bytes": 70056,
+        "contentType": "text/javascript",
+        "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+      },
+      {
+        "path": "/nh/releases/0.4.14/SHA256SUMS",
+        "bytes": 73,
+        "contentType": "",
+        "sha256": "96a5222ca19cbd52815d413505cf660180f1ac17e527809638ac855079f5decb"
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "bytes": 74001,
+        "contentType": "text/javascript",
+        "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "bytes": 61139,
+        "contentType": "text/javascript",
+        "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "bytes": 53804,
+        "contentType": "text/javascript",
+        "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "bytes": 49938,
+        "contentType": "text/javascript",
+        "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "bytes": 46789,
+        "contentType": "text/javascript",
+        "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11"
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "bytes": 7287,
+        "contentType": "text/css",
+        "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356"
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "bytes": 1905,
+        "contentType": "text/css",
+        "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d"
+      },
+      {
+        "path": "/_next/static/chunks/002cl2ogvnafz.js",
+        "bytes": 26960,
+        "contentType": "text/javascript",
+        "sha256": "bb3b595e526591863deddefe02dadb2a71e2b87d1dc1ba72c80ecbf46f4274c1"
+      },
+      {
+        "path": "/_next/static/chunks/01k3i--fh-v28.js",
+        "bytes": 23272,
+        "contentType": "text/javascript",
+        "sha256": "917c5e3d01a0b39179fe380449e68785698487108e5b97ccd7b564d4a25280e9"
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "bytes": 71596,
+        "contentType": "font/woff2",
+        "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101"
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "bytes": 69760,
+        "contentType": "font/woff2",
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+      }
+    ],
+    "checkedOlderCliVersions": [
+      "0.4.8",
+      "0.4.9",
+      "0.4.10",
+      "0.4.11",
+      "0.4.12"
+    ],
+    "checkedOlderCliBytesUnchanged": true,
+    "bindingCount": 27,
+    "bindingsUnchanged": true,
+    "subrequests": 50000,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "canaryComparisons": {
+      "branches": true,
+      "protection": true,
+      "rulesets": true,
+      "defaultBranch": true,
+      "archive": true,
+      "environments": true,
+      "collaborators": true,
+      "secrets": true,
+      "runners": true
+    },
+    "existingCanaryFieldsUnchanged": true,
+    "addedCapabilities": {
+      "mergeMethods": [
+        "fast-forward",
+        "merge",
+        "squash",
+        "rebase"
+      ]
+    },
+    "canaryRefsOrSettingsMutated": false,
+    "repositoryCredentialIssued": false,
+    "ui": {
+      "checkedAt": "2026-10-28T13:05:10.735Z",
+      "background": "rgb(250, 248, 243)",
+      "codeOwnerApprovalRequired": true,
+      "documentWidth": 1280,
+      "font": "geist, \"geist Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "mergeButtonDisabled": true,
+      "methods": [
+        {
+          "disabled": false,
+          "label": "Fast-forward",
+          "value": "fast-forward"
+        },
+        {
+          "disabled": false,
+          "label": "Merge commit",
+          "value": "merge"
+        },
+        {
+          "disabled": false,
+          "label": "Squash and merge",
+          "value": "squash"
+        },
+        {
+          "disabled": false,
+          "label": "Rebase and merge",
+          "value": "rebase"
+        }
+      ],
+      "selected": "squash",
+      "stylesheets": 5,
+      "viewport": 1280,
+      "formSubmitted": false,
+      "credentialIssued": false
+    },
+    "anonymousPrivateGit": {
+      "checkedAt": "2026-10-28T13:06:21.503Z",
+      "scope": "anonymous private Git discovery boundary only",
+      "status": 401,
+      "challenge": "Basic realm=\"nanohub\"",
+      "cacheControl": "private, no-store",
+      "credentialCreated": false
+    },
+    "vaultVersion": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "vaultDeployed": false
+  },
+  "installer": {
+    "checkedAt": "2026-10-28T13:05:25.757Z",
+    "origin": "https://nanohub.sh",
+    "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+    "commands": {
+      "nh": "nh 0.4.14",
+      "nanohub": "nh 0.4.14"
+    },
+    "quotedPrefixAndOutsideCheckout": true,
+    "mergeAndPendingHelp": true,
+    "globalInstallationModified": false,
+    "credentialIssued": false,
+    "privateInstallationRemoved": true
+  },
+  "nanohubActionsAccount": {
+    "checkedAt": "2026-10-28T13:05:56.884Z",
+    "scope": "read-only Nanohub account sandbox listing; no runner registration or VM allocation",
+    "nanohubAccountKeyReplaced": false,
+    "available": false,
+    "status": 403,
+    "insufficientSandboxScope": true
+  },
+  "productionCapture": {
+    "path": "docs/evidence/merge-methods-production.png",
+    "sha256": "833a8893a737da69ae6483a8b92245ea848ab995e92988d1e6d829dc90672926"
+  },
+  "temporaryValidationTabClosed": true,
+  "githubPushed": false,
+  "productionGeneratedMergeWritten": false,
+  "productionCliDraftWritten": false,
+  "unattendedActionsEstablished": false,
+  "applicationStagingEstablished": false,
+  "changingGitCloudRecoveryEstablished": false,
+  "trafficSloEstablished": false,
+  "fullGithubParityEstablished": false
+}

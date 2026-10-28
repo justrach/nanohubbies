@@ -215,8 +215,9 @@ Existing Git-only and registered-agent credentials gain no CLI API rights.
 
 ### Private pending reviews
 
-CLI **0.4.13** adds private batch reviews, included in the current 0.4.14 candidate. This is locally validated;
-the deployed CLI remains 0.4.12 until a separately verified rollout. Like
+CLI **0.4.14** includes private batch reviews introduced in 0.4.13. The
+[release validation](evidence/merge-methods-release-validation.md) records the
+frozen Linux gates, production delivery and real installer checks. Like
 [GitHub pending reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request),
 comments remain private until submitted together with Comment, Approve or
 Request changes. The server publishes the verdict, anchored comments and retry
@@ -271,7 +272,7 @@ cannot read or mutate a browser draft on the CLI's behalf; retry after rollout.
 
 ## Merge methods from the CLI
 
-The locally validated **0.4.14 candidate** adds explicit history choices:
+CLI **0.4.14** adds explicit history choices:
 
 ```sh
 nh pr merge 12 -R owner/repository --merge
@@ -299,9 +300,11 @@ signing requirements need fast-forward. Automatic rebase requires linear
 feature history and is bounded at 200 commits/16 MiB of commit metadata.
 Neither the source ref nor its existing Git objects are rewritten.
 
-The candidate includes the private reviews added in 0.4.13. The published CLI
-remains 0.4.12; fresh hosted release validation and deployment are still pending.
-See [validation](evidence/merge-methods-validation.md).
+The published CLI is **0.4.14**, including private reviews added in 0.4.13.
+See [behavioral validation](evidence/merge-methods-validation.md) and
+[release evidence](evidence/merge-methods-release-validation.md). Generated Git
+merges and private-review mutations are covered by local and frozen Linux
+Worker tests; this release's production checks preserve existing canary state.
 
 ## Branch protections from the CLI
 
