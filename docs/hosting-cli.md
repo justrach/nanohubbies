@@ -215,7 +215,7 @@ Existing Git-only and registered-agent credentials gain no CLI API rights.
 
 ### Private pending reviews
 
-Published CLI **0.4.15** includes private batch reviews introduced in 0.4.13. The
+Published CLI **0.4.16** includes private batch reviews introduced in 0.4.13. The
 [earlier release validation](evidence/merge-methods-release-validation.md) records the
 frozen Linux gates, production delivery and real installer checks. Like
 [GitHub pending reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request),
@@ -272,7 +272,7 @@ cannot read or mutate a browser draft on the CLI's behalf; retry after rollout.
 
 ## Merge methods from the CLI
 
-CLI **0.4.14** introduced explicit history choices, retained in published 0.4.15:
+CLI **0.4.14** introduced explicit history choices, retained in published 0.4.16:
 
 ```sh
 nh pr merge 12 -R owner/repository --merge
@@ -281,7 +281,7 @@ nh pr merge 12 -R owner/repository --rebase
 nh pr merge 12 -R owner/repository --method fast-forward
 ```
 
-In CLI 0.4.14, omitting the method uses fast-forward. Published 0.4.15
+In CLI 0.4.14, omitting the method uses fast-forward. CLI 0.4.15 and later
 instead observes the repository default when the server advertises
 merge settings, retaining fast-forward on older servers. Choose one
 flag or one `--method` value. `--message` is available only with merge/squash,
@@ -302,9 +302,9 @@ signing requirements need fast-forward. Automatic rebase requires linear
 feature history and is bounded at 200 commits/16 MiB of commit metadata.
 Neither the source ref nor its existing Git objects are rewritten.
 
-The published CLI is **0.4.15**, including private reviews added in 0.4.13.
+The published CLI is **0.4.16**, including private reviews added in 0.4.13.
 See [behavioral validation](evidence/merge-methods-validation.md) and
-[current release evidence](evidence/merge-settings-release-validation.md). Generated Git
+[current release evidence](evidence/access-capacity-release-validation.md). Generated Git
 merges and private-review mutations are covered by local and frozen Linux
 Worker tests; this release's production checks preserve existing canary state.
 
@@ -328,7 +328,7 @@ refused. A lost response is not retried: inspect `repo merge-settings` before
 another edit. Ordinary merge requests bind the observed settings revision and
 generated methods also bind the current target SHA. Branch protections remain
 independent. See [the full contract](merge-settings.md) and [local validation](evidence/merge-settings-validation.md).
-CLI 0.4.15 is published. Its [release record](evidence/merge-settings-release-validation.md)
+CLI 0.4.15 introduced these settings, retained in published 0.4.16. Its [release record](evidence/merge-settings-release-validation.md)
 distinguishes frozen Linux native administration checks from the live settings
 and archive smoke.
 
@@ -737,10 +737,10 @@ to the credential owner. See [storage limits](standalone-host.md#migrate-committ
 
 ## Collaborator administration
 
-Collaborator administration is available in local, unpublished CLI 0.4.16 through
+Published CLI 0.4.16 provides collaborator administration through
 `nh access list/invite/recover/role/remove/cancel`, with the separate explicit
 `collaborators:write` grant. See [commands, private invitation files and conditional
-edit behavior](cli-collaborators.md). The public CLI remains 0.4.15.
+edit behavior](cli-collaborators.md) and [release acceptance](evidence/access-capacity-release-validation.md).
 
 ## Runner registrations
 

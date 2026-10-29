@@ -79,3 +79,11 @@ All **365 API unit cases**, the hosting/namespace integration gate and pinned ts
 checks pass after reconciliation; the focused workflow/transport cases also pass
 with the revised timeout declaration. A new complete Linux run is still required
 before production promotion.
+
+## Subsequent full Linux acceptance
+
+The corrected runtime later passes all eight frozen project gates on a fresh
+Codegraff VM, with 365 API unit cases, 64 CLI cases and independent destruction
+confirmation. See [the exact Linux record](access-capacity-linux-validation.md)
+and [subsequent release acceptance](access-capacity-release-validation.md).
+This closes the fresh-Linux gate above; hosted Actions activation remains separate.

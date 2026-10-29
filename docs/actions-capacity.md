@@ -10,10 +10,11 @@ GitHub also recommends [ephemeral runners for autoscaling](https://docs.github.c
 Docker documents the [kernel, daemon and configuration boundaries](https://docs.docker.com/engine/security/)
 that a shared host must enforce.
 
-The new capacity path is implemented and locally tested. It is **not deployed
-or activated in production**. It does not add billing plans, compute sizes,
-provider quotas or an unattended dispatcher. The configured Nanohub Codegraff
-key's missing sandbox scope remains a separate activation blocker.
+The shared capacity API is **deployed** and passes local and frozen Linux
+acceptance; see [release evidence](evidence/access-capacity-release-validation.md).
+The hosted dispatcher is **not activated**. This does not add billing plans,
+compute sizes, provider quotas or an unattended dispatcher. The configured
+Nanohub Codegraff key's missing sandbox scope remains an activation blocker.
 
 ## Policy and account identity
 

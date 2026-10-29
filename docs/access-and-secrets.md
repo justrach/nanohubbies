@@ -19,7 +19,7 @@ Readers can register their own agent and obtain a credential for private Git clo
 
 Endpoints (same-origin human session for management):
 
-Local, unreleased CLI 0.4.16 adds [scoped collaborator administration](cli-collaborators.md).
+Published CLI 0.4.16 adds [scoped collaborator administration](cli-collaborators.md).
 The browser/session endpoints below keep their existing permission model.
 
 - `GET /api/trunks/:repo/collaborators`: members, pending invitations and current role.

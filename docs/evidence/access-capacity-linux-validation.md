@@ -1,9 +1,13 @@
 # Collaborator CLI and shared capacity — Linux acceptance, 2026-10-29
 
-The frozen runtime passes all eight full-project gates on a fresh Codegraff VM.
-**CLI 0.4.16 is not published, and this runtime is not deployed to the main
-Worker.** Disposable Cloudflare delivery acceptance remains incomplete, so the
-release stops before production staging or promotion. The
+This record describes the earlier held rollout. A subsequent
+[release acceptance](access-capacity-release-validation.md) completes delivery
+and publishes CLI 0.4.16; the historical failed probes below remain retained.
+
+The frozen runtime passed all eight full-project gates on a fresh Codegraff VM.
+**At this checkpoint, CLI 0.4.16 was not published and this runtime was not
+deployed to the main Worker.** Disposable Cloudflare delivery acceptance was
+incomplete, so the release stopped before production staging or promotion. The
 [sanitized receipt](access-capacity-linux-receipt.json) records the separate
 successful Linux gate, failed delivery probes, cleanup and current publication.
 
@@ -55,7 +59,7 @@ The VM is destroyed by the controller. An independent provider read at
 `2026-10-29T09:40:02.837Z` confirms `destroyed`. The complete OpenNext build and
 production-configuration Wrangler dry run also pass.
 
-## Delivery acceptance remains incomplete
+## Incomplete delivery acceptance at this checkpoint
 
 Five uniquely named disposable Workers use the actual application entrypoint
 and built assets, with only asset/version-metadata bindings. They have no
@@ -83,7 +87,7 @@ No normal or held production version is staged, and no traffic promotion is
 attempted. No production CLI credential, collaborator invitation, Git ref or
 repository setting is created or changed by this acceptance.
 
-## Current publication and remaining gates
+## Publication and remaining gates at this checkpoint
 
 Fresh public/provider reads retain main Worker
 `31d951d3-6a6d-4784-aeaf-34c39995733b` at 100%, CLI 0.4.15 with its original
@@ -99,7 +103,7 @@ allocations. The separate trusted CI account proves isolated Linux execution;
 it does not replace the Nanohub key or activate hosted callbacks/dispatch.
 
 Disposable delivery, inactive-version staging, exact production publication and
-live post-release preservation checks remain required for CLI 0.4.16. The wider
+live post-release preservation checks were still required for CLI 0.4.16. The wider
 goal also retains unattended Actions, intended-application CI/staging/cutover,
 complete changing-Git hosted recovery, load/security/operations and broader
 GitHub parity gates in [production readiness](../production-readiness.md).

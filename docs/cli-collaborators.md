@@ -1,9 +1,8 @@
 # Repository access from the CLI
 
-Local CLI **0.4.16** adds collaborator administration for independently managed
-repositories. This version and its server changes are not published/deployed yet;
-the current public CLI remains 0.4.15. Existing browser invitation/acceptance
-flows continue to work. Externally managed Codegraff teams keep their provider
+Published CLI **0.4.16** adds collaborator administration for independently managed
+repositories. Its server changes are deployed; see [release acceptance](evidence/access-capacity-release-validation.md).
+Existing browser invitation/acceptance flows continue to work. Externally managed Codegraff teams keep their provider
 membership boundary and cannot be overridden through these commands.
 
 ## Commands

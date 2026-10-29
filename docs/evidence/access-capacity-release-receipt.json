@@ -1,0 +1,682 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-29T13:50:36.929107+00:00",
+  "scope": "CLI 0.4.16 and access/capacity feature release; hosted Actions and unrestricted production readiness remain unverified",
+  "implementationCommit": "610e4c66b9402c91c1b1229e0575c1122ce6ab1b",
+  "acceptanceCommit": "520a91a55548ef9307744ca50398f0931fc908bd",
+  "copiedFilesMatchedBeforeStagingAndPromotion": 1024,
+  "sourceManifestSha256": "8f38ea39896a082714e874981661411c3ddbe083a9e97c44977191d4e7009dfc",
+  "documentationFilesChangedAfterPromotion": [
+    "docs/access-and-secrets.md",
+    "docs/actions-capacity.md",
+    "docs/cli-collaborators.md",
+    "docs/evidence/runner-upload-validation.md",
+    "docs/github-parity.md",
+    "docs/hosting-cli.md",
+    "docs/production-readiness.md"
+  ],
+  "runtimeFilesStillMatchAcceptance": true,
+  "linux": {
+    "receipt": {
+      "checkedAt": "2026-10-29T09:38:53.719Z",
+      "productionCodegraff": true,
+      "hostedNanohub": false,
+      "source": "520a91a55548ef9307744ca50398f0931fc908bd",
+      "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/nanohub-ci@sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+      "registryProvider": "cloudflare",
+      "sandboxId": "cnd_c8fcf675f054b02a593c56860733876c94424fa5",
+      "gates": [
+        "install",
+        "unit",
+        "repository",
+        "cli",
+        "access",
+        "hosting",
+        "build",
+        "check"
+      ],
+      "network": "none",
+      "credentialFreeCandidate": true,
+      "cleanupDeleted": true
+    },
+    "independentCleanup": {
+      "checkedAt": "2026-10-29T09:40:02.837Z",
+      "sandboxId": "cnd_c8fcf675f054b02a593c56860733876c94424fa5",
+      "providerState": "destroyed",
+      "deletionConfirmed": true,
+      "independentRead": true
+    },
+    "logSha256": "4611e10a086c421defd4f319d7167a8c292eea74bd0a25e6b1ecacd6b8d77223",
+    "apiUnitCases": 365,
+    "cliCases": 64,
+    "countsOverlap": true
+  },
+  "routingProbe": {
+    "worker": "nh-routing-probe-mvtklsrx-4c9c37dd",
+    "actualRouterWithSyntheticDelegates": true,
+    "fullApplicationAcceptance": false,
+    "normalAssetChecks": 17,
+    "heldGetChecks": 23,
+    "bodylessHead": true,
+    "independentCleanup": {
+      "checkedAt": "2026-10-29T13:21:05.250555+00:00",
+      "name": "nh-routing-probe-mvtklsrx-4c9c37dd",
+      "independentRead": true,
+      "absenceConfirmed": true
+    },
+    "readiness": [
+      {
+        "label": "normal",
+        "attempt": 0,
+        "status": 200,
+        "bytes": 179,
+        "sha256": "febc44d1f894ae3f9643cb1e83e7ae78e314939942c14d40caca32f38e3ff995",
+        "server": "cloudflare",
+        "ray": "a52279b6db3049ec-SJC"
+      },
+      {
+        "label": "held",
+        "attempt": 0,
+        "status": 200,
+        "bytes": 179,
+        "sha256": "febc44d1f894ae3f9643cb1e83e7ae78e314939942c14d40caca32f38e3ff995",
+        "server": "cloudflare",
+        "ray": "a5227a233918e418-SJC"
+      },
+      {
+        "label": "held",
+        "attempt": 1,
+        "status": 503,
+        "bytes": 106,
+        "sha256": "769875105f12ae3085f7cc9457491bfba4fef51f6b441b4de799d8eef7404fe7",
+        "server": "cloudflare",
+        "ray": "a5227a317b1be418-SJC"
+      }
+    ]
+  },
+  "fullApplicationProbe": {
+    "worker": "nh-access-assets-mvtkngym-c1a2cdb7",
+    "productionStateBound": false,
+    "customDomains": false,
+    "normalVersion": "1164138d-2606-4c39-bfac-f161035ab799",
+    "heldVersion": "371d2462-ef5c-41d7-8057-06bdcf78cf41",
+    "normalAssets": [
+      {
+        "path": "/nh/latest.json",
+        "bytes": 179,
+        "sha256": "febc44d1f894ae3f9643cb1e83e7ae78e314939942c14d40caca32f38e3ff995",
+        "contentType": "application/json"
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "bytes": 81369,
+        "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.16/SHA256SUMS",
+        "bytes": 73,
+        "sha256": "42890777509821cddfc901c7c3941f1a8778565b66725c558e86594484d716a3",
+        "contentType": ""
+      },
+      {
+        "path": "/nh/releases/0.4.15/nh.mjs",
+        "bytes": 74141,
+        "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "bytes": 70056,
+        "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "bytes": 74001,
+        "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "bytes": 61139,
+        "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "bytes": 53804,
+        "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "bytes": 49938,
+        "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "bytes": 46789,
+        "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "bytes": 7287,
+        "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356",
+        "contentType": "text/css"
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "bytes": 1905,
+        "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d",
+        "contentType": "text/css"
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_buildManifest.js",
+        "bytes": 219,
+        "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_clientMiddlewareManifest.js",
+        "bytes": 96,
+        "sha256": "5483e3295dc35dfe29ea932efc85341c916f10ff78ff5b0e965e003710893a4a",
+        "contentType": "text/javascript"
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "bytes": 71596,
+        "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101",
+        "contentType": "font/woff2"
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "bytes": 69760,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "contentType": "font/woff2"
+      }
+    ],
+    "heldGetChecks": [
+      {
+        "path": "/nh/latest.json",
+        "status": 503
+      },
+      {
+        "path": "/nh/install.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.16/SHA256SUMS",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.15/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_buildManifest.js",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_clientMiddlewareManifest.js",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "status": 503
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "status": 503
+      },
+      {
+        "path": "/",
+        "status": 503
+      },
+      {
+        "path": "/dashboard",
+        "status": 503
+      },
+      {
+        "path": "/cli/authorize",
+        "status": 503
+      },
+      {
+        "path": "/api/agent-help",
+        "status": 503
+      },
+      {
+        "path": "/git/private.git/info/refs?service=git-upload-pack",
+        "status": 503
+      },
+      {
+        "path": "/t/synthetic/settings/rules",
+        "status": 503
+      }
+    ],
+    "bodylessHead": true,
+    "controllerConfirmedAbsence": true,
+    "independentAbsenceConfirmedBeforeStaging": true,
+    "readiness": [
+      {
+        "label": "normal",
+        "attempt": 0,
+        "status": 404,
+        "bytes": 19984,
+        "sha256": "2000e6b28a1517ba1268e1649cd3163326ef839492edfdba31e8959830580976",
+        "server": "cloudflare",
+        "ray": "a5227bf5ce58174b-SJC",
+        "contentType": "text/html; charset=UTF-8",
+        "cloudflareBrandedNotFound": true
+      },
+      {
+        "label": "normal",
+        "attempt": 1,
+        "status": 200,
+        "bytes": 179,
+        "sha256": "febc44d1f894ae3f9643cb1e83e7ae78e314939942c14d40caca32f38e3ff995",
+        "server": "cloudflare",
+        "ray": "a5227c04084d174b-SJC",
+        "contentType": "application/json"
+      },
+      {
+        "label": "held",
+        "attempt": 0,
+        "status": 503,
+        "bytes": 106,
+        "sha256": "769875105f12ae3085f7cc9457491bfba4fef51f6b441b4de799d8eef7404fe7",
+        "server": "cloudflare",
+        "ray": "a5227ccf0b1ef579-SJC",
+        "contentType": "application/json; charset=utf-8"
+      }
+    ]
+  },
+  "earlierFailedWorkersIndependentlyAbsent": 5,
+  "staging": {
+    "normalVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "heldVersion": "2c29f140-66cf-4ba4-9e49-bd0207981e11",
+    "normalBindingCount": 27,
+    "heldBindingCount": 28,
+    "allNormalBindingDefinitionsUnchanged": true,
+    "heldAddsOnlyRecoveryHold": true,
+    "trafficUnchangedDuringStaging": true
+  },
+  "promotion": {
+    "previousVersion": "31d951d3-6a6d-4784-aeaf-34c39995733b",
+    "version": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "deploymentId": "61872d68-dc49-4d56-91f9-93fbfa14064f",
+    "observedPercentage": 100,
+    "durableObjectsCodeUpdateMode": "immediate",
+    "liveVersionObserved": true,
+    "controllerPromotionCommands": 1,
+    "wranglerMayRetryHttpInternally": true
+  },
+  "publication": {
+    "manifest": {
+      "format": 1,
+      "version": "0.4.16",
+      "path": "/nh/releases/0.4.16/nh.mjs",
+      "bytes": 81369,
+      "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+    },
+    "assets": [
+      {
+        "path": "/nh/latest.json",
+        "bytes": 179,
+        "contentType": "application/json",
+        "sha256": "febc44d1f894ae3f9643cb1e83e7ae78e314939942c14d40caca32f38e3ff995"
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "contentType": "text/javascript",
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c"
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "bytes": 81369,
+        "contentType": "text/javascript",
+        "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+      },
+      {
+        "path": "/nh/releases/0.4.16/SHA256SUMS",
+        "bytes": 73,
+        "contentType": "",
+        "sha256": "42890777509821cddfc901c7c3941f1a8778565b66725c558e86594484d716a3"
+      },
+      {
+        "path": "/nh/releases/0.4.15/nh.mjs",
+        "bytes": 74141,
+        "contentType": "text/javascript",
+        "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81"
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "bytes": 70056,
+        "contentType": "text/javascript",
+        "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "bytes": 74001,
+        "contentType": "text/javascript",
+        "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "bytes": 61139,
+        "contentType": "text/javascript",
+        "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "bytes": 53804,
+        "contentType": "text/javascript",
+        "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "bytes": 49938,
+        "contentType": "text/javascript",
+        "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "bytes": 46789,
+        "contentType": "text/javascript",
+        "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11"
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "bytes": 7287,
+        "contentType": "text/css",
+        "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356"
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "bytes": 1905,
+        "contentType": "text/css",
+        "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d"
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_buildManifest.js",
+        "bytes": 219,
+        "contentType": "text/javascript",
+        "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea"
+      },
+      {
+        "path": "/_next/static/Fnj_R6Oc01qLPZuFLwQ27/_clientMiddlewareManifest.js",
+        "bytes": 96,
+        "contentType": "text/javascript",
+        "sha256": "5483e3295dc35dfe29ea932efc85341c916f10ff78ff5b0e965e003710893a4a"
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "bytes": 71596,
+        "contentType": "font/woff2",
+        "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101"
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "bytes": 69760,
+        "contentType": "font/woff2",
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+      },
+      {
+        "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+        "bytes": 190,
+        "contentType": "text/css",
+        "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca"
+      },
+      {
+        "path": "/_next/static/chunks/18vdng-ava46y.css",
+        "bytes": 9317,
+        "contentType": "text/css",
+        "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba"
+      },
+      {
+        "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+        "bytes": 1524,
+        "contentType": "text/css",
+        "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a"
+      },
+      {
+        "path": "/_next/static/chunks/27mzymd5lizl7.css",
+        "bytes": 20785,
+        "contentType": "text/css",
+        "sha256": "c431bc7783286bff2aa697d2fed4bb1cc01df4a5708f14ca523e2426400cdbca"
+      },
+      {
+        "path": "/_next/static/chunks/2ab2tu-5ykczt.css",
+        "bytes": 61345,
+        "contentType": "text/css",
+        "sha256": "8f4e75891f0acd439a0c832416fc7c1801711f955c22bff06bb1fbf7a5bec248"
+      },
+      {
+        "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+        "bytes": 6246,
+        "contentType": "text/css",
+        "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2"
+      },
+      {
+        "path": "/_next/static/chunks/36srit4cbyjno.css",
+        "bytes": 5560,
+        "contentType": "text/css",
+        "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131"
+      },
+      {
+        "path": "/_next/static/chunks/3r55xobv4dda2.css",
+        "bytes": 16693,
+        "contentType": "text/css",
+        "sha256": "b61a6444f2f35785847bb7866a5b32c949c38351605f368cb8d355f894efaaaa"
+      }
+    ],
+    "checkedEarlierCliModules": [
+      "/nh/releases/0.4.15/nh.mjs",
+      "/nh/releases/0.4.14/nh.mjs",
+      "/nh/releases/0.4.12/nh.mjs",
+      "/nh/releases/0.4.11/nh.mjs",
+      "/nh/releases/0.4.10/nh.mjs",
+      "/nh/releases/0.4.9/nh.mjs",
+      "/nh/releases/0.4.8/nh.mjs"
+    ],
+    "version": "nh 0.4.16",
+    "accessCommandHelpVerified": true,
+    "bindingsUnchanged": true,
+    "workerFirst": true,
+    "recoveryHoldEnabled": false,
+    "installer": {
+      "checkedAt": "2026-10-29T13:29:34.869Z",
+      "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+      "manifest": {
+        "format": 1,
+        "version": "0.4.16",
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "bytes": 81369,
+        "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+      },
+      "aliases": [
+        {
+          "name": "nh",
+          "version": "nh 0.4.16",
+          "mergeSettingsHelp": true
+        },
+        {
+          "name": "nanohub",
+          "version": "nh 0.4.16",
+          "mergeSettingsHelp": true
+        }
+      ],
+      "prefixContainsSpacesAndQuote": true,
+      "executedOutsideCheckout": true,
+      "temporaryInstallationRemoved": true,
+      "globalInstallationChanged": false
+    }
+  },
+  "preservation": {
+    "checkedAt": "2026-10-29T13:42:34.780973+00:00",
+    "checks": [
+      {
+        "resource": "branches",
+        "allFieldsEqual": true,
+        "beforeSha256": "f132f635069e0b9c8cf1e69c4bf06b9c117b604be0946eebd8798fc0d8cced3b",
+        "afterSha256": "f132f635069e0b9c8cf1e69c4bf06b9c117b604be0946eebd8798fc0d8cced3b"
+      },
+      {
+        "resource": "protection",
+        "allFieldsEqual": true,
+        "beforeSha256": "85dcf50e3764097476f897db80a1e84ec2a05370234cabf81b215a0e042789f0",
+        "afterSha256": "85dcf50e3764097476f897db80a1e84ec2a05370234cabf81b215a0e042789f0"
+      },
+      {
+        "resource": "rulesets",
+        "allFieldsEqual": true,
+        "beforeSha256": "0e6aad97c94c4d990dd07ac10b068f517165e02d9dd26e93365e56bdaefa3e26",
+        "afterSha256": "0e6aad97c94c4d990dd07ac10b068f517165e02d9dd26e93365e56bdaefa3e26"
+      },
+      {
+        "resource": "default-branch",
+        "allFieldsEqual": true,
+        "beforeSha256": "0d4f92148311cb7c0ee1e73a9d66c93fbefb6cb8ab29c9660d5012e67400acac",
+        "afterSha256": "0d4f92148311cb7c0ee1e73a9d66c93fbefb6cb8ab29c9660d5012e67400acac"
+      },
+      {
+        "resource": "archive",
+        "allFieldsEqual": true,
+        "beforeSha256": "74a5e42e0633d1cb213130045dbaa6a474c984d8d527e929e7932949a872fa9f",
+        "afterSha256": "74a5e42e0633d1cb213130045dbaa6a474c984d8d527e929e7932949a872fa9f",
+        "readThroughDocumentedOwnerAddress": true
+      },
+      {
+        "resource": "environments",
+        "allFieldsEqual": true,
+        "beforeSha256": "41606a37f4738cf765451eb886049e5a73d18e887f28beb94b1ef2449e4d7673",
+        "afterSha256": "41606a37f4738cf765451eb886049e5a73d18e887f28beb94b1ef2449e4d7673"
+      },
+      {
+        "resource": "collaborators",
+        "allFieldsEqual": true,
+        "beforeSha256": "1c167f0eb214d7474945f61f3e2491234005f2f9a00254b7cf1ffbd61cb6b21e",
+        "afterSha256": "1c167f0eb214d7474945f61f3e2491234005f2f9a00254b7cf1ffbd61cb6b21e"
+      },
+      {
+        "resource": "secrets",
+        "allFieldsEqual": true,
+        "beforeSha256": "49d28c502b5d015dd741ac5906dc927051f3b78481c4a58a158b56811cb4e6da",
+        "afterSha256": "49d28c502b5d015dd741ac5906dc927051f3b78481c4a58a158b56811cb4e6da"
+      },
+      {
+        "resource": "runners",
+        "allFieldsEqual": true,
+        "beforeSha256": "9d03842173f1fcfd4375b271daa9e1e5f4d6868d3717205aa8f98062d7694a69",
+        "afterSha256": "9d03842173f1fcfd4375b271daa9e1e5f4d6868d3717205aa8f98062d7694a69"
+      }
+    ],
+    "allExistingFieldsEqual": true,
+    "newCredentialsIssued": 0,
+    "newInvitationsIssued": 0
+  },
+  "consent": {
+    "checkedAt": "2026-10-29T13:42:34.780973+00:00",
+    "credentialsUnchanged": true,
+    "collaboratorPermissionAvailable": true,
+    "onlyExpectedScopeAdded": true,
+    "addedScopes": [
+      "collaborators:write"
+    ],
+    "uncheckedByDefault": true,
+    "newCredentialsIssued": 0,
+    "newInvitationsIssued": 0,
+    "currentCredentials": 0,
+    "beforeScopes": 13,
+    "afterScopes": 14,
+    "screenshotSha256": "77076cc5f6046be8d95a23a5d793f70805342ae13c81c8472a2cf3f74487c58e"
+  },
+  "screenshot": {
+    "path": "access-capacity-production.png",
+    "sha256": "77076cc5f6046be8d95a23a5d793f70805342ae13c81c8472a2cf3f74487c58e"
+  },
+  "nanohubActions": {
+    "checkedAt": "2026-10-29T13:47:51.579Z",
+    "credentialSource": "configured Nanohub Actions account",
+    "nanohubRequests": 0,
+    "sandboxAllocations": 0,
+    "accountInventoryRetained": false,
+    "sandboxAccessVerified": false,
+    "error": {
+      "code": "sandbox_scope_required",
+      "status": 403,
+      "message": "Codegraff API key requires the sandbox scope for Actions; no CI job was claimed"
+    },
+    "providerReads": 1
+  },
+  "finalState": {
+    "checkedAt": "2026-10-29T13:42:36.173Z",
+    "main": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "mainPercentage": 100,
+    "heldFallbackInactive": true,
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "vaultUnchanged": true,
+    "cli": "0.4.16",
+    "assetChecks": 25,
+    "bindingCount": 27,
+    "canaryResourcesPreserved": 9,
+    "liveScopeMetadataVerified": true,
+    "newGitOrCliCredentialsIssued": 0,
+    "newCollaboratorInvitationsIssued": 0,
+    "githubPushed": false,
+    "hostedDispatcherActivated": false,
+    "sourceFrozen": "520a91a55548ef9307744ca50398f0931fc908bd"
+  },
+  "remainingGates": [
+    "Nanohub sandbox-scoped key and hosted dispatcher/callback activation",
+    "Intended-application CI/staging/cutover",
+    "Complete changing-Git hosted recovery and latest-authority reconciliation",
+    "Load/SLO/security/operations",
+    "Broader GitHub compatibility"
+  ]
+}
