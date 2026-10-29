@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, readFile, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, readFile, mkdir, writeFile,access } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import {createHash} from 'node:crypto';
 import { parseWorkflow } from "../../../tools/actions-workflow.mjs";
 import {
   Codegraff,
@@ -76,7 +77,7 @@ function mockClient({
     },
     async exec(id, command) {
       calls.push({ id, command });
-      if (command.startsWith("cat ") && failClone)
+      if (command.includes("git clone --no-checkout") && failClone)
         throw Error("wrong candidate");
       if (command.startsWith("docker inspect"))
         return JSON.stringify({ Running: false, ExitCode: exitCode });
@@ -495,7 +496,25 @@ test('large Git bundles cross the preview upload limit as bounded base64-safe ch
  const dir=await mkdtemp(join(tmpdir(),'nanohub-large-transfer-'));try{
   const client=mockClient(),bundle=Buffer.alloc(1100000,0x7f),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
   const result=await sandboxJob({client,job,run,bundle,image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'});
-  assert.equal(result.state,'success');const chunks=client.uploads.filter(u=>/\/bundle-\d{5}$/.test(u.path));assert.equal(chunks.length,3);assert.ok(chunks.every(u=>JSON.stringify({path:u.path,contentBase64:u.bytes.toString('base64')}).length<1000000));assert.deepEqual(Buffer.concat(chunks.map(u=>u.bytes)),bundle);
+  assert.equal(result.state,'success');const chunks=client.uploads.filter(u=>/\/bundle-\d{5}$/.test(u.path));assert.ok(chunks.length>3);assert.ok(chunks.every(u=>u.bytes.length<=65536&&JSON.stringify({path:u.path,contentBase64:u.bytes.toString('base64')}).length<100000));assert.deepEqual(Buffer.concat(chunks.map(u=>u.bytes)),bundle);const assemble=client.calls.find(c=>c.command?.includes('git clone --no-checkout')).command;assert.ok(assemble.length<2048);assert.match(assemble,/sha256sum -c -/);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('large file uploads use bounded API payloads and checksum-verified atomic assembly, with no retry after unknown writes',async()=>{
+ for(const mode of ['success','corrupt','unknown']){
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-file-transfer-')),temporary=new Set(),calls=[];
+  try {
+   const target=join(dir,"file's $(touch SENTINEL).bin"),bytes=Buffer.alloc(190003,0xab);await writeFile(target,'original');
+   const client=new Codegraff('synthetic-unused-key');client.api=async(path,body)=>{assert.ok(path.endsWith('/upload'));calls.push(body);assert.ok(Buffer.byteLength(JSON.stringify(body))<100000);const chunk=Buffer.from(body.contentBase64,'base64');assert.ok(chunk.length<=65536);if(mode==='corrupt'&&calls.length===1)chunk[0]^=1;await writeFile(body.path,chunk);if(mode==='unknown'&&calls.length===2)throw Error('unknown write outcome');return {ok:true};};
+   client.exec=async(_id,command)=>{for(const path of command.match(/\/tmp\/nanohub-upload-[a-f0-9-]+/g)??[])temporary.add(path);assert.ok(command.length<2048);const result=await runProcess('sh',['-c',command],{timeoutMs:5000,cwd:dir});if(result.code)throw Error('Checksum or assembly failed');return result.output;};
+   if(mode==='success'){await client.upload('owned-fixture',target,bytes);assert.equal(createHash('sha256').update(await readFile(target)).digest('hex'),createHash('sha256').update(bytes).digest('hex'));}
+   else {await assert.rejects(client.upload('owned-fixture',target,bytes));assert.equal(await readFile(target,'utf8'),'original');if(mode==='unknown')assert.equal(calls.length,2);}
+   await assert.rejects(access(join(dir,'SENTINEL')));
+  }finally{for(const path of temporary)await rm(path,{recursive:true,force:true});await rm(dir,{recursive:true,force:true});}
+ }
+});
+test('revocation during a multi-chunk source transfer stops uploads before candidate execution and still destroys the VM',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-cancel-transfer-'));
+ try {const client=mockClient(),upload=client.upload;let active=true;client.upload=async(...args)=>{await upload(...args);active=false;};const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];const result=await sandboxJob({client,job,run,bundle:Buffer.alloc(200000),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>active});assert.equal(result.state,'cancelled');assert.equal(client.uploads.length,1);assert.ok(!client.calls.some(call=>call.command?.startsWith('docker run')));assert.equal(client.calls.filter(call=>call.destroy).length,1);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
 

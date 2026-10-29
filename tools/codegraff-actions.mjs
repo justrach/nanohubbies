@@ -4,7 +4,7 @@
 import { readFile, writeFile, stat, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
+import { randomUUID,createHash } from "node:crypto";
 import { parseWorkflow, quote } from "./actions-workflow.mjs";
 import { runProcess } from "./ci-runner.mjs";
 import { semaphore, positiveInteger } from "./runner-pool.mjs";
@@ -14,6 +14,9 @@ import {cloudflarePullCredentials} from './cloudflare-registry.mjs';
 const id = (value) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Live Fleet probes accept 64 KiB binary payloads while 512 KiB uploads time
+// out. This is a conservative transport size, not a claimed provider maximum.
+const uploadChunkBytes=64*1024;
 export class Codegraff {
   constructor(key, { fetcher = fetch, sleep = pause } = {}) {
     if (!key)
@@ -78,9 +81,21 @@ export class Codegraff {
     throw Error("Codegraff sandbox startup timed out");
   }
   async upload(sandbox, path, bytes) {
+    bytes=Buffer.from(bytes);
+    if(bytes.length>uploadChunkBytes) {
+      const temporary='/tmp/nanohub-upload-'+randomUUID();
+      await this.exec(sandbox,`mkdir -m 700 ${quote(temporary)}`);
+      for(let offset=0,part=0;offset<bytes.length;offset+=uploadChunkBytes,part++)
+        await this.api(`/sandboxes/${sandbox}/upload`,{path:temporary+'/part-'+String(part).padStart(8,'0'),contentBase64:bytes.subarray(offset,offset+uploadChunkBytes).toString('base64')});
+      const digest=createHash('sha256').update(bytes).digest('hex');
+      // Only the fresh private staging directory is globbed. Unknown upload
+      // outcomes abort; neither chunk writes nor this final move are retried.
+      await this.exec(sandbox,`LC_ALL=C cat ${quote(temporary)}/part-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9] > ${quote(temporary+'/complete')} && printf '%s  %s\\n' ${quote(digest)} ${quote(temporary+'/complete')} | sha256sum -c - && chmod 644 ${quote(temporary+'/complete')} && mv -f ${quote(temporary+'/complete')} ${quote(path)} && rm -rf ${quote(temporary)}`);
+      return;
+    }
     await this.api(`/sandboxes/${sandbox}/upload`, {
       path,
-      contentBase64: Buffer.from(bytes).toString("base64"),
+      contentBase64: bytes.toString("base64"),
     });
   }
   async destroy(sandbox) {
@@ -230,6 +245,10 @@ export async function sandboxJob({
   const provenance=selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
+  const ensureTransferActive=async()=>{
+    if(now()>=deadline)throw Object.assign(Error('Job timed out during source transfer'),{code:'job_deadline'});
+    if(!await active())throw Object.assign(Error('Candidate lease is no longer active during source transfer'),{code:'ci_cancelled'});
+  };
   if (deadline <= now()) throw Error("CI lease exhausted");
   if(!await active()) {
     const file=job.name.replaceAll('/','-')+'.log',command='Cancelled before allocation: candidate lease is no longer active';
@@ -301,14 +320,14 @@ export async function sandboxJob({
       if(actual!==image)throw Error('Trusted toolchain image is missing or differs from its configured SHA-256 ID');
       if(now()>=deadline||!await active()||now()>=deadline)throw Error('Candidate lease is no longer active after toolchain preparation');
     }
-    await client.exec(sandbox, "mkdir -p /workspace/nanohub");
+    const transfer='/workspace/nanohub/transfer-'+randomUUID();
+    await client.exec(sandbox, `mkdir -p /workspace/nanohub && mkdir -m 700 ${quote(transfer)}`);
     const chunks = [];
-    // Gateway preview uploads are capped at 1 MB. Leave room for base64/JSON
-    // overhead instead of sending a full 1 MiB binary chunk.
-    const chunkBytes=512*1024;
+    const chunkBytes=uploadChunkBytes;
     for (let offset = 0; offset < bundle.length; offset += chunkBytes) {
+      await ensureTransferActive();
       const part =
-        "/workspace/nanohub/bundle-" + String(chunks.length).padStart(5, "0");
+        transfer+"/bundle-" + String(chunks.length).padStart(5, "0");
       await client.upload(
         sandbox,
         part,
@@ -318,7 +337,7 @@ export async function sandboxJob({
     }
     await client.exec(
       sandbox,
-      `cat ${chunks.map(quote).join(" ")} > /workspace/nanohub/source.bundle && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
+      `LC_ALL=C cat ${quote(transfer)}/bundle-[0-9][0-9][0-9][0-9][0-9] > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(createHash('sha256').update(bundle).digest('hex'))} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
     );
     const script = `set -e\ncp -R /source /tmp/work\ncd /tmp/work\n${prepare}\n${job.script}`;
     await client.upload(
@@ -326,6 +345,7 @@ export async function sandboxJob({
       "/workspace/nanohub/job.sh",
       Buffer.from(script),
     );
+    await ensureTransferActive();
     const variables = {
       CI: "true",
       GITHUB_ACTIONS: "true",
@@ -378,7 +398,7 @@ export async function sandboxJob({
       output += "\nJob or CI lease timed out";
     }
   } catch (error) {
-    state = "failure";
+    state = error.code==='job_deadline'?'timed_out':error.code==='ci_cancelled'?'cancelled':"failure";
     output += "\n" + String(error);
   } finally {
     for (let attempt = 0; attempt < 3; attempt++) {

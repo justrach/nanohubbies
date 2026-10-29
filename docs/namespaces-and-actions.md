@@ -55,6 +55,14 @@ The default execution backend is now **Codegraff**. This repository’s own chec
 
 Codegraff supplies the VM and Docker runtime through its documented [sandbox gateway](https://codegraff.com/docs/sandboxes). Local Docker is unnecessary for this backend. The small dispatcher process still needs Git and Node, and holds `CODEGRAFF_API_KEY` and `NANOHUB_CI_TOKEN` outside candidate execution. Neither key, the clone lease nor vault workload grants are uploaded to the sandbox. The bundle contains committed Git data, excluding local files and clone configuration/credentials.
 
+Source transfers use at most 64 KiB binary chunks and verify the full bundle's
+SHA-256 before clone/checkout. Reassembly commands stay bounded as bundle size
+grows; larger control/job files use the same bounded upload size and verified
+atomic assembly. Failed or uncertain writes are not retried automatically.
+Deadline/revocation checks interrupt source transfer between chunks. The
+[live upload diagnosis](evidence/runner-upload-validation.md) records why the
+earlier 512 KiB chunk size was reduced; it does not claim a provider-wide maximum.
+
 ### Supported workflow syntax
 
 Workflows live in `.github/workflows/*.yml` or `.yaml`, following the [Actions workflow convention](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax). This is an explicit subset, not a complete GitHub Actions runtime.
