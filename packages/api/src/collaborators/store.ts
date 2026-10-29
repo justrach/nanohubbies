@@ -1,4 +1,5 @@
 import {assertRepositoryWritable} from "../repository/archive";
+import {collaboratorRevisions} from './revision';
 export type RepoRole = "reader" | "writer" | "admin" | "owner";
 export interface Collaborator {
   userId: string;
@@ -15,7 +16,7 @@ export const hashToken = async (token: string) =>
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 export class Collaborators {
-  constructor(private sql: SqlStorage) {
+  constructor(private sql: SqlStorage,private credentialId?:string) {
     sql.exec(
       "CREATE TABLE IF NOT EXISTS collaborators (trunk TEXT, user_id TEXT, role TEXT NOT NULL, added_at INTEGER, added_by TEXT, PRIMARY KEY(trunk,user_id))",
     );
@@ -25,6 +26,7 @@ export class Collaborators {
     sql.exec(
       "CREATE TABLE IF NOT EXISTS access_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, trunk TEXT, actor TEXT, action TEXT, target TEXT, at INTEGER)",
     );
+    collaboratorRevisions(sql);
   }
   private owner(trunk: string) {
     const row = this.sql
@@ -61,12 +63,13 @@ export class Collaborators {
   }
   private audit(trunk: string, actor: string, action: string, target: string) {
     this.sql.exec(
-      "INSERT INTO access_audit(trunk,actor,action,target,at) VALUES(?,?,?,?,?)",
+      "INSERT INTO access_audit(trunk,actor,action,target,at,credential_id) VALUES(?,?,?,?,?,?)",
       trunk,
       actor,
       action,
       target,
       Date.now(),
+      this.credentialId??null,
     );
   }
   list(trunk: string) {
@@ -118,6 +121,7 @@ export class Collaborators {
     userId: string,
     role: RepoRole,
     tokenHash: string,
+    invitationId?:string,
   ) {
     if (!["reader", "writer", "admin"].includes(role))
       throw new Error("Choose reader, writer or admin");
@@ -141,7 +145,7 @@ export class Collaborators {
         .toArray()[0].n >= 100
     )
       throw new Error("Too many pending invitations");
-    const id = crypto.randomUUID(),
+    const id = invitationId??crypto.randomUUID(),
       expires = Date.now() + 7 * 86400000;
     this.sql.exec(
       "INSERT INTO repo_invitations VALUES(?,?,?,?,?,?,?)",

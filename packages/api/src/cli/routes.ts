@@ -12,13 +12,14 @@ export async function cliCredentialRoute(env:Env,request:Request,trunk:string,us
   if(!access)return json({error:"CLI credentials require a repository access policy"},403);
   if(request.method==="GET") {
     const writable=canWrite(access)&&!archiveLocked(await env.HUB.get(env.HUB.idFromName("hub")).repositoryArchive(trunk));
-    return json({credentials:await listCliCredentials(env,user.id,trunk),allowedScopes:cliScopes.filter(scope=>cliScopeAllowed(scope,access.proof.role,writable))});
+    return json({credentials:await listCliCredentials(env,user.id,trunk),allowedScopes:cliScopes.filter(scope=>cliScopeAllowed(scope,access.proof.role,writable,access.binding.kind==='owner'))});
   }
   if(request.method!=="POST")return json({error:"Use GET or POST"},405);
   if(!sameOrigin(env,request))return json({error:"Same-origin request required"},403);
   const body=await creationBody<Record<string,unknown>>(request,4096);
   if(Object.keys(body).some(k=>!["label","scopes","days"].includes(k)))return json({error:"Unknown CLI credential field"},400);
   const scopes=requestedScopes(body.scopes);
+  if(scopes.includes('collaborators:write')&&access.binding.kind!=='owner')return json({error:'Collaborator administration requires an independently managed repository'},403);
   if(!canWrite(access)&&scopes.some(cliScopeWrites))return json({error:"Repository write access is required for these permissions"},403);
   if(scopes.some(cliAdminScope)&&!canAdmin(access))return json({error:"Current repository admin access is required for these permissions"},403);
   if(scopes.some(cliOwnerScope)&&access.proof.role!=='owner')return json({error:'Current repository owner access is required for runner administration'},403);
@@ -76,6 +77,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="GET"&&resource==="archive")scope="read";
   if(method==="GET"&&resource==="default-branch")scope="read";
   if(method==='GET'&&resource==='merge-settings')scope='read';
+  if(['GET','POST','PATCH','DELETE'].includes(method)&&resource==='collaborators')scope='collaborators:write';
   if(['GET','POST'].includes(method)&&resource==='ci/runners'||method==='DELETE'&&/^ci\/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resource))scope='runners:write';
   if(method==="GET"&&/^environments(?:\/[a-zA-Z0-9-]{8,80}(?:\/configuration)?)?$/.test(resource)||method==="POST"&&resource==="environments"||["PUT","DELETE"].includes(method)&&/^environments\/[a-zA-Z0-9-]{8,80}$/.test(resource))scope="environments:write";
   if(method==="PUT"&&resource==="default-branch")scope="repository:default";

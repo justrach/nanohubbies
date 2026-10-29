@@ -55,3 +55,7 @@ test('merge settings administration never joins default login scopes and can be 
  const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);expect(JSON.parse(f.requests[0].options.body).scopes).not.toContain('repository:merge');
  const g=fixture();await run(['auth','login','-R','team/project','--scopes','repository:merge','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','repository:merge']);
 });
+test('collaborator administration is excluded from default login and must be explicitly requested',async()=>{
+ const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);expect(JSON.parse(f.requests[0].options.body).scopes).not.toContain('collaborators:write');
+ const g=fixture();await run(['auth','login','-R','team/project','--scopes','collaborators:write','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','collaborators:write']);
+});

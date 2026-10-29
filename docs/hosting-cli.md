@@ -735,6 +735,13 @@ Git URL, removes its temporary clone, and leaves global/helper configuration
 unchanged. Imported commit authors remain unchanged; ref writes are attributed
 to the credential owner. See [storage limits](standalone-host.md#migrate-committed-code).
 
+## Collaborator administration
+
+Collaborator administration is available in local, unpublished CLI 0.4.16 through
+`nh access list/invite/recover/role/remove/cancel`, with the separate explicit
+`collaborators:write` grant. See [commands, private invitation files and conditional
+edit behavior](cli-collaborators.md). The public CLI remains 0.4.15.
+
 ## Runner registrations
 
 CLI **0.4.11** adds these commands. The [release evidence](evidence/cli-runners-validation.md)

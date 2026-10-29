@@ -48,7 +48,7 @@ async function repository(env:Env,request:Request,user:User,row:Device) {
   try{access=await requireTeam(env,new Request(request.url,{headers}),id,user);}catch(error){if(error instanceof TeamError&&[403,404].includes(error.status))throw unavailable();throw error;}
   if(!access)throw unavailable();
   const address=await hub.repositoryAddress(id),archived=archiveLocked(await hub.repositoryArchive(id));
-  const allowed=requestedScopes(JSON.parse(row.requestedScopes)).filter(scope=>cliScopeAllowed(scope,access.proof.role,!archived));
+  const allowed=requestedScopes(JSON.parse(row.requestedScopes)).filter(scope=>cliScopeAllowed(scope,access.proof.role,!archived,access.binding.kind==='owner'));
   return {id,name:address?`${address.namespace}/${address.name}`:id,allowed,archived};
 }
 

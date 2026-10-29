@@ -1,37 +1,14 @@
-import {open,constants,realpath,lstat} from 'node:fs/promises';
-import {resolve,dirname,join,basename} from 'node:path';
+import {resolve} from 'node:path';
 import {randomBytes,randomUUID} from 'node:crypto';
+import {outsideCheckout,readPrivateJson,createPrivateJson} from './private-file.mjs';
 const validId=value=>/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(value??'');
 const validName=value=>typeof value==='string'&&/^[\w.-]{1,80}$/.test(value);
 function document(record,target){
  if(!record||typeof record!=='object'||Array.isArray(record)||Object.keys(record).some(key=>!['format','origin','repository','trunk','id','name','token'].includes(key))||record.format!==1||record.origin!==target.origin||record.repository!==target.repository||record.trunk!==target.trunk||!validId(record.id)||!validName(record.name)||typeof record.token!=='string'||!/^nhci_[a-f0-9]{64}$/.test(record.token))throw Error('Use a private runner credential file for this exact host and repository');
  return record;
 }
-async function outsideCheckout(path){
- let at=await realpath(dirname(path));
- for(;;){
-  let marker=false;try{await lstat(join(at,'.git'));marker=true;}catch(error){if(error.code!=='ENOENT')throw error;}
-  if(marker||basename(at)==='.git')throw Error('Keep runner credential files outside Git checkouts');
-  const parent=dirname(at);if(parent===at)return;at=parent;
- }
-}
 export async function readRunnerCredentialFile(path,target){
- let handle;
- try{
-  await outsideCheckout(path);
-  handle=await open(path,constants.O_RDONLY|(constants.O_NOFOLLOW??0)|(constants.O_NONBLOCK??0));
-  const stat=await handle.stat();
-  if(!stat.isFile()||stat.size>4096||(stat.mode&0o077)!==0||typeof process.getuid==='function'&&stat.uid!==process.getuid())throw Error('Private file required');
-  const bytes=Buffer.alloc(4097),{bytesRead}=await handle.read(bytes,0,bytes.length,0);if(bytesRead>4096)throw Error('Oversized private file');
-  return document(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(0,bytesRead))),target);
- }catch{throw Error('Cannot read this private runner credential file; require an owner-only regular JSON file for the selected host/repository');}
- finally{await handle?.close();}
-}
-async function create(path,record){
- let handle;
- try{handle=await open(path,'wx',0o600);await handle.writeFile(JSON.stringify(record,null,2)+'\n');await handle.sync();}
- catch{throw Error('Could not exclusively save the runner credential file; registration was not requested. Existing files are never overwritten');}
- finally{await handle?.close();}
+ return readPrivateJson(path,'runner credential',value=>document(value,target));
 }
 export async function runnerCommand({action,pos,opts,target,base,token,request,output,cwd=process.cwd()}){
  const path=base+'/ci/runners';
@@ -54,7 +31,7 @@ export async function runnerCommand({action,pos,opts,target,base,token,request,o
   output({registration:{id:r.id,name:r.name,revoked:true}},`Revoked runner ${r.name} (${r.id}). Active leases are invalidated.`);return;
  }
  const selected=record??{format:1,origin:target.origin,repository:target.repository,trunk:target.trunk,id:randomUUID(),name:pos[0],token:'nhci_'+randomBytes(32).toString('hex')};
- if(action==='create')await create(file,selected);
+ if(action==='create')await createPrivateJson(file,selected,'runner credential','registration');
  let result;
  try{result=await request(path,token,{method:'POST',body:{id:selected.id,name:selected.name,token:selected.token}});}
  catch(error){throw Error(`${error.message}. The private credential file is retained; use runner recover --token-file FILE to retry this same registration, or inspect runner list.`);}

@@ -5,6 +5,7 @@ import {MergeSettingsStore,type MergeSettingsInput} from '../../src/repository/m
 import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
 let dropNextRunnerAcknowledgement=false;
+let dropNextCollaboratorAcknowledgement=false;
 let dropImportAcknowledgement:string|null=null;
 const importPosts={objects:0,refs:0};
 
@@ -132,6 +133,15 @@ export default {
       catch(error){return Response.json({error:String(error)},{status:400});}
     }
     if(url.pathname==='/fixture/drop-runner-acknowledgement'){dropNextRunnerAcknowledgement=true;return Response.json({armed:true});}
+    if(url.pathname==='/fixture/drop-collaborator-acknowledgement'){dropNextCollaboratorAcknowledgement=true;return Response.json({armed:true});}
+    if(url.pathname==='/fixture/conditional-collaborator'){
+      const body=await request.json<{trunk:string;actor:string;input:Parameters<import('../../src/hub').Hub['configureCollaborators']>[2]}>();
+      try{return Response.json(await env.HUB.get(env.HUB.idFromName('hub')).configureCollaborators(body.trunk,body.actor,body.input));}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
+    if(dropNextCollaboratorAcknowledgement&&request.method==='POST'&&/^\/api\/cli\/(trunks|repos)\/.+\/collaborators$/.test(url.pathname)){
+      dropNextCollaboratorAcknowledgement=false;const response=await api.fetch(request,env);if(!response.ok)return response;await response.body?.cancel();return Response.json({error:'Synthetic lost collaborator acknowledgement'},{status:503});
+    }
     if(url.pathname==='/fixture/conditional-runner'){
       const body=await request.json<{trunk:string;actor:string;registration?:{id:string;name:string;token:string};revoke?:string}>();
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureCliRunner({credentialId:'fixture-direct-runner',origin:url.origin,...(body.registration?{registration:body.registration}:{revoke:body.revoke})},body.actor));}

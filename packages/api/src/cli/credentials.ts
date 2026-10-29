@@ -1,13 +1,13 @@
 import type {User} from "../auth";
 
-export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write"] as const;
+export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write"] as const;
 export type CliScope=typeof cliScopes[number];
 export const cliScopeWrites=(scope:CliScope)=>scope!=="read"&&scope!=="contents:read";
-export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write"].includes(scope);
+export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","collaborators:write"].includes(scope);
 export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 /** Lifecycle control remains delegable while archived, so an admin can reopen.
  * This exception grants neither content writes nor other settings access. */
-export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean)=>scope==="repository:archive"?["owner","admin"].includes(role):!cliScopeWrites(scope)||writable&&(cliOwnerScope(scope)?role==='owner':cliAdminScope(scope)?["owner","admin"].includes(role):role!=="reader");
+export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>scope==='collaborators:write'&&!independent?false:scope==="repository:archive"?["owner","admin"].includes(role):!cliScopeWrites(scope)||writable&&(cliOwnerScope(scope)?role==='owner':cliAdminScope(scope)?["owner","admin"].includes(role):role!=="reader");
 export interface CliCredential {id:string;label:string;trunk:string;origin:string;scopes:CliScope[];createdAt:number;expiresAt:number;usedAt:number|null}
 interface Stored extends Omit<CliCredential,"scopes"> {owner:string;scopes:string}
 const ready=new WeakMap<D1Database,Promise<unknown>>();

@@ -122,3 +122,9 @@ slots for uncertain allocations or failed cleanup, and scoped operator recovery.
 It is not deployed or activated, and it does not remove the existing Actions
 key-scope blocker. Account-specific compute/pricing tiers, spend limits, hosted
 activation and production capacity/load acceptance remain open.
+
+Local CLI 0.4.16 also adds [collaborator administration acceptance](evidence/cli-collaborators-validation.md):
+separate explicit admin delegation, private recoverable invitations, conditional
+role/removal/cancel operations and immediate role enforcement on later requests.
+It is not published/deployed; the production CLI remains 0.4.15. This does not
+close hosted activation, staging, recovery or traffic-readiness gates.

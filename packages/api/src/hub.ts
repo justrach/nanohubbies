@@ -13,6 +13,7 @@ import {pgpKey} from "./signing/pgp";
 import {verifyCommit} from "./signing/verify";
 import {currentSigningEmail} from "./signing/identity";
 import {ActionsCapacity,actionsLimits,type ReserveSandbox} from './ci/capacity';
+import {CollaboratorAdministration,type CollaboratorEdit} from './collaborators/administration';
 
 export interface TrunkInfo {
   name: string;
@@ -122,6 +123,8 @@ export class Hub extends DurableObject<Env> {
     return {binding,accounts,checkedAt:Date.now()};
   }
   collaborators(trunk: string) { return new Collaborators(this.sql).list(trunk); }
+  collaboratorConfiguration(trunk:string,actor:string) {return this.ctx.storage.transactionSync(()=>new CollaboratorAdministration(this.sql,trunk).configuration(actor));}
+  configureCollaborators(trunk:string,actor:string,input:CollaboratorEdit) {return this.ctx.storage.transactionSync(()=>new CollaboratorAdministration(this.sql,trunk,input.credentialId).edit(actor,input));}
   inviteCollaborator(trunk: string, actor: string, userId: string, role: RepoRole, hash: string) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,trunk);return new Collaborators(this.sql).invite(trunk,actor,userId,role,hash);}); }
   acceptInvitation(trunk: string, userId: string, hash: string) { return this.ctx.storage.transactionSync(() => new Collaborators(this.sql).accept(trunk,userId,hash)); }
   changeCollaborator(trunk: string, actor: string, userId: string, role: RepoRole | null) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,trunk);return new Collaborators(this.sql).change(trunk,actor,userId,role);}); }

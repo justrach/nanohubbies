@@ -12,6 +12,7 @@ export const cliPermissions=[
   ['repository:merge','Change allowed merge methods and the default (repository admins only)'],
   ["environments:write","Manage deployment environments, reviewers and source restrictions (repository admins only)"],
   ["runners:write","Register runners and issue or revoke their CI credentials (repository owner only)"],
+  ['collaborators:write','Invite, remove or change collaborators (admins; only owners manage admins)'],
 ] as const;
 export const cliPermissionLabels:Record<string,string>=Object.fromEntries(cliPermissions);
 export const cliReadScope=(scope:string)=>scope==="read"||scope==="contents:read";

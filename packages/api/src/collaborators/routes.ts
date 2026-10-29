@@ -1,6 +1,7 @@
 import type { User } from "../auth";
 import { canAdmin, sameOrigin, type TeamAccess } from "../team/access";
 import { hashToken, type RepoRole } from "./store";
+import {cliCollaborators} from './cli-route';
 
 export async function acceptInvitation(
   env: Env,
@@ -43,6 +44,7 @@ export async function collaboratorRoute(
   user: User | null,
   access: TeamAccess | null,
 ) {
+  if(user?.cli)return cliCollaborators(env,request,trunk,id,user,access);
   const hub = env.HUB.get(env.HUB.idFromName("hub"));
   if (access?.binding.kind !== "owner")
     return Response.json({

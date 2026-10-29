@@ -36,11 +36,18 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 | Allowed pushers | Stable account allowlist, applied to create/update/delete and PR merge; overlapping allowlists intersect; empty list blocks everyone | No teams/apps or bypass roles; membership remains a prerequisite |
 | Linear history | Checks every introduced commit against previous-ref ancestry; merge commits below the tip are rejected; applies to push, HTTP branch creation, restack and PR merge | Git mode only; strict squash/rebase is deployed and covered by frozen Linux acceptance; nonlinear automatic rebasing and method settings remain open |
 | Actions execution | Trusted controller reads accepted-base workflow, creates a fresh Codegraff VM per job, transfers a credential-free Git bundle, runs an isolated candidate, records private logs and cleans up | Explicit limited workflow dialect; expressions, matrices, arbitrary marketplace actions, services, reusable workflows, scheduled events, cache and artifact actions are not supported yet |
-| Runner pool | Configurable concurrent candidates/jobs, shared per-process sandbox cap across repositories under one Codegraff account; atomic leases; named registrations and immediate revoke/reassignment | Provider capacity/credit still bounds actual allocations; repository credentials remain separately scoped; project CI still requires its sandbox-scoped key, verified toolchain image and running dispatcher; the real Bun cloud smoke uses the existing CI account configuration |
+| Runner pool | Configurable concurrent candidates/jobs, per-process sandbox cap across repositories; atomic leases; named registrations and immediate revoke/reassignment; local shared deployment/account reservations across controllers with retained uncertain allocations and cleanup repair | Shared ledger is not deployed/activated; provider capacity/credit still bounds allocations; repository credentials remain separately scoped; project CI still requires its sandbox-scoped key, verified toolchain image and running dispatcher; account-specific compute tiers remain open |
 | Secrets | Private on-demand service with Cloudflare Secrets Store bindings, scoped references, bounded/revocable grants and audit; Cloudflare retains values when runtime idles | Static binding changes require deployment; values managed directly in Cloudflare; no GitHub-compatible secret upload API or automatic candidate injection |
 | Staging | Exact head/base approval, staging version/acceptance evidence contract and controller adapter | Live deployment, real-service acceptance and Meld migration still need activation and evidence |
 
 Additional signature formats, merge queues, organizational policies and full Actions compatibility remain open work. A signature header alone never counts as a verified signature. These gaps are not silently presented as supported options.
+
+Local, unpublished CLI 0.4.16 adds [collaborator administration](cli-collaborators.md):
+explicit current-admin delegation, private client-generated invitations with
+lost-response recovery, revision-checked role/removal/cancel operations and final
+Hub authority checks. The [shared Actions capacity ledger](actions-capacity.md)
+also has local acceptance across controllers. Neither feature is deployed or
+activated in production yet; current public CLI remains 0.4.15.
 
 ## Protection API
 

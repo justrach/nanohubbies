@@ -40,7 +40,8 @@ try {
   assert.equal((await fetch(remote+'/info/refs?service=git-upload-pack',{headers:{Authorization:'Basic '+btoa('git:'+author.token)}})).status,401);
   assert.equal((await f.mf.dispatchFetch('https://other.invalid'+gateway+'/pulls',{headers:auth(author)})).status,401);
   assert.equal((await f.request('GET','/api/cli/trunks/other-cli-repo/pulls',undefined,auth(author))).status,404);
-  for(const path of ['/secrets','/collaborators','/cli-credentials','/pulls/1/reviews/1/dismissals'])assert.equal((await f.request('GET',gateway+path,undefined,auth(author))).status,404);
+  const collaboratorDenied=await f.request('GET',gateway+'/collaborators',undefined,auth(author));assert.equal(collaboratorDenied.status,403);assert.match(collaboratorDenied.headers.get('WWW-Authenticate')??'',/collaborators:write/);
+  for(const path of ['/secrets','/cli-credentials','/pulls/1/reviews/1/dismissals'])assert.equal((await f.request('GET',gateway+path,undefined,auth(author))).status,404);
   assert.equal((await f.json('GET',gateway+'/protection',undefined,auth(read))).policies[0].branch,'main');
   assert.equal((await f.request('PUT',gateway+'/protection',config,auth(author))).status,403,'Existing write/review credentials gain no protection administration');
   assert.equal((await f.request('GET','/api/cli/credentials',undefined,auth(author))).status,403);
