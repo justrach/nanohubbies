@@ -43,12 +43,25 @@ function assetSessionFailure(result, accountId, worker) {
     !/\b(?:Uploaded|Deployed|10000|10006|10007|401|403)\b|Current Version ID|unauthori[sz]ed|authentication|permission denied|fetch failed|timed?\s*out|ECONN|ETIMEDOUT|UND_ERR_/i.test(output);
 }
 
+function consumedCompletionFailure(result, accountId, worker) {
+  if (!Number.isSafeInteger(result?.code) || result.code === 0 || result.timedOut || result.executionUncertain) return false;
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "");
+  const failedRequest = `A request to the Cloudflare API (/accounts/${accountId}/workers/scripts/${worker}/versions) failed.`;
+  const codes = [...output.matchAll(/\[code:\s*(\d+)\]/g)];
+  return output.split(failedRequest).length === 2 &&
+    output.split("Completion token has already been consumed").length === 2 &&
+    codes.length === 1 && codes[0][1] === "100312" &&
+    !/\b(?:Uploaded|Deployed|10000|10006|10007|401|403)\b|Current Version ID|unauthori[sz]ed|authentication|permission denied|fetch failed|timed?\s*out|ECONN|ETIMEDOUT|UND_ERR_/i.test(output);
+}
+
 /** Only the already-existing, privately owned recovery app's phase deploy may
  * retry once, after an exact asset-session rejection and unchanged provider
- * state. This is not a generic deploy/mutation retry or a recovery-write retry. */
+ * state. A consumed upload token gets diagnostics only, never another deploy.
+ * This is not a generic deploy/mutation retry or a recovery-write retry. */
 export async function deployHeldFixturePhase({
   accountId, runId, purpose, worker, phase, previousPhase, previous,
-  deployOnce, observe, recordRetry,
+  deployOnce, observe, recordRetry, recordFailure,
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
 }) {
   const prefix = purpose === "vault-recovery" ? "nh-vault-recovery-"
@@ -56,7 +69,7 @@ export async function deployHeldFixturePhase({
   if (!prefix || !/^[a-f0-9]{32}$/.test(accountId) ||
       !/^[a-z0-9]{8,12}-[a-f0-9]{10}$/.test(runId) ||
       worker !== `${prefix}${runId}-app` || !phases.has(phase) ||
-      typeof recordRetry !== "function")
+      typeof recordRetry !== "function" || typeof recordFailure !== "function")
     throw Error("Phase deployment requires an owned recovery fixture");
   const baseline = phaseDeploymentSnapshot(previous, previousPhase);
   let result = await deployOnce();
@@ -74,6 +87,28 @@ export async function deployHeldFixturePhase({
     });
     result = await deployOnce();
     attempts++;
+  }
+  if (consumedCompletionFailure(result, accountId, worker)) {
+    // A consumed token is not proof of a pre-effect refusal. Observe once for
+    // diagnostics, persist only fingerprints, then stop even if the target
+    // phase is active. Never replay the deployment or infer its acknowledgement.
+    let active = null;
+    try {
+      const observed = await observe();
+      const activePhase = observed?.metadata?.resources?.bindings
+        ?.find(binding => binding.name === "HOSTED_REPO_PHASE")?.text;
+      active = { ...phaseDeploymentSnapshot(observed, activePhase), phase: activePhase };
+    } catch {
+      // An unavailable/invalid read is neither absence nor unchanged state.
+    }
+    await recordFailure({
+      reason: "owned-version-upload-completion-token-consumed-100312",
+      worker, phase, previousPhase, previous: baseline,
+      failedStep: result.step ?? null, commandAttempts: attempts,
+      observation: active ? "verified-held-version" : "unavailable-or-invalid",
+      active,
+    });
+    throw Error("Phase version upload completion is uncertain (100312); no deployment retry; inspect the saved active-version observation");
   }
   if (result.code) throw Error("Phase deployment failed; inspect its private log");
   const acknowledgements = [...String(result.stdout ?? "").matchAll(/Current Version ID:[ \t]*([^\s]+)/g)];

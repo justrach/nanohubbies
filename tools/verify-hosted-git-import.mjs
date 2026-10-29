@@ -734,6 +734,11 @@ export async function verifyHostedGitImport(
               record.recoveryPhaseDeployRetries.push({ ...proof, at: new Date().toISOString() });
               await persist();
             },
+            recordFailure: async (proof) => {
+              record.recoveryPhaseDeployFailures ??= [];
+              record.recoveryPhaseDeployFailures.push({ ...proof, at: new Date().toISOString() });
+              await persist();
+            },
           });
           record.apiVersion = deployed.version;
           assertFixtureBindings(deployed.metadata, plan, "api");
