@@ -16,7 +16,7 @@ import {
 import { verifyRetainedBytes } from "./probe.mjs";
 import { createHash } from "node:crypto";
 import { verifiedR2Reconcile } from "./retained.mjs";
-import { waitForFixturePhase, recoveryFailureCode } from "./phase.mjs";
+import { waitForFixturePhase, recoveryFailureCode, readInFixturePhase } from "./phase.mjs";
 import { readCheckpoint } from "./checkpoint";
 
 const key = "a".repeat(64),
@@ -852,4 +852,78 @@ test("control endpoint retries checkpoint reads through fresh stubs but never re
   assert.equal(stubs, 2);
   await assert.rejects(() => control(request({ binding: "SEQUENCER", name: "test", op: "lose" }), local), value => value === reset);
   assert.equal(stubs, 3); assert.equal(losses, 1);
+});
+
+const readVersion = "11111111-1111-4111-8111-111111111111";
+const readExpectation = { method: "GET", phase: "verify", version: readVersion };
+const currentPhase = () => ({ phase: "verify", version: readVersion, normalTrafficHeld: true });
+test("a real frozen private Git read is retried only after held phase/version observation and a saved proof", async () => {
+  let clock = 0, calls = 0, observations = 0;
+  const local: any = { ...env, HOSTED_REPO_RECOVERY: "1", HOSTED_REPO_PHASE: "frozen" };
+  const proofs: any[] = [];
+  const result = await readInFixturePhase(async () => {
+    return (await repositoryRoute(new Request("https://fixture.example/__fixture/app/git/owner/repo.git/HEAD"), local, {} as any,
+      { fetch: async () => { calls++; assert.equal(proofs.length, 1); return new Response("missing Git", { status: 404 }); } }))!;
+  }, { ...readExpectation, status: 404 }, {
+    now: () => clock, sleep: async ms => { clock += ms; },
+    readPhase: async () => { observations++; local.HOSTED_REPO_PHASE = "verify"; return currentPhase(); },
+    recordRetry: async proof => { proofs.push(proof); },
+  });
+  assert.equal(result.attempts, 2); assert.equal(calls, 1); assert.equal(observations, 1);
+  assert.equal(proofs[0].refusal, "fixture_frozen");
+  assert.equal(await result.response.text(), "missing Git");
+});
+test("phase-read helper rejects writes before dispatch and never retries a transport exception", async () => {
+  let calls = 0;
+  const options = { readPhase: async () => currentPhase(), recordRetry: async () => {}, sleep: async () => {} };
+  for (const method of ["POST", "PUT", "PATCH", "DELETE"])
+    await assert.rejects(() => readInFixturePhase(async () => { calls++; return new Response(); }, { ...readExpectation, method }, options), /Invalid fixture read/);
+  assert.equal(calls, 0);
+  const failure = Error("connection reset after unknown outcome");
+  await assert.rejects(() => readInFixturePhase(async () => { calls++; throw failure; }, readExpectation, options), error => error === failure);
+  assert.equal(calls, 1);
+});
+test("only a recognized 503 fence retries; auth, other errors, malformed and oversized bodies stop", async () => {
+  for (const response of [Response.json({ code: "fixture_frozen" }, { status: 403 }),
+    Response.json({ error: "private application error" }, { status: 503 }),
+    new Response("not JSON", { status: 503 }), new Response("x".repeat(4097), { status: 503 }),
+    new Response(null, { status: 503 }), new Response(null, { status: 401 })]) {
+    let calls = 0, observations = 0;
+    await readInFixturePhase(async () => { calls++; return response; }, readExpectation, {
+      readPhase: async () => { observations++; return currentPhase(); },
+      recordRetry: async () => { throw Error("Unexpected retry"); },
+    });
+    assert.equal(calls, 1); assert.equal(observations, 0);
+  }
+});
+test("expected closed reads and rate-limit responses retain their bodies without phase retries", async () => {
+  for (const [response, expected] of [[Response.json({ code: "fixture_frozen" }, { status: 503 }), { ...readExpectation, phase: "frozen", status: 503 }],
+    [Response.json({ rate: true }, { status: 429 }), readExpectation]] as any) {
+    const result = await readInFixturePhase(async () => response, expected, {
+      readPhase: async () => { throw Error("No phase observation expected"); }, recordRetry: async () => { throw Error("No retry expected"); },
+    });
+    assert.deepEqual(await result.response.json(), response.status === 503 ? { code: "fixture_frozen" } : { rate: true });
+  }
+});
+test("phase-read observation and receipt failures stop before a second application read", async () => {
+  for (const failurePoint of ["hold", "observation", "receipt"]) {
+    let calls = 0;
+    await assert.rejects(() => readInFixturePhase(async () => { calls++; return Response.json({ code: "fixture_frozen" }, { status: 503 }); }, readExpectation, {
+      readPhase: async () => {
+        if (failurePoint === "observation") throw Error("observation failed");
+        return { ...currentPhase(), normalTrafficHeld: failurePoint !== "hold" };
+      }, recordRetry: async () => { throw Error("receipt failed"); },
+    }));
+    assert.equal(calls, 1);
+  }
+});
+test("phase-read retries have a three-read limit and reject an observation past its deadline", async () => {
+  let clock = 0, calls = 0, proofs = 0;
+  const result = await readInFixturePhase(async () => { calls++; return Response.json({ code: "fixture_frozen" }, { status: 503 }); }, readExpectation, {
+    readPhase: async () => currentPhase(), recordRetry: async () => { proofs++; }, now: () => clock, sleep: async ms => { clock += ms; },
+  });
+  assert.equal(calls, 3); assert.equal(proofs, 2); assert.equal(result.failureCode, "fixture_frozen");
+  await assert.rejects(() => readInFixturePhase(async () => { clock += 2; return new Response("too late"); }, readExpectation, {
+    timeoutMs: 1, now: () => clock, readPhase: async () => currentPhase(), recordRetry: async () => { throw Error("Unexpected proof"); },
+  }), /deadline/);
 });

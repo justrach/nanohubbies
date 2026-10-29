@@ -20,13 +20,16 @@ export default {
     )
       return reply({ error: "Not found" }, 404);
     const url = new URL(request.url);
+    if (url.pathname === "/__fixture/purge-status" && request.method === "GET")
+      return reply({ purgeOnly: env.HOSTED_PURGE_ONLY === "1",
+        bucketConfigured: !!env.OBJECTS, targetConfigured: !!env.TARGET });
     // Cleanup remains possible after the API gate expires. This route returns
     // counts only and can address only this fixture's dedicated bucket binding.
     if (url.pathname === "/__fixture/purge" && request.method === "POST") {
-      if (env.HOSTED_PURGE_ONLY !== "1")
-        return reply({ error: "Close the API gate before purging" }, 409);
+      if (env.HOSTED_PURGE_ONLY !== "1" || env.TARGET)
+        return reply({ error: "Close the API gate before purging", code: "fixture_purge_not_ready" }, 409);
       if (!env.OBJECTS)
-        return reply({ error: "Fixture bucket is not configured" }, 409);
+        return reply({ error: "Fixture bucket is not configured", code: "fixture_bucket_unbound" }, 409);
       const page = await env.OBJECTS.list({ limit: 1000 });
       if (page.objects.length)
         await env.OBJECTS.delete(page.objects.map((object) => object.key));

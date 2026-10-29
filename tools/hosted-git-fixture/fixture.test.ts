@@ -11,6 +11,7 @@ import {
 } from "./config.mjs";
 import { cleanupFixture } from "./cleanup.mjs";
 import { readMeasurement } from "./measurement";
+import { purgeFixturePage } from "./purge.mjs";
 
 test("fixture read telemetry reports numbers only and preserves binding method receivers", async () => {
   const observations: number[][] = [],
@@ -153,6 +154,77 @@ test("purge requires closed API and control authority, works after expiry, retur
     { deleted: 1, more: true },
   );
   assert.deepEqual(deleted, ["private/path"]);
+});
+test("purge status is authenticated, read-only and available after expiry; a service binding blocks deletion", async () => {
+  let lists = 0;
+  const OBJECTS = { list: async () => { lists++; return { objects: [], truncated: false }; } };
+  const local: any = { ...env, HOSTED_FIXTURE_EXPIRES: "0", OBJECTS, HOSTED_PURGE_ONLY: "1", TARGET: {} };
+  assert.equal((await gate.fetch(request("/__fixture/purge-status", false), local)).status, 404);
+  assert.deepEqual(await (await gate.fetch(request("/__fixture/purge-status"), local)).json(), {
+    purgeOnly: true, bucketConfigured: true, targetConfigured: true,
+  });
+  const refused = await gate.fetch(request("/__fixture/purge", true, "POST"), local);
+  assert.equal(refused.status, 409); assert.equal((await refused.json()).code, "fixture_purge_not_ready");
+  const missing = await gate.fetch(request("/__fixture/purge", true, "POST"), { ...local, TARGET: undefined, OBJECTS: undefined });
+  assert.equal((await missing.json()).code, "fixture_bucket_unbound"); assert.equal(lists, 0);
+});
+test("purge waits for the real gate and retries only a proven pre-deletion refusal", async () => {
+  let clock = 0, posts = 0, deletes = 0;
+  const proofs: any[] = [];
+  const OBJECTS = { list: async () => ({ objects: [{ key: "owned" }], truncated: false }), delete: async () => { deletes++; } };
+  const closed: any = { ...env, HOSTED_PURGE_ONLY: "1", OBJECTS };
+  let ready = false;
+  const result = await purgeFixturePage({
+    now: () => clock, sleep: async ms => { clock += ms; ready = true; },
+    readStatus: async () => gate.fetch(request("/__fixture/purge-status"), ready ? closed : { ...closed, HOSTED_PURGE_ONLY: "0", TARGET: {} }),
+    purge: async () => {
+      posts++; assert.equal(proofs.at(-1).state, "closed-gate-observed");
+      return gate.fetch(request("/__fixture/purge", true, "POST"), posts === 1 ? { ...closed, HOSTED_PURGE_ONLY: "0" } : closed);
+    }, recordObservation: async proof => { proofs.push(proof); },
+  });
+  assert.deepEqual(result, { deleted: 1, more: false }); assert.equal(posts, 2); assert.equal(deletes, 1);
+  assert.ok(proofs.some(proof => proof.state === "waiting-for-closed-gate"));
+  assert.equal(proofs.filter(proof => proof.state === "refused-before-deletion").length, 1);
+});
+const purgeJson = (value: unknown, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "private, no-store" } });
+const readyPurge = () => purgeJson({ purgeOnly: true, bucketConfigured: true, targetConfigured: false });
+test("lost purge acknowledgement after deletion is never replayed", async () => {
+  let posts = 0, deletions = 0;
+  const lost = Error("reply lost after deletion");
+  await assert.rejects(() => purgeFixturePage({ readStatus: async () => readyPurge(), recordObservation: async () => {},
+    purge: async () => { posts++; deletions++; throw lost; },
+  }), error => error === lost);
+  assert.equal(posts, 1); assert.equal(deletions, 1);
+});
+test("unbound buckets, denied status reads and failed receipts prevent purge writes", async () => {
+  for (const response of [purgeJson({ purgeOnly: true, bucketConfigured: false, targetConfigured: false }),
+    purgeJson({}, 401), purgeJson({}, 403), purgeJson({}, 404), purgeJson({ purgeOnly: "yes" })]) {
+    let posts = 0;
+    await assert.rejects(() => purgeFixturePage({ readStatus: async () => response, purge: async () => { posts++; return purgeJson({ deleted: 0, more: false }); }, recordObservation: async () => {} }));
+    assert.equal(posts, 0);
+  }
+  let posts = 0;
+  await assert.rejects(() => purgeFixturePage({ readStatus: async () => readyPurge(), purge: async () => { posts++; return purgeJson({ deleted: 0, more: false }); }, recordObservation: async () => { throw Error("receipt unavailable"); } }), /receipt unavailable/);
+  assert.equal(posts, 0);
+});
+test("unknown purge failures and invalid acknowledgements stop after one write", async () => {
+  for (const response of [purgeJson({ code: "fixture_bucket_unbound" }, 409), purgeJson({ code: "fixture_purge_not_ready" }, 503),
+    purgeJson({ deleted: 1001, more: false }), new Response("x".repeat(4097), { headers: { "Cache-Control": "private, no-store" } }),
+    Response.json({ deleted: 0, more: false }), new Response("private-fixture-body", { headers: { "Cache-Control": "private, no-store" } })]) {
+    let posts = 0;
+    await assert.rejects(() => purgeFixturePage({ readStatus: async () => readyPurge(), purge: async () => { posts++; return response; }, recordObservation: async () => {} }), error => !error.message.includes("private-fixture-body"));
+    assert.equal(posts, 1);
+  }
+});
+test("purge readiness and explicit refusal retries are bounded", async () => {
+  let clock = 0, posts = 0;
+  await assert.rejects(() => purgeFixturePage({ timeoutMs: 2000, now: () => clock, sleep: async ms => { clock += ms; },
+    readStatus: async () => purgeJson({ purgeOnly: false, bucketConfigured: false, targetConfigured: true }),
+    purge: async () => { posts++; return purgeJson({ deleted: 0, more: false }); }, recordObservation: async () => {},
+  }), /deadline/); assert.equal(posts, 0);
+  await assert.rejects(() => purgeFixturePage({ now: () => clock, sleep: async ms => { clock += ms; }, readStatus: async () => readyPurge(),
+    purge: async () => { posts++; return purgeJson({ code: "fixture_purge_not_ready" }, 409); }, recordObservation: async () => {},
+  }), /not acknowledged/); assert.equal(posts, 3);
 });
 test("backend independently fences direct access and strips both controls before the actual app", async () => {
   let calls = 0;

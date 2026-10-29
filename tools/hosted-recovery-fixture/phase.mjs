@@ -61,3 +61,43 @@ export async function recoveryFailureCode(response) {
     await reader.cancel().catch(() => {});
   }
 }
+
+/** Only retry a read explicitly refused by the private pre-dispatch phase
+ * fence. Transport failures and writes are never replayed here. */
+export async function readInFixturePhase(read, expected, {
+  readPhase, recordRetry, now = Date.now,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  timeoutMs = 120000,
+} = {}) {
+  if (!["GET", "HEAD"].includes(expected?.method) ||
+      !phases.has(expected.phase) || !versionId.test(expected.version ?? "") ||
+      !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000 ||
+      typeof readPhase !== "function" || typeof recordRetry !== "function")
+    throw Error("Invalid fixture read phase contract");
+  const deadline = now() + timeoutMs;
+  const remaining = () => {
+    const value = deadline - now();
+    if (value <= 0) throw Error("Fixture read phase deadline exceeded; keep recovery closed");
+    return value;
+  };
+  for (let attempt = 1; ; attempt++) {
+    const response = await read(remaining());
+    remaining();
+    if (expected.status === undefined ? response.ok : response.status === expected.status)
+      return { response, attempts: attempt };
+    // The caller owns the existing rate-limit policy and must retain this body.
+    if (response.status === 429) return { response, attempts: attempt };
+    const failureCode = await recoveryFailureCode(response);
+    if (response.status !== 503 || failureCode !== "fixture_frozen" ||
+        expected.phase === "frozen" || attempt >= 3)
+      return { response, failureCode, attempts: attempt };
+    const observation = await waitForFixturePhase(readPhase, expected, {
+      now, sleep, timeoutMs: remaining(),
+    });
+    remaining();
+    await recordRetry({ method: expected.method, phase: expected.phase,
+      version: expected.version, refusedAttempt: attempt,
+      refusal: "fixture_frozen", phaseObservations: observation.attempts });
+    await sleep(Math.min(1000, remaining()));
+  }
+}

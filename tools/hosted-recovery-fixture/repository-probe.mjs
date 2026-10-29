@@ -13,7 +13,7 @@ import { gitProxy } from "../hosted-git-fixture/proxy.mjs";
 import { verifyRetainedBytes } from "./probe.mjs";
 import { syntheticValue } from "./vault-lifecycle.mjs";
 import { verifiedR2Reconcile } from "./retained.mjs";
-import { recoveryFailureCode } from "./phase.mjs";
+import { recoveryFailureCode, readInFixturePhase } from "./phase.mjs";
 
 const exec = promisify(execFile),
   hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -74,13 +74,30 @@ export async function runRepositoryRecoveryProbe({
         : (principal ?? {})),
     };
     for (let retry = 0; ; retry++) {
-      const response = await fetch(origin + "/__fixture/app" + path, {
+      const fetchOnce = (timeoutMs) => fetch(origin + "/__fixture/app" + path, {
         method,
         headers,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         redirect: "error",
-        signal: AbortSignal.timeout(120000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
+      let observed;
+      if (["GET", "HEAD"].includes(method)) {
+        const phase = record.recoveryPhases?.at(-1) ?? record.recoverySeedObservation;
+        observed = await readInFixturePhase(fetchOnce, {
+          method, phase: phase.phase, version: phase.version, status: expected,
+        }, {
+          readPhase: async (timeoutMs) => (await call("/__fixture/repository", {
+            method: "POST", body: { op: "phase" }, timeoutMs,
+          })).json(),
+          recordRetry: async (proof) => {
+            result.readFenceRetries ??= [];
+            result.readFenceRetries.push({ ...proof, path, at: new Date().toISOString() });
+            await persist();
+          },
+        });
+      } else observed = { response: await fetchOnce(120000) };
+      const { response } = observed;
       if (response.status === 429 && retry < 2) {
         const seconds = Number(response.headers.get("retry-after"));
         await response.body?.cancel();
@@ -89,7 +106,7 @@ export async function runRepositoryRecoveryProbe({
         continue;
       }
       if (expected === undefined ? !response.ok : response.status !== expected) {
-        const code = await recoveryFailureCode(response);
+        const code = "failureCode" in observed ? observed.failureCode : await recoveryFailureCode(response);
         assert.fail(`Repository fixture HTTP ${response.status}${code ? ` (${code})` : ""}: ${path}`);
       }
       return response;

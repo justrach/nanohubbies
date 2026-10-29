@@ -38,6 +38,7 @@ import {
 import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
 import { deployHeldFixturePhase } from "./hosted-recovery-fixture/phase-deploy.mjs";
 import { checkOperatorBindings } from "./check-operator-bindings.mjs";
+import { purgeFixturePage } from "./hosted-git-fixture/purge.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1150,9 +1151,19 @@ export async function verifyHostedGitImport(
         let empty = 0,
           deleted = 0;
         for (let page = 0; page < 10000 && empty < 2; page++) {
-          const value = await (
-            await call("/__fixture/purge", { method: "POST", body: {} })
-          ).json();
+          const send = (path, method, timeoutMs) => fetch(gateOrigin + path, {
+            method, headers: { "x-nanohub-hosted-fixture": keys.control },
+            redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs),
+          });
+          const value = await purgeFixturePage({
+            readStatus: (timeoutMs) => send("/__fixture/purge-status", "GET", timeoutMs),
+            purge: (timeoutMs) => send("/__fixture/purge", "POST", timeoutMs),
+            recordObservation: async (proof) => {
+              record.cleanupPurgeObservations ??= [];
+              record.cleanupPurgeObservations.push({ ...proof, page, at: new Date().toISOString() });
+              await persist();
+            },
+          });
           assert.ok(
             Number.isInteger(value.deleted) &&
               value.deleted >= 0 &&
