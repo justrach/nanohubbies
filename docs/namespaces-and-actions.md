@@ -173,8 +173,11 @@ credential file for each target:
 across every repository in this process; `jobConcurrency` caps jobs within one
 candidate. Positive integer settings are configurable without an application
 runner-count cap. Defaults are 4/4/4; the legacy pipeline adapter defaults to one
-candidate worker. Separate pool processes have separate caps; all allocations
-still use the configured Codegraff account and its available capacity/credit.
+candidate worker. These local caps remain per process. The updated controller
+also reserves shared capacity from Nanohub before creating each VM; see
+[shared Actions capacity](actions-capacity.md) for deployment/account limits,
+cleanup recovery and rollout requirements. All allocations still use the
+configured Codegraff account and its available capacity/credit.
 These are ephemeral sized fleet sandboxes, rather than personal cloud instances.
 The [gateway documentation](https://codegraff.com/docs/sandboxes) describes their
 resource and capacity behavior.

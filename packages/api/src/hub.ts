@@ -12,6 +12,7 @@ import {sshKey} from "./signing/ssh";
 import {pgpKey} from "./signing/pgp";
 import {verifyCommit} from "./signing/verify";
 import {currentSigningEmail} from "./signing/identity";
+import {ActionsCapacity,actionsLimits,type ReserveSandbox} from './ci/capacity';
 
 export interface TrunkInfo {
   name: string;
@@ -34,6 +35,21 @@ export class Hub extends DurableObject<Env> {
     this.teams = new TeamStore(this.sql);
     this.admission = new Admission(ctx.storage, this.sql);
   }
+
+  private actionsAccount(trunk:string) {
+    const entry=this.find(trunk);if(!entry?.owner)throw Error('Actions capacity requires an owned repository');
+    const binding=this.teams.get(trunk);
+    return binding&&binding.kind!=='owner'?JSON.stringify(['team',binding.issuer,binding.roomId]):JSON.stringify(['owner',entry.owner]);
+  }
+  actionsCapacity(trunk:string) {
+    return this.ctx.storage.transactionSync(()=>{const account=this.actionsAccount(trunk);return {limits:actionsLimits(this.env),usage:new ActionsCapacity(this.sql).usage(account),sharedReservations:'v1' as const};});
+  }
+  reserveActionsSandbox(trunk:string,input:ReserveSandbox) {
+    return this.ctx.storage.transactionSync(()=>{assertRepositoryWritable(this.sql,trunk);return new ActionsCapacity(this.sql).reserve(trunk,this.actionsAccount(trunk),input,actionsLimits(this.env));});
+  }
+  inspectActionsSandbox(trunk:string,id:string) {return this.ctx.storage.transactionSync(()=>new ActionsCapacity(this.sql).inspect(trunk,id));}
+  attachActionsSandbox(trunk:string,id:string,sandbox:string) {return this.ctx.storage.transactionSync(()=>new ActionsCapacity(this.sql).attach(trunk,id,sandbox));}
+  releaseActionsSandbox(trunk:string,id:string,evidence:{reason:'not-created'|'destroyed';sandboxId?:string}) {return this.ctx.storage.transactionSync(()=>new ActionsCapacity(this.sql).release(trunk,id,evidence));}
 
   repositoryArchive(trunk:string) { return new ArchiveStore(this.sql,trunk).state(); }
   archiveConfiguration(trunk:string) {return {...this.repositoryArchive(trunk),conditionalWrites:true as const,nameConfirmation:true as const};}

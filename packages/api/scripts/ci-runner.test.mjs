@@ -37,11 +37,12 @@ test('successful sandbox access permits normal claims, shares verification acros
   globalThis.fetch=async(url,options)=>{
    calls.push([String(url),options.method]);
    if(String(url)==='https://gateway.codegraff.com/v1/sandboxes')return Response.json({sandboxes:[]});
+   if(String(url).endsWith('/capacity/status'))return Response.json({sharedReservations:'v1'});
    assert.match(String(url),/\/ci\/claim$/);return Response.json({run:null});
   };
   assert.deepEqual(await runOnce(config,'unused-repository-token'),{idle:true});
   assert.deepEqual(await runOnce({...config,repository:'alice/other'},'unused-other-token'),{idle:true});
-  assert.deepEqual(calls,[['https://gateway.codegraff.com/v1/sandboxes','GET'],['https://never-contact.invalid/api/repos/alice/repo/ci/claim','POST'],['https://never-contact.invalid/api/repos/alice/other/ci/claim','POST']]);
+  assert.deepEqual(calls,[['https://gateway.codegraff.com/v1/sandboxes','GET'],['https://never-contact.invalid/api/repos/alice/repo/ci/capacity/status','POST'],['https://never-contact.invalid/api/repos/alice/repo/ci/claim','POST'],['https://never-contact.invalid/api/repos/alice/other/ci/capacity/status','POST'],['https://never-contact.invalid/api/repos/alice/other/ci/claim','POST']]);
   assert.ok(!calls.some(([url,method])=>url==='https://gateway.codegraff.com/v1/sandboxes'&&method==='POST'));
  } finally {globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
 });
@@ -55,6 +56,12 @@ test('explicit Docker and trusted pipeline runners do not require Codegraff acco
   assert.deepEqual(await runOnce({...config,pipelineAdapter:'/etc/nanohub/trusted-adapter.mjs'},'unused-repository-token'),{idle:true});
   assert.equal(calls.length,2);
  } finally {globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
+});
+test('missing or incompatible shared capacity service stops before a CI claim',async()=>{
+ const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY,calls=[];
+ try {process.env.CODEGRAFF_API_KEY='synthetic-capacity-preflight';globalThis.fetch=async(url)=>{calls.push(String(url));if(String(url).includes('gateway.codegraff.com'))return Response.json({sandboxes:[]});assert.ok(String(url).endsWith('/capacity/status'));return Response.json({sharedReservations:'old'});};
+  await assert.rejects(runOnce({origin:'https://never-contact.invalid',repository:'alice/repo',backend:'codegraff',image:'registry.invalid/toolchain@sha256:'+'c'.repeat(64),artifacts:'/var/lib/nanohub'},'unused-token'),/no CI job was claimed/);assert.equal(calls.length,2);
+ }finally{globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
 });
 test('a deployment must succeed before version and real acceptance count',async()=>{
   for(const patch of [{state:'failure',candidate:head,kind:'deployment'},{state:'success',candidate:base,kind:'deployment'},{state:'success',candidate:head,kind:'checks'}]){

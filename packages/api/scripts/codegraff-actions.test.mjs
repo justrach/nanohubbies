@@ -12,6 +12,7 @@ import {
 } from "../../../tools/codegraff-actions.mjs";
 import { runProcess } from "../../../tools/ci-runner.mjs";
 import { semaphore } from "../../../tools/runner-pool.mjs";
+import {sandboxCapacity} from '../../../tools/sandbox-capacity.mjs';
 const workflow = `name: Checks
 on: push
 permissions:
@@ -91,6 +92,43 @@ function mockClient({
     },
   };
 }
+test('shared capacity is reserved before provider allocation and released only after confirmed VM destruction',async()=>{
+ for(const mode of ['success','destroy-failed','create-unknown','attach-lost','release-lost']) {
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-capacity-job-'));
+  try {
+   const client=mockClient({failDelete:mode==='destroy-failed'}),events=[],records=[];
+   const provider=client.api;client.api=async(...args)=>{events.push('allocate');assert.equal(records.at(-1).state,'allocation-pending');if(mode==='create-unknown')throw Error('unknown provider response');return provider(...args);};
+   const destroy=client.destroy;client.destroy=async sandbox=>{events.push('destroy');return destroy(sandbox);};
+   const api=async(path,body)=>{
+    events.push(path);
+    if(path.endsWith('reserve'))return {admitted:true,reservation:{...body,state:'reserved',sandboxId:null}};
+    if(path.endsWith('attach')){if(mode==='attach-lost')throw Error('lost attach response');return {...body,state:'allocated'};}
+    assert.equal(events.at(-2),'destroy');if(mode==='release-lost')throw Error('lost release response');return {...body,state:'released'};
+   };
+   const capacity=sandboxCapacity(api,run,dir,{receipt:async(_,record)=>records.push({...record})}),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+   const execute=()=>sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',capacity});
+   if(mode==='create-unknown'){await assert.rejects(execute(),/unknown provider/);assert.deepEqual(events,['/capacity/reserve','allocate']);assert.equal(records.at(-1).state,'allocation-pending');continue;}
+   const result=await execute();assert.equal(result.state,mode==='success'?'success':'failure');
+   if(mode==='destroy-failed'){assert.ok(!events.includes('/capacity/release'));assert.equal(records.at(-1).state,'allocated');}
+   else if(mode==='release-lost')assert.equal(records.at(-1).state,'release-pending');
+   else assert.equal(records.at(-1).state,'released');
+   if(mode==='attach-lost')assert.equal(client.uploads.length,0);
+  }finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
+test('cancellation before creation and explicit provider capacity rejection release an unused shared slot',async()=>{
+ for(const mode of ['cancel','provider-capacity']) {
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-unused-capacity-'));
+  try {
+   const client=mockClient(),events=[];let reserved=false;
+   const capacity={acquire:async()=>{reserved=true;return {allocating:async()=>events.push('allocating'),released:async sandbox=>{assert.equal(sandbox,undefined);events.push('released');}};}};
+   client.api=async()=>{throw Object.assign(Error('provider capacity'),{status:429,retryAfterMs:600000});};
+   const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+   await assert.rejects(sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',capacity,active:async()=>mode==='cancel'?!reserved:true}),mode==='cancel'?/no longer active/:/provider capacity/);
+   assert.equal(events.at(-1),'released');assert.ok(!client.calls.some(call=>call.destroy));
+  }finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
 test('tag jobs retain exact checkout identity and typed reserved ref variables without requiring the current base as an ancestor',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'nanohub-tag-job-'));
  try{const client=mockClient(),tag={...run,ref:'refs/tags/feature',refTarget:'d'.repeat(40)},job=parseWorkflow(workflow,'.github/workflows/check.yml','feature','refs/tags/feature')[0];

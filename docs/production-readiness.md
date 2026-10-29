@@ -115,3 +115,10 @@ application staging acceptance, complete restore verification and traffic/securi
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)
 retain their explicit cutover gates. Production remains separate from a verified
 private-beta deployment, and the original repository must remain available.
+
+Shared Actions capacity now has [local acceptance](evidence/actions-capacity-validation.md):
+one durable deployment/account reservation ledger across controllers, retained
+slots for uncertain allocations or failed cleanup, and scoped operator recovery.
+It is not deployed or activated, and it does not remove the existing Actions
+key-scope blocker. Account-specific compute/pricing tiers, spend limits, hosted
+activation and production capacity/load acceptance remain open.

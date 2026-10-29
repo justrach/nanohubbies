@@ -190,10 +190,12 @@ rm -f "$headers"
 }
 /** Retry only explicit capacity/preparation responses, which allocate no VM.
  * Network timeouts have an unknown outcome and must not allocate duplicates. */
-export async function allocateSandbox(client,spec,deadline,active=async()=>true) {
+export async function allocateSandbox(client,spec,deadline,active=async()=>true,hooks={}) {
   for(;;){
     if(!await active())throw Error('Candidate lease is no longer active');
+    await hooks.beforeCreate?.();
     try{return await client.api('/sandboxes',spec);}catch(error){
+      if([429,503].includes(error.status))hooks.notCreated?.();
       const delay=Math.max(1000,Number.isFinite(error.retryAfterMs)?error.retryAfterMs:2000);
       if(![429,503].includes(error.status)||Date.now()+delay>=deadline)throw error;
       for(let remaining=delay;remaining>0;remaining-=30000){
@@ -220,6 +222,7 @@ export async function sandboxJob({
   artifactOrigin,
   repository,
   receipt = writeFile,
+  capacity,
   active = async () => true,
   now = Date.now,
 }) {
@@ -233,16 +236,24 @@ export async function sandboxJob({
     await writeFile(join(artifacts,file),command+'\n');
     return{name:job.name,state:'cancelled',command,log:new URL(file,artifactOrigin).href,artifacts:[]};
   }
-  const allocated = await allocateSandbox(client, {
-    provider: "fleet",
-    cpu: 4,
-    memory: 16,
-    disk: 60,
-    autoStopMinutes: Math.min(
-      120,
-      Math.ceil((deadline - now()) / 60000) + 10,
-    ),
-  },Math.min(deadline,now()+5*60000),active);
+  const slot=capacity?await capacity.acquire(job):null;
+  let allocationUncertain=false,allocated;
+  try {
+    if(slot&&(now()>=deadline||!await active()))throw Error('Candidate lease is no longer active before allocation');
+    allocated = await allocateSandbox(client, {
+      provider: "fleet",
+      cpu: 4,
+      memory: 16,
+      disk: 60,
+      autoStopMinutes: Math.min(
+        120,
+        Math.ceil((deadline - now()) / 60000) + 10,
+      ),
+    },Math.min(deadline,now()+5*60000),active,{
+      beforeCreate:async()=>{await slot?.allocating();allocationUncertain=true;},
+      notCreated:()=>{allocationUncertain=false;},
+    });
+  }catch(error){if(slot&&!allocationUncertain)await slot.released();throw error;}
   if (!id(allocated.id))
     throw Error("Codegraff returned an invalid sandbox ID");
   const sandbox = allocated.id,
@@ -265,6 +276,7 @@ export async function sandboxJob({
         ...provenance,
       }),
     );
+    await slot?.attached(sandbox);
     await client.ready(sandbox, Math.min(deadline, now() + 5 * 60000));
     if(selected.registry) {
       if(now()>=deadline||!await active()||now()>=deadline)throw Error('Candidate lease is no longer active before registry preparation');
@@ -378,6 +390,9 @@ export async function sandboxJob({
         cleanupError = error;
       }
     }
+    if(!cleanupError) {
+      try {await slot?.released(sandbox);}catch(error){cleanupError=error;}
+    }
     await receipt(
       path,
       JSON.stringify({
@@ -395,7 +410,7 @@ export async function sandboxJob({
   if (cleanupError) {
     state = "failure";
     output +=
-      "\nSandbox cleanup failed; use the saved receipt to retry deletion";
+      "\nSandbox cleanup or shared capacity release failed; inspect the saved receipts before retrying";
   }
   const file = job.name.replaceAll("/", "-") + ".log";
   await writeFile(join(artifacts, file), output.slice(-(2 << 20)));
@@ -421,6 +436,7 @@ export async function executeActions(
     processRunner = runProcess,
     sandboxLimit = work => work(),
     registryCredentials = cloudflarePullCredentials,
+    capacity,
   } = {},
 ) {
   const { run, source, artifacts, artifactOrigin } = context;
@@ -491,7 +507,7 @@ export async function executeActions(
         return jobLimit(()=>sandboxLimit(async()=>{
           if(context.active && !await context.active())return stopped(job,'cancelled','Cancelled before allocation: candidate lease is no longer active');
           try {
-            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active});
+            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active,capacity});
           }catch(error){return stopped(job,'failure','Sandbox allocation or dispatch failed: '+String(error));}
         }));
       })();

@@ -13,6 +13,7 @@ import { pathToFileURL } from 'node:url';
 import {toolchain} from './toolchain.mjs';
 import { runFleet } from './runner-pool.mjs';
 import { verifySandboxAccess } from './sandbox-access.mjs';
+import {sandboxCapacity} from './sandbox-capacity.mjs';
 
 export function runProcess(command, args, options={}) {
   return new Promise((resolve,reject)=>{
@@ -73,12 +74,16 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   if(config.backend==='codegraff'&&!process.env.CODEGRAFF_API_KEY)throw Error('Configure the Nanohub account CODEGRAFF_API_KEY before claiming cloud jobs');
   const base=config.repository ? `${origin.origin}/api/repos/${config.repository}/ci` : `${origin.origin}/api/trunks/${config.trunk}/ci`;
   async function api(path,body) {
-    const response=await fetch(base+path,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const response=await fetch(base+path,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(20000)});
     if(!response.ok)throw Error(`CI request failed (${response.status}): ${await response.text()}`);
     return response.json();
   }
   if(config.stagingEnvironment!==undefined&&(typeof config.stagingEnvironment!=="string"||!config.stagingEnvironment||config.stagingEnvironment.length>255||config.stagingEnvironment!==config.stagingEnvironment.trim()||/[\x00-\x1f\x7f]/.test(config.stagingEnvironment)))throw Error("Use a configured staging environment name");
-  if(config.backend==='codegraff')await verifySandboxAccess(process.env.CODEGRAFF_API_KEY);
+  if(config.backend==='codegraff') {
+    await verifySandboxAccess(process.env.CODEGRAFF_API_KEY);
+    const capacity=await api('/capacity/status',{});
+    if(capacity.sharedReservations!=='v1')throw Error('Shared sandbox capacity is unavailable; no CI job was claimed');
+  }
   const claimed=await api('/claim',{});if(!claimed.run)return {idle:true};
   const run=claimed.run,dir=await mkdtemp(join(tmpdir(),'nanohub-ci-')),source=join(dir,'source');
   const artifacts=join(config.artifacts,run.id,`${run.attempt}`);await mkdir(artifacts,{recursive:true});
@@ -113,7 +118,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
         const response=await fetch(claimed.cloneUrl+'/HEAD',{headers:{Authorization:`Bearer ${run.readToken}`},signal:AbortSignal.timeout(20000),redirect:'error'});
         return response.ok;
       };
-      const result=await executeActions({run,source,artifacts,artifactOrigin:publicUrl,active},config,{sandboxLimit});
+      const capacity=sandboxCapacity(api,run,artifacts,{active});
+      const result=await executeActions({run,source,artifacts,artifactOrigin:publicUrl,active},config,{sandboxLimit,capacity});
       results.push(...result.results);
     }
     if(config.pipelineAdapter && config.backend!=='codegraff') {

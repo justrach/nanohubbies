@@ -18,6 +18,7 @@ import type { RulesetInput } from "./rulesets";
 import { visibleRuleset } from "./ruleset-view";
 import { importRuleset } from "./ruleset-transfer";
 import {missingProtectionMethod,protectionUpdating} from "./protection-rpc";
+import {capacityRoute} from '../ci/capacity-route';
 
 export async function repositoryRoute(env: Env, request: Request, trunk: string, action: string, id: string | undefined, user: User | null, access: TeamAccess | null, operation?: string) {
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
@@ -239,6 +240,7 @@ export async function runnerRoute(env: Env, request: Request, trunk: string, id:
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
   if (!token.startsWith("nhci_")) return null;
   if (request.method !== "POST") return Response.json({ error: "Method not supported" }, { status: 405 });
+  if(id==='capacity')return capacityRoute(env,request,trunk,token,operation);
   try {
     await seq.ciAuthenticate(token);
     const archive=await env.HUB.get(env.HUB.idFromName("hub")).repositoryArchive(trunk);
