@@ -14,6 +14,7 @@ import { verifyRetainedBytes } from "./probe.mjs";
 import { syntheticValue } from "./vault-lifecycle.mjs";
 import { verifiedR2Reconcile } from "./retained.mjs";
 import { recoveryFailureCode, readInFixturePhase } from "./phase.mjs";
+import { fixtureTransportFailure } from "../hosted-git-fixture/transport.mjs";
 
 const exec = promisify(execFile),
   hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -80,7 +81,7 @@ export async function runRepositoryRecoveryProbe({
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         redirect: "error",
         signal: AbortSignal.timeout(timeoutMs),
-      });
+      }).catch(error => { throw fixtureTransportFailure(error, { method, path, body }); });
       let observed;
       if (["GET", "HEAD"].includes(method)) {
         const phase = record.recoveryPhases?.at(-1) ?? record.recoverySeedObservation;

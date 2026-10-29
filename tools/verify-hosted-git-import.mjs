@@ -40,6 +40,8 @@ import { deployHeldFixturePhase } from "./hosted-recovery-fixture/phase-deploy.m
 import { checkOperatorBindings } from "./check-operator-bindings.mjs";
 import { purgeFixturePage } from "./hosted-git-fixture/purge.mjs";
 import { waitForFixtureHealth } from "./hosted-git-fixture/health.mjs";
+import { serializedReceipt } from "./hosted-git-fixture/receipt.mjs";
+import { fixtureTransportFailure } from "./hosted-git-fixture/transport.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -212,7 +214,8 @@ export async function verifyHostedGitImport(
   });
   assert.equal(record.accountId, accountId);
   assert.equal(record.runId, runId);
-  const persist = () => atomic(join(directory, "operation.json"), record);
+  const saveRecord = serializedReceipt(value => atomic(join(directory, "operation.json"), value));
+  const persist = () => saveRecord(record);
   if (cleanupDirectory) {
     record.cleanupReconciliations ??= [];
     record.cleanupReconciliations.push({
@@ -391,7 +394,7 @@ export async function verifyHostedGitImport(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       redirect: "error",
       signal: AbortSignal.timeout(timeoutMs),
-    });
+    }).catch(error => { throw fixtureTransportFailure(error, { method, path, body }); });
     if (
       expectedStatus === undefined
         ? !response.ok
@@ -688,7 +691,7 @@ export async function verifyHostedGitImport(
       const health = await waitForFixtureHealth(timeoutMs => fetch(gateOrigin + "/__fixture/health", {
         method: "GET", headers: { "x-nanohub-hosted-fixture": keys.control },
         redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs),
-      }), { expiresAt: plan.deadline }, {
+      }).catch(error => { throw fixtureTransportFailure(error, { method: "GET", path: "/__fixture/health" }); }), { expiresAt: plan.deadline }, {
         recordObservation: async (proof) => {
           record.healthReadiness ??= [];
           record.healthReadiness.push({ ...proof, at: new Date().toISOString() });
@@ -1164,7 +1167,7 @@ export async function verifyHostedGitImport(
           const send = (path, method, timeoutMs) => fetch(gateOrigin + path, {
             method, headers: { "x-nanohub-hosted-fixture": keys.control },
             redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs),
-          });
+          }).catch(error => { throw fixtureTransportFailure(error, { method, path }); });
           const value = await purgeFixturePage({
             readStatus: (timeoutMs) => send("/__fixture/purge-status", "GET", timeoutMs),
             purge: (timeoutMs) => send("/__fixture/purge", "POST", timeoutMs),

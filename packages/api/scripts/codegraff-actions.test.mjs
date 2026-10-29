@@ -378,9 +378,11 @@ test('capacity responses retry without retrying uncertain allocations or exhaust
 test('the repository workflow runs all suites in parallel before the stable check/check gate',async()=>{
  const jobs=parseWorkflow(await readFile(new URL('../../../.github/workflows/check.yml',import.meta.url),'utf8'),'.github/workflows/check.yml','main');
  const gate=jobs.find(j=>j.id==='check');
- assert.deepEqual(new Set(gate.needs),new Set(['unit','repository','cli','access','hosting','build']));
+ assert.deepEqual(new Set(gate.needs),new Set(['unit','repository','cli','access','hosting','fixtures','build']));
  for(const id of gate.needs)assert.deepEqual(jobs.find(j=>j.id===id).needs,[]);
  assert.match(jobs.find(j=>j.id==='unit').script,/bun run --filter @swarm\/api test:unit/);assert.match(jobs.find(j=>j.id==='cli').script,/bun run test:cli/);assert.match(gate.script,/bun run check/);
+ assert.match(jobs.find(j=>j.id==='fixtures').script,/bun run test:hosted-fixture/);
+ assert.match(jobs.find(j=>j.id==='fixtures').script,/bun run test:hosted-recovery/);
 });
 
 test('independent jobs overlap within the shared cap, dependencies wait and failed prerequisites skip dependents',async()=>{
