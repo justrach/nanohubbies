@@ -375,3 +375,9 @@ provider entry and private keys absent, original provider entries and required
 retirement receipts retained, and production main/Vault versions unchanged.
 The trace retains 144 events with zero write failures. This attempt is terminal
 and cleaned; full changing-Git recovery acceptance remains unpassed.
+
+Three later attempts against the current runtime are recorded in
+[recovery readiness validation](recovery-readiness-validation.md). They exposed
+phase refusal, startup readiness and transport failures, with independent cleanup
+and unchanged production versions. Controller and CI corrections pass local
+validation; the complete changing-Git rollback-and-return gate remains open.

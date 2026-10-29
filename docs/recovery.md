@@ -257,9 +257,11 @@ same command with `--cleanup /absolute/private-artifacts/<run-id>`.
 ### Vault-inclusive hosted drill
 
 The [recorded Vault acceptance](evidence/hosted-vault-recovery-validation.md) passes
-the two authorization/vault points on an unchanged Git graph. The later extension
-with a Git commit between points passes local checks but still needs hosted
-acceptance after two control-API connectivity failures during provisioning.
+the two authorization/vault points on an unchanged Git graph. The changing-Git
+extension retains partial cloud evidence, including older-point clone/fsck and
+known-authority reconciliation, but its complete return gate remains unpassed.
+The latest [readiness and receipt checks](evidence/recovery-readiness-validation.md)
+record additional failed attempts and the resulting fixture/controller fixes.
 
 The vault extension runs the repository acceptance with a separate disposable
 Vault Worker and its real Secrets Store binding:
@@ -305,3 +307,39 @@ unknown or changed unretained content stops recovery while closed. Only backed
 objects absent from the selected checkpoint may be removed. Independent clones
 verify the older graph and the later return to the newer graph, in addition to
 the authority and provider-value checks.
+
+### Fixture readiness and refused operations
+
+A provider deployment acknowledgement is not proof that every subsequent data-plane
+request uses that version. Fixture startup polls only GET health, within a bounded
+deadline, and admits work only after the private identity and exact expiry match.
+A startup 404 is a non-admission observation, never evidence of resource absence;
+401/403, other failures and malformed successful responses stop the controller.
+
+Private application GET/HEAD reads may retry at most three times after an explicit
+`503 fixture_frozen` refusal. Each retry first observes the expected held phase and
+exact API version, then saves a private proof. Intentional frozen responses remain
+valid negative checks. Application/storage writes and unknown transport outcomes
+are not replayed by this helper.
+
+Cleanup observes an authenticated, read-only purge status before deleting a page.
+The gate must be purge-only, have no application service binding and retain its
+owned bucket binding. A POST refused with the exact pre-deletion
+`409 fixture_purge_not_ready` code may be attempted again only after another status
+observation and saved proof, with three attempts maximum. Missing buckets,
+authorization failures, unknown responses or a lost deletion acknowledgement stop
+cleanup and retain its keys. No unknown delete outcome is automatically replayed.
+
+Receipt writes are serialized within a controller, with a snapshot captured per
+invocation; concurrent read proofs cannot race the same temporary file or overwrite
+a later state with an earlier snapshot. This is not a cross-process controller
+lock. Transport diagnostics expose only known operations, class names, an object-ID
+digest and recognized error codes, excluding credentials, arbitrary bodies and
+upstream messages.
+
+The native workflow's `fixtures` job runs both fixture suites and is a dependency
+of the stable `check` job. The full Linux toolchain verifier also includes this
+suite. These are local/offline tests, not live restore commands. Existing check
+conclusion semantics remain unchanged: use success-only requirements where a
+skipped dependent job must not satisfy a required check. Hosted Actions activation
+and complete fresh changing-Git recovery acceptance remain separate gates.

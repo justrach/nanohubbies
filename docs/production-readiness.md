@@ -138,3 +138,10 @@ role/removal/cancel operations and immediate role enforcement on later requests.
 The [published release](evidence/access-capacity-release-validation.md) adds
 frozen Linux and live delivery/consent/preservation checks. This does not close
 hosted activation, staging, recovery or traffic-readiness gates.
+
+The [recovery-controller readiness checks](evidence/recovery-readiness-validation.md)
+add bounded fixture phase/startup observations, guarded purge readiness, serialized
+receipts and a native CI fixture gate. Three further isolated cloud attempts fail
+before complete restore/return acceptance; all are independently confirmed cleaned,
+with production versions unchanged. Local harness checks do not close the hosted
+changing-Git recovery gate or constitute a fresh nine-gate Linux acceptance.

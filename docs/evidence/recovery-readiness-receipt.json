@@ -1,0 +1,172 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-29T21:44:10.686089+00:00",
+  "implementationCommit": "4c401362eba3a3fd8755861952a06401b5e1a031",
+  "scope": "Local recovery-controller and fixture CI corrections; three failed isolated cloud drills with independently verified cleanup",
+  "fullChangingGitCloudGatePassed": false,
+  "productionDeployedThisChange": false,
+  "sourcePushed": false,
+  "attempts": [
+    {
+      "runId": "mvtmbj4l-74b7c2dc15",
+      "sourceCommit": "10b8d836627c0eb35bdc79416f7b7e6e4479ae23",
+      "startedAt": "2026-10-29T14:07:51.190Z",
+      "finishedAt": "2026-10-29T14:24:05.904Z",
+      "acceptancePassed": false,
+      "lastPhase": "complete-application-loss-and-restore",
+      "failure": "Repository fixture HTTP 503 (fixture_frozen): /git/recovery-owner/project.git/HEAD",
+      "checkpoints": [
+        {
+          "label": "before-revocations",
+          "durableObjects": 15,
+          "classes": 10,
+          "r2Objects": 17,
+          "r2Bytes": 18844
+        },
+        {
+          "label": "after-revocations",
+          "durableObjects": 15,
+          "classes": 10,
+          "r2Objects": 19,
+          "r2Bytes": 20440
+        }
+      ],
+      "restoredCloneVerified": false,
+      "newerReturnVerified": false,
+      "cleanupResumeRequired": true,
+      "cleanupNeeded": false,
+      "independentCleanup": {
+        "checkedAt": "2026-10-29T14:27:51.856Z",
+        "apiAbsent": true,
+        "gateAbsent": true,
+        "vaultAbsent": true,
+        "bucketAbsent": true,
+        "databaseAbsent": true,
+        "providerEntryAbsent": true,
+        "requiredRetirementReceiptsVerified": true,
+        "originalProviderEntriesRetained": true,
+        "keysRemoved": true
+      },
+      "productionVersionsUnchanged": true,
+      "gitObjectCounts": [
+        {
+          "checkpoint": "before-revocations",
+          "objects": 10
+        },
+        {
+          "checkpoint": "after-revocations",
+          "objects": 13
+        }
+      ],
+      "distinctGitPoints": true,
+      "corruptionRejectedBeforeLoss": true,
+      "physicalLossStarted": true,
+      "completePhysicalLossVerified": false
+    },
+    {
+      "runId": "mvtnhtez-e6b1f34c7b",
+      "sourceCommit": "ebfa7f973bd91e64e610a779b8c37b1198672358",
+      "startedAt": "2026-10-29T14:40:44.076Z",
+      "finishedAt": "2026-10-29T14:43:13.559Z",
+      "acceptancePassed": false,
+      "lastPhase": null,
+      "failure": "Fixture HTTP 404 at /__fixture/health",
+      "checkpoints": [],
+      "restoredCloneVerified": false,
+      "newerReturnVerified": false,
+      "cleanupResumeRequired": false,
+      "cleanupNeeded": false,
+      "independentCleanup": {
+        "checkedAt": "2026-10-29T14:45:53.292Z",
+        "apiAbsent": true,
+        "gateAbsent": true,
+        "vaultAbsent": true,
+        "bucketAbsent": true,
+        "databaseAbsent": true,
+        "providerEntryAbsent": true,
+        "requiredRetirementReceiptsVerified": true,
+        "originalProviderEntriesRetained": true,
+        "keysRemoved": true
+      },
+      "productionVersionsUnchanged": true
+    },
+    {
+      "runId": "mvtnt657-ec294d5a06",
+      "sourceCommit": "024e4713c60def0992f9b16498bd0f5b656e56ec",
+      "startedAt": "2026-10-29T14:49:33.788Z",
+      "finishedAt": "2026-10-29T15:00:03.415Z",
+      "acceptancePassed": false,
+      "lastPhase": "repository-seed",
+      "failure": "fetch failed",
+      "checkpoints": [],
+      "restoredCloneVerified": false,
+      "newerReturnVerified": false,
+      "cleanupResumeRequired": true,
+      "cleanupNeeded": false,
+      "independentCleanup": {
+        "checkedAt": "2026-10-29T15:04:17.079Z",
+        "apiAbsent": true,
+        "gateAbsent": true,
+        "vaultAbsent": true,
+        "bucketAbsent": true,
+        "databaseAbsent": true,
+        "providerEntryAbsent": true,
+        "requiredRetirementReceiptsVerified": true,
+        "originalProviderEntriesRetained": true,
+        "keysRemoved": true
+      },
+      "productionVersionsUnchanged": true
+    }
+  ],
+  "productionBefore": {
+    "checkedAt": "2026-10-29T14:06:40.788Z",
+    "main": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20"
+  },
+  "productionAfter": {
+    "checkedAt": "2026-10-29T15:04:17.079Z",
+    "main": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20"
+  },
+  "validation": {
+    "recoveryBunCases": 86,
+    "protocolNodeCases": 8,
+    "fixtureBunCases": 32,
+    "proxyProviderNodeCases": 10,
+    "apiUnitCases": 365,
+    "countsOverlap": true,
+    "rootCheckPassed": true,
+    "workspaceTasks": 3,
+    "cachedWorkspaceTasks": 1,
+    "operatorTargets": 7,
+    "pinnedTsrs": true,
+    "linuxGateCountAfterChange": 9,
+    "freshNineGateLinuxAcceptance": false,
+    "logs": [
+      {
+        "name": "nanohub-recovery-protocol-check.log",
+        "sha256": "65b1fb01743ef2ef1653f2381195a376f01cbf8700ff12509e2c509b1912650f"
+      },
+      {
+        "name": "nanohub-recovery-unit-check.log",
+        "sha256": "59fd6ed08215e4243549b50b7afa5834eee9e3c74299dbdb5374772995e4e599"
+      },
+      {
+        "name": "nanohub-recovery-root-check.log",
+        "sha256": "597cdd561572913e7e3aead374b2a2aae066abb5a601fedd3234dbb24f638284"
+      },
+      {
+        "name": "nanohub-fixture-health-check.log",
+        "sha256": "cd6a9660814327ee469f9157167cd80fd0b3916fbfdc6dde5c5ccfd40bf3cda4"
+      }
+    ]
+  },
+  "limits": [
+    "Read retries admit only explicit fixture_frozen with exact persisted held-phase/version proof.",
+    "Only explicit pre-effect purge refusal is replayable; unknown mutation outcomes are not retried.",
+    "Serialized receipts coordinate one controller, not concurrent controller processes.",
+    "Final controller changes have local acceptance; full cloud restore, production recovery operations, staging and load acceptance remain open."
+  ]
+}
