@@ -17,6 +17,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Live Fleet probes accept 64 KiB binary payloads while 512 KiB uploads time
 // out. This is a conservative transport size, not a claimed provider maximum.
 const uploadChunkBytes=64*1024;
+const retryableTransferError=error=>error.status===undefined||[408,429,500,502,503,504].includes(error.status);
 export class Codegraff {
   constructor(key, { fetcher = fetch, sleep = pause } = {}) {
     if (!key)
@@ -80,23 +81,66 @@ export class Codegraff {
     }
     throw Error("Codegraff sandbox startup timed out");
   }
-  async upload(sandbox, path, bytes) {
+  async upload(sandbox, path, bytes, {recover=false}={}) {
     bytes=Buffer.from(bytes);
     if(bytes.length>uploadChunkBytes) {
       const temporary='/tmp/nanohub-upload-'+randomUUID();
       await this.exec(sandbox,`mkdir -m 700 ${quote(temporary)}`);
       for(let offset=0,part=0;offset<bytes.length;offset+=uploadChunkBytes,part++)
-        await this.api(`/sandboxes/${sandbox}/upload`,{path:temporary+'/part-'+String(part).padStart(8,'0'),contentBase64:bytes.subarray(offset,offset+uploadChunkBytes).toString('base64')});
+        await this.upload(sandbox,temporary+'/part-'+String(part).padStart(8,'0'),bytes.subarray(offset,offset+uploadChunkBytes),{recover});
       const digest=createHash('sha256').update(bytes).digest('hex');
-      // Only the fresh private staging directory is globbed. Unknown upload
-      // outcomes abort; neither chunk writes nor this final move are retried.
+      // Only the fresh private staging directory is globbed. Per-part recovery
+      // is explicit; the final assembled-file move is never blindly retried.
       await this.exec(sandbox,`LC_ALL=C cat ${quote(temporary)}/part-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9] > ${quote(temporary+'/complete')} && printf '%s  %s\\n' ${quote(digest)} ${quote(temporary+'/complete')} | sha256sum -c - && chmod 644 ${quote(temporary+'/complete')} && mv -f ${quote(temporary+'/complete')} ${quote(path)} && rm -rf ${quote(temporary)}`);
       return;
     }
+    if(recover)return this.uploadVerifiedPart(sandbox,path,bytes);
     await this.api(`/sandboxes/${sandbox}/upload`, {
       path,
       contentBase64: bytes.toString("base64"),
     });
+  }
+  async readTransfer(sandbox,command) {
+    let last;for(let n=0;n<3;n++){try{return await this.exec(sandbox,command);}catch(error){last=error;if(!retryableTransferError(error))throw error;if(n<2)await this.sleep(250);}}throw last;
+  }
+  /** Staging paths are unique. After an unconfirmed write, observe its hash;
+   * an unverified copy is abandoned and never selected by the source manifest. */
+  async stageUpload(sandbox,path,bytes) {
+    bytes=Buffer.from(bytes);if(bytes.length>uploadChunkBytes)throw Error('Stage at most 64 KiB at a time');
+    const digest=createHash('sha256').update(bytes).digest('hex');
+    let last;
+    for(let attempt=0;attempt<3;attempt++) {
+      const staging=path+'.nh-upload-'+randomUUID();
+      try {await this.api(`/sandboxes/${sandbox}/upload`,{path:staging,contentBase64:bytes.toString('base64')});}
+      catch(error){
+        if(!retryableTransferError(error))throw error;
+        last=error;
+        const observed=await this.readTransfer(sandbox,`if test -f ${quote(staging)}; then sha256sum ${quote(staging)}; else printf missing; fi`);
+        if(observed.trim().split(/\s/)[0]!==digest){if(attempt<2)await this.sleep(Number.isFinite(error.retryAfterMs)?Math.max(1000,Math.min(30000,error.retryAfterMs)):1000);continue;}
+      }
+      return staging;
+    }
+    throw last??Error('Source upload could not be verified');
+  }
+  /** Only credential-free source/job files opt into reconciliation. Registry
+   * and deployment control files keep fail-closed, single-request uploads. */
+  async uploadVerifiedPart(sandbox,path,bytes) {
+    const digest=createHash('sha256').update(bytes).digest('hex');
+    const staging=await this.stageUpload(sandbox,path,bytes),publication=staging+'.publish';
+    // A persistent operation lock makes publication idempotent even when an
+    // exec response is lost. A verified copy uses a different inode from the
+    // upload, so a delayed upload cannot rewrite the published destination.
+    const done=publication+'/done',failed=publication+'/failed',copy=publication+'/content';
+    const publish=`if mkdir -m 700 ${quote(publication)} 2>/dev/null; then if cp ${quote(staging)} ${quote(copy)} && printf '%s  %s\\n' ${quote(digest)} ${quote(copy)} | sha256sum -c - && chmod 644 ${quote(copy)} && mv -f ${quote(copy)} ${quote(path)} && printf '%s' ${quote(digest)} > ${quote(done)}; then :; else printf failed > ${quote(failed)}; exit 1; fi; elif test -f ${quote(done)}; then test "$(cat ${quote(done)})" = ${quote(digest)}; else exit 75; fi`;
+    const observe=`if test -f ${quote(failed)}; then printf failed; elif test -f ${quote(done)} && test "$(cat ${quote(done)})" = ${quote(digest)}; then sha256sum ${quote(path)}; else printf waiting; fi`;
+    let last;for(let n=0;n<3;n++){
+      try{await this.exec(sandbox,publish);return;}catch(error){
+        last=error;if(!retryableTransferError(error))throw error;
+        const observed=await this.readTransfer(sandbox,observe);if(observed.trim().split(/\s/)[0]===digest)return;
+        if(observed.trim()==='failed')throw error;if(n<2)await this.sleep(250);
+      }
+    }
+    throw last;
   }
   async destroy(sandbox) {
     if (!id(sandbox)) throw Error("Invalid sandbox ID");
@@ -328,22 +372,26 @@ export async function sandboxJob({
       await ensureTransferActive();
       const part =
         transfer+"/bundle-" + String(chunks.length).padStart(5, "0");
-      await client.upload(
-        sandbox,
-        part,
-        bundle.subarray(offset, offset + chunkBytes),
-      );
-      chunks.push(part);
+      const bytes=bundle.subarray(offset, offset + chunkBytes);
+      let selected=part;
+      if(typeof client.stageUpload==='function')selected=await client.stageUpload(sandbox,part,bytes);
+      else await client.upload(sandbox,part,bytes);
+      if(typeof selected!=='string'||!selected.startsWith(transfer+'/')||!/^bundle-\d{5}(?:\.nh-upload-[a-f0-9-]{36})?$/.test(selected.slice(transfer.length+1)))throw Error('Invalid staged source path');
+      chunks.push(selected.slice(transfer.length+1));
     }
+    await ensureTransferActive();
+    const manifest=transfer+'/selected-paths';
+    await client.upload(sandbox,manifest,Buffer.from(chunks.join('\n')+'\n'),{recover:true});
     await client.exec(
       sandbox,
-      `LC_ALL=C cat ${quote(transfer)}/bundle-[0-9][0-9][0-9][0-9][0-9] > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(createHash('sha256').update(bundle).digest('hex'))} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
+      `(cd ${quote(transfer)} && while IFS= read -r part; do cat "$part" || exit 1; done < selected-paths) > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(createHash('sha256').update(bundle).digest('hex'))} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
     );
     const script = `set -e\ncp -R /source /tmp/work\ncd /tmp/work\n${prepare}\n${job.script}`;
     await client.upload(
       sandbox,
       "/workspace/nanohub/job.sh",
       Buffer.from(script),
+      {recover:true},
     );
     await ensureTransferActive();
     const variables = {

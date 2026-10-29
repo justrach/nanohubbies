@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm, readFile, mkdir, writeFile,access } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import {createHash} from 'node:crypto';
+import {createHash,randomBytes} from 'node:crypto';
 import { parseWorkflow } from "../../../tools/actions-workflow.mjs";
 import {
   Codegraff,
@@ -515,6 +515,38 @@ test('large file uploads use bounded API payloads and checksum-verified atomic a
 test('revocation during a multi-chunk source transfer stops uploads before candidate execution and still destroys the VM',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'nanohub-cancel-transfer-'));
  try {const client=mockClient(),upload=client.upload;let active=true;client.upload=async(...args)=>{await upload(...args);active=false;};const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];const result=await sandboxJob({client,job,run,bundle:Buffer.alloc(200000),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>active});assert.equal(result.state,'cancelled');assert.equal(client.uploads.length,1);assert.ok(!client.calls.some(call=>call.command?.startsWith('docker run')));assert.equal(client.calls.filter(call=>call.destroy).length,1);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('credential-free upload reconciliation uses isolated paths and one publication across lost responses without weakening authorization',async()=>{
+ for(const mode of ['ack-lost','not-sent','publish-ack-lost','publish-not-sent','all-unknown','forbidden','corrupt']){
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-verified-upload-'));
+  try {
+   const target=join(dir,"owned's payload.bin"),bytes=Buffer.alloc(10037,0xca),calls=[],commands=[];let publicationDispatches=0,publicationExecutions=0,publish;
+   await writeFile(target,'original');const client=new Codegraff('synthetic-unused-key',{sleep:async()=>{}});
+   client.api=async(path,body)=>{assert.ok(path.endsWith('/upload'));calls.push(body);if(mode==='forbidden')throw Object.assign(Error('forbidden'),{status:403});if(mode==='all-unknown'||mode==='not-sent'&&calls.length===1)throw TypeError('request outcome unknown');const value=Buffer.from(body.contentBase64,'base64');if(mode==='corrupt')value[0]^=1;await writeFile(body.path,value);if(mode==='ack-lost'&&calls.length===1)throw TypeError('upload response lost');return {ok:true};};
+   client.exec=async(_id,command)=>{commands.push(command);const publication=command.startsWith('if mkdir -m 700');if(publication){publicationDispatches++;publish=command;if(mode==='publish-not-sent'&&publicationDispatches===1)throw TypeError('publication request outcome unknown');publicationExecutions++;}const result=await runProcess('sh',['-c',command],{cwd:dir,timeoutMs:5000});if(result.code)throw Error('publication or inspection failed');if(publication&&mode==='publish-ack-lost'&&publicationDispatches===1)throw TypeError('publication response lost');return result.output;};
+   if(['all-unknown','forbidden','corrupt'].includes(mode)){
+    await assert.rejects(client.upload('owned-fixture',target,bytes,{recover:true}));assert.equal(await readFile(target,'utf8'),'original');assert.equal(calls.length,mode==='all-unknown'?3:1);if(mode==='forbidden')assert.equal(commands.length,0);
+   }else {
+    await client.upload('owned-fixture',target,bytes,{recover:true});assert.deepEqual(await readFile(target),bytes);assert.equal(publicationExecutions,1);assert.equal(calls.length,mode==='not-sent'?2:1);
+    if(mode==='not-sent'){assert.notEqual(calls[0].path,calls[1].path);await writeFile(calls[0].path,'delayed abandoned upload');assert.deepEqual(await readFile(target),bytes);}
+    // A delayed duplicate finalizer cannot overwrite a later generation.
+    await writeFile(target,'later generation');const late=await runProcess('sh',['-c',publish],{cwd:dir,timeoutMs:5000});assert.equal(late.code,0);assert.equal(await readFile(target,'utf8'),'later generation');
+   }
+   assert.equal(new Set(calls.map(call=>call.path)).size,calls.length);
+  }finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
+test('the selected source manifest excludes abandoned uploads and reconstructs an exact real Git bundle before execution',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-selected-source-'));
+ try {
+  const source=join(dir,'source');await mkdir(source);const binary=randomBytes(180003);await writeFile(join(source,'asset.bin'),binary);
+  const git=async(...args)=>{const result=await runProcess('git',['-C',source,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',...args]);assert.equal(result.code,0,result.output);return result.output.trim();};
+  await git('init','-b','main');await git('add','.');await git('commit','-m','Synthetic source');const head=await git('rev-parse','HEAD'),bundlePath=join(dir,'source.bundle');await git('bundle','create',bundlePath,'HEAD');
+  const remote=join(dir,'remote'),map=path=>path.replaceAll('/workspace/nanohub',remote),client=new Codegraff('synthetic-unused-key',{sleep:async()=>{}});let abandoned,lateWritten=false,destroyed=false;
+  client.ready=async()=>{};client.destroy=async()=>{destroyed=true;};client.api=async(path,body)=>{if(path==='/sandboxes')return{id:'owned-source-fixture'};assert.ok(path.endsWith('/upload'));if(body.path.includes('/bundle-')&&!abandoned){abandoned=body;throw TypeError('upload delivery unknown');}if(body.path.includes('/selected-paths.nh-upload-')&&!lateWritten){await writeFile(map(abandoned.path),'wrong delayed abandoned content');lateWritten=true;}await writeFile(map(body.path),Buffer.from(body.contentBase64,'base64'));return{ok:true};};
+  client.exec=async(_id,command)=>{if(command.startsWith('docker run'))return'container';if(command.startsWith('docker inspect'))return JSON.stringify({Running:false,ExitCode:0});if(command.startsWith('docker logs'))return'synthetic container result';const result=await runProcess('sh',['-c',map(command)],{cwd:dir,timeoutMs:5000,env:{...process.env,GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1'}});if(result.code)throw Error(result.output);return result.output;};
+  const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run:{...run,head,base:head},bundle:await readFile(bundlePath),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'});assert.equal(result.state,'success');assert.equal(lateWritten,true);assert.equal(destroyed,true);assert.deepEqual(await readFile(join(remote,'source','asset.bin')),binary);const verified=await runProcess('git',['-C',join(remote,'source'),'fsck','--strict']);assert.equal(verified.code,0,verified.output);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
 

@@ -35,10 +35,9 @@ between chunks and before candidate launch.
 
 The generic upload helper also chunks larger files, including generated job
 scripts. It verifies assembled bytes before atomically replacing the intended
-destination. A corrupt or uncertain chunk stops the transfer without replacing
-an existing destination or retrying the write. Staging paths are controller-owned
-and unique; candidate code cannot select or write them. Cleanup remains the
-disposable VM's responsibility after failure.
+destination. Staging paths are controller-owned and unique; candidate code cannot
+select or write them. Cleanup remains the disposable VM's responsibility after
+failure.
 
 The focused transport tests pass, including real local shell reassembly of
 binary files and quoted filenames, checksum refusal, unchanged destination after
@@ -47,3 +46,36 @@ execution. All **363 API unit cases**, the hosting integration gate and pinned
 tsrs checks pass. These are local acceptance plus the measured synthetic cloud
 probe; the corrected complete fresh-Linux run remains a separate release gate.
 No main Worker, Vault, production repository or Nanohub Actions key was changed.
+
+## Connection-drop reconciliation
+
+The first corrected 64 KiB run completed 227 upload calls before a separate
+`TypeError: fetch failed` stopped transfer. Its VM was destroyed, independently
+confirmed at `2026-10-29T09:06:39.295Z`. This establishes progress through more
+than 14 MiB, not completion of the Linux gates.
+
+Credential-free source chunks now have unique staging paths. After an ambiguous
+response the controller reads the staged file's hash. It selects a verified
+copy, or abandons the unknown path and makes at most three isolated attempts.
+It never repeats a write to an uncertain path. Only selected relative basenames
+enter a bounded manifest; abandoned/late uploads cannot enter reassembly. The
+whole bundle hash and exact Git head are checked before candidate execution.
+
+Credential-free manifest/job files use a VM-local publication lock and receipt.
+The finalizer copies verified data to a separate inode and publishes once. Lost
+exec replies are reconciled by observing that receipt; replaying the same
+locked operation cannot overwrite a later file generation. Corruption or an
+unrecoverable observation fails closed. Authentication/malformed-request errors
+are not retried. Registry/deployment control files do not opt into this recovery;
+no new credential copies are introduced by it. VM creation/deployment writes
+retain their separate no-blind-retry rules.
+
+Additional tests run real shell/Git reconstruction with an abandoned corrupt
+upload, lost upload/finalizer replies, pre-delivery failures, late finalizers,
+bounded failure and denied authorization. Nanohub's own workflow now allows
+30-minute jobs to include cold fleet setup/source transfer; the suites and stable
+dependency gate are unchanged. Other repositories keep their declared timeouts.
+All **365 API unit cases**, the hosting/namespace integration gate and pinned tsrs
+checks pass after reconciliation; the focused workflow/transport cases also pass
+with the revised timeout declaration. A new complete Linux run is still required
+before production promotion.

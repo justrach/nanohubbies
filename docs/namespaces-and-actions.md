@@ -58,7 +58,10 @@ Codegraff supplies the VM and Docker runtime through its documented [sandbox gat
 Source transfers use at most 64 KiB binary chunks and verify the full bundle's
 SHA-256 before clone/checkout. Reassembly commands stay bounded as bundle size
 grows; larger control/job files use the same bounded upload size and verified
-atomic assembly. Failed or uncertain writes are not retried automatically.
+atomic assembly. Credential-free files reconcile unknown replies through hashes,
+isolated staging paths and publication receipts. Abandoned paths never enter the
+selected source manifest. Other control-file writes fail closed on uncertainty;
+VM creation and deployment requests are not blindly retried.
 Deadline/revocation checks interrupt source transfer between chunks. The
 [live upload diagnosis](evidence/runner-upload-validation.md) records why the
 earlier 512 KiB chunk size was reduced; it does not claim a provider-wide maximum.
