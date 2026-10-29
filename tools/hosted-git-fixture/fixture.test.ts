@@ -12,6 +12,7 @@ import {
 import { cleanupFixture } from "./cleanup.mjs";
 import { readMeasurement } from "./measurement";
 import { purgeFixturePage } from "./purge.mjs";
+import { waitForFixtureHealth } from "./health.mjs";
 
 test("fixture read telemetry reports numbers only and preserves binding method receivers", async () => {
   const observations: number[][] = [],
@@ -53,6 +54,43 @@ const request = (path: string, authorized = true, method = "GET") =>
     method,
     headers: authorized ? { "x-nanohub-hosted-fixture": key } : undefined,
   });
+
+test("startup health waits for a real private gate and verifies its exact expiry", async () => {
+  let clock = Date.now(), attempts = 0;
+  const expiresAt = clock + 10000;
+  const local: any = { ...env, HOSTED_FIXTURE_EXPIRES: String(expiresAt), TARGET: {} };
+  const proofs: any[] = [];
+  const health = await waitForFixtureHealth(async () => {
+    attempts++;
+    return gate.fetch(request("/__fixture/health", attempts > 1), local);
+  }, { expiresAt }, { now: () => clock, sleep: async ms => { clock += ms; }, recordObservation: async proof => { proofs.push(proof); } });
+  assert.deepEqual(health, { fixture: "private-hosted-git", expiresAt, attempts: 2 });
+  assert.deepEqual(proofs.map(proof => proof.identityVerified), [false, true]);
+});
+test("startup health never accepts denied, malformed or foreign successful responses", async () => {
+  for (const response of [new Response(null, { status: 401 }), new Response(null, { status: 403 }),
+    Response.json({ fixture: "public", expiresAt: 10000 }, { headers: { "Cache-Control": "private, no-store" } }),
+    Response.json({ fixture: "private-hosted-git", expiresAt: 10001 }, { headers: { "Cache-Control": "private, no-store" } }),
+    new Response("private-fixture-body", { headers: { "Cache-Control": "private, no-store" } })]) {
+    let reads = 0;
+    await assert.rejects(() => waitForFixtureHealth(async () => { reads++; return response; }, { expiresAt: 10000 },
+      { now: () => 0, recordObservation: async () => {} }), error => !error.message.includes("private-fixture-body"));
+    assert.equal(reads, 1);
+  }
+});
+test("startup health has an expiry/deadline bound and cannot hide transport or receipt failures", async () => {
+  let clock = 0, reads = 0;
+  await assert.rejects(() => waitForFixtureHealth(async () => { reads++; return new Response(null, { status: 404 }); }, { expiresAt: 1500 },
+    { now: () => clock, sleep: async ms => { clock += ms; }, recordObservation: async () => {}, timeoutMs: 5000 }), /deadline/);
+  assert.equal(reads, 2); assert.equal(clock, 1500);
+  const failure = Error("unavailable");
+  for (const mode of ["transport", "receipt"]) {
+    let calls = 0;
+    await assert.rejects(() => waitForFixtureHealth(async () => { calls++; if (mode === "transport") throw failure; return new Response(null, { status: 404 }); },
+      { expiresAt: 10000 }, { now: () => 0, recordObservation: async () => { throw failure; } }), error => error === failure);
+    assert.equal(calls, 1);
+  }
+});
 
 test("private gate refuses missing, incorrect, expired and malformed authority before dispatch", async () => {
   let calls = 0;

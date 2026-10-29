@@ -39,6 +39,7 @@ import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
 import { deployHeldFixturePhase } from "./hosted-recovery-fixture/phase-deploy.mjs";
 import { checkOperatorBindings } from "./check-operator-bindings.mjs";
 import { purgeFixturePage } from "./hosted-git-fixture/purge.mjs";
+import { waitForFixtureHealth } from "./hosted-git-fixture/health.mjs";
 const exec = promisify(execFile),
   root = resolve(import.meta.dirname, ".."),
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -684,7 +685,16 @@ export async function verifyHostedGitImport(
           .status,
         404,
       );
-      const health = await (await call("/__fixture/health")).json();
+      const health = await waitForFixtureHealth(timeoutMs => fetch(gateOrigin + "/__fixture/health", {
+        method: "GET", headers: { "x-nanohub-hosted-fixture": keys.control },
+        redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs),
+      }), { expiresAt: plan.deadline }, {
+        recordObservation: async (proof) => {
+          record.healthReadiness ??= [];
+          record.healthReadiness.push({ ...proof, at: new Date().toISOString() });
+          await persist();
+        },
+      });
       assert.equal(health.fixture, "private-hosted-git");
       if (["repository-recovery", "vault-recovery"].includes(purpose)) {
         const { runRepositoryRecoveryProbe } =

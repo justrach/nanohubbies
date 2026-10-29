@@ -1,10 +1,10 @@
 /** Private fixture cleanup only. No retry after an unknown deletion outcome. */
-async function boundedJson(response) {
+export async function privateFixtureJson(response) {
   const caching = (response.headers.get("cache-control") ?? "").toLowerCase().split(",").map(value => value.trim());
   if (!caching.includes("private") || !caching.includes("no-store") || caching.includes("public"))
-    throw Error("Invalid fixture purge response caching");
+    throw Error("Invalid private fixture response caching");
   const reader = response.body?.getReader();
-  if (!reader) throw Error("Missing fixture purge response");
+  if (!reader) throw Error("Missing private fixture response");
   const chunks = [];
   let bytes = 0;
   try {
@@ -12,14 +12,14 @@ async function boundedJson(response) {
       const part = await reader.read();
       if (part.done) break;
       bytes += part.value.length;
-      if (bytes > 4096) throw Error("Oversized fixture purge response");
+      if (bytes > 4096) throw Error("Oversized private fixture response");
       chunks.push(part.value);
     }
     const body = new Uint8Array(bytes);
     let offset = 0;
     for (const part of chunks) { body.set(part, offset); offset += part.length; }
     try { return JSON.parse(new TextDecoder().decode(body)); }
-    catch { throw Error("Invalid fixture purge JSON"); }
+    catch { throw Error("Invalid private fixture JSON"); }
   } finally { await reader.cancel().catch(() => {}); }
 }
 
@@ -40,7 +40,7 @@ export async function purgeFixturePage({ readStatus, purge, recordObservation,
     const response = await readStatus(remaining());
     remaining();
     if (response.status !== 200) throw Error("Fixture purge status unavailable");
-    const status = await boundedJson(response);
+    const status = await privateFixtureJson(response);
     if (!status || Array.isArray(status) || Object.keys(status).sort().join(",") !==
         "bucketConfigured,purgeOnly,targetConfigured" ||
         !Object.values(status).every(value => typeof value === "boolean"))
@@ -56,7 +56,7 @@ export async function purgeFixturePage({ readStatus, purge, recordObservation,
       purgeAttempt: attempts + 1 });
     const result = await purge(remaining());
     remaining();
-    const value = await boundedJson(result);
+    const value = await privateFixtureJson(result);
     attempts++;
     if (result.status === 200) {
       if (!value || Array.isArray(value) || Object.keys(value).sort().join(",") !== "deleted,more" ||

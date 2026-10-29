@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import { readInFixturePhase } from "./phase.mjs";
 import { purgeFixturePage } from "../hosted-git-fixture/purge.mjs";
+import { waitForFixtureHealth } from "../hosted-git-fixture/health.mjs";
 
 async function withServer(handle, run) {
   const server = createServer(handle);
@@ -17,6 +18,21 @@ function json(response, status, value, caching = "private, no-store") {
   response.end(JSON.stringify(value));
 }
 const version = "11111111-1111-4111-8111-111111111111";
+
+test("real HTTP startup 404s cannot admit work before private identity and expiry match", async () => {
+  let reads = 0, verified = false;
+  const expiresAt = Date.now() + 60000;
+  await withServer((request, response) => {
+    assert.equal(request.method, "GET"); reads++;
+    json(response, reads === 1 ? 404 : 200, reads === 1 ? { error: "Not found" } : { fixture: "private-hosted-git", expiresAt });
+  }, async origin => {
+    const result = await waitForFixtureHealth(ms => fetch(origin, { signal: AbortSignal.timeout(ms) }), { expiresAt }, {
+      sleep: async () => {}, recordObservation: async proof => { verified = proof.identityVerified; },
+    });
+    assert.equal(verified, true); assert.equal(result.attempts, 2);
+  });
+  assert.equal(reads, 2);
+});
 
 test("real HTTP phase refusal is consumed once, then proof precedes the next Git read", async () => {
   let reads = 0, phases = 0, proofs = 0;
