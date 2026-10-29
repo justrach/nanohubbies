@@ -46,11 +46,23 @@ See the [recorded local result](evidence/cold-recovery-validation.md).
 
 ## Operator request hold
 
-The fence is deployed on main-site version
+The fence's first corrected rollout was main-site version
 `1450c429-a969-483e-8383-c05d9ed8467c`. Normal asset delivery and a held
 configuration are verified separately; see the [rollout evidence](evidence/recovery-hold-validation.md).
 Earlier builds may not honor this variable. Verify an aware deployment and
 actual held responses before relying on it.
+
+The current [merge-settings release](evidence/merge-settings-release-validation.md)
+serves normal traffic on `31d951d3-6a6d-4784-aeaf-34c39995733b`. It also retains
+inactive held version `50bde0d5-54bb-454c-8991-0cc31d7532eb`, whose bindings differ
+only by the recovery-hold flag. Its metadata is verified; production traffic was
+not switched to that held version during acceptance.
+
+After repository merge settings have been saved, an older writer without their
+enforcement must not be used to reopen traffic. The retained held version keeps
+that enforcement while providing a request fence. Roll forward to compatible
+code, or establish an equivalent enforced policy before any older-code reopen.
+This does not replace the authority, isolation and recovery gates below.
 
 Set the main Worker's `NANOHUB_RECOVERY_HOLD` configuration variable to `"1"`
 before recovery. This is operator configuration outside DO/D1/R2 backups; it

@@ -1,9 +1,10 @@
 # Repository merge settings — local acceptance, 2026-10-29 JST
 
 The candidate implements repository allowed PR methods and a default in the
-existing Settings UI, native CLI 0.4.15 and final Git writer. It is built and
-committed locally; it is not deployed or pushed to GitHub. Production continues
-to use the previously recorded main Worker and CLI 0.4.14. The
+existing Settings UI, native CLI 0.4.15 and final Git writer. At this local
+checkpoint it was built and committed, without deployment or GitHub push.
+The subsequent [release acceptance](merge-settings-release-validation.md)
+records frozen Linux checks and deployment. The
 [receipt](merge-settings-receipt.json) pins source, test logs, distribution bytes
 and synthetic local screenshots. See the [behavioral contract](../merge-settings.md).
 
@@ -106,9 +107,10 @@ revoked and it contains no production secrets or Cloudflare resources.
 
 ## Remaining release gates
 
-No frozen Linux acceptance, disposable hosted candidate rollout or production
-merge-setting mutation is claimed for this candidate. Keep the current deployed
-release until those gates, asset checks and private-canary comparisons pass.
+This local record alone does not establish frozen Linux acceptance, disposable
+hosted delivery or production merge-setting mutation. The subsequent
+[release record](merge-settings-release-validation.md) establishes those gates,
+asset checks, private-canary comparisons and live settings/archive acceptance.
 This feature does not close unattended Actions, actual application CI/staging,
 the complete changing-Git recovery workflow, load/capacity, monitoring or
 primary-host cutover acceptance. Broader GitHub differences remain explicit in

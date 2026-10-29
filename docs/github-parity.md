@@ -21,7 +21,7 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 | Hunk review and conversation resolution | Bounded file-by-file PR reviewer; line/range and hunk comments, replies, resolve/reopen, original-code excerpts for earlier revisions; unresolved PR-scoped threads block final merge across pushes and deleted files | New inline writes require signed-in human writers; legacy version comments retain their commit scope; dismissing a review does not resolve conversations |
 | Code suggestions | Insert selected after-side code into a suggestion; preview and apply one or up to 50 non-overlapping suggestions as one protected commit; atomic ref, resolution and retry receipt; stale approval and CI behavior follows ordinary branch writes | Current exact head/comparison and root comments only; regular UTF-8 text files up to 1 MiB; no offset suggestion syntax or automatic reanchoring; generated commits use pseudonymous account identities and are unsigned |
 | Signed commits | Account-bound public SSH/OpenPGP keys; current verified committer email or stable account noreply address; cryptographic checks across introduced history; classic protection and `required_signatures` rulesets; immutable repository verification records survive key/email removal | S/MIME and hardware SSH formats, fork-network receipt sharing, automatic verification of every unprotected push, and server signing of web-generated commits remain open; SSH signing does not enable SSH transport |
-| Pending reviews | Private browser reviewer-scoped and CLI credential-scoped drafts; multi-file collection, editing/removal/discard; atomic publication of all comments with Comment/Approve/Request changes; optimistic draft revisions and idempotent submission receipts | Exact head/comparison required at submission; stale drafts stay private and must be discarded before starting on a new diff; pending replies and attachments are not supported; CLI 0.4.14 is published; draft mutations are covered by frozen Linux Worker tests |
+| Pending reviews | Private browser reviewer-scoped and CLI credential-scoped drafts; multi-file collection, editing/removal/discard; atomic publication of all comments with Comment/Approve/Request changes; optimistic draft revisions and idempotent submission receipts | Exact head/comparison required at submission; stale drafts stay private and must be discarded before starting on a new diff; pending replies and attachments are not supported; CLI 0.4.15 is published; draft mutations are covered by frozen Linux Worker tests |
 | Required deployments | Named case-insensitive environments, optional trusted runner source, exact candidate/current-default workflow-base terminal deployment evidence; required account reviewers, self-approval prevention and durable wait timers; classic and `required_deployments` rulesets; current source/revision checks in the final writer; merge-time receipts retained | Reviewer teams, explicit environment admin bypass, `jobs.environment`, pending/in-progress/inactive statuses and environment-scoped secret release remain open |
 | Required checks | Separate trusted runner credentials, exact head/current-default workflow-base results, strict up-to-date PR target, optional checks before opening a PR; success/neutral/skipped satisfy ordinary named checks; explicit success-only mode blocks neutral/skipped as required for Meld; other terminal conclusions block; source pins and revocation checked at PR open and final merge | Runner registrations are the native source identity rather than GitHub Apps; legacy staging still requires verified successful deployment evidence; no loose check mode, merge queue or code scanning gates; see [conclusion contract](check-conclusions.md) |
 | Force push/deletion | Server-side force-push and deletion blocks; selected account force exceptions with independent ordinary-write permissions; allowed deletions are independent of PR requirements; tag replacement is configurable through rulesets | Default branch and branches with open PRs cannot be deleted; any tag replacement is treated as a force update |
@@ -74,7 +74,7 @@ All ref changes re-read policy inside the sequencer's final serialized transacti
 
 ## Git pull request merge methods
 
-The deployed PR view and CLI 0.4.14 offer explicit merge-commit, squash and rebase
+The deployed PR view and CLI 0.4.15 offer explicit merge-commit, squash and rebase
 choices. The existing fast-forward default remains unchanged.
 Every method requires the head to contain the current target commit; loose
 checks and divergent three-way merges remain open work.
@@ -93,12 +93,12 @@ preserves raw author/timezone/message/encoding bytes, changes the committer and
 never copies invalidated signatures. Nonlinear features need a local rebase or
 merge/squash. Automatic coauthor trailers and server signing remain parity gaps.
 
-The local candidate adds repository method allowlists/defaults in Settings and
+The deployed release adds repository method allowlists/defaults in Settings and
 CLI 0.4.15, with a separate current-admin grant, storage revisions and a final
 merge-writer recheck. It preserves all four methods and fast-forward until an
 explicit edit; new clients honor the selected repository default. This feature
-is locally verified and built, but is not deployed. See the [settings contract](merge-settings.md)
-and [local evidence](evidence/merge-settings-validation.md). GitHub message
+passes local and frozen Linux acceptance plus live settings/archive checks. See
+the [settings contract](merge-settings.md) and [release evidence](evidence/merge-settings-release-validation.md). GitHub message
 templates and branch-specific merge-method rules remain open.
 
 The final writer distinguishes reviewed head H from generated result M. Current

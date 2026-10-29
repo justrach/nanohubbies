@@ -1,9 +1,10 @@
 # Repository merge settings
 
 Owners and current repository admins can choose allowed pull request merge
-methods and a default under **Settings → Pull request merges**. The source and
-CLI 0.4.15 implement this feature; production still runs the earlier release.
-See [local validation](evidence/merge-settings-validation.md) for the exact scope.
+methods and a default under **Settings → Pull request merges**. The UI, final
+writer and CLI 0.4.15 are deployed. See [behavioral validation](evidence/merge-settings-validation.md)
+and [release acceptance](evidence/merge-settings-release-validation.md) for the
+exact scope.
 
 The supported values are `fast-forward`, `merge`, `squash` and `rebase`. Enable
 at least one method and choose a default from that set. Existing repositories
@@ -98,6 +99,8 @@ The existing strict up-to-date target requirement, linear automatic-rebase
 limits and unsigned generated commits remain. GitHub message templates,
 automatic coauthor trailers, divergent three-way merges, branch-specific merge
 method rules, merge queues and full GitHub API equivalence are not implemented.
-The source feature requires frozen Linux release gates and a verified rollout
-before being available at nanohub.sh. It does not close the separate Actions,
-application staging, changing-Git recovery or traffic-readiness gates.
+Frozen Linux release gates, verified rollout and live settings/archive smoke
+now pass at nanohub.sh. This does not close the separate Actions, application
+staging, changing-Git recovery or traffic-readiness gates. An inactive held
+release is retained as a request fence; rolling back to code without these
+settings must not silently waive a saved allowlist.
