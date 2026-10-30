@@ -42,6 +42,13 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 
 Additional signature formats, merge queues, organizational policies and full Actions compatibility remain open work. A signature header alone never counts as a verified signature. These gaps are not silently presented as supported options.
 
+The unpublished **0.4.17 source candidate** adds [native deployment requests and
+reviews](cli-deployments.md): independent request/reviewer permissions, current
+native and connected-team membership, reader consent, revision-checked decisions
+and final credential checks. [Local acceptance](evidence/cli-deployments-validation.md)
+covers source, standalone bundle and exact release module. Published 0.4.16 and
+the production API remain separate until release acceptance and rollout.
+
 Published CLI 0.4.16 adds [collaborator administration](cli-collaborators.md):
 explicit current-admin delegation, private client-generated invitations with
 lost-response recovery, revision-checked role/removal/cancel operations and final

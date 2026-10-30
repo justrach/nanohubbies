@@ -152,3 +152,10 @@ but Cloudflare code `100312` stops the next phase upload before a second checkpo
 or restore. Independent cleanup and unchanged production versions pass. The
 follow-up diagnostic is locally validated and preserves the stop-on-uncertainty
 rule; full hosted recovery remains unpassed.
+
+The [deployment CLI candidate](evidence/cli-deployments-validation.md) adds scoped
+requests and approvals/rejections, including configured reader and connected-team
+reviewers. Its local Worker/Git, source/bundled/exact-module, typecheck and build
+checks pass. It is version 0.4.17 locally; production still publishes 0.4.16.
+Frozen Linux acceptance and API/CLI release verification are pending, and it does
+not activate hosted runners or complete actual application staging/cutover.

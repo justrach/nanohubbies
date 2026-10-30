@@ -1,0 +1,210 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T02:52:32.490207+00:00",
+  "implementationCommit": "969757df608549d6f8641f2c765dd08c26978b91",
+  "scope": "Local real Worker/D1/SQLite/Git acceptance for native deployment CLI; simulated membership and deployment evidence, not hosted execution or production mutation",
+  "cliCandidate": {
+    "format": 1,
+    "version": "0.4.17",
+    "path": "/nh/releases/0.4.17/nh.mjs",
+    "bytes": 85565,
+    "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+  },
+  "previousRelease": {
+    "version": "0.4.16",
+    "bytes": 81369,
+    "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4",
+    "unchangedLocally": true
+  },
+  "productionReadOnly": {
+    "checkedAt": "2026-10-30T02:47:59.643Z",
+    "scope": "Read-only public production delivery; no authentication or writes",
+    "requests": [
+      {
+        "path": "/nh/latest.json",
+        "status": 200
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "status": 200
+      },
+      {
+        "path": "/nh/install.mjs",
+        "status": 200
+      },
+      {
+        "path": "/api/agent-help",
+        "status": 200
+      }
+    ],
+    "mainVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "publishedCli": {
+      "format": 1,
+      "version": "0.4.16",
+      "path": "/nh/releases/0.4.16/nh.mjs",
+      "bytes": 81369,
+      "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+    },
+    "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+    "candidatePublished": false
+  },
+  "permissions": {
+    "requests": "deployments:write",
+    "reviews": "deployments:review",
+    "read": "read",
+    "newScopesDefaultUnchecked": true,
+    "ordinaryCredentialsGainPermission": false,
+    "nativeReadersMayReviewIfConfigured": true,
+    "connectedProviderMembersSupported": true,
+    "currentCredentialAndRoleChecksAtFinalMutation": true,
+    "reviewIfMatch": "deployment-request-N",
+    "simultaneousDifferentReviewersOneRevision": [
+      200,
+      412
+    ],
+    "accountBoundIdempotence": true,
+    "adminBypassAdded": false,
+    "trustedReportOrSecretAccessAdded": false
+  },
+  "validation": {
+    "apiUnitCases": 370,
+    "cliCases": 68,
+    "repositoryUnitCases": 283,
+    "repositoryWorkerGitChainPassed": true,
+    "focusedApiCases": 5,
+    "sourceCliPassed": true,
+    "standaloneBundlePassed": true,
+    "exactReleaseModulePassed": true,
+    "currentConnectedMemberApprovalAndOutageDenial": true,
+    "approvalRemovalPreventsLeaseResume": true,
+    "accessUnitCases": 8,
+    "accessWorkerChainPassed": true,
+    "hostingUnitCases": 55,
+    "hostingWorkerChainPassed": true,
+    "hostedFixtureBunCases": 32,
+    "hostedFixtureNodeCases": 10,
+    "recoveryFixtureBunCases": 91,
+    "recoveryFixtureNodeCases": 23,
+    "countsOverlap": true,
+    "operatorTargets": 7,
+    "workspaceTypeTasks": 3,
+    "cachedTypeTasks": 1,
+    "pinnedTsrs": true,
+    "workspaceBuildPassed": true,
+    "opennextBuildPassed": true,
+    "frozenOfflineInstallPassed": true,
+    "freshNineGateLinuxAcceptance": false,
+    "logs": [
+      {
+        "check": "install",
+        "log": "nanohub-cli-deployment-install.log",
+        "sha256": "5ee608fc7fe28bc7d3cd0f8cd6c3846145ab0cb85d762c98416346b74a8ff092",
+        "exitCode": 0
+      },
+      {
+        "check": "api-unit",
+        "log": "nanohub-cli-deployment-verified-unit.log",
+        "sha256": "d218908a027b28daa3f702d4b9f9380b4f19a7299a788f904854419976bfe8f7",
+        "exitCode": 0
+      },
+      {
+        "check": "repository",
+        "log": "nanohub-cli-deployment-verified-repository.log",
+        "sha256": "080a765f1b30af240502b7419fd67df5a08e683e84153636f43592d5a10433b5",
+        "exitCode": 0
+      },
+      {
+        "check": "cli",
+        "log": "nanohub-cli-deployment-cli-final.log",
+        "sha256": "0da7bdf10e7e56a11ffeafbf120bcbe06809a9dd7d5d346627c794861c31172d",
+        "exitCode": 0
+      },
+      {
+        "check": "access",
+        "log": "nanohub-cli-deployment-final-access.log",
+        "sha256": "e8180dc3949dc4e54faad274a6b3d13d61dc831739ac67a4779006c8228c2e8f",
+        "exitCode": 0
+      },
+      {
+        "check": "hosting",
+        "log": "nanohub-cli-deployment-final-hosting.log",
+        "sha256": "1bb5edf0b8295650f46c09bbbe8a5b3fd91e638d3319f68f0020a8fd66e4be1a",
+        "exitCode": 0
+      },
+      {
+        "check": "recovery-fixtures",
+        "log": "nanohub-cli-deployment-final-fixtures.log",
+        "sha256": "b49e5d0f0c1cbf27f7a311cdbc1404577693f3088c4a739fe745f4db8ecdedc8",
+        "exitCode": 0
+      },
+      {
+        "check": "hosted-fixture",
+        "log": "nanohub-cli-deployment-verified-hosted-fixture.log",
+        "sha256": "42a07c8670ef4d7b0f7af7db09e9185fc175e83ffd0a15d68a99620de8383108",
+        "exitCode": 0
+      },
+      {
+        "check": "types",
+        "log": "nanohub-cli-deployment-verified-types.log",
+        "sha256": "bedea92db241d8fb1f9daacd3677efb3de3b854e937aafe6ed25572fe7383583",
+        "exitCode": 0
+      },
+      {
+        "check": "deployment-focused",
+        "log": "nanohub-cli-deployment-verified-focused.log",
+        "sha256": "132f57884ea17c0b8c6dca35743aa998cc8929e329baf9202f388749d24c3e7b",
+        "exitCode": 0
+      },
+      {
+        "check": "exact-release-module",
+        "log": "nanohub-cli-deployment-verified-distribution.log",
+        "sha256": "e645395a30ea11ddfc7f35f65d2097ca863ebf1077fa9f01b542f6b747468d5b",
+        "exitCode": 0
+      },
+      {
+        "check": "opennext-build",
+        "log": "nanohub-cli-deployment-verified-opennext.log",
+        "sha256": "371524adcdeec6172d47752e36be7ba2751fe4c33c1ade0e045a62587c50af85",
+        "exitCode": 0
+      },
+      {
+        "check": "workspace-build",
+        "log": "nanohub-cli-deployment-build.log",
+        "sha256": "942319c469e90f13da20d3284049812a69b115f640f8a91c9494383b4d35068a",
+        "exitCode": 0
+      }
+    ]
+  },
+  "observedNonfatalDiagnostics": {
+    "repositoryRpcDisposal": true,
+    "repositoryWranglerEnvironmentWarnings": true,
+    "turboCliOutputsWarning": true
+  },
+  "release": {
+    "productionDeployed": false,
+    "sourcePushed": false,
+    "newProductionCredentialIssued": false,
+    "productionMutationRequests": 0,
+    "productionSecretValuesRead": false,
+    "hostedDispatcherActivated": false,
+    "realCloudSandboxExecutedForThisFeature": false,
+    "realDeploymentAdapterExecuted": false
+  },
+  "remaining": [
+    "Frozen Linux acceptance and API/CLI release verification for this candidate.",
+    "Hosted Actions activation with its sandbox-scoped Nanohub account credential.",
+    "Actual intended-application CI/staging/cutover acceptance.",
+    "Complete hosted changing-Git recovery, independent latest-authority acquisition, namespace-loss recovery, long-term backups and RPO/RTO.",
+    "Remaining GitHub parity, traffic/security/operations acceptance."
+  ],
+  "runnerPreflight": {
+    "checkedAt": "2026-10-30T02:53:47.130Z",
+    "configuredAccount": "Nanohub Actions",
+    "sandboxAccessVerified": false,
+    "providerGetRequests": 1,
+    "nanohubRequests": 0,
+    "sandboxAllocations": 0,
+    "code": "sandbox_scope_required",
+    "status": 403
+  }
+}

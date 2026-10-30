@@ -169,7 +169,10 @@ In **Git access → Nanohub CLI**, create a named credential for the current
 repository, valid for 1–30 days (the UI defaults to seven). Read is mandatory;
 Clone/fetch, push, PR creation/closing, reviewing/conversations, merging and
 branch protection management are separately chosen. Readers and archived repositories can grant metadata read
-and clone/fetch; write scopes require current write access and an active repository. Values
+and clone/fetch. In an active repository, configured readers can also delegate
+deployment reviews through the separate `deployments:review` scope in the
+0.4.17 source candidate. Other write scopes retain their writer/admin/owner
+requirements; archive reopening has its separate administration exception. Values
 are shown once. Cloudflare D1 stores SHA-256 digests and minimal account identity,
 not the plaintext token or a browser session. This is a native credential flow,
 not OAuth; its Authorization bearer transport follows
@@ -627,6 +630,11 @@ the field. No credential gains new permissions, and no published CLI bytes
 change. See [the contract](check-conclusions.md#success-only-migration-policy).
 
 ## Deployment environments
+
+The unpublished 0.4.17 candidate also adds native `deployment list/view/request/approve/reject`
+with separate request/reviewer grants, current membership and revision checks.
+See [deployment CLI permissions and enforcement](cli-deployments.md). These
+commands do not grant environment administration or trusted runner reporting.
 
 `nh env` and `nanohub env` manage the existing deployment environments through
 native API calls. They require an explicit `environments:write` CLI permission
