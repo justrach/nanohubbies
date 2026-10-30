@@ -125,6 +125,13 @@ confirmed cleanup. The exact packaged CLI also passes the actual local Meld
 import/resume/revocation sequence with zero registered agents. Production
 verification remains publication and preservation, without a new import grant.
 
+The [Meld freshness bridge](evidence/meld-bridge-freshness-validation.md) now
+requires a fresh acknowledged external job per native attempt, validates all
+seven real pipeline stages and rejects newer same-SHA reruns. A real external
+job passed, but a controller-read timeout correctly left its native result
+failed. Read-only observation recovery now passes local tests; a fresh live
+attempt is building. This does not close hosted callbacks, staging or cutover.
+
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)

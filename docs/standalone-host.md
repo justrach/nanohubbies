@@ -142,19 +142,27 @@ import, new deployment, real-service acceptance or cutover. No Meld refs,
 credentials, runtime secrets or bindings were changed.
 
 ```sh
-node --env-file=/absolute/private/staging-pipeline.env tools/ci-runner.mjs /etc/nanohub-ci/meld.json
+bun --env-file=/absolute/private/staging-pipeline.env tools/ci-runner.mjs /etc/nanohub-ci/meld.json
 ```
 
 Keep the existing `MELD_STAGING_CI_URL` / `PIPELINE_ADMIN_SECRET`, GitHub authentication and the new workspace-scoped `NANOHUB_CI_TOKEN` in the trusted control process/secret store. The adapter never reads secrets out of GitHub or copies deployment/runtime credentials into Nanohub. Its controller origin is pinned to `meld-staging-ci.phedayatnia.workers.dev`.
 
 The control process clones **Nanohub** with the expiring read-only run credential, verifies the candidate and base ancestry, and pins its full SHA. The current Codegraff controller only accepts GitHub source, so the bridge publishes this identical commit to the existing private `yourmeld/meld2` repository as a CI transport mirror. GitHub does not choose the authoritative candidate; every returned controller SHA must match the pinned Nanohub SHA. This is a compatibility bridge and still depends on GitHub for CI transport. It does not remove the original repository or claim a GitHub-free CI execution path.
 
-Ordinary branch events push an immutable `nanohub-ci/<event-id>` mirror and request **checks only** through `/check`. An ordinary contributor or agent cannot turn that event into a staging deployment. The existing staging controller releases deployment authority for trusted staging work, so a human owner must approve the exact Nanohub head/base before that path can be used:
+Ordinary branch events push a `nanohub-ci/<run-id>/<attempt>` mirror and request **checks only** through `/check`. An ordinary contributor or agent cannot turn that event into a staging deployment. The existing staging controller releases deployment authority for trusted staging work, so a human owner must approve the exact Nanohub head/base before that path can be used:
 
 - Review the candidate on the workspace's **Actions** list and choose **Approve staging**, or use `POST /api/trunks/:trunk/ci/approve` with `{ "runId": "..." }` and a same-origin owner session.
 - Approval requeues that candidate, invalidates prior leases/results, and is audited. A changed head/base requires a fresh approval. Agents and ordinary team members cannot approve it.
 - The approved adapter fetches GitHub's shared staging ref, proves it is an ancestor of the Nanohub candidate, and pushes with a normal fast-forward update. Divergence fails and requests a reviewed integration candidate in Nanohub; there is no force-push/reset path.
-- The adapter reuses an existing matching controller job for idempotent delivery, or calls `/run`, which resolves the current staging head itself. Any returned unrelated SHA or checks-only job is rejected. Failed/superseded jobs and unfinished cleanup/reporting do not pass.
+- Each new Nanohub attempt must dispatch a fresh controller job; an older matching pass cannot satisfy it. The adapter retains a private intent before pushing or calling `/run` or `/check`. Only an acknowledged receipt with the identical run/attempt/head/base/kind/ref/authorization binding can resume without another mutation. An unacknowledged operation requires reconciliation and is never automatically replayed. `/run` resolves the current staging head itself. Any unrelated SHA, ref or run kind is rejected. A newer same-SHA job invalidates the result; failed/superseded jobs, incomplete suites and unfinished cleanup/reporting do not pass.
+
+Transient controller GET failures re-observe only that acknowledged job, within
+the original wait deadline. Authentication/schema errors fail immediately;
+dispatch POSTs and Git pushes are never retried by this observation loop. The
+actual build-log link remains authenticated. Independent external reruns after
+the final observation still require callback integration, and an external
+deployment controller must revalidate current Nanohub authorization at its
+deployment boundary before unattended staging activation.
 
 This supports the existing pre-PR deployment gate: branch checks and owner-approved staging can complete before a PR is created. `beforeOpen` still requires both `codegraff-ci` and `staging`. When staging diverges, integrate it into a new reviewed candidate first, push that candidate to Nanohub and rerun its checks/approval. The supported merge strategy deploys the **same full SHA as the eventual PR head**. A separate staging integration SHA is not silently substituted for a PR head; callers must use the reviewed integration candidate as the PR head in this mode. Record any earlier feature SHA and its additional staging changes in the handoff.
 
@@ -164,7 +172,14 @@ Set `MELD_ACCEPTANCE_MODULE` to an absolute, trusted module outside candidate co
 
 For other runners, the optional Docker path in `tools/ci-runner.mjs` runs configured commands in a disposable container with a digest-pinned toolchain, read-only source mount and no external network. The image must contain its locked dependency cache. Candidate code receives no control-process secrets. Each command has a bounded execution time and its container is removed. A generic trusted staging module can export `dispatch(context)`, `wait(runId, sha)` and `accept(context)` using the same exact-deployment/version/evidence contract. This optional path is not a replacement for Meld's existing Codegraff service.
 
-Leases last two hours without heartbeat; longer runs expire and must be reclaimed. The live bridge still needs the runner registration/service configuration, the existing private controller credentials, and the real acceptance module. The changes here do not replace runtime secrets/bindings, apply database migrations, deploy production or change Meld's primary remote.
+Leases last two hours without heartbeat; longer runs expire and must be reclaimed.
+Existing Meld controller credentials are configured and authenticated access is
+verified. The [live bridge validation](evidence/meld-bridge-freshness-validation.md)
+separates an externally passing job from its failed native callback and a fresh
+checks-only attempt. Hosted runner/service registration, callback integration and
+the real staging acceptance module remain required. The changes here do not
+replace runtime secrets/bindings, apply database migrations, deploy production or
+change Meld's primary remote.
 
 ## Verification and cutover
 

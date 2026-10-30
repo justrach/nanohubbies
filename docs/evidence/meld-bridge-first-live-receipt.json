@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T14:56:16.382Z",
+  "sourceCommit": "6dc1fd838fb0e4f4dd86801cbdfcb835c7a6dcd1",
+  "candidate": "77d528a0786106c8e943fee220c421b842a46a19",
+  "nativeRun": "18f02299-c36b-431a-b1a5-f40d6b298de1",
+  "externalRun": "1793357891890-e2c2fef3-1e30-48cf-bce2-0277e6a67548",
+  "nativeAcceptancePassed": false,
+  "nativeResult": {
+    "name": "runner",
+    "state": "failure",
+    "reason": "Controller read timed out"
+  },
+  "externalPhase": "passed",
+  "steps": [
+    {
+      "name": "locked install",
+      "exitCode": 0,
+      "milliseconds": 5436
+    },
+    {
+      "name": "pipeline regression checks",
+      "exitCode": 0,
+      "milliseconds": 378
+    },
+    {
+      "name": "typechecks",
+      "exitCode": 0,
+      "milliseconds": 1119
+    },
+    {
+      "name": "unit and package checks",
+      "exitCode": 0,
+      "milliseconds": 129557
+    },
+    {
+      "name": "browser installation",
+      "exitCode": 0,
+      "milliseconds": 39486
+    },
+    {
+      "name": "browser checks",
+      "exitCode": 0,
+      "milliseconds": 608276
+    },
+    {
+      "name": "production bundle",
+      "exitCode": 0,
+      "milliseconds": 40249
+    }
+  ],
+  "providerCleanup": {
+    "sandboxId": "cnd_d2fe045730dd2fc2c983157654f03a2ff8ebaa14",
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "ownedMirrorRefAbsent": true,
+  "nativeRunnerRevoked": true,
+  "localFixtureDisposed": true,
+  "mainStagingRefsUnchanged": true,
+  "stagingVersionUnchanged": true,
+  "log": {
+    "private": true,
+    "bytes": 249290,
+    "sha256": "675afceb5095f9f3fb9b36b13d61aae4b1cc72de00b9d49c15472d30ca2532c2"
+  },
+  "scope": {
+    "nativeHost": "isolated local Worker/DO/D1/R2",
+    "membership": "synthetic local provider",
+    "controller": "existing real Meld controller",
+    "sourceObjects": 16974,
+    "sourceRefs": 1,
+    "productionNanohubCredentialsIssued": 0,
+    "stagingDeployments": 0,
+    "hostedNanohubDispatcherActivated": false
+  }
+}
