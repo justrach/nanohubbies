@@ -91,3 +91,8 @@ fail-closed and are not retried. General production draining, independently reta
 latest-authority acquisition, namespace-loss recovery, long-term backups and measured
 RPO/RTO remain open alongside intended-application CI/staging and traffic acceptance.
 Normal production remains on CLI 0.4.16. Source is locally committed, not pushed.
+
+The [next isolated attempt](recovery-upload-uncertainty-validation.md) captures one
+checkpoint, then stops on an uncertain provider phase upload. It is independently
+confirmed cleaned. Its diagnostic follow-up does not turn the failed attempt into
+complete restore acceptance.

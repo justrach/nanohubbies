@@ -1,0 +1,131 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T00:05:48.604001+00:00",
+  "scope": "One failed isolated hosted Vault-inclusive drill and local diagnostic follow-up; not complete restore acceptance",
+  "implementationCommit": "16b5d65f4430de78a0c57a4314c0255015f4076c",
+  "fullChangingGitCloudGatePassed": false,
+  "cloudAttempt": {
+    "runId": "mvu2nz3j-9d99a5af39",
+    "sourceCommit": "7df9b86cc45b3e385c19ed9b1120f64752f8347b",
+    "startedAt": "2026-10-29T21:45:25.616Z",
+    "finishedAt": "2026-10-29T22:06:54.667Z",
+    "acceptancePassed": false,
+    "lastPhase": "revoke-current-authority",
+    "checkpoints": [
+      {
+        "label": "before-revocations",
+        "durableObjects": 15,
+        "classes": 10,
+        "r2Objects": 17,
+        "r2Bytes": 18843,
+        "gitObjects": 10
+      }
+    ],
+    "acceptedGitCommitAfterFirstCheckpoint": true,
+    "providerRotationWithoutVaultRedeploy": true,
+    "providerValuesAbsentFromRetainedApplicationBackup": true,
+    "heldChecks": 8,
+    "completeSecondCheckpoint": false,
+    "lossStarted": false,
+    "restoreStarted": false,
+    "newerReturnCloneVerified": false,
+    "failure": {
+      "controllerMessage": "Phase deployment failed; inspect its private log",
+      "providerCode": 100312,
+      "providerMessage": "Completion token has already been consumed",
+      "step": "043-deploy",
+      "requestedPhase": "frozen",
+      "previousPhase": "reconcile",
+      "controllerRetriedPhaseCommand": false,
+      "underlyingProviderEffectEstablished": false,
+      "logSha256": "0de34f9c4b02d4f8616a319fac85b14e69a250d1e6c527cfbf5cf8bb7d23ff38"
+    },
+    "trace": {
+      "events": 373,
+      "writeFailures": 0
+    },
+    "cleanupNeeded": false,
+    "cleanupResumeRequired": false,
+    "independentCleanup": {
+      "checkedAt": "2026-10-29T22:07:28.371Z",
+      "apiAbsent": true,
+      "gateAbsent": true,
+      "vaultAbsent": true,
+      "bucketAbsent": true,
+      "databaseAbsent": true,
+      "providerEntryAbsent": true,
+      "requiredRetirementReceiptsVerified": true,
+      "originalProviderEntriesRetained": true,
+      "keysRemoved": true
+    }
+  },
+  "productionBefore": {
+    "checkedAt": "2026-10-29T21:45:01.471Z",
+    "main": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20"
+  },
+  "productionAfter": {
+    "checkedAt": "2026-10-29T22:07:29.529Z",
+    "main": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "857257c1-18fa-4866-87f8-2e9a9216bf20"
+  },
+  "productionVersionsUnchanged": true,
+  "localDiagnosticReplay": {
+    "checkedAt": "2026-10-30T00:05:10.748Z",
+    "scope": "Offline replay of captured CLI output and retained immutable provider metadata; no cloud requests",
+    "capturedLogSha256": "0de34f9c4b02d4f8616a319fac85b14e69a250d1e6c527cfbf5cf8bb7d23ff38",
+    "providerMetadataSha256": "26ae848a5bbdc67fb5456993c0cf61d9bd77fc7870254145becbf650c964aa0a",
+    "controllerCommandCalls": 1,
+    "observationCallbacks": 1,
+    "cloudRequests": 0,
+    "accepted": false
+  },
+  "validation": {
+    "recoveryBunCases": 91,
+    "recoveryNodeCases": 23,
+    "countsOverlap": true,
+    "fixtureBunCases": 32,
+    "fixtureProxyProviderNodeCases": 10,
+    "pinnedTsrsFixtureChecksPassed": true,
+    "rootOperatorTargets": 7,
+    "rootWorkspaceTasks": 3,
+    "rootCachedWorkspaceTasks": 3,
+    "apiUnitBaselineBeforeDiagnosticChange": {
+      "sourceCommit": "7df9b86cc45b3e385c19ed9b1120f64752f8347b",
+      "cases": 365,
+      "apiSourceChangedInFollowUp": false
+    },
+    "freshNineGateLinuxAcceptance": false,
+    "logs": [
+      {
+        "name": "nanohub-recovery-20261030-final-recovery.log",
+        "sha256": "d72e7a970e1c81c8d81d92bc51babe11c4c36ed2db2473218f0abe0f608af77a"
+      },
+      {
+        "name": "nanohub-recovery-20261030-final-root.log",
+        "sha256": "8964c61a0b30a8d7abee14acb9d42d8ddef07b9b1ebcf4691ccb02822b28e0f2"
+      },
+      {
+        "name": "nanohub-recovery-20261030-uncertainty-fixture.log",
+        "sha256": "188171a1e58c695bbba0e34b62dcaa94fa555537cb0f493979dd6db7d2308753"
+      },
+      {
+        "name": "nanohub-recovery-20261030-unit.log",
+        "sha256": "46a50beaec8ad7702edfc58a1e89f63bd7eb28353cd23b623d331c2fb4d14bf4"
+      }
+    ]
+  },
+  "release": {
+    "productionDeployed": false,
+    "sourcePushed": false,
+    "publishedCli": "0.4.16"
+  },
+  "remaining": [
+    "Complete hosted changing-Git rollback-and-return acceptance.",
+    "Validate the diagnostic correction on a future cloud failure without weakening acknowledgement requirements.",
+    "Production inventory/draining, independent latest-authority acquisition, namespace-loss recovery, long-term backups and measured RPO/RTO.",
+    "Intended-application CI/staging/cutover, hosted Actions activation and production traffic/security/operations acceptance."
+  ]
+}

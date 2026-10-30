@@ -260,8 +260,11 @@ The [recorded Vault acceptance](evidence/hosted-vault-recovery-validation.md) pa
 the two authorization/vault points on an unchanged Git graph. The changing-Git
 extension retains partial cloud evidence, including older-point clone/fsck and
 known-authority reconciliation, but its complete return gate remains unpassed.
-The latest [readiness and receipt checks](evidence/recovery-readiness-validation.md)
+The [readiness and receipt checks](evidence/recovery-readiness-validation.md)
 record additional failed attempts and the resulting fixture/controller fixes.
+A later [upload-completion failure](evidence/recovery-upload-uncertainty-validation.md)
+stops before the second checkpoint and is independently confirmed cleaned. It does
+not close the changing-Git recovery gate.
 
 The vault extension runs the repository acceptance with a separate disposable
 Vault Worker and its real Secrets Store binding:
@@ -321,6 +324,14 @@ Private application GET/HEAD reads may retry at most three times after an explic
 exact API version, then saves a private proof. Intentional frozen responses remain
 valid negative checks. Application/storage writes and unknown transport outcomes
 are not replayed by this helper.
+
+An exact owned phase-version upload failure with Cloudflare code `100312` and
+the consumed-completion-token message is not a safe pre-effect refusal. The
+controller attempts a read-only active-version observation and persists its
+held-phase/resource fingerprint, or explicitly records an unavailable/invalid
+observation. It then stops, even if the requested phase appears active. This
+diagnostic does not acknowledge the failed command or permit another deployment.
+Raw provider bindings, values and arbitrary error text are excluded from the proof.
 
 Cleanup observes an authenticated, read-only purge status before deleting a page.
 The gate must be purge-only, have no application service binding and retain its

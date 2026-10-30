@@ -381,3 +381,9 @@ Three later attempts against the current runtime are recorded in
 phase refusal, startup readiness and transport failures, with independent cleanup
 and unchanged production versions. Controller and CI corrections pass local
 validation; the complete changing-Git rollback-and-return gate remains open.
+
+The later [upload-completion attempt](recovery-upload-uncertainty-validation.md)
+retains one checkpoint, accepts a subsequent synthetic Git commit and verifies
+revocation/provider rotation, but stops before its second checkpoint on Cloudflare
+code `100312`. All resources are independently confirmed cleaned and production
+versions remain unchanged. Complete hosted restore acceptance remains open.

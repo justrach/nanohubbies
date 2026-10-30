@@ -145,3 +145,10 @@ receipts and a native CI fixture gate. Three further isolated cloud attempts fai
 before complete restore/return acceptance; all are independently confirmed cleaned,
 with production versions unchanged. Local harness checks do not close the hosted
 changing-Git recovery gate or constitute a fresh nine-gate Linux acceptance.
+
+A [subsequent hosted attempt](evidence/recovery-upload-uncertainty-validation.md)
+captures the first checkpoint and verifies synthetic revocations/provider rotation,
+but Cloudflare code `100312` stops the next phase upload before a second checkpoint
+or restore. Independent cleanup and unchanged production versions pass. The
+follow-up diagnostic is locally validated and preserves the stop-on-uncertainty
+rule; full hosted recovery remains unpassed.
