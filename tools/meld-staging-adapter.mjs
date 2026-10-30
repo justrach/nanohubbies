@@ -13,15 +13,19 @@ import { stagingGate } from './ci-runner.mjs';
 import {meldJobId,meldRuns,currentMeldJob,verifiedMeldSteps} from './meld-pipeline-state.mjs';
 const exec=promisify(execFile);
 const REPOSITORY='https://github.com/yourmeld/meld2.git';
+const retryableReadStatuses=new Set([408,429,500,502,503,504]);
+const readUnavailable=()=>Object.assign(Error('Meld controller read is temporarily unavailable'),{code:'meld_read_unavailable'});
 export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride,sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=Date.now}={}) {
   const origin=new URL(env.MELD_STAGING_CI_URL||'https://meld-staging-ci.phedayatnia.workers.dev');
   if(origin.href!=='https://meld-staging-ci.phedayatnia.workers.dev/'||!env.PIPELINE_ADMIN_SECRET)throw Error('Existing Meld staging controller configuration is required');
   const dispatched=new Map();
-  const api=async(path,method='GET',body)=>{
-    const r=await fetcher(new URL(path,origin),{method,redirect:'error',headers:{authorization:`Bearer ${env.PIPELINE_ADMIN_SECRET}`,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30_000)});
-    if(!r.ok)throw Error(`Meld staging controller returned ${r.status}`);
+  const api=async(path,method='GET',body,deadline=Infinity)=>{
+    let r;
+    try{r=await fetcher(new URL(path,origin),{method,redirect:'error',headers:{authorization:`Bearer ${env.PIPELINE_ADMIN_SECRET}`,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(Math.max(1,Math.min(30_000,Math.ceil(deadline-now()))))});}
+    catch(error){if(method==='GET')throw readUnavailable();throw error;}
+    if(!r.ok){await r.body?.cancel().catch(()=>{});if(method==='GET'&&retryableReadStatuses.has(r.status))throw readUnavailable();throw Error(`Meld staging controller returned ${r.status}`);}
     const reader=r.body?.getReader();if(!reader)throw Error('Empty Meld controller response');
-    let size=0;const chunks=[];try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>524288)throw Error('Meld controller response exceeded its bound');chunks.push(value);}try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw Error('Invalid Meld controller JSON');}}finally{await reader.cancel().catch(()=>{});}
+    let size=0;const chunks=[];try{for(;;){let part;try{part=await reader.read();}catch(error){if(method==='GET')throw readUnavailable();throw error;}const {done,value}=part;if(done)break;size+=value.length;if(size>524288)throw Error('Meld controller response exceeded its bound');chunks.push(value);}try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw Error('Invalid Meld controller JSON');}}finally{await reader.cancel().catch(()=>{});}
   };
   const git=gitOverride??(async(source,...args)=>{
     const result=await exec('git',['-C',source,'-c','credential.helper=!gh auth git-credential',...args],{
@@ -70,16 +74,22 @@ export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride
       if(!binding||binding.sha!==sha||binding.deploy!==deploy)throw Error('Wait requires this attempt\'s acknowledged dispatch receipt');
       const deadline=now()+Math.min(55*60_000,Number(env.MELD_CI_WAIT_MS)||55*60_000);
       while(now()<deadline) {
-        const job=currentMeldJob(meldRuns(await api('/runs')),binding);
-        if(job) {
-          if(['failed','superseded'].includes(job.phase))throw Error(`Meld staging job ${job.phase}`);
-          // Cleanup/reporting are still controller-owned pending work.
-          if(job.phase==='passed'&&!job.pending){
-            const final=currentMeldJob(meldRuns(await api('/runs')),binding);
-            if(final?.phase==='passed'&&!final.pending)return {state:'success',kind:deploy?'deployment':'checks',candidate:sha,runId,steps:verifiedMeldSteps(final),verifiedAt:now()};
+        try{
+          const job=currentMeldJob(meldRuns(await api('/runs','GET',undefined,deadline)),binding);
+          if(job) {
+            if(['failed','superseded'].includes(job.phase))throw Error(`Meld staging job ${job.phase}`);
+            // Cleanup/reporting are still controller-owned pending work.
+            if(job.phase==='passed'&&!job.pending&&now()<deadline){
+              const final=currentMeldJob(meldRuns(await api('/runs','GET',undefined,deadline)),binding);
+              if(final?.phase==='passed'&&!final.pending&&now()<deadline)return {state:'success',kind:deploy?'deployment':'checks',candidate:sha,runId,steps:verifiedMeldSteps(final),verifiedAt:now()};
+            }
           }
+        }catch(error){
+          // Only re-observe an acknowledged job. Never replay Git pushes or
+          // dispatch POSTs, and never turn missing observations into a pass.
+          if(error.code!=='meld_read_unavailable')throw error;
         }
-        await sleep(15_000);
+        const remaining=deadline-now();if(remaining>0)await sleep(Math.min(15_000,remaining));
       }
       throw Error('Timed out waiting for the exact Codegraff deployment job');
     },

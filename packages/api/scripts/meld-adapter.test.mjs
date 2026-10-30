@@ -102,6 +102,46 @@ test('real HTTP lost acknowledgement dispatches once and retains no controller k
  const fetcher=(url,options)=>fetch('http://127.0.0.1:'+server.address().port+new URL(url).pathname,options);
  try{await assert.rejects(f.make({fetcher}).dispatch(f.context));await assert.rejects(f.make({fetcher}).dispatch(f.context),/unconfirmed/);assert.equal(posts,1);assert.equal((await readFile(join(f.context.artifacts,'meld-dispatch.json'),'utf8')).includes(env.PIPELINE_ADMIN_SECRET),false);}finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 }));
+test('acknowledged jobs survive transient reads and broken response bodies without another dispatch',async()=>{
+ const failures=[()=>{throw new DOMException('private transport detail','TimeoutError');},()=>{throw new TypeError('private socket detail');},... [408,429,500,502,503,504].map(status=>()=>new Response('private unavailable detail',{status})),()=>new Response(new ReadableStream({start(controller){controller.error(new TypeError('private response detail'));}}))];
+ for(const failure of failures)await fixture(async f=>{
+  let reads=0;const adapter=f.make({env:{...env,MELD_CI_WAIT_MS:'1000'},fetcher:async(u,o)=>{if(o.method==='GET'&&f.state.posts&&++reads===1)return failure();return f.fetcher(u,o);}}),{runId}=await adapter.dispatch(f.context);
+  assert.equal((await adapter.wait(runId,head,false)).state,'success');assert.equal(reads,3);assert.equal(f.state.posts,1);assert.equal(f.state.pushes,1);
+ });
+});
+test('a failed final read requires fresh observations and still rejects a newer external rerun',async()=>{
+ for(const superseded of [false,true])await fixture(async f=>{
+  let reads=0;const adapter=f.make({env:{...env,MELD_CI_WAIT_MS:'1000'},fetcher:async(u,o)=>{
+   if(o.method==='GET'&&f.state.posts){reads++;if(reads===2)throw new DOMException('timed out','TimeoutError');if(reads===3&&superseded)f.state.queued=[job({at:f.state.tick+1000,phase:'queued'})];}
+   return f.fetcher(u,o);
+  }}),{runId}=await adapter.dispatch(f.context);
+  if(superseded)await assert.rejects(adapter.wait(runId,head,false),/newer or ambiguously ordered/);
+  else{assert.equal((await adapter.wait(runId,head,false)).state,'success');assert.equal(reads,4);}
+  assert.equal(f.state.posts,1);assert.equal(f.state.pushes,1);
+ });
+});
+test('authorization, malformed state and oversized replies fail immediately during observation',async()=>{
+ const failures=[... [401,403,404].map(status=>()=>new Response('private denial detail',{status})),()=>new Response('private malformed detail'),()=>Response.json({active:null,queued:[],runs:[{...job(),queuedAt:null}]}),()=>new Response('x'.repeat(524289))];
+ for(const failure of failures)await fixture(async f=>{
+  let reads=0;const adapter=f.make({fetcher:async(u,o)=>{if(o.method==='GET'&&f.state.posts){reads++;return failure();}return f.fetcher(u,o);}}),{runId}=await adapter.dispatch(f.context);
+  await assert.rejects(adapter.wait(runId,head,false),error=>!error.message.includes('private'));assert.equal(reads,1);assert.equal(f.state.clock,0);assert.equal(f.state.posts,1);
+ });
+});
+test('read outages and late successful responses cannot extend the original observation deadline',async()=>{
+ await fixture(async f=>{
+  let reads=0;const adapter=f.make({env:{...env,MELD_CI_WAIT_MS:'31000'},sleep:async ms=>{f.state.clock+=ms;},fetcher:async(u,o)=>{if(o.method==='GET'&&f.state.posts){reads++;return new Response(null,{status:503});}return f.fetcher(u,o);}}),{runId}=await adapter.dispatch(f.context);
+  await assert.rejects(adapter.wait(runId,head,false),/Timed out/);assert.equal(f.state.clock,31000);assert.equal(reads,3);assert.equal(f.state.posts,1);
+ });
+ for(const lateRead of [1,2])await fixture(async f=>{
+  let reads=0;const adapter=f.make({fetcher:async(u,o)=>{if(o.method==='GET'&&f.state.posts&&++reads===lateRead)f.state.clock=101;return f.fetcher(u,o);}}),{runId}=await adapter.dispatch(f.context);
+  await assert.rejects(adapter.wait(runId,head,false),/Timed out/);assert.equal(reads,lateRead);assert.equal(f.state.posts,1);
+ });
+});
+test('real HTTP observation socket reset recovers only by reading the same acknowledged job',async()=>fixture(async f=>{
+ let reads=0,posts=0;const server=createServer(async(req,res)=>{assert.equal(req.headers.authorization,'Bearer '+env.PIPELINE_ADMIN_SECRET);if(req.method==='GET'){reads++;if(reads===2){req.socket.destroy();return;}res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(f.view()));return;}posts++;for await(const chunk of req){}f.state.tick+=1000;const created=job({at:f.state.tick});f.state.jobs=[created];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({id:created.id,sha:head,deploy:false}));});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const fetcher=(url,options)=>fetch('http://127.0.0.1:'+server.address().port+new URL(url).pathname,options);
+ try{const adapter=f.make({fetcher,env:{...env,MELD_CI_WAIT_MS:'1000'}}),{runId}=await adapter.dispatch(f.context);assert.equal((await adapter.wait(runId,head,false)).state,'success');assert.equal(reads,4);assert.equal(posts,1);assert.equal(f.state.pushes,1);}finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}));
 test('Meld build IDs match the exact prefix and are rechecked after acceptance',async()=>{
  const context={run:{head,base},stagingOrigin:'https://staging.meld.space',versionPrefixLength:7};const adapter={dispatch:async()=>({runId:'run'}),wait:async()=>({state:'success',kind:'deployment',candidate:head}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};
  assert.equal((await stagingGate(adapter,context,async()=>Response.json({buildId:head.slice(0,7)}))).version,head);let reads=0;await assert.rejects(stagingGate(adapter,context,async()=>Response.json({buildId:++reads===1?head.slice(0,7):base.slice(0,7)})),/version mismatch/);
