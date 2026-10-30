@@ -53,3 +53,13 @@ with unchanged bindings/value custody, immutable public installer/assets and
 scope/consent verification. Production grant mutations and actual runtime
 eviction are not proved by these local tests. The broader staging/cutover,
 production recovery/load and unattended runner gates remain open.
+
+The first frozen Linux attempt at `730d3d03218c136580dc4b8bf36fd81a96c4c72f`
+passes locked offline install and all 407 API unit cases, then stops in the
+repository gate. Its existing deployment CLI test expects the secrets route to
+be unsupported (404); the new explicitly scoped route denies that credential
+with 403. The assertion now checks the exact insufficient-scope response and
+challenge. The source deployment integration rerun passes. This attempt remains
+failed, and a separate Codegraff GET confirms its VM is destroyed. A subsequent
+full run must also exercise secret commands using the exact distribution module,
+whose version, byte count and hash are checked before execution.

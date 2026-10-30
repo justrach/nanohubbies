@@ -51,7 +51,8 @@
     "test:cli-collaborators": "node --test scripts/cli-collaborators.test.mjs scripts/access-vault.test.mjs && node scripts/smoke-cli-collaborators.ts && node scripts/smoke-cli-collaborators.ts --bundle",
     "test:cli-import": "node --test scripts/migration-preflight.test.mjs && node scripts/smoke-cli-import.ts && node scripts/smoke-cli-import.ts --bundle",
     "test:cli-deployments": "node --test scripts/cli-deployments.test.mjs && node scripts/smoke-cli-deployments.ts && node scripts/smoke-cli-deployments.ts --bundle",
-    "test:cli-deployment-distribution": "node scripts/smoke-cli-deployments.ts --distribution"
+    "test:cli-deployment-distribution": "node scripts/smoke-cli-deployments.ts --distribution",
+    "test:cli-secret-distribution": "node scripts/smoke-cli-secrets.ts --distribution"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.7.6",

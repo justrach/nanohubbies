@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {execFile} from 'node:child_process';import {promisify} from 'node:util';
 import {readFile,stat,access} from 'node:fs/promises';import {join,resolve} from 'node:path';
 import {teamFixture,ROOM} from './team/fixture.ts';
@@ -6,7 +7,11 @@ const f=await teamFixture({}, {vault:true}),exec=promisify(execFile),trunk='cli-
 const environment={...process.env,NANOHUB_API_TOKEN:'',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0'};
 const auth=(credential:any)=>({Authorization:'Bearer '+credential.token});let bin=resolve(import.meta.dirname,'../../cli/bin/nh.mjs');
 try{
- if(process.argv.includes('--bundle')){const directory=join(f.dir,"Secrets CLI's private distribution"),manifest=JSON.parse((await exec('bun',[resolve(import.meta.dirname,'../../cli/scripts/build.mjs'),directory],{env:environment})).stdout);bin=join(directory,'releases',manifest.version,'nh.mjs');}
+ if(process.argv.includes('--distribution')){
+  const publicDir=resolve(import.meta.dirname,'../../../apps/web/public'),manifest=JSON.parse(await readFile(join(publicDir,'nh/latest.json'),'utf8'));
+  assert.equal(manifest.format,1);assert.match(manifest.version,/^\d+\.\d+\.\d+$/);assert.equal(manifest.path,`/nh/releases/${manifest.version}/nh.mjs`);bin=join(publicDir,manifest.path);
+  const bytes=await readFile(bin);assert.equal(bytes.length,manifest.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.sha256);assert.equal((await exec('bun',[bin,'--version'],{env:environment})).stdout.trim(),'nh '+manifest.version);
+ }else if(process.argv.includes('--bundle')){const directory=join(f.dir,"Secrets CLI's private distribution"),manifest=JSON.parse((await exec('bun',[resolve(import.meta.dirname,'../../cli/scripts/build.mjs'),directory],{env:environment})).stdout);bin=join(directory,'releases',manifest.version,'nh.mjs');}
  const owner=await f.login('owner','101'),admin=await f.login('admin','202'),writer=await f.login('writer','303'),reader=await f.login('reader','404');await f.json('POST',base,{mode:'git'},owner);
  for(const [id,user,role]of [['admin',admin,'admin'],['writer',writer,'writer'],['reader',reader,'reader']]as const){const invitation=await f.json('POST',base+'/collaborators',{userId:'codegraff:'+id,role},owner);await f.json('POST','/api/invitations/accept',{trunk,token:invitation.token},user);}
  const provider=await f.provisionSecret(trunk,'staging','TOKEN','synthetic-provider-held-only'),make=(user:any=owner,scopes=permissions)=>f.json('POST',base+'/cli-credentials',{label:'Secret CLI fixture',scopes,days:1},user);
@@ -39,5 +44,5 @@ try{
  await f.json('POST','/api/namespaces',{name:'secrets'},owner);const named=await f.json('POST','/api/repos/secrets/named',{},owner);const namedId=named.id??named.name;assert.ok(namedId);const namedCredential=await f.json('POST','/api/repos/secrets/named/cli-credentials',{label:'Named secret fixture',scopes:permissions,days:1},owner);result=await cli(['list'],namedCredential,['-R','secrets/named']);assert.equal(result.code,0,result.output);
  const team='cli-secrets-team';await f.json('POST','/api/trunks/'+team,{mode:'git'},owner);await f.json('POST','/api/trunks/'+team+'/team',{roomId:ROOM},owner);const teamCredential=await f.json('POST','/api/trunks/'+team+'/cli-credentials',{label:'Team secret fixture',scopes:permissions,days:1},owner);result=await cli(['list'],teamCredential,['--trunk',team]);assert.equal(result.code,0,result.output);f.members.set('101','member');result=await cli(['list'],teamCredential,['--trunk',team]);assert.notEqual(result.code,0);f.members.set('101','owner');
  result=await cli(['disconnect','TOKEN','--revision','1','--confirm','TOKEN']);assert.equal(result.code,0,result.output);assert.equal((await metadata()).secrets.length,0);assert.equal((await metadata()).nextCleanupAt,null);assert.equal(await provider.read(),'synthetic-provider-held-only');
- console.log('PASS: '+(process.argv.includes('--bundle')?'bundled':'source')+' secret CLI; explicit admin scopes, private fixed-expiry grants, lost-ack recovery, parent-delegation revocation, final role/token checks, archive-safe revocation, aliases, current team ownership, restart, retained Cloudflare values and no idle alarm');
+ console.log('PASS: '+(process.argv.includes('--distribution')?'exact release artifact':process.argv.includes('--bundle')?'bundled':'source')+' secret CLI; explicit admin scopes, private fixed-expiry grants, lost-ack recovery, parent-delegation revocation, final role/token checks, archive-safe revocation, aliases, current team ownership, restart, retained Cloudflare values and no idle alarm');
 }finally{f.members.set('101','owner');f.provider.down=false;await f.close();}
