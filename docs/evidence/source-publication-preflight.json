@@ -1,0 +1,59 @@
+{
+  "checkedAt": "2026-10-30T15:17:49.864054+00:00",
+  "scanner": "gitleaks 8.30.1, built-in default rules, inline allows ignored",
+  "range": "origin/main..HEAD",
+  "commitsScanned": 73,
+  "findings": [
+    {
+      "RuleID": "generic-api-key",
+      "File": "docs/evidence/runner-preflight-receipt.json",
+      "StartLine": 7,
+      "Commit": "4ee6539b8644792defabf054ab87d1725a939554",
+      "Fingerprint": "4ee6539b8644792defabf054ab87d1725a939554:docs/evidence/runner-preflight-receipt.json:generic-api-key:7",
+      "classification": "source file SHA-256 digest",
+      "verifiedAgainstHistoricalGitBlob": true,
+      "sourcePath": "tools/sandbox-access.mjs"
+    },
+    {
+      "RuleID": "generic-api-key",
+      "File": "docs/evidence/runner-preflight-receipt.json",
+      "StartLine": 10,
+      "Commit": "4ee6539b8644792defabf054ab87d1725a939554",
+      "Fingerprint": "4ee6539b8644792defabf054ab87d1725a939554:docs/evidence/runner-preflight-receipt.json:generic-api-key:10",
+      "classification": "source file SHA-256 digest",
+      "verifiedAgainstHistoricalGitBlob": true,
+      "sourcePath": "packages/api/scripts/sandbox-access.test.mjs"
+    },
+    {
+      "RuleID": "generic-api-key",
+      "File": "docs/evidence/production-validation-2026-10-26.md",
+      "StartLine": 37,
+      "Commit": "40f79a1eca3e75da1851de37deb81b7d0f75f9a3",
+      "Fingerprint": "40f79a1eca3e75da1851de37deb81b7d0f75f9a3:docs/evidence/production-validation-2026-10-26.md:generic-api-key:37",
+      "classification": "documented Cloudflare deployment version UUID",
+      "verifiedContext": true
+    },
+    {
+      "RuleID": "generic-api-key",
+      "File": "packages/api/scripts/signing.test.mjs",
+      "StartLine": 61,
+      "Commit": "40f79a1eca3e75da1851de37deb81b7d0f75f9a3",
+      "Fingerprint": "40f79a1eca3e75da1851de37deb81b7d0f75f9a3:packages/api/scripts/signing.test.mjs:generic-api-key:61",
+      "classification": "static JavaScript variable assignment to a generated fixture field",
+      "verifiedContext": true
+    }
+  ],
+  "resolved": true,
+  "scope": "credential-pattern scan only; not a repository security audit",
+  "head": "aa4250aedb9fd84cb455c31a9052f211b076e15b",
+  "exactCredentialHistoryCheck": {
+    "checkedAt": "2026-10-30T15:23:19.138Z",
+    "head": "aa4250aedb9fd84cb455c31a9052f211b076e15b",
+    "knownConfiguredCredentialsChecked": 11,
+    "knownCredentialMatches": [],
+    "credentialShapedHexMatches": 0,
+    "scope": "unpublished Git patch history, including removed lines"
+  },
+  "sourcePublicationPerformed": false,
+  "githubRegisteredRunners": 0
+}

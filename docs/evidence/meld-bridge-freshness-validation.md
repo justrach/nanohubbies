@@ -55,11 +55,25 @@ remains the temporary CI transport mirror.
    pass. It is not reused as successful acceptance.
 3. A fresh attempt at `b790981`, native run
    `469c322e-78fe-4f32-95e2-166eebd3155c`, dispatched external job
-   `1793372611784-ba2c09c7-1a47-4469-8ade-df5afcf57f04`; at 15:04 UTC it is
-   building. It deliberately injects one
-   synthetic controller GET timeout after a real dispatch acknowledgement, then
-   observes that same job. Native callback acceptance and final cleanup remain
-   pending until its terminal receipt is inspected.
+   `1793372611784-ba2c09c7-1a47-4469-8ade-df5afcf57f04`. The real job passed all
+   seven stages, and the native authenticated callback persisted
+   `codegraff-ci: success` at the exact candidate/base. A synthetic controller GET
+   timeout after dispatch acknowledgement was tolerated without a second POST.
+   The pre-callback fault/count assertions succeeded before the saved callback.
+   The retained build log reports the same suite/skip counts listed below.
+
+Attempt 3's harness subsequently exited 1 during mirror cleanup: its Git push
+ran outside a repository. The original log and incomplete operation receipt are
+retained; **the full harness is not recorded as passed**. A separate terminal
+observer validated the native callback and pipeline receipts against the actual
+controller job, independently confirmed the VM `destroyed`, deleted the exact
+owned ref with an expected-old lease from the retained bare repository, and
+verified absence. Main/staging refs and the staging version still match the
+before snapshots; the local fixture is unreachable. See the
+[core acceptance and manual cleanup receipt](meld-bridge-live-core-receipt.json).
+The actual-copy retry-state and native-runner revocation-response assertions
+were not durably retained before the cleanup error; do not claim those two
+postconditions from this run. Local fixture disposal removes its authority.
 
 For attempt 2, the real stage results were: install 5,436 ms; policy checks
 378 ms; typechecks 1,119 ms; unit/package checks 129,557 ms; browser installation

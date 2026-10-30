@@ -1,0 +1,106 @@
+{
+  "checkedAt": "2026-10-30T15:21:22.438Z",
+  "sourceCommit": "b790981e19771b13ce20b9ffdde99f4bffda1a22",
+  "candidate": "77d528a0786106c8e943fee220c421b842a46a19",
+  "nativeRun": "469c322e-78fe-4f32-95e2-166eebd3155c",
+  "nativeCallback": {
+    "id": "469c322e-78fe-4f32-95e2-166eebd3155c",
+    "branch": "main",
+    "head": "77d528a0786106c8e943fee220c421b842a46a19",
+    "base": "77d528a0786106c8e943fee220c421b842a46a19",
+    "state": "complete",
+    "generation": 1,
+    "initiator": "codegraff:owner",
+    "deploymentApprovedBy": null,
+    "attempt": 1,
+    "leaseUntil": 1793379800697,
+    "runner": "a4217e8f-bb31-4374-9a17-deb4d7b7a3c4",
+    "results": [
+      {
+        "name": "codegraff-ci",
+        "state": "success",
+        "command": "Meld Codegraff pipeline: locked install; pipeline regression checks; typechecks; unit and package checks; browser installation; browser checks; production bundle",
+        "log": "https://meld-staging-ci.phedayatnia.workers.dev/runs/1793372611784-ba2c09c7-1a47-4469-8ade-df5afcf57f04/logs/build",
+        "artifacts": [
+          "https://meld-staging-ci.phedayatnia.workers.dev/runs/1793372611784-ba2c09c7-1a47-4469-8ade-df5afcf57f04/logs/build"
+        ]
+      }
+    ],
+    "staging": null,
+    "createdAt": 1793372592601,
+    "deployments": []
+  },
+  "externalRun": "1793372611784-ba2c09c7-1a47-4469-8ade-df5afcf57f04",
+  "externalPhase": "passed",
+  "suite": [
+    {
+      "name": "locked install",
+      "exitCode": 0,
+      "milliseconds": 5044
+    },
+    {
+      "name": "pipeline regression checks",
+      "exitCode": 0,
+      "milliseconds": 317
+    },
+    {
+      "name": "typechecks",
+      "exitCode": 0,
+      "milliseconds": 1196
+    },
+    {
+      "name": "unit and package checks",
+      "exitCode": 0,
+      "milliseconds": 129512
+    },
+    {
+      "name": "browser installation",
+      "exitCode": 0,
+      "milliseconds": 36024
+    },
+    {
+      "name": "browser checks",
+      "exitCode": 0,
+      "milliseconds": 607907
+    },
+    {
+      "name": "production bundle",
+      "exitCode": 0,
+      "milliseconds": 40106
+    }
+  ],
+  "coreAcceptancePassed": true,
+  "harnessPassed": false,
+  "harnessExitCode": 1,
+  "harnessFailure": "Cleanup Git push used a working directory without a repository",
+  "manualCleanupPassed": true,
+  "providerCleanup": {
+    "sandboxId": "cnd_fad46a4d46fc23348e2362d255cfdde792850f44",
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "ownedMirrorRefAbsent": true,
+  "mainStagingRefsUnchanged": true,
+  "stagingVersionUnchanged": true,
+  "stagingBuildId": "77d528a",
+  "localFixtureUnreachable": true,
+  "importCredentialRevokedBeforeCi": true,
+  "observationRecovery": {
+    "injectedReadTimeout": true,
+    "controllerDispatchPosts": 1,
+    "evidence": "Successful pre-callback assertions in the preserved harness, followed by the persisted native callback",
+    "harnessSha256": "6a1d3295438e4b58d7c9cf84d8554e075718e41075584d4ec576cb6269719267"
+  },
+  "unretainedPostconditions": [
+    "Actual-copy newer native retry state after its assertion",
+    "Explicit native runner revocation response before fixture disposal"
+  ],
+  "buildLog": {
+    "private": true,
+    "bytes": 250484,
+    "sha256": "6692d50cabf0cb6ad4c0ce5128fa2cccb279e7c1185f0c7fe8e9e492700ae68d"
+  },
+  "stagingDeployments": 0,
+  "productionNanohubCredentialsIssued": 0,
+  "hostedNanohubDispatcherActivated": false
+}

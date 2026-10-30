@@ -129,8 +129,12 @@ The [Meld freshness bridge](evidence/meld-bridge-freshness-validation.md) now
 requires a fresh acknowledged external job per native attempt, validates all
 seven real pipeline stages and rejects newer same-SHA reruns. A real external
 job passed, but a controller-read timeout correctly left its native result
-failed. Read-only observation recovery now passes local tests; a fresh live
-attempt is building. This does not close hosted callbacks, staging or cutover.
+failed. A fresh real job now passes all seven stages and its native callback
+after a synthetic GET timeout, without redispatch. Its harness later failed in
+cleanup; separate observation confirms the VM destroyed, owned mirror ref
+removed, fixture unavailable and shared refs/version unchanged. The full
+harness is not marked passed. This does not close hosted callbacks, staging or
+cutover.
 
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
