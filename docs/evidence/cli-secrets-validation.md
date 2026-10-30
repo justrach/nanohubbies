@@ -63,3 +63,11 @@ challenge. The source deployment integration rerun passes. This attempt remains
 failed, and a separate Codegraff GET confirms its VM is destroyed. A subsequent
 full run must also exercise secret commands using the exact distribution module,
 whose version, byte count and hash are checked before execution.
+
+The complete local repository rerun also exposes the same stale route expectation
+in environment and general CLI acceptance, plus a general CLI test using the now
+valid `secrets:read` permission as an invalid scope. Those assertions now require
+the precise scope denial and reject an unsupported `secrets:values` capability.
+The first retry launch stops at its read-only Codegraff preflight because sandbox
+access cannot be verified; it never reaches source freezing or VM allocation.
+Neither attempt is counted as passing cloud acceptance.

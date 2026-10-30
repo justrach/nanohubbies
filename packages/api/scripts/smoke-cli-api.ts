@@ -26,7 +26,7 @@ try {
   const make=async(cookie:any,scopes:string[],label='CLI test',days=1)=>{const c=await f.json('POST',`${base}/cli-credentials`,{label,scopes,days},cookie);issued.push({id:c.id,cookie});return c;};
   assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'No session',scopes:['read'],days:1})).status,404);
   assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'Cross origin',scopes:['read'],days:1},{...owner,Origin:'https://other.invalid'})).status,403);
-  for(const body of [{label:'Bad',scopes:[],days:1},{label:'Bad',scopes:['read','secrets:read'],days:1},{label:'Bad',scopes:['read'],days:31},{label:'Bad',scopes:['read'],days:1,owner:'spoof'}])assert.equal((await f.request('POST',`${base}/cli-credentials`,body,owner)).status,400);
+  for(const body of [{label:'Bad',scopes:[],days:1},{label:'Bad',scopes:['read','secrets:values'],days:1},{label:'Bad',scopes:['read'],days:31},{label:'Bad',scopes:['read'],days:1,owner:'spoof'}])assert.equal((await f.request('POST',`${base}/cli-credentials`,body,owner)).status,400);
   assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'Reader cannot write',scopes:['read','reviews:write'],days:1},reader)).status,403);
   const read=await make(reader,['read']),author=await make(owner,['read','pulls:write','reviews:write','pulls:merge']),reviewer=await make(writer,['read','reviews:write']);
   const auth=(c:any)=>({Authorization:`Bearer ${c.token}`});
