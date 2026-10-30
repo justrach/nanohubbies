@@ -106,7 +106,8 @@ export async function execute(context) {
   }
   const receipt={candidate:context.run.head,base:context.run.base,nanohubRun:context.run.id,nanohubAttempt:context.run.attempt,source:'Nanohub authenticated private clone',transportMirror:'yourmeld/meld2',runId:jobId,pipelineEvidence,staging:staged,limits:['GitHub remains the current CI transport mirror','Staging requires explicit owner approval of this head and base','Real-service acceptance is supplied by the trusted acceptance module','Independent external reruns after the final observation require callback integration; this adapter is not an unattended controller']};
   await writeFile(join(context.artifacts,'meld-pipeline.json'),JSON.stringify(receipt,null,2));
-  const results=[{name:'codegraff-ci',state:'success',command:'Meld Codegraff pipeline: '+pipelineEvidence.steps.map(step=>step.name).join('; '),log:new URL('meld-pipeline.json',context.artifactOrigin).href,artifacts:[new URL('meld-pipeline.json',context.artifactOrigin).href]}];
+  const buildLog=`https://meld-staging-ci.phedayatnia.workers.dev/runs/${jobId}/logs/build`;
+  const results=[{name:'codegraff-ci',state:'success',command:'Meld Codegraff pipeline: '+pipelineEvidence.steps.map(step=>step.name).join('; '),log:buildLog,artifacts:[buildLog]}];
   if(staged)results.push({name:'staging',state:'success',command:'owner-approved candidate; normal fast-forward staging mirror push; exact Codegraff deployment job; seven-character /api/version verification; real-service acceptance; version recheck',log:`https://meld-staging-ci.phedayatnia.workers.dev/runs/${staged.runId}/logs/deploy`,artifacts:staged.acceptance.map(e=>e.url)});
   return {staging:staged,results};
 }
