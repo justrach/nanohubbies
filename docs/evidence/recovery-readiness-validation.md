@@ -1,5 +1,10 @@
 # Recovery readiness and controller receipts — 2026-10-30 JST
 
+This records an earlier failed-attempt checkpoint. A subsequent
+[complete changing-Git/Vault drill](hosted-changing-git-recovery-validation.md)
+passes with the retained-assets correction; these original attempt outcomes
+remain failed and do not retroactively gain acceptance.
+
 The recovery harness now handles explicit phase/startup refusals, verifies purge
 readiness, serializes its receipts and runs fixture tests in the native CI graph.
 **The complete hosted changing-Git rollback-and-return gate remains unpassed.**

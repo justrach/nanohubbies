@@ -152,8 +152,9 @@ Before a live drill can establish readiness, the operator workflow must prove:
    evidence, failed attempts and a tested return path. Reopen traffic only after
    that acceptance, then observe private access, queues, cleanup and errors.
 
-This workflow, an independent retained backup and a hosted destructive recovery
-drill remain open production requirements. The local test does not establish
+The isolated hosted drills below now pass complete changing-Git/Vault rollback
+and return. The production workflow and an independently retained long-term
+backup remain open requirements. The local test alone does not establish
 Cloudflare PITR execution, bookmark retention, production resource enumeration,
 alarm/import resumption, cross-service backup atomicity, infrastructure-loss
 recovery, an RPO/RTO, or an automated revocation-safe reopening mechanism.
@@ -256,15 +257,21 @@ same command with `--cleanup /absolute/private-artifacts/<run-id>`.
 
 ### Vault-inclusive hosted drill
 
-The [recorded Vault acceptance](evidence/hosted-vault-recovery-validation.md) passes
-the two authorization/vault points on an unchanged Git graph. The changing-Git
-extension retains partial cloud evidence, including older-point clone/fsck and
-known-authority reconciliation, but its complete return gate remains unpassed.
+The [complete changing-Git acceptance](evidence/hosted-changing-git-recovery-validation.md)
+now passes both distinct Git checkpoints, corrupt-backup rejection, application
+loss/restore, older-authority reconciliation and final newer clone/fsck, with
+independent cleanup and unchanged production versions. The earlier
+[Vault acceptance](evidence/hosted-vault-recovery-validation.md) covers two
+authorization/vault points on an unchanged graph. Its first changing-Git return
+attempt stopped on an unknown restore-request connection reset and remains failed.
 The [readiness and receipt checks](evidence/recovery-readiness-validation.md)
 record additional failed attempts and the resulting fixture/controller fixes.
 A later [upload-completion failure](evidence/recovery-upload-uncertainty-validation.md)
 stops before the second checkpoint and is independently confirmed cleaned. It does
-not close the changing-Git recovery gate.
+not close that gate. The later successful run uses
+[retained assets for owned phase updates](evidence/recovery-retained-assets-validation.md)
+without replaying those failed deployments. Production recovery requirements
+above remain separate.
 
 The vault extension runs the repository acceptance with a separate disposable
 Vault Worker and its real Secrets Store binding:
@@ -353,4 +360,5 @@ of the stable `check` job. The full Linux toolchain verifier also includes this
 suite. These are local/offline tests, not live restore commands. Existing check
 conclusion semantics remain unchanged: use success-only requirements where a
 skipped dependent job must not satisfy a required check. Hosted Actions activation
-and complete fresh changing-Git recovery acceptance remain separate gates.
+remains separate. The [complete isolated changing-Git drill](evidence/hosted-changing-git-recovery-validation.md)
+now passes; production recovery/isolation/reopening acceptance is still required.

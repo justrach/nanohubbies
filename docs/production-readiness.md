@@ -1,4 +1,4 @@
-# Production readiness — 2026-10-29 (JST)
+# Production readiness — 2026-10-30 (JST)
 
 **Current recommendation: a controlled private beta with backup mirrors.**
 The engineering estimate is roughly **70% toward the first production release**.
@@ -14,7 +14,7 @@ pending the original migration and CI/staging acceptance.
 | Cloudflare-owned secrets             | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md)                                                                                                                                                                                                                                                                            | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups                                                                                                                                  |
 | Codegraff Actions                    | Real disposable cloud job through the dispatcher; [retained private full image and separate fresh-VM acceptance](evidence/private-toolchain-registry-validation.md) passes every offline project gate using per-job temporary Cloudflare pull access; both VMs are confirmed destroyed                                                                                                                    | A sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation                                                                                                                                               |
 | Staging and application cutover      | Exact candidate/version/approval/acceptance contracts and negative tests; committed Meld runbook/controller located through existing Git access, healthy controller and matching current staging version in [read-only discovery](evidence/meld-source-discovery.json)                                                                                                                                    | Live intended-application staging job from Nanohub source, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted                                                 |
-| Recovery                             | [Local cold DO/D1/R2 loss-and-restore drill](evidence/cold-recovery-validation.md): exact Git and metadata, locks/reviews/archive fences, as-of-checkpoint revocations, retained separate provider values; older-backup authority resurrection demonstrated. The [native hosted probe](evidence/native-recovery-validation.md) passes; the [repository drill](evidence/hosted-repository-recovery-validation.md) passes, and the [Vault-inclusive extension](evidence/hosted-vault-recovery-validation.md) now restores 15 instances across ten classes, retains the latest provider value, denies revoked workload access after restart and leaves no idle Vault alarm; normal traffic stays held | Complete the [production recovery workflow](recovery.md#hosted-recovery-release-gate): complete changing-Git rollback-and-return acceptance (newer and older clone/fsck plus revocation reconciliation pass; the final newer return stopped on an unknown restore-request connection reset; failed-run cleanup is independently verified), retained long-term backups, production inventory/isolation/draining, independent latest-authority acquisition, namespace-loss recovery and measured RPO/RTO before safe reopening |
+| Recovery | [Complete isolated changing-Git/Vault rollback and return](evidence/hosted-changing-git-recovery-validation.md): two distinct Git checkpoints, corrupt-backup rejection, native DO/D1 plus retained R2 recovery, exact metadata/locks, older-authority hazard and explicit reconciliation, final newer clone/fsck, current provider value, revoked access after restart and no idle Vault alarm; independent cleanup and unchanged production versions | Complete the [production recovery workflow](recovery.md#hosted-recovery-release-gate): retained long-term backups, production inventory/isolation/draining, independent latest-authority acquisition, namespace-loss recovery, resumption/reopening and measured production RPO/RTO |
 | Traffic and operations               | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds                                                                                                                                                                                                                                                                                                                     | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence                                                                                                                                                       |
 | Source and releases                  | Changes are committed locally and selected builds are deployed; source has not been pushed to GitHub                                                                                                                                                                                                                                                                                                      | Source review/push and an automated repeatable release/rollback workflow                                                                                                                                                                                                      |
 
@@ -158,7 +158,8 @@ captures the first checkpoint and verifies synthetic revocations/provider rotati
 but Cloudflare code `100312` stops the next phase upload before a second checkpoint
 or restore. Independent cleanup and unchanged production versions pass. The
 follow-up diagnostic is locally validated and preserves the stop-on-uncertainty
-rule; full hosted recovery remains unpassed.
+rule. The later complete isolated drill below closes its changing-Git return gate;
+production recovery remains separate.
 
 The published [deployment CLI](evidence/cli-deployments-release-validation.md) adds scoped
 requests and approvals/rejections, including configured reader and connected-team
@@ -173,4 +174,14 @@ canonical owned configuration, phase-only provider resource comparison and the
 existing stop-on-uncertainty rules. Local fixtures and a disposable six-state
 Cloudflare protocol probe pass, with independent deletion and unchanged main.
 This avoids another asset completion token for phase changes. It is not the
-full recovery application, and full changing-Git restore/return remains unpassed.
+full recovery application; the later complete drill below supplies that acceptance.
+
+The [complete changing-Git/Vault recovery drill](evidence/hosted-changing-git-recovery-validation.md)
+now passes on committed source `25e2215`: both distinct checkpoints, corruption
+rejection, physical application loss, exact current restore, older-point rollback
+and authority reconciliation, final newer clone/fsck and restart denial. All
+15 retained-asset phase changes and 44 held checks pass. A separate observer
+confirms owned-resource cleanup, retained original provider entries and unchanged
+production main/Vault versions. This closes the isolated full rollback-and-return
+gate; it does not establish production inventory, long-term backups, independent
+latest-authority acquisition, namespace-loss recovery, RPO/RTO or safe reopening.

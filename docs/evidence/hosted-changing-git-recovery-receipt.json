@@ -1,0 +1,440 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T10:24:07.778198+00:00",
+  "scope": "Complete isolated hosted changing-Git and Vault in-place rollback/return acceptance, with independent clone/fsck and cleanup; not production disaster-recovery or traffic readiness",
+  "sourceCommit": "25e22154f1f2dbda522667c591a5fd3049171c47",
+  "runId": "mvusx0y3-8f6333fc5e",
+  "controllerRuntime": {
+    "name": "node",
+    "version": "24.14.1"
+  },
+  "controllerExitCode": 0,
+  "startedAt": "2026-10-30T10:00:17.932Z",
+  "finishedAt": "2026-10-30T10:22:36.670Z",
+  "productionApplicationResourcesUsed": false,
+  "sharedAccountSecretsStoreUsed": true,
+  "syntheticProviderEntryOnly": true,
+  "checkpoints": [
+    {
+      "label": "before-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 17,
+      "r2Bytes": 18846
+    },
+    {
+      "label": "after-revocations",
+      "durableObjects": 15,
+      "classes": 10,
+      "r2Objects": 19,
+      "r2Bytes": 20440
+    }
+  ],
+  "checks": {
+    "acceptedGitCommitBetweenCheckpoints": true,
+    "providerValuesAbsentFromApplicationBackup": true,
+    "providerRotationWithoutVaultRedeploy": true,
+    "corruptionRejectedBeforeLoss": true,
+    "physicalApplicationLossObserved": true,
+    "exactMetadataReviewsAndArchive": true,
+    "exactGitGraphBinaryModesTags": true,
+    "protectedPushLockTagDeletionAndMergeDenied": true,
+    "currentCheckpointRevocationsRetained": true,
+    "currentRestoreRetainsLatestProviderValue": true,
+    "olderGitGraphVerified": true,
+    "olderCheckpointResurrectsAuthority": true,
+    "olderWorkloadGrantRevivesButValueRemainsCurrent": true,
+    "disconnectReconnectRetainsProviderValue": true,
+    "newerReturnCloneVerified": true,
+    "fullRepositoryReturnPathVerified": true,
+    "idleVaultHasNoAlarm": true,
+    "workloadRevocationDeniedAfterRestart": true,
+    "latestAuthorityReconciledAndDeniedAfterRestart": true,
+    "normalTrafficNeverReopened": true
+  },
+  "normalTrafficHeldChecks": 44,
+  "phases": [
+    {
+      "phase": "frozen",
+      "version": "85b659c3-f9b1-4a0d-8d52-e09aab1dac4f",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "92322890-f5b7-42e0-a19a-5fad48d1acdd",
+        "version": "85b659c3-f9b1-4a0d-8d52-e09aab1dac4f",
+        "resourceSha256": "9c13cb2718b89608a0da8c9e8658842a5ff0e885b4ec63a3da694e5aefbf1e56",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "85b659c3-f9b1-4a0d-8d52-e09aab1dac4f"
+      },
+      "at": "2026-10-30T10:03:18.836Z"
+    },
+    {
+      "phase": "reconcile",
+      "version": "0977a5dc-fcf0-4dac-b08b-54879649f0c8",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "85b659c3-f9b1-4a0d-8d52-e09aab1dac4f",
+        "version": "0977a5dc-fcf0-4dac-b08b-54879649f0c8",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "reconcile",
+        "version": "0977a5dc-fcf0-4dac-b08b-54879649f0c8"
+      },
+      "at": "2026-10-30T10:04:56.146Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "00501c52-778e-4f6e-9390-62c75899f85c",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "0977a5dc-fcf0-4dac-b08b-54879649f0c8",
+        "version": "00501c52-778e-4f6e-9390-62c75899f85c",
+        "resourceSha256": "7d402c79a2674c905ae9fb50fdaef7831756c9751e385e29c3415f3504acfec5",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "00501c52-778e-4f6e-9390-62c75899f85c"
+      },
+      "at": "2026-10-30T10:06:07.633Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "3760e881-f637-4100-9507-fd0dbe183d28",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "00501c52-778e-4f6e-9390-62c75899f85c",
+        "version": "3760e881-f637-4100-9507-fd0dbe183d28",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "3760e881-f637-4100-9507-fd0dbe183d28"
+      },
+      "at": "2026-10-30T10:07:26.527Z"
+    },
+    {
+      "phase": "verify",
+      "version": "f9dd2a94-6ad9-45a2-8bef-57dcdc44ee4b",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "3760e881-f637-4100-9507-fd0dbe183d28",
+        "version": "f9dd2a94-6ad9-45a2-8bef-57dcdc44ee4b",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "f9dd2a94-6ad9-45a2-8bef-57dcdc44ee4b"
+      },
+      "at": "2026-10-30T10:08:44.503Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "3348a7d3-c9dd-4ee3-aa6e-5714133924de",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "f9dd2a94-6ad9-45a2-8bef-57dcdc44ee4b",
+        "version": "3348a7d3-c9dd-4ee3-aa6e-5714133924de",
+        "resourceSha256": "e0016ce7cbb77b9fbf7ec5725b9cc4b60ca358f8ca08ce42913db624ab049059",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "3348a7d3-c9dd-4ee3-aa6e-5714133924de"
+      },
+      "at": "2026-10-30T10:09:29.292Z"
+    },
+    {
+      "phase": "verify",
+      "version": "555b4139-9430-4359-8af4-4c04dfad84e7",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "3348a7d3-c9dd-4ee3-aa6e-5714133924de",
+        "version": "555b4139-9430-4359-8af4-4c04dfad84e7",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "555b4139-9430-4359-8af4-4c04dfad84e7"
+      },
+      "at": "2026-10-30T10:10:46.905Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "860c39a2-3ca6-4067-acfd-6122d70973ce",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "555b4139-9430-4359-8af4-4c04dfad84e7",
+        "version": "860c39a2-3ca6-4067-acfd-6122d70973ce",
+        "resourceSha256": "e0016ce7cbb77b9fbf7ec5725b9cc4b60ca358f8ca08ce42913db624ab049059",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "860c39a2-3ca6-4067-acfd-6122d70973ce"
+      },
+      "at": "2026-10-30T10:12:14.519Z"
+    },
+    {
+      "phase": "verify",
+      "version": "25313696-7c29-4c3b-98cb-c69c28d7ae29",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "860c39a2-3ca6-4067-acfd-6122d70973ce",
+        "version": "25313696-7c29-4c3b-98cb-c69c28d7ae29",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "25313696-7c29-4c3b-98cb-c69c28d7ae29"
+      },
+      "at": "2026-10-30T10:13:43.326Z"
+    },
+    {
+      "phase": "reconcile",
+      "version": "9b1030ff-c006-4e00-b057-3d98ff004940",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "25313696-7c29-4c3b-98cb-c69c28d7ae29",
+        "version": "9b1030ff-c006-4e00-b057-3d98ff004940",
+        "resourceSha256": "e0016ce7cbb77b9fbf7ec5725b9cc4b60ca358f8ca08ce42913db624ab049059",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "reconcile",
+        "version": "9b1030ff-c006-4e00-b057-3d98ff004940"
+      },
+      "at": "2026-10-30T10:14:45.107Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "60a0455f-a1d9-421a-960b-fe0cce8b9ba6",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "9b1030ff-c006-4e00-b057-3d98ff004940",
+        "version": "60a0455f-a1d9-421a-960b-fe0cce8b9ba6",
+        "resourceSha256": "7d402c79a2674c905ae9fb50fdaef7831756c9751e385e29c3415f3504acfec5",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "60a0455f-a1d9-421a-960b-fe0cce8b9ba6"
+      },
+      "at": "2026-10-30T10:16:24.023Z"
+    },
+    {
+      "phase": "verify",
+      "version": "deceab5a-d43f-4066-9b37-6b973de1ebb9",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "60a0455f-a1d9-421a-960b-fe0cce8b9ba6",
+        "version": "deceab5a-d43f-4066-9b37-6b973de1ebb9",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "deceab5a-d43f-4066-9b37-6b973de1ebb9"
+      },
+      "at": "2026-10-30T10:17:35.602Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "12337ede-31ca-4a1e-842f-ea79db23f3c9",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "deceab5a-d43f-4066-9b37-6b973de1ebb9",
+        "version": "12337ede-31ca-4a1e-842f-ea79db23f3c9",
+        "resourceSha256": "e0016ce7cbb77b9fbf7ec5725b9cc4b60ca358f8ca08ce42913db624ab049059",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "12337ede-31ca-4a1e-842f-ea79db23f3c9"
+      },
+      "at": "2026-10-30T10:18:28.441Z"
+    },
+    {
+      "phase": "verify",
+      "version": "6d1043aa-2f30-4d61-979c-b80ef621af28",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "12337ede-31ca-4a1e-842f-ea79db23f3c9",
+        "version": "6d1043aa-2f30-4d61-979c-b80ef621af28",
+        "resourceSha256": "656adaac2f877eff3b9501a5d40803511aaf469c20c85b7986a6c381af6250e6",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "verify",
+        "version": "6d1043aa-2f30-4d61-979c-b80ef621af28"
+      },
+      "at": "2026-10-30T10:19:49.206Z"
+    },
+    {
+      "phase": "frozen",
+      "version": "4e6b080f-8208-4e95-b1a2-e68e9913f714",
+      "deployAttempts": 1,
+      "assetsReused": true,
+      "resourceInvariant": {
+        "previousVersion": "6d1043aa-2f30-4d61-979c-b80ef621af28",
+        "version": "4e6b080f-8208-4e95-b1a2-e68e9913f714",
+        "resourceSha256": "e0016ce7cbb77b9fbf7ec5725b9cc4b60ca358f8ca08ce42913db624ab049059",
+        "phaseOnly": true
+      },
+      "dataPlaneObservation": {
+        "attempts": 1,
+        "phase": "frozen",
+        "version": "4e6b080f-8208-4e95-b1a2-e68e9913f714"
+      },
+      "at": "2026-10-30T10:21:07.317Z"
+    }
+  ],
+  "trace": {
+    "events": 1211,
+    "exitCode": 0,
+    "writeFailures": 0
+  },
+  "independentObservation": {
+    "runId": "mvusx0y3-8f6333fc5e",
+    "observedAt": "2026-10-30T10:22:48.901Z",
+    "providerRuntime": "node",
+    "apiAbsent": true,
+    "gateAbsent": true,
+    "vaultAbsent": true,
+    "bucketAbsent": true,
+    "databaseAbsent": true,
+    "syntheticProviderSecretAbsent": true,
+    "otherProviderEntriesRetained": true,
+    "existingProviderEntryCount": 1,
+    "accountStoreRetained": true,
+    "explicitTenClassRetirement": true,
+    "privateKeysAndGrantsRemoved": true,
+    "git": {
+      "strictFsck": true,
+      "exactRefsGraphTree": true,
+      "refs": 3,
+      "refsSha256": "142848a4043963a5eb4d716ffeb454eec6aeb812b2a5e3eee0153061655b27fe",
+      "objects": 13,
+      "executableMode": true,
+      "symlinkMode": true,
+      "unicodeBranch": true,
+      "annotatedTag": true,
+      "binaryBytes": 1048593,
+      "binarySha256": "5b14849bd9ae3d2a743c8ab2d892749e32fcc2d5bb19f7e233bde8040c209fdc"
+    },
+    "distinctGitCheckpoints": {
+      "olderObjects": 10,
+      "newerObjects": 13,
+      "olderCloneFsck": true,
+      "newerReturnCloneFsck": true,
+      "differentRefs": true,
+      "removedOnlyBackedExtraObjects": 2
+    },
+    "main": {
+      "version": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+      "versionUnchanged": true,
+      "normalTrafficEnabled": true,
+      "bindings": 27,
+      "subrequests": 50000
+    },
+    "productionVault": {
+      "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+      "versionUnchanged": true
+    },
+    "passed": true
+  },
+  "productionBefore": {
+    "checkedAt": "2026-10-30T10:00:03.492Z",
+    "main": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "a37ab061-a029-4480-9fb9-2b7cefeb19e3"
+  },
+  "productionAfter": {
+    "checkedAt": "2026-10-30T10:22:48.896Z",
+    "main": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+    "vault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "publicVersion": "a37ab061-a029-4480-9fb9-2b7cefeb19e3"
+  },
+  "sourceHashes": {
+    "tools/check-operator-bindings.mjs": "5d8d9e3ceac1ff933f8b6cd3a275b336147ec18a42346a2873bb0297a03764ab",
+    "tools/hosted-recovery-fixture/phase-assets.mjs": "a9a3d0d30c5cf8082ff2c1fb299479f294ad7a3f7b09fef860b443acf77a28e5",
+    "tools/hosted-recovery-fixture/phase-deploy.test.mjs": "1d60281942621547e99ee0a042970b481e80f09a29e8a5137a98688f539944dc",
+    "tools/verify-hosted-git-import.mjs": "636f121db75975aa47a9f56181e83ea4fac17856640abe81d707c21183a6d21d"
+  },
+  "validation": {
+    "bunFixtureCases": 95,
+    "nodeProtocolCases": 27,
+    "countsOverlap": true,
+    "actualWranglerMultipartDryRun": true,
+    "operatorTargets": 8,
+    "operatorFullJsTypeCheck": false,
+    "workspaceTypeTasks": 3,
+    "cachedWorkspaceTasks": 3,
+    "pinnedTsrs": true,
+    "newFrozenLinuxAcceptance": false
+  },
+  "retainedLogs": {
+    "operation": "a0568769bfe96f76b5e65ca86154140d7010f823b104848515fcde572b555f70",
+    "controller": "fb30fd154f4d15537b378d28c2a34a05be8fe14aae6901def47df3c3cddd8938",
+    "runtimeEvents": "65dbb57b948661642079418dab15ed05da4ead466675382cda5c61976e382a1e",
+    "beforeCheckpoint": "0f4885dc907dbe7a1cae15a23de59509ba50f8a7c7fc0a3eaa98cae360eac802",
+    "afterCheckpoint": "570d4639e3f15db448971e9692d4d9afd3bb42f9c53c7429d2ff18161ea09ca6",
+    "independentObservation": "fef624a1b4a1525ae67b6980ef5101e5bfd0859edd72b2a098f62581a193a644"
+  },
+  "earlierFailedAttemptsRemainFailed": true,
+  "newFrozenLinuxAcceptance": false,
+  "productionInventoryDrainingAccepted": false,
+  "independentProductionLatestAuthorityAcquisitionAccepted": false,
+  "completeNamespaceLossAccepted": false,
+  "retainedLongTermBackupPolicyAccepted": false,
+  "productionRpoRtoEstablished": false,
+  "hostedActionsActivated": false,
+  "actualMeldCiStagingCutoverAccepted": false,
+  "productionTrafficReadinessEstablished": false,
+  "documentationChangedAfterCompletedRun": [
+    "docs/evidence/recovery-readiness-validation.md",
+    "docs/evidence/recovery-retained-assets-validation.md",
+    "docs/evidence/recovery-upload-uncertainty-validation.md",
+    "docs/production-readiness.md",
+    "docs/recovery.md",
+    "docs/evidence/hosted-changing-git-recovery-validation.md",
+    "docs/evidence/hosted-changing-git-recovery-receipt.json"
+  ],
+  "runtimeSourceHashesStillMatch": true
+}

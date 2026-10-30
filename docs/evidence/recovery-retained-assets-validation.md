@@ -1,5 +1,9 @@
 # Recovery phase asset retention — 2026-10-30
 
+This records the mechanism's initial validation checkpoint. A subsequent
+[complete changing-Git/Vault drill](hosted-changing-git-recovery-validation.md)
+passes with this committed correction. Its wider production limits remain open.
+
 The recovery controller now retains existing Cloudflare assets when changing an
 owned fixture's phase. Local regressions and an isolated provider protocol probe
 pass. **Full hosted changing-Git restore/return acceptance remains unpassed.**

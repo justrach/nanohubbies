@@ -1,5 +1,10 @@
 # Recovery upload uncertainty — 2026-10-30 JST
 
+This records an earlier failed-attempt checkpoint. A subsequent
+[complete changing-Git/Vault drill](hosted-changing-git-recovery-validation.md)
+passes with the retained-assets correction; these original attempt outcomes
+remain failed and do not retroactively gain acceptance.
+
 **The full hosted changing-Git rollback-and-return gate remains unpassed.**
 The [sanitized receipt](recovery-upload-uncertainty-receipt.json) separates the
 failed cloud attempt from its local diagnostic correction and independent cleanup.
