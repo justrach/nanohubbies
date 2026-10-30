@@ -62,6 +62,7 @@ jobs:
       - run: test "$(bun --version)" = "1.4.4"
       - run: bun install --frozen-lockfile --offline
       - run: bun run --filter @swarm/web build
+      - run: bun run --filter @swarm/api test:cli-deployment-distribution
   check:
     runs-on: codegraff
     needs: [unit, repository, cli, access, hosting, fixtures, build]

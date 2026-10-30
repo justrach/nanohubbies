@@ -3,7 +3,7 @@ import {creationBody} from "../abuse";
 import {canAdmin,canWrite,requireTeam,sameOrigin,type TeamAccess} from "../team/access";
 import {cliCredential,listCliCredentials,makeCliCredential,requestedScopes,revokeCliCredential,type CliScope} from "./credentials";
 import {cliDeviceRoute} from "./device";
-import {cliScopes,cliScopeWrites,cliScopeAllowed,cliAdminScope,cliOwnerScope} from "./credentials";
+import {cliScopes,cliScopeWrites,cliScopeNeedsWriter,cliScopeAllowed,cliAdminScope,cliOwnerScope} from "./credentials";
 import {archiveLocked} from "../repository/archive";
 
 const json=(body:unknown,status=200)=>Response.json(body,{status});
@@ -11,7 +11,7 @@ export async function cliCredentialRoute(env:Env,request:Request,trunk:string,us
   if(!user||user.cli||request.headers.has("authorization"))return json({error:"Sign in to manage CLI credentials"},403);
   if(!access)return json({error:"CLI credentials require a repository access policy"},403);
   if(request.method==="GET") {
-    const writable=canWrite(access)&&!archiveLocked(await env.HUB.get(env.HUB.idFromName("hub")).repositoryArchive(trunk));
+    const writable=!archiveLocked(await env.HUB.get(env.HUB.idFromName("hub")).repositoryArchive(trunk));
     return json({credentials:await listCliCredentials(env,user.id,trunk),allowedScopes:cliScopes.filter(scope=>cliScopeAllowed(scope,access.proof.role,writable,access.binding.kind==='owner'))});
   }
   if(request.method!=="POST")return json({error:"Use GET or POST"},405);
@@ -20,7 +20,7 @@ export async function cliCredentialRoute(env:Env,request:Request,trunk:string,us
   if(Object.keys(body).some(k=>!["label","scopes","days"].includes(k)))return json({error:"Unknown CLI credential field"},400);
   const scopes=requestedScopes(body.scopes);
   if(scopes.includes('collaborators:write')&&access.binding.kind!=='owner')return json({error:'Collaborator administration requires an independently managed repository'},403);
-  if(!canWrite(access)&&scopes.some(cliScopeWrites))return json({error:"Repository write access is required for these permissions"},403);
+  if(!canWrite(access)&&scopes.some(cliScopeNeedsWriter))return json({error:"Repository write access is required for these permissions"},403);
   if(scopes.some(cliAdminScope)&&!canAdmin(access))return json({error:"Current repository admin access is required for these permissions"},403);
   if(scopes.some(cliOwnerScope)&&access.proof.role!=='owner')return json({error:'Current repository owner access is required for runner administration'},403);
   if(scopes.some(scope=>cliScopeWrites(scope)&&scope!=="repository:archive"))await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
@@ -70,6 +70,9 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(!trunk||trunk!==info.trunk)return json({error:"Repository not found or credential scope does not match"},404);
   const method=request.method,resource=rest.join("/");let scope:CliScope|undefined;
   if(method==="GET"&&["branches","pulls"].includes(resource))scope="read";
+  if(method==='GET'&&/^deployment-requests(?:\/[a-zA-Z0-9-]{8,80})?$/.test(resource))scope='read';
+  if(method==='POST'&&resource==='deployment-requests')scope='deployments:write';
+  if(method==='POST'&&/^deployment-requests\/[a-zA-Z0-9-]{8,80}\/reviews$/.test(resource))scope='deployments:review';
   if(method==="GET"&&/^rulesets(?:\/[1-9]\d{0,8})?$/.test(resource))scope="read";
   if(method==="GET"&&/^rulesets\/[1-9]\d{0,8}\/configuration$/.test(resource))scope="rulesets:write";
   if(method==="POST"&&resource==="rulesets"||["PUT","DELETE"].includes(method)&&/^rulesets\/[1-9]\d{0,8}$/.test(resource))scope="rulesets:write";
@@ -93,7 +96,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(["GET","POST","PATCH","DELETE"].includes(method)&&/^pulls\/[1-9]\d{0,8}\/pending-review$/.test(resource)||method==="POST"&&/^pulls\/[1-9]\d{0,8}\/pending-review\/submit$/.test(resource))scope="reviews:write";
   if(!scope)return json({error:"CLI operation not supported"},404);
   if(!info.scopes.includes(scope))return new Response(JSON.stringify({error:`CLI credential requires ${scope}`}),{status:403,headers:{"Content-Type":"application/json","WWW-Authenticate":`Bearer error="insufficient_scope", scope="${scope}"`}});
-  if((method!=="GET"||scope==="reviews:write")&&!canWrite(access))return json({error:"Current repository write access required"},403);
+  if((method!=="GET"||scope==="reviews:write")&&scope!=='deployments:review'&&!canWrite(access))return json({error:"Current repository write access required"},403);
   if(cliAdminScope(scope)&&!canAdmin(access))return json({error:"Current repository admin access required"},403);
   if(cliOwnerScope(scope)&&access.proof.role!=='owner')return json({error:'Current repository owner access required'},403);
   const target=new URL(url);target.pathname=`/api/trunks/${trunk}/${resource}`;

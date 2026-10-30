@@ -4,6 +4,8 @@ import {MergeSettingsStore,type MergeSettingsInput} from './repository/merge-set
 import type {RulesetActor} from './repository/bypass';
 import {currentRulesetActor} from './repository/bypass';
 import {DeploymentRequests} from "./deployments/requests";
+import {currentCliGrant} from './cli/credentials';
+import type {CliDeploymentMutation} from './deployments/cli';
 import {Contributions} from './contributions/store';
 import type {ContributionAgent,WorkStart,WorkReport,ContributionFilter} from './contributions/types';
 import {runRef,runRefTarget} from './ci/ref';
@@ -348,6 +350,28 @@ export class Sequencer extends DurableObject<Env> {
   async deploymentRequests(actor:string,origin:string,before?:number,limit=25) {
     const store=new DeploymentRequests(this.sql),page=store.list(before,limit),proof=await this.deploymentMembers([...page.requests.flatMap(request=>request.reviews.map(review=>review.actor)),actor],origin),ci=new CIStore(this.sql);
     return {requests:page.requests.map(request=>store.status(store.get(request.id),ci.get(request.run),proof,actor)),nextCursor:page.nextCursor};
+  }
+  deploymentCliCapabilities(){return {version:1 as const,conditionalReviews:true as const,cliAudit:true as const,finalGrantCheck:true as const};}
+  async deploymentRequest(id:string,actor:string,origin:string){
+    const store=new DeploymentRequests(this.sql),request=store.get(id),proof=await this.deploymentMembers([...request.reviews.map(review=>review.actor),actor],origin);
+    const current=store.get(id);return store.status(current,new CIStore(this.sql).get(current.run),proof,actor);
+  }
+  async mutateCliDeployment(input:CliDeploymentMutation,actor:string){
+    const trunk=this.meta<string>('trunk');if(!trunk||!input||!['request','review'].includes(input.operation)||typeof input.credentialId!=='string'||typeof input.origin!=='string')throw Error('Invalid deployment CLI command');
+    const authority=await rulesetActor(this.env,trunk,actor,input.origin),proof=await this.deploymentMembers([actor],input.origin);
+    const scope=input.operation==='request'?'deployments:write':'deployments:review',grant=await currentCliGrant(this.env,input.credentialId,actor,trunk,input.origin,scope);
+    return this.ctx.storage.transactionSync(()=>{
+      if(!grant||grant.expiresAt<=Date.now())throw Error('CLI credential is revoked, expired or lacks the deployment permission');
+      const roles=input.operation==='request'?['owner','admin','writer']:['owner','admin','writer','reader'];
+      if(!currentRulesetActor(authority,actor)||!roles.includes(authority.role??''))throw Error('Current repository access required for this deployment operation');
+      assertRepositoryWritable(this.sql);if(!this.repositoryMode())throw Error('Deployments require Git repository mode');
+      const store=new DeploymentRequests(this.sql),ci=new CIStore(this.sql),via={kind:'cli' as const,credentialId:input.credentialId};
+      if(input.operation==='request')return store.request(ci.get(input.runId),input.environment,actor,Date.now(),request=>new Repository(this.sql).audit({actor,deploymentRequest:{id:request.id,environment:request.environment},head:request.head,base:request.base,via}));
+      const request=store.get(input.id),result=store.review(input.id,ci.get(request.run),actor,input.decision,input.comment,input.revision,proof);
+      if(input.decision==='reject')ci.rejectEnvironment(request.run,input.id,request.environmentId);
+      if(result.reviews.length>request.reviews.length)new Repository(this.sql).audit({actor,deploymentReview:{request:input.id,decision:input.decision,comment:input.comment,environment:request.environment},via});
+      return result;
+    });
   }
   requestDeployment(runId:string,environment:string,actor:string) {return this.ctx.storage.transactionSync(()=>{return new DeploymentRequests(this.sql).request(new CIStore(this.sql).get(runId),environment,actor,Date.now(),request=>new Repository(this.sql).audit({actor,deploymentRequest:{id:request.id,environment:request.environment},head:request.head,base:request.base}));});}
   async reviewDeployment(id:string,actor:string,decision:"approve"|"reject",comment:string,revision:number,origin:string) {

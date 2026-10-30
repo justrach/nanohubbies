@@ -6,6 +6,7 @@ import { sessionCookie, settings, type User } from "../../src/auth";
 export * from "../../src/index";
 let dropNextRunnerAcknowledgement=false;
 let dropNextCollaboratorAcknowledgement=false;
+let dropNextDeploymentAcknowledgement=false;
 let dropImportAcknowledgement:string|null=null;
 const importPosts={objects:0,refs:0};
 
@@ -155,6 +156,18 @@ export default {
       const body=await request.json<{trunk:string;actor:string;revision:number;id?:string;configuration?:import('../../src/deployments/types').EnvironmentInput}>();
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureEnvironment({...body,credentialId:'fixture-direct-environment',origin:url.origin},body.actor));}
       catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(url.pathname==='/fixture/conditional-deployment'){
+      const body=await request.json<{trunk:string;actor:string;command:import('../../src/deployments/cli').CliDeploymentMutation}>();
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).mutateCliDeployment({...body.command,origin:url.origin},body.actor));}
+      catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(url.pathname==='/fixture/drop-deployment-acknowledgement'){dropNextDeploymentAcknowledgement=true;return Response.json({armed:true});}
+    if(url.pathname==='/fixture/expire-deployment-cli-grant'){
+      const body=await request.json<{id:string}>();await env.AUTH_DB.prepare('UPDATE cli_credentials SET expiresAt=? WHERE id=?').bind(Date.now()-1,body.id).run();return Response.json({expired:true});
+    }
+    if(dropNextDeploymentAcknowledgement&&request.method==='POST'&&/^\/api\/cli\/(trunks|repos)\/.+\/deployment-requests\/[a-zA-Z0-9-]+\/reviews$/.test(url.pathname)){
+      dropNextDeploymentAcknowledgement=false;const response=await api.fetch(request,env);if(!response.ok)return response;await response.body?.cancel();return Response.json({error:'Synthetic lost deployment acknowledgement'},{status:503});
     }
     if(url.pathname==="/fixture/conditional-archive") {
       const body=await request.json<{trunk:string;actor:string;archived:boolean;revision:number;confirmation:string}>();

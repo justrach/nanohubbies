@@ -1,13 +1,14 @@
 import type {User} from "../auth";
 
-export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write"] as const;
+export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review"] as const;
 export type CliScope=typeof cliScopes[number];
 export const cliScopeWrites=(scope:CliScope)=>scope!=="read"&&scope!=="contents:read";
+export const cliScopeNeedsWriter=(scope:CliScope)=>cliScopeWrites(scope)&&scope!=="deployments:review";
 export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","collaborators:write"].includes(scope);
 export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 /** Lifecycle control remains delegable while archived, so an admin can reopen.
  * This exception grants neither content writes nor other settings access. */
-export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>scope==='collaborators:write'&&!independent?false:scope==="repository:archive"?["owner","admin"].includes(role):!cliScopeWrites(scope)||writable&&(cliOwnerScope(scope)?role==='owner':cliAdminScope(scope)?["owner","admin"].includes(role):role!=="reader");
+export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>scope==='collaborators:write'&&!independent?false:scope==="repository:archive"?["owner","admin"].includes(role):!cliScopeWrites(scope)||writable&&(scope==='deployments:review'?['owner','admin','writer','reader','member'].includes(role):cliOwnerScope(scope)?role==='owner':cliAdminScope(scope)?["owner","admin"].includes(role):role!=="reader");
 export interface CliCredential {id:string;label:string;trunk:string;origin:string;scopes:CliScope[];createdAt:number;expiresAt:number;usedAt:number|null}
 interface Stored extends Omit<CliCredential,"scopes"> {owner:string;scopes:string}
 const ready=new WeakMap<D1Database,Promise<unknown>>();
@@ -47,6 +48,13 @@ export async function listCliCredentials(env:Env,ownerId:string,trunk?:string) {
 }
 export async function revokeCliCredential(env:Env,ownerId:string,id:string) {
   const r=await (await database(env)).prepare("UPDATE cli_credentials SET revokedAt=? WHERE id=? AND ownerId=? AND revokedAt IS NULL").bind(Date.now(),id,ownerId).run();return (r.meta.changes??0)>0;
+}
+/** Final delegated writers re-read the current grant after membership lookups.
+ * The ID is attribution, never an externally accepted bearer credential. */
+export async function currentCliGrant(env:Env,id:string,ownerId:string,trunk:string,origin:string,scope:CliScope) {
+  const d=await database(env),row=await d.prepare('SELECT scopes,expiresAt FROM cli_credentials WHERE id=? AND ownerId=? AND trunk=? AND origin=? AND revokedAt IS NULL AND expiresAt>?').bind(id,ownerId,trunk,origin,Date.now()).first<{scopes:string;expiresAt:number}>();
+  if(!row)return null;
+  try{const scopes=JSON.parse(row.scopes);return Array.isArray(scopes)&&scopes.includes('read')&&scopes.includes(scope)?{expiresAt:row.expiresAt}:null;}catch{return null;}
 }
 export async function cliCredential(env:Env,request:Request) {
   const token=/^Bearer (nhc_[a-f0-9]{64})$/i.exec(request.headers.get("authorization")??"")?.[1];

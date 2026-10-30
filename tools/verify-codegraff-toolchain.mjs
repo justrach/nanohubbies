@@ -32,7 +32,7 @@ const gates=[
   ['access','bun run --filter @swarm/api test:access'],
   ['hosting','bun run --filter @swarm/api test:hosting'],
   ['fixtures','bun run test:hosted-fixture && bun run test:hosted-recovery'],
-  ['build','bun run --filter @swarm/web build'],
+  ['build','bun run --filter @swarm/web build && bun run --filter @swarm/api test:cli-deployment-distribution'],
   ['check','bun run check'],
 ];
 const script=`test "$(git rev-parse HEAD)" = '${head}'

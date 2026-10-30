@@ -1,7 +1,9 @@
 import {creationBody} from '../abuse';
 import {sameOrigin,canWrite,type TeamAccess} from '../team/access';
 import type {User} from '../auth';
+import {cliDeploymentRoute} from './cli';
 export async function deploymentRequestRoute(env:Env,request:Request,trunk:string,id:string|undefined,operation:string|undefined,user:User|null,access:TeamAccess|null) {
+ if(user?.cli)return cliDeploymentRoute(env,request,trunk,id,operation,user,access);
  if(!user||request.headers.has('authorization'))return Response.json({error:'A signed-in repository member is required'},{status:403});
  const seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk)),url=new URL(request.url),headers={'Cache-Control':'private, no-store'};
  try {

@@ -11,6 +11,8 @@ export const cliPermissions=[
   ["repository:default","Change the default branch (repository admins only)"],
   ['repository:merge','Change allowed merge methods and the default (repository admins only)'],
   ["environments:write","Manage deployment environments, reviewers and source restrictions (repository admins only)"],
+  ['deployments:write','Request deployments (repository writers; environment gates still apply)'],
+  ['deployments:review','Approve or reject deployment requests as your account (configured reviewers only)'],
   ["runners:write","Register runners and issue or revoke their CI credentials (repository owner only)"],
   ['collaborators:write','Invite, remove or change collaborators (admins; only owners manage admins)'],
 ] as const;
