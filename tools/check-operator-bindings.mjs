@@ -14,6 +14,8 @@ const operators = [
   "tools/hosted-recovery-fixture/phase.mjs",
   "tools/hosted-recovery-fixture/phase-deploy.mjs",
   "tools/hosted-recovery-fixture/phase-assets.mjs",
+  "tools/meld-staging-adapter.mjs",
+  "tools/meld-pipeline-state.mjs",
 ];
 // --noResolve does not follow @types/node's reference graph. Supply the Node
 // declarations used by these operators explicitly, without traversing app code.
