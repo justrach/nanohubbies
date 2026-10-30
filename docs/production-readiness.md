@@ -1,4 +1,4 @@
-# Production readiness — 2026-10-30 (JST)
+# Production readiness — 2026-10-31 (SGT)
 
 **Current recommendation: a controlled private beta with backup mirrors.**
 The engineering estimate is roughly **70% toward the first production release**.
@@ -16,7 +16,7 @@ pending the original migration and CI/staging acceptance.
 | Staging and application cutover      | Exact candidate/version/approval/acceptance contracts and negative tests; committed Meld runbook/controller located through existing Git access, healthy controller and matching current staging version in [read-only discovery](evidence/meld-source-discovery.json)                                                                                                                                    | Live intended-application staging job from Nanohub source, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted                                                 |
 | Recovery | [Complete isolated changing-Git/Vault rollback and return](evidence/hosted-changing-git-recovery-validation.md): two distinct Git checkpoints, corrupt-backup rejection, native DO/D1 plus retained R2 recovery, exact metadata/locks, older-authority hazard and explicit reconciliation, final newer clone/fsck, current provider value, revoked access after restart and no idle Vault alarm; independent cleanup and unchanged production versions | Complete the [production recovery workflow](recovery.md#hosted-recovery-release-gate): retained long-term backups, production inventory/isolation/draining, independent latest-authority acquisition, namespace-loss recovery, resumption/reopening and measured production RPO/RTO |
 | Traffic and operations               | Atomic-write/race tests, runner pool concurrency and existing request/resource bounds                                                                                                                                                                                                                                                                                                                     | Sustained load against an agreed traffic target, abuse/security acceptance and operational monitoring/recovery evidence                                                                                                                                                       |
-| Source and releases                  | Changes are committed locally and selected builds are deployed; source has not been pushed to GitHub                                                                                                                                                                                                                                                                                                      | Source review/push and an automated repeatable release/rollback workflow                                                                                                                                                                                                      |
+| Source and releases                  | Source is [published on the feature branch](evidence/source-publication-validation.md); selected builds are deployed. GitHub checks await runner registration                                                                                                                                                                                                                                                                                                      | Source review, compatible Codegraff runner registration and an automated repeatable release/rollback workflow                                                                                                                                                                                                      |
 
 The [hosted migration check](evidence/hosted-import-validation.md) exposed a
 publication timeout after uploading the full actual graph. A bounded pack-cache
@@ -88,7 +88,8 @@ passes 348 API unit cases, 272 repository cases with the full Worker/Git chain,
 59 CLI cases, pinned tsrs and the Next/OpenNext production build. Latest reader
 permission hints are additionally verified by source and packaged Worker tests.
 The [release acceptance](evidence/merge-settings-release-validation.md) adds
-frozen Linux and hosted verification. Source remains unpushed. A fresh
+frozen Linux and hosted verification. Source was unpushed at that release; the
+[feature branch is now published](evidence/source-publication-validation.md). A fresh
 2026-10-29 read of the configured Nanohub Actions key still returns 403 for
 missing sandbox scope, with zero claims or allocations. The operational release
 requirements above remain open.

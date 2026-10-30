@@ -140,8 +140,9 @@ returns retryable 503 without falling back to another strategy. Lost responses
 never trigger an automatic mutation retry. See [behavioral validation](evidence/merge-methods-validation.md)
 and [frozen Linux, deployment and installer evidence](evidence/merge-methods-release-validation.md).
 Production checks preserve the canary's refs and settings; generated-merge
-mutations are verified in local/frozen Linux Workers. Source has not been pushed
-to GitHub.
+mutations are verified in local/frozen Linux Workers. The source feature branch
+is now [published on GitHub](evidence/source-publication-validation.md); its
+GitHub workflow remains queued pending Codegraff runner registration.
 
 ## Repository-wide archive
 
