@@ -1,4 +1,5 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
+import {VaultAdministration,type VaultEdit,type VaultAuthority} from './administration';
 import {
   bindingFor,
   references,
@@ -30,6 +31,9 @@ export class VaultService extends WorkerEntrypoint<VaultEnv> {
   list(s: Scope) {
     return this.#store(s).list(s);
   }
+  administer(s:Scope,input:VaultEdit,authority:VaultAuthority){
+    return this.#store(s).administer(s,input,authority);
+  }
   put(s: Scope, input: SecretInput) {
     return this.#store(s).put(s, input);
   }
@@ -45,12 +49,15 @@ export class VaultService extends WorkerEntrypoint<VaultEnv> {
   principal(s: Scope, token: string) {
     return this.#store(s).principal(s, token);
   }
+  principalInfo(s:Scope,token:string){return this.#store(s).principalInfo(s,token);}
   redeem(s: Scope, token: string) {
     return this.#store(s).redeem(s, token);
   }
+  redeemAuthorized(s:Scope,token:string,authority:VaultAuthority){return this.#store(s).redeemAuthorized(s,token,authority);}
 }
 export class Vault extends DurableObject<VaultEnv> {
   #sql: SqlStorage;
+  #administration:VaultAdministration;
   constructor(ctx: DurableObjectState, env: VaultEnv) {
     super(ctx, env);
     this.#sql = ctx.storage.sql;
@@ -65,6 +72,7 @@ export class Vault extends DurableObject<VaultEnv> {
     this.#sql.exec(
       "CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,actor TEXT,action TEXT,target TEXT,at INTEGER)",
     );
+    this.#administration=new VaultAdministration(this.#sql);
   }
   #audit(s: Scope, action: string, target: string) {
     this.#sql.exec(
@@ -76,6 +84,9 @@ export class Vault extends DurableObject<VaultEnv> {
     );
   }
   async #schedule() {
+    // Expired recovery metadata is pruned opportunistically. Tombstones do
+    // not schedule alarms or keep the runtime active after all grants end.
+    this.#administration.prune();
     this.#sql.exec(
       "DELETE FROM managed_grants WHERE expires <= ? OR uses >= 100",
       Date.now(),
@@ -103,6 +114,8 @@ export class Vault extends DurableObject<VaultEnv> {
           .toArray()[0].n
       : 0;
     return {
+      ...this.#administration.configuration(),
+      serverTime:Date.now(),
       provider: "cloudflare-secrets-store",
       runtime: "on-demand",
       valueCustody: "cloudflare",
@@ -137,9 +150,19 @@ export class Vault extends DurableObject<VaultEnv> {
           action: string;
           target: string;
           at: number;
-        }>("SELECT actor,action,target,at FROM audit ORDER BY id DESC LIMIT 50")
+          credentialId:string|null;
+        }>("SELECT actor,action,target,at,credential_id AS credentialId FROM audit ORDER BY id DESC LIMIT 50")
         .toArray(),
     };
+  }
+  async administer(s:Scope,input:VaultEdit,authority:VaultAuthority){
+    scopeKey(s);
+    if(typeof authority?.authorize!=='function')throw Error('Private vault authorization is required');
+    const expiresAt=await authority.authorize(),now=Date.now();
+    if(!Number.isSafeInteger(expiresAt)||expiresAt<=now||expiresAt>now+30000)throw Error('Vault authorization expired or unavailable');
+    const result=this.ctx.storage.transactionSync(()=>this.#administration.edit(s,input,(name,binding)=>{bindingFor(this.env,s,name,binding);},now));
+    await this.#schedule();
+    return result;
   }
   put(s: Scope, input: SecretInput) {
     if (
@@ -255,7 +278,7 @@ export class Vault extends DurableObject<VaultEnv> {
   }
   async #grant(s: Scope, token: string) {
     scopeKey(s);
-    if (typeof token !== "string" || !/^nhv_[a-f0-9]{64}$/.test(token))
+    if (typeof token !== "string" || !/^nh(?:v|w)_[a-f0-9]{64}$/.test(token))
       throw Error("Workload grant unavailable");
     const g = this.#sql
       .exec<{
@@ -268,16 +291,32 @@ export class Vault extends DurableObject<VaultEnv> {
       .toArray()[0];
     if (!g || g.expires <= Date.now() || g.uses >= 100)
       throw Error("Workload grant unavailable");
+    if(token.startsWith('nhw_')&&!this.#sql.exec('SELECT 1 FROM cli_grant_receipts WHERE id=?',g.id).toArray().length)throw Error('Workload grant delegation cannot be verified');
     return g;
   }
   async principal(s: Scope, token: string) {
-    return (await this.#grant(s, token)).actor;
+    const grant=await this.#grant(s,token);
+    if(this.#sql.exec('SELECT 1 FROM cli_grant_receipts WHERE id=?',grant.id).toArray().length)throw Error('CLI workload grants require delegation-aware redemption');
+    return grant.actor;
+  }
+  async principalInfo(s:Scope,token:string){
+    const grant=await this.#grant(s,token),receipt=this.#sql.exec<{actor:string;names:string;expires:number;credential_id:string;hash:string}>('SELECT actor,names,expires,credential_id,hash FROM cli_grant_receipts WHERE id=?',grant.id).toArray()[0];
+    if(receipt&&(receipt.actor!==grant.actor||receipt.names!==grant.names||receipt.expires!==grant.expires||receipt.hash!==await digest(token)))throw Error('Workload grant delegation cannot be verified');
+    return {actor:grant.actor,credentialId:receipt?.credential_id??null};
   }
   async redeem(s: Scope, token: string) {
+    return this.#redeem(s,token);
+  }
+  async redeemAuthorized(s:Scope,token:string,authority:VaultAuthority){
+    if(typeof authority?.authorize!=='function')throw Error('Private workload authorization is required');
+    return this.#redeem(s,token,authority);
+  }
+  async #redeem(s:Scope,token:string,authority?:VaultAuthority){
     const grant = await this.#grant(s, token);
+    if(!authority&&this.#sql.exec('SELECT 1 FROM cli_grant_receipts WHERE id=?',grant.id).toArray().length)throw Error('CLI workload grants require delegation-aware redemption');
     // Compare and consume in one transaction; parallel requests cannot exceed
     // the use limit while Cloudflare resolves an asynchronous binding.
-    this.ctx.storage.transactionSync(() => {
+    const reservedUse=this.ctx.storage.transactionSync(() => {
       const row = this.#sql
         .exec<{
           uses: number;
@@ -290,19 +329,29 @@ export class Vault extends DurableObject<VaultEnv> {
         "UPDATE managed_grants SET uses = uses + 1 WHERE id = ?",
         grant.id,
       );
+      return row.uses+1;
     });
     const values: Record<string, string> = {};
+    const observed:{name:string;binding:string;version:number}[]=[];
     for (const name of JSON.parse(grant.names) as string[]) {
       const row = this.#sql
         .exec<{
           binding: string;
-        }>("SELECT binding FROM secret_references WHERE name = ?", name)
+          version:number;
+        }>("SELECT binding,version FROM secret_references WHERE name = ?", name)
         .toArray()[0];
       if (!row) throw Error("Secret reference unavailable");
+      observed.push({name,...row});
       values[name] = await bindingFor(this.env, s, name, row.binding).get();
       if (typeof values[name] !== "string")
         throw Error("Cloudflare secret unavailable");
     }
+    if(authority){const expiresAt=await authority.authorize(),now=Date.now();if(!Number.isSafeInteger(expiresAt)||expiresAt<=now||expiresAt>now+30000)throw Error('Workload authorization expired or unavailable');}
+    this.ctx.storage.transactionSync(()=>{
+      const current=this.#sql.exec<{actor:string;names:string;expires:number;uses:number}>('SELECT actor,names,expires,uses FROM managed_grants WHERE id=?',grant.id).toArray()[0];
+      if(!current||current.actor!==grant.actor||current.names!==grant.names||current.expires!==grant.expires||current.expires<=Date.now()||current.uses<reservedUse||current.uses>100)throw Error('Workload grant changed before delivery');
+      for(const ref of observed){const current=this.#sql.exec<{binding:string;version:number}>('SELECT binding,version FROM secret_references WHERE name=?',ref.name).toArray()[0];if(!current||current.binding!==ref.binding||current.version!==ref.version)throw Error('Secret reference changed before delivery');}
+    });
     this.#audit({ ...s, actor: `workload:${grant.id}` }, "read", grant.id);
     await this.#schedule();
     return { values };

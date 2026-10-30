@@ -51,6 +51,12 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   access role ACCOUNT --role ROLE          Change access with --revision N
   access remove ACCOUNT --confirm ACCOUNT  Remove access with --revision N
   access cancel ID --confirm ID             Cancel a pending invitation with --revision N
+  secret list [--environment NAME]          Inspect Cloudflare reference and grant metadata
+  secret connect NAME --binding BINDING    Connect a reference with --revision N
+  secret disconnect NAME --confirm NAME    Disconnect with --revision N; Cloudflare retains values
+  secret grant NAMES --token-file FILE     Issue a private workload grant with --revision N [--ttl 60..3600]
+  secret recover --token-file FILE         Recover the same grant without extending or reviving it
+  secret revoke ID --confirm ID            Revoke one workload grant
   env list / env view ID / env export ID    Inspect deployment environments (admin permission)
   env create --file FILE                    Create from {revision,configuration}
   env update ID --file FILE                 Replace the complete exported environment
@@ -98,6 +104,9 @@ repository:archive permission; it remains available to admins while archived.
 Default branch edits require repository:default and an active repository.
 Merge-method edits require repository:merge, your current admin role and the
 revision from repo merge-settings. Branch protections still apply to every merge.
+Secret metadata requires secrets:read and your current admin role. Reference edits use
+secrets:write; workload grants use secrets:grant. Values stay in Cloudflare. Grant
+credentials are saved in owner-only files outside Git and stop with the issuing CLI credential.
 Environment administration requires environments:write and your current admin role.
 Deployment requests require deployments:write and current writer access.
 Deployment reviews require deployments:review and current configured reviewer access;
@@ -134,7 +143,7 @@ export function address(value,origin,trunk=false) {
  return {repository:trunk?null:value,trunk:trunk?value:null,origin,gitUrl:`${origin}/git/${value}.git`,url:trunk?`${origin}/t/${value}`:`${origin}/${value}`};
 }
 function options(args) {
- const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','invite-file','role','edit','remove','method','message','allow-merge-methods','default-merge-method','environment','before','limit'].map(k=>['--'+k,k]))};
+ const values={},positionals=[];const names={'-R':'repo','--repo':'repo','--host':'host','--trunk':'trunk','--credential-helper':'helper',...Object.fromEntries(['title','body','head','base','verdict','path','side','line','start-line','reply-to','thread','scopes','days','label','file','revision','confirm','default-branch','token-file','invite-file','role','edit','remove','method','message','allow-merge-methods','default-merge-method','environment','before','limit','binding','ttl'].map(k=>['--'+k,k]))};
  for(let i=0;i<args.length;i++){
   if(args[i]==='--'){positionals.push(...args.slice(i+1));break;}
   const arg=args[i],equal=arg.indexOf('='),flag=equal>=0?arg.slice(0,equal):arg;if(names[flag]){if(values[names[flag]]!==undefined||equal<0&&(!args[i+1]||args[i+1].startsWith('-')))throw Error(`Provide one value for ${flag}`);values[names[flag]]=equal>=0?arg.slice(equal+1):args[++i];}
@@ -147,6 +156,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  if(!args.length||args[0]==='--help'||args[0]==='help'){write(help);return;}
  if(args[0]==='--version'){write('nh '+cliPackage.version);return;}
  const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo merge-settings','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
+ if(group==='secret')for(const verb of ['list','connect','disconnect','grant','recover','revoke'])allowed.add('secret '+verb);
  if(group==='deployment')for(const verb of ['list','view','request','approve','reject'])allowed.add('deployment '+verb);
  if(group==='access')for(const verb of ['list','invite','recover','role','remove','cancel'])allowed.add('access '+verb);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
@@ -167,12 +177,14 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  const pendingMode=group==='pr'&&(action==='draft'||action==='comment'&&opts.draft||action==='review'&&opts.pending);
  if(opts.draft&&!(group==='pr'&&action==='comment')||opts.pending&&!(group==='pr'&&action==='review')||[opts.edit,opts.remove,opts.discard].some(v=>v!==undefined)&&!(group==='pr'&&action==='draft'))throw Error('Draft options only apply to pr draft, pr comment --draft or pr review --pending');
  if(pendingMode&&[opts['reply-to'],opts.thread,opts.reopen].some(v=>v!==undefined))throw Error('Pending reviews accept root hunk comments; replies and resolution use published threads');
- if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)||group==='runner'&&action==='revoke'||group==='access'&&opts.file===undefined||group==='deployment'&&['approve','reject'].includes(action)&&opts.file===undefined&&opts.confirm===undefined))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration, deployment reviews or pending review revisions');
+ if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)||group==='runner'&&action==='revoke'||group==='access'&&opts.file===undefined||group==='deployment'&&['approve','reject'].includes(action)&&opts.file===undefined&&opts.confirm===undefined||group==='secret'&&opts.file===undefined))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration, deployment reviews or pending review revisions');
  if([opts['invite-file'],opts.role].some(value=>value!==undefined)&&group!=='access')throw Error('--invite-file and --role only apply to access commands');
  if(group==='access'&&(opts.web||opts.print||opts.file!==undefined))throw Error('Access administration uses native commands and --invite-file');
- if(opts['token-file']!==undefined&&!(group==='runner'&&['create','recover'].includes(action)))throw Error('--token-file only applies to runner create or recover');
+ if(opts['token-file']!==undefined&&!(group==='runner'&&['create','recover'].includes(action)||group==='secret'&&['grant','recover'].includes(action)))throw Error('--token-file only applies to runner create/recover or secret grant/recover');
  if(group==='runner'&&(opts.web||opts.print||opts.file!==undefined||opts.revision!==undefined))throw Error('Runner administration uses native runner commands and --token-file');
- if(opts.environment!==undefined&&!(group==='deployment'&&action==='request')||[opts.before,opts.limit].some(value=>value!==undefined)&&!(group==='deployment'&&action==='list'))throw Error('--environment, --before and --limit only apply to their deployment commands');
+ if(opts.environment!==undefined&&!(group==='deployment'&&action==='request'||group==='secret')||[opts.before,opts.limit].some(value=>value!==undefined)&&!(group==='deployment'&&action==='list'))throw Error('--environment applies to deployment request or secret commands; --before and --limit apply to deployment list');
+ if([opts.binding,opts.ttl].some(value=>value!==undefined)&&group!=='secret')throw Error('--binding and --ttl only apply to secret commands');
+ if(group==='secret'&&(opts.web||opts.print||opts.file!==undefined))throw Error('Secret administration uses native commands and a private --token-file');
  if(group==='env'&&(opts.web||opts.print))throw Error('Environment commands use the native API; use rules view for browser settings');
  if(group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)&&(opts.web||opts.print))throw Error('Repository administration uses the native API; use repo view to open the repository');
  if(opts['default-branch']!==undefined&&!(group==='repo'&&action==='edit'))throw Error('--default-branch only applies to repo edit');
@@ -208,7 +220,7 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
   output({...target,gitConfigured:true,message:`Git now uses the scoped CLI credential in this checkout.${environment.NANOHUB_API_TOKEN?' Keep NANOHUB_API_TOKEN available for Git operations.':''}`});return;
  }
  if(group==='auth'&&action==='login'&&!opts['with-token']&&!opts['with-api-token']&&!opts.web&&!opts.print&&!opts.git)return browserLogin({target,opts,pos,git,execute,write,progress,platform,cwd,fetcher,environment,wait,now});
- if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||['ruleset','env','runner','access','deployment'].includes(group)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment,cwd});
+ if(group==='auth'&&(opts['with-api-token']||!opts.git&&action!=='login')||group==='pr'&&!opts.web&&!opts.print||group==='run'&&!opts.web&&!opts.print||group==='rules'&&action!=='view'||['ruleset','env','runner','access','deployment','secret'].includes(group)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action))return nativeCommand({group,action,pos,opts,target,git,readToken,readProtectionFile:path=>readProtectionFile(resolve(cwd,path)),write,fetcher,environment,cwd});
  if(group==='repo'&&action==='clone'){
   if(pos.length>1)throw Error('Use at most one destination directory');const directory=pos[0]??basename(target.repository??target.trunk);if(!directory||directory.startsWith('-'))throw Error('Use a destination directory that does not start with a dash');
   let selectedHelper=helper,cli=false;

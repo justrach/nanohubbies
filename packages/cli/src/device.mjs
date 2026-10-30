@@ -1,10 +1,11 @@
 import {apiRequest,nativeCommand} from './api.mjs';
 const scopes=['read','contents:read','contents:write','pulls:write','reviews:write','pulls:merge'];
-const availableScopes=[...scopes,'protections:write','rulesets:write','repository:archive','repository:default','repository:merge','environments:write','runners:write','collaborators:write','deployments:write','deployments:review'];
+const availableScopes=[...scopes,'protections:write','rulesets:write','repository:archive','repository:default','repository:merge','environments:write','runners:write','collaborators:write','deployments:write','deployments:review','secrets:read','secrets:write','secrets:grant'];
 export async function browserLogin({target,opts,pos,git,execute,write,progress,platform,cwd,fetcher,environment,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),now=Date.now}) {
  if(pos.length)throw Error('Unexpected positional argument');
  const permissions=opts.scopes?[...new Set(['read',...opts.scopes.split(',')])]:[...scopes],days=Number(opts.days??7),label=opts.label??'Nanohub CLI';
  if(permissions.includes('contents:write')&&!permissions.includes('contents:read'))permissions.push('contents:read');
+ if(permissions.some(scope=>scope==='secrets:write'||scope==='secrets:grant')&&!permissions.includes('secrets:read'))permissions.push('secrets:read');
  if(permissions.some(s=>!availableScopes.includes(s))||!Number.isInteger(days)||days<1||days>30||!label.trim()||label.length>64||/[\x00-\x1f\x7f]/.test(label))throw Error('Choose valid --scopes, a --label up to 64 characters, and --days between 1 and 30');
  const request=(path,body)=>fetcher(target.origin+path,{method:'POST',redirect:'error',credentials:'omit',headers:{'Content-Type':'application/json','User-Agent':'nanohub-cli/0.4'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
  let response,data;try{response=await request('/api/cli/device',{...(target.repository?{repository:target.repository}:{trunk:target.trunk}),scopes:permissions,days,label,client_origin:target.origin});data=await response.json();}catch{throw Error('Could not start CLI authorization. Check --host and network access.');}

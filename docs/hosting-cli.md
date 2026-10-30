@@ -823,3 +823,14 @@ as an alternative, but cannot be combined with a file for one target. Files are
 loaded at pool startup; restart the controller when intentionally switching
 registrations. Candidate bundles, mounts and environment receive neither file
 nor control credential.
+
+## Secret references and workload grants
+
+Candidate 0.4.18 adds native `secret list`, `secret connect`, `secret disconnect`,
+`secret grant`, `secret recover` and `secret revoke`. All require explicit
+current-admin secret permissions; existing credentials gain no capabilities.
+Values remain in Cloudflare. Grant credentials are saved only to owner-only
+files outside Git, are bounded by their parent CLI credential and cannot be
+renewed or resurrected by recovery. See the [command contract](cli-secrets.md)
+and [local validation](evidence/cli-secrets-validation.md). Public rollout is
+pending.

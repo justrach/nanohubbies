@@ -263,7 +263,8 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext,
   }
   // Account token revocation and normal Git read-token creation remain available.
   // Repository deletion keeps its separate owner-only authorization below.
-  if(!["GET","HEAD"].includes(method)&&!(action==="git-tokens"||method==="DELETE"&&(!action||action==="ci")))await hub.assertRepositoryWritable(trunk);
+  const cliGrantRevocation=!!user?.cli&&method==='DELETE'&&action==='secrets'&&rawAgent==='grants'&&/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(agentAction??'');
+  if(!["GET","HEAD"].includes(method)&&!cliGrantRevocation&&!(action==="git-tokens"||method==="DELETE"&&(!action||action==="ci")))await hub.assertRepositoryWritable(trunk);
   if (!canWrite(teamAccess) && !["GET","HEAD"].includes(method) && !(method === "POST" && (action === "deployment-requests"&&!!rawAgent&&agentAction==="reviews" || action === "git-tokens" || action === "agents" && (!rawAgent || agentAction === "token")))) return json({error:"Repository read access does not permit writes"},403);
   if (action === "git-tokens") {
     if (!user || request.headers.has("authorization")) return json({error:"Sign in to manage your Git tokens"},403);

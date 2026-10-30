@@ -3,16 +3,17 @@ import type { User } from "../auth";
 import {
   canAdmin,
   sameOrigin,
-  ownerEvidence,
   type TeamAccess,
 } from "../team/access";
 import type { VaultService, Scope } from "../../../vault/src/index";
+import {cliSecrets} from './cli';
+import {authorizeWorkload,WorkloadAuthority} from './workload-authority';
 const client = (env: Env) =>
   (
     env as unknown as {
       VAULT?: Pick<
         VaultService,
-        "list" | "put" | "remove" | "grant" | "revoke" | "principal" | "redeem"
+        "list" | "put" | "remove" | "grant" | "revoke" | "principal" | "principalInfo" | "redeem" | "redeemAuthorized"
       >;
     }
   ).VAULT;
@@ -28,6 +29,8 @@ export async function secretRoute(
   user: User | null,
   access: TeamAccess | null,
 ) {
+  if(user?.cli)return cliSecrets(env,request,trunk,user,access);
+  if(!/\/secrets\/?$/.test(new URL(request.url).pathname))return Response.json({error:'Secret operation not found'},{status:404});
   if (!user || request.headers.has("authorization") || !canAdmin(access))
     return Response.json(
       {
@@ -99,7 +102,7 @@ export async function workloadSecrets(
 ) {
   const token =
     request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
-  if (request.method !== "POST" || !/^nhv_[a-f0-9]{64}$/.test(token))
+  if (request.method !== "POST" || !/^nh(?:v|w)_[a-f0-9]{64}$/.test(token))
     return Response.json(
       { error: "A workload grant is required" },
       { status: 403 },
@@ -111,37 +114,14 @@ export async function workloadSecrets(
       new URL(request.url).searchParams.get("environment") ?? "staging";
     const scope = { repository: trunk, environment, actor: "workload" };
     await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
-    const actor = await vault.principal(scope, token);
-    const hub = env.HUB.get(env.HUB.idFromName("hub")),
-      binding = await hub.team(trunk);
-    if (!binding || !(await hub.find(trunk)))
-      throw new Error("Repository unavailable");
-    if (binding.kind === "owner") {
-      if (
-        !["owner", "admin"].includes(
-          (await hub.collaboratorRole(trunk, actor)) ?? "",
-        )
-      )
-        throw new Error("Issuer no longer authorized");
-    } else {
-      const evidence = await ownerEvidence(
-        env,
-        new URL(request.url).origin,
-        actor,
-        [binding.roomId],
-      );
-      if (
-        evidence.issuer !== binding.issuer ||
-        !evidence.rooms.some(
-          (r) => r.id === binding.roomId && r.role === "owner",
-        )
-      )
-        throw new Error("Issuer no longer authorized");
-    }
-    await hub.assertRepositoryWritable(trunk);
-    const redeemed=await vault.redeem(scope, token);
-    await hub.assertRepositoryWritable(trunk);
-    return Response.json(redeemed);
+    const principal=await vault.principalInfo(scope,token);
+    try{
+      const actor=principal.actor,credentialId=principal.credentialId,origin=new URL(request.url).origin;
+      const check=()=>authorizeWorkload(env,trunk,actor,origin,credentialId);
+      await check();
+      const redeemed=await vault.redeemAuthorized(scope,token,new WorkloadAuthority(check));
+      try{return Response.json(redeemed,{headers:{'Cache-Control':'private, no-store',Vary:'Authorization'}});}finally{(redeemed as unknown as {[Symbol.dispose]?:()=>void})[Symbol.dispose]?.();}
+    }finally{(principal as unknown as {[Symbol.dispose]?:()=>void})[Symbol.dispose]?.();}
   } catch {
     return Response.json(
       { error: "Workload grant unavailable" },

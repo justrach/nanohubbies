@@ -18,7 +18,7 @@ const { outputFiles } = await build({
       plugin.onResolve({ filter: /^\.\/better-auth$/ }, () => ({ path: "auth", namespace: "fixture" }));
       plugin.onLoad({ filter: /.*/, namespace: "fixture" }, ({ path }) => ({
         loader: "js",
-        contents: path === "workers" ? "export class DurableObject {}" : `
+        contents: path === "workers" ? "export class DurableObject {} export class RpcTarget {}" : `
           export const codegraffReady = () => true;
           export const sessionUser = async () => null;
           export async function codegraffAuth() {

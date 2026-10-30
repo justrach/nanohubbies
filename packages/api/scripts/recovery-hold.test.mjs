@@ -9,7 +9,7 @@ import { recoveryHoldResponse } from "../src/recovery.ts";
 
 const directory = await mkdtemp(join(tmpdir(), "nanohub-hold-unit-"));
 after(() => rm(directory, { recursive: true, force: true }));
-const paths = ["/", "/dashboard", "/t/private/branches", "/owner/private", "/cli/authorize", "/nh/latest.json", "/nh/releases/0.4.9/nh.mjs", "/_next/static/app.js", "/api/auth/callback/codegraff", "/api/agent-help", "/api/trunks/private/live", "/api/trunks/private/agents/builder/mcp", "/api/cli/trunks/private/protection", "/api/trunks/private/ci/claim", "/api/trunks/private/secrets/read", "/git/owner/private.git/git-receive-pack", "/git/private.git/info/refs"];
+const paths = ["/", "/dashboard", "/t/private/branches", "/owner/private", "/cli/authorize", "/nh/latest.json", "/nh/releases/0.4.9/nh.mjs", "/_next/static/app.js", "/api/auth/callback/codegraff", "/api/agent-help", "/api/trunks/private/live", "/api/trunks/private/agents/builder/mcp", "/api/cli/trunks/private/protection", "/api/cli/trunks/private/secrets", "/api/cli/trunks/private/secrets/grants", "/api/trunks/private/ci/claim", "/api/trunks/private/secrets/read", "/git/owner/private.git/git-receive-pack", "/git/private.git/info/refs"];
 
 test("only omitted or explicit 0 operator configuration opens traffic; hold is private, retryable and bodyless for HEAD", async () => {
   for (const value of [undefined, "0"])
@@ -33,7 +33,7 @@ test("the actual API handler holds every route before authentication, throttle o
   const file = join(directory, "api.mjs");
   await build({ entryPoints: [fileURLToPath(new URL("../src/index.ts", import.meta.url))], bundle: true, platform: "node", format: "esm", outfile: file, plugins: [{ name: "cloudflare-types", setup(plugin) {
     plugin.onResolve({ filter: /^cloudflare:workers$/ }, () => ({ path: "workers", namespace: "fixture" }));
-    plugin.onLoad({ filter: /.*/, namespace: "fixture" }, () => ({ contents: "export class DurableObject {}", loader: "js" }));
+    plugin.onLoad({ filter: /.*/, namespace: "fixture" }, () => ({ contents: "export class DurableObject {} export class RpcTarget {}", loader: "js" }));
   } }] });
   const { default: api } = await import(pathToFileURL(file).href);
   const env = new Proxy({}, { get(_target, name) {

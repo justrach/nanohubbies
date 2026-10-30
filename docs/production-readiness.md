@@ -151,6 +151,13 @@ Hosted dispatch is not activated, and the existing Actions key-scope blocker
 remains. Account-specific compute/pricing tiers, spend limits, hosted
 activation and production capacity/load acceptance remain open.
 
+Candidate [CLI 0.4.18 secret administration](evidence/cli-secrets-validation.md)
+passes local API/Vault callback, source/bundled command and current role/token
+acceptance, 407 API unit and 76 CLI tests. It adds three optional admin scopes
+and private parent-bound workload grants while retaining Cloudflare value
+custody and idle behavior. Frozen Linux and Vault/API/public CLI rollout remain
+pending; production still publishes 0.4.17.
+
 Published CLI 0.4.16 also adds [collaborator administration acceptance](evidence/cli-collaborators-validation.md):
 separate explicit admin delegation, private recoverable invitations, conditional
 role/removal/cancel operations and immediate role enforcement on later requests.

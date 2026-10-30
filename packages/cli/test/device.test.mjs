@@ -59,3 +59,7 @@ test('collaborator administration is excluded from default login and must be exp
  const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);expect(JSON.parse(f.requests[0].options.body).scopes).not.toContain('collaborators:write');
  const g=fixture();await run(['auth','login','-R','team/project','--scopes','collaborators:write','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','collaborators:write']);
 });
+test('secret capabilities are excluded from default login and grant requests explicitly include metadata access',async()=>{
+ const f=fixture();await run(['auth','login','-R','team/project','--no-browser'],f.io);const defaults=JSON.parse(f.requests[0].options.body).scopes;for(const scope of ['secrets:read','secrets:write','secrets:grant'])expect(defaults).not.toContain(scope);
+ const g=fixture();await run(['auth','login','-R','team/project','--scopes','secrets:grant','--no-browser'],g.io);expect(JSON.parse(g.requests[0].options.body).scopes).toEqual(['read','secrets:grant','secrets:read']);
+});

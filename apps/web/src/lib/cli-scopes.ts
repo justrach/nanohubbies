@@ -15,13 +15,16 @@ export const cliPermissions=[
   ['deployments:review','Approve or reject deployment requests as your account (configured reviewers only)'],
   ["runners:write","Register runners and issue or revoke their CI credentials (repository owner only)"],
   ['collaborators:write','Invite, remove or change collaborators (admins; only owners manage admins)'],
+  ['secrets:read','Read Cloudflare secret reference, grant and audit metadata (admins; no values)'],
+  ['secrets:write','Connect or disconnect Cloudflare secret references (admins; saved values are retained)'],
+  ['secrets:grant','Issue or revoke workload grants (admins; grants can read selected values and stop when this credential expires or is revoked)'],
 ] as const;
 export const cliPermissionLabels:Record<string,string>=Object.fromEntries(cliPermissions);
-export const cliReadScope=(scope:string)=>scope==="read"||scope==="contents:read";
-export const cliArchivedScope=(scope:string)=>cliReadScope(scope)||scope==="repository:archive";
+export const cliReadScope=(scope:string)=>scope==="read"||scope==="contents:read"||scope==='secrets:read';
+export const cliArchivedScope=(scope:string)=>cliReadScope(scope)||scope==="repository:archive"||scope==='secrets:grant';
 export function toggleCliScope(previous:string[],scope:string,checked:boolean) {
   const next=new Set(previous);
-  if(checked){next.add(scope);if(scope==="contents:write")next.add("contents:read");}
-  else{next.delete(scope);if(scope==="contents:read")next.delete("contents:write");}
+  if(checked){next.add(scope);if(scope==="contents:write")next.add("contents:read");if(scope==='secrets:write'||scope==='secrets:grant')next.add('secrets:read');}
+  else{next.delete(scope);if(scope==="contents:read")next.delete("contents:write");if(scope==='secrets:read'){next.delete('secrets:write');next.delete('secrets:grant');}}
   return [...next];
 }

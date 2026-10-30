@@ -48,6 +48,13 @@ Endpoints support `?environment=staging` (default), `production` or a custom low
 
 Keep grants and returned values in a trusted deployment controller. Candidate Codegraff jobs receive no vault grants or deployment secrets automatically. This implementation does not migrate Meld's existing credentials.
 
+Candidate CLI 0.4.18 adds [explicit secret administration](cli-secrets.md):
+metadata/reference/grant permissions are separate and admin-only. Delegated
+workload grants are stored in private local files, stop with their parent CLI
+credential and cannot be resurrected by recovery. The source and bundled local
+tests pass; rollout remains pending. Existing browser grants keep their current
+independent lifecycle and Cloudflare retains values in both cases.
+
 ## Provisioning
 
 1. In the intended Cloudflare account, create a Secrets Store and create its secret with the `workers` scope, using the dashboard or Wrangler's interactive prompt. Secret values never belong in a manifest, command argument or repository. For example:

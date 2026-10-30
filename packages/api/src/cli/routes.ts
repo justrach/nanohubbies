@@ -23,7 +23,7 @@ export async function cliCredentialRoute(env:Env,request:Request,trunk:string,us
   if(!canWrite(access)&&scopes.some(cliScopeNeedsWriter))return json({error:"Repository write access is required for these permissions"},403);
   if(scopes.some(cliAdminScope)&&!canAdmin(access))return json({error:"Current repository admin access is required for these permissions"},403);
   if(scopes.some(cliOwnerScope)&&access.proof.role!=='owner')return json({error:'Current repository owner access is required for runner administration'},403);
-  if(scopes.some(scope=>cliScopeWrites(scope)&&scope!=="repository:archive"))await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
+  if(scopes.some(scope=>cliScopeWrites(scope)&&scope!=="repository:archive"&&scope!=='secrets:grant'))await env.HUB.get(env.HUB.idFromName("hub")).assertRepositoryWritable(trunk);
   return json(await makeCliCredential(env,user,trunk,new URL(request.url).origin,body.label,scopes,body.days),201);
 }
 
@@ -70,6 +70,9 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(!trunk||trunk!==info.trunk)return json({error:"Repository not found or credential scope does not match"},404);
   const method=request.method,resource=rest.join("/");let scope:CliScope|undefined;
   if(method==="GET"&&["branches","pulls"].includes(resource))scope="read";
+  if(method==='GET'&&resource==='secrets')scope='secrets:read';
+  if(['PUT','DELETE'].includes(method)&&/^secrets\/[A-Z_][A-Z0-9_]{0,127}$/.test(resource))scope='secrets:write';
+  if(method==='POST'&&resource==='secrets/grants'||method==='DELETE'&&/^secrets\/grants\/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resource))scope='secrets:grant';
   if(method==='GET'&&/^deployment-requests(?:\/[a-zA-Z0-9-]{8,80})?$/.test(resource))scope='read';
   if(method==='POST'&&resource==='deployment-requests')scope='deployments:write';
   if(method==='POST'&&/^deployment-requests\/[a-zA-Z0-9-]{8,80}\/reviews$/.test(resource))scope='deployments:review';

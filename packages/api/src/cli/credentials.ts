@@ -1,14 +1,18 @@
 import type {User} from "../auth";
 
-export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review"] as const;
+export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review","secrets:read","secrets:write","secrets:grant"] as const;
 export type CliScope=typeof cliScopes[number];
-export const cliScopeWrites=(scope:CliScope)=>scope!=="read"&&scope!=="contents:read";
+export const cliScopeWrites=(scope:CliScope)=>!["read","contents:read","secrets:read"].includes(scope);
 export const cliScopeNeedsWriter=(scope:CliScope)=>cliScopeWrites(scope)&&scope!=="deployments:review";
-export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","collaborators:write"].includes(scope);
+export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","collaborators:write","secrets:read","secrets:write","secrets:grant"].includes(scope);
 export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 /** Lifecycle control remains delegable while archived, so an admin can reopen.
  * This exception grants neither content writes nor other settings access. */
-export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>scope==='collaborators:write'&&!independent?false:scope==="repository:archive"?["owner","admin"].includes(role):!cliScopeWrites(scope)||writable&&(scope==='deployments:review'?['owner','admin','writer','reader','member'].includes(role):cliOwnerScope(scope)?role==='owner':cliAdminScope(scope)?["owner","admin"].includes(role):role!=="reader");
+export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>{
+  if(scope==='collaborators:write'&&!independent||cliAdminScope(scope)&&!["owner","admin"].includes(role)||cliOwnerScope(scope)&&role!=='owner')return false;
+  if(scope==='repository:archive'||scope==='secrets:grant')return true;
+  return !cliScopeWrites(scope)||writable&&(scope==='deployments:review'?['owner','admin','writer','reader','member'].includes(role):role!=="reader");
+};
 export interface CliCredential {id:string;label:string;trunk:string;origin:string;scopes:CliScope[];createdAt:number;expiresAt:number;usedAt:number|null}
 interface Stored extends Omit<CliCredential,"scopes"> {owner:string;scopes:string}
 const ready=new WeakMap<D1Database,Promise<unknown>>();
@@ -28,6 +32,7 @@ export const cliOwner=(user:User)=>JSON.stringify({id:user.id,name:user.name,ema
 export function requestedScopes(value:unknown):CliScope[] {
   if(!Array.isArray(value)||!value.length||value.length>cliScopes.length||new Set(value).size!==value.length||value.some(s=>!cliScopes.includes(s))||!value.includes("read"))throw Error("Choose read access and valid CLI permissions");
   if(value.includes("contents:write")&&!value.includes("contents:read"))throw Error("Git push permission also requires clone/fetch permission");
+  if(value.some(scope=>scope==='secrets:write'||scope==='secrets:grant')&&!value.includes('secrets:read'))throw Error('Secret reference and grant permissions also require secrets:read');
   return cliScopes.filter(s=>value.includes(s));
 }
 export async function makeCliCredential(env:Env,user:User,trunk:string,origin:string,label:unknown,scopes:unknown,days:unknown) {

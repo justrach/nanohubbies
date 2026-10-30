@@ -3,12 +3,22 @@ import api,{Sequencer as ProductionSequencer,Room as ProductionRoom} from "../..
 import type {ArchiveChange} from "../../src/repository/archive-types";
 import {MergeSettingsStore,type MergeSettingsInput} from '../../src/repository/merge-settings';
 import { sessionCookie, settings, type User } from "../../src/auth";
+import {RpcTarget} from 'cloudflare:workers';
+import {revokeCliCredential} from '../../src/cli/credentials';
 export * from "../../src/index";
 let dropNextRunnerAcknowledgement=false;
 let dropNextCollaboratorAcknowledgement=false;
 let dropNextDeploymentAcknowledgement=false;
 let dropImportAcknowledgement:string|null=null;
+let dropNextSecretGrantAcknowledgement=false;
+let vaultAuthorityRace:{trunk:string;actor:string;owner:string;credentialId?:string;role?:'reader'|'writer'}|null=null;
+let workloadAuthorityRace:{trunk:string;actor:string;owner:string}|null=null;
 const importPosts={objects:0,refs:0};
+class FixtureVaultAuthority extends RpcTarget {
+  calls=0;
+  constructor(private ttl:number,private denied:boolean){super();}
+  async authorize(){this.calls++;if(this.denied)throw Error('Synthetic current-authority denial');return Date.now()+this.ttl;}
+}
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
@@ -96,6 +106,43 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/vault-legacy-read'){
+      const body=await request.json<{scope:import('../../../vault/src/provider').VaultScope;token:string;method:'principal'|'redeem'}>();
+      const vault=env.VAULT as unknown as import('../../../vault/src/index').VaultService;
+      try{const value=await vault[body.method](body.scope,body.token);try{return Response.json(value);}finally{(value as unknown as {[Symbol.dispose]?:()=>void})[Symbol.dispose]?.();}}catch{return Response.json({error:'Legacy redemption denied'},{status:403});}
+    }
+    if(url.pathname==='/fixture/workload-authority-race'){workloadAuthorityRace=await request.json();return Response.json({armed:true});}
+    if(workloadAuthorityRace&&request.method==='POST'&&url.pathname==='/api/trunks/'+workloadAuthorityRace.trunk+'/secrets/read'){
+      const race=workloadAuthorityRace;workloadAuthorityRace=null;const service=env.VAULT as unknown as import('../../../vault/src/index').VaultService;
+      const vault={principalInfo:(...args:Parameters<typeof service.principalInfo>)=>service.principalInfo(...args),redeemAuthorized:async(...args:Parameters<typeof service.redeemAuthorized>)=>{
+        await env.HUB.get(env.HUB.idFromName('hub')).changeCollaborator(race.trunk,race.owner,race.actor,'writer');return service.redeemAuthorized(...args);
+      }};
+      return api.fetch(request,new Proxy(env,{get(target,key){return key==='VAULT'?vault:Reflect.get(target,key);}}));
+    }
+    if(url.pathname==='/fixture/drop-secret-grant-acknowledgement'){dropNextSecretGrantAcknowledgement=true;return Response.json({armed:true});}
+    if(url.pathname==='/fixture/vault-authority-race'){vaultAuthorityRace=await request.json();return Response.json({armed:true});}
+    if(vaultAuthorityRace&&request.method!=='GET'&&url.pathname.includes('/api/cli/trunks/'+vaultAuthorityRace.trunk+'/secrets/')){
+      const race=vaultAuthorityRace;vaultAuthorityRace=null;const service=env.VAULT as unknown as import('../../../vault/src/index').VaultService;
+      const vault={administer:async(...args:Parameters<typeof service.administer>)=>{
+        if(race.credentialId)await revokeCliCredential(env,race.actor,race.credentialId);
+        if(race.role)await env.HUB.get(env.HUB.idFromName('hub')).changeCollaborator(race.trunk,race.owner,race.actor,race.role);
+        return service.administer(...args);
+      }};
+      return api.fetch(request,new Proxy(env,{get(target,key){return key==='VAULT'?vault:Reflect.get(target,key);}}));
+    }
+    if(dropNextSecretGrantAcknowledgement&&request.method==='POST'&&/^\/api\/cli\/(trunks|repos)\/.+\/secrets\/grants$/.test(url.pathname)){
+      dropNextSecretGrantAcknowledgement=false;const response=await api.fetch(request,env);if(!response.ok)return response;await response.body?.cancel();return Response.json({error:'Synthetic lost workload grant acknowledgement'},{status:503});
+    }
+    if(url.pathname==='/fixture/vault-administration'){
+      const body=await request.json<{scope:import('../../../vault/src/provider').VaultScope;input:import('../../../vault/src/administration').VaultEdit;ttl?:number;denied?:boolean}>();
+      const authority=new FixtureVaultAuthority(body.ttl??10000,body.denied===true);
+      try{
+        const result=await (env.VAULT as unknown as import('../../../vault/src/index').VaultService).administer(body.scope,body.input,authority);
+        const response=Response.json({result,authorityCalls:authority.calls});
+        (result as unknown as {[Symbol.dispose]?:()=>void})[Symbol.dispose]?.();
+        return response;
+      }catch(error){return Response.json({error:(error as Error).message,authorityCalls:authority.calls},{status:400});}
+    }
     if(url.pathname==='/fixture/import-transport'){
       if(request.method==='POST'){const body=await request.json<{drop:string}>();dropImportAcknowledgement=body.drop;}
       return Response.json(importPosts);

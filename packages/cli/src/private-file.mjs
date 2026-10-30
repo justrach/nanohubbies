@@ -8,13 +8,13 @@ export async function outsideCheckout(path,kind='credential') {
   const parent=dirname(at);if(parent===at)return;at=parent;
  }
 }
-export async function readPrivateJson(path,kind,validate) {
+export async function readPrivateJson(path,kind,validate,{maxBytes=4096}={}) {
  let handle;
  try {
   await outsideCheckout(path,kind);handle=await open(path,constants.O_RDONLY|(constants.O_NOFOLLOW??0)|(constants.O_NONBLOCK??0));
   const stat=await handle.stat();
-  if(!stat.isFile()||stat.size>4096||(stat.mode&0o077)!==0||typeof process.getuid==='function'&&stat.uid!==process.getuid())throw Error('Private file required');
-  const bytes=Buffer.alloc(4097),{bytesRead}=await handle.read(bytes,0,bytes.length,0);if(bytesRead>4096)throw Error('Oversized private file');
+  if(!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>32768||!stat.isFile()||stat.size>maxBytes||(stat.mode&0o077)!==0||typeof process.getuid==='function'&&stat.uid!==process.getuid())throw Error('Private file required');
+  const bytes=Buffer.alloc(maxBytes+1),{bytesRead}=await handle.read(bytes,0,bytes.length,0);if(bytesRead>maxBytes)throw Error('Oversized private file');
   return validate(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(0,bytesRead))));
  }catch{throw Error(`Cannot read this private ${kind} file; require an owner-only regular JSON file for the selected host/repository`);}
  finally{await handle?.close();}
