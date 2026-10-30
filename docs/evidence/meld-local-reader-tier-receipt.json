@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-30T15:12:23.961Z",
+  "candidate": "77d528a0786106c8e943fee220c421b842a46a19",
+  "nativeRun": "469c322e-78fe-4f32-95e2-166eebd3155c",
+  "sourceCommit": "b790981e19771b13ce20b9ffdde99f4bffda1a22",
+  "scope": "isolated local actual Meld copy; synthetic human reader invitation and ordinary APIs",
+  "checks": [
+    {
+      "name": "uninvited account cannot read private repository",
+      "status": 404
+    },
+    {
+      "name": "accepted reader can browse",
+      "status": 200
+    },
+    {
+      "name": "reader Git token can read HEAD",
+      "status": 200
+    },
+    {
+      "name": "reader Git token cannot initiate push",
+      "status": 403
+    },
+    {
+      "name": "reader denied CI retry",
+      "status": 403
+    },
+    {
+      "name": "reader denied runner registration",
+      "status": 403
+    },
+    {
+      "name": "reader denied policy changes",
+      "status": 403
+    },
+    {
+      "name": "reader denied secret management metadata",
+      "status": 403
+    },
+    {
+      "name": "membership removal invalidates existing Git token immediately",
+      "status": 404
+    }
+  ],
+  "productionMutations": 0,
+  "refsAndPolicyUnchanged": true,
+  "liveCiLeaseUndisturbed": true,
+  "acceptancePassed": true,
+  "readerTokenRevoked": true,
+  "readerRemoved": true,
+  "finishedAt": "2026-10-30T15:12:23.976Z"
+}

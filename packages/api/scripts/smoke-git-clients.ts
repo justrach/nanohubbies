@@ -46,6 +46,11 @@ try {
   const readAuth={authorization:`Basic ${btoa(`git:${readToken.token}`)}`};
   assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,readAuth)).status,200);
   assert.equal((await f.request("GET","/git/git-clients.git/info/refs?service=git-receive-pack",undefined,readAuth)).status,403);
+  const readerRun=(await f.json("GET",`${base}/branches`,undefined,reader)).runs[0];assert.ok(readerRun);
+  assert.equal((await f.request("POST",`${base}/ci/retry`,{runId:readerRun.id},reader)).status,403,"a human reader cannot spend runner capacity by retrying checks");
+  assert.equal((await f.request("POST",`${base}/ci/runners`,{name:"reader-denied"},reader)).status,403,"a human reader cannot register a runner");
+  assert.equal((await f.request("PUT",`${base}/protection`,{branch:"main",locked:true},reader)).status,403,"a human reader cannot change branch policy");
+  assert.equal((await f.request("GET",`${base}/secrets`,undefined,reader)).status,403,"a human reader cannot inspect secret management metadata");
   await f.json("PATCH",`${base}/collaborators`,{userId:"codegraff:reader",role:null},owner);
   assert.equal((await f.request("GET","/git/git-clients.git/HEAD",undefined,readAuth)).status,404,"removed membership takes effect on existing Git tokens");
   assert.equal((await f.json("DELETE",`/api/tokens/${issued.id}`,undefined,outsider)).revoked,false);

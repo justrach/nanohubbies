@@ -77,6 +77,42 @@ was updated by the test. Private original operation and failure receipts remain
 intact, with a separate terminal observation and cleanup receipt.
 See the [failed attempt's sanitized receipt](meld-bridge-first-live-receipt.json).
 
+## Local application protection and access checks
+
+While the fresh real cloud job was building, ordinary Git/public API probes ran
+against its imported local Meld copy. The
+[protection receipt](meld-local-policy-rejections-receipt.json) records eleven
+checks: authenticated clone and strict fsck; rejected direct-main, alternate
+`refs/for/main`, forced-main and deletion pushes; denied application API access
+for a Git-only token; successful registered-agent authentication; denied agent
+policy changes and forged CI completion; and rejected agent text submission and
+retry. Ref/policy state and the existing native CI attempt/lease remained intact.
+The Git and agent credentials were revoked, and both were denied afterward.
+
+The [reader-tier receipt](meld-local-reader-tier-receipt.json) records nine
+checks. An uninvited account cannot read the copy; an identity-bound invitation
+permits a reader to browse and use a Git read token. Push initiation, CI retry,
+runner registration, policy edits and secret-management metadata remain denied.
+Removing the membership immediately invalidates the existing Git token. The
+temporary membership was removed and the token explicitly revoked. Ref/policy
+and the running CI attempt remained unchanged.
+
+These probes use only the fixture's test-only session creation for synthetic
+identity setup; policy/CI/Git operations use ordinary public routes. They are
+**local** application-copy acceptance, not hosted Nanohub account, staging or
+cutover acceptance. A first negative-probe harness used Bearer agent auth on a
+non-MCP route and stopped at an assertion. Its failed private receipt is
+retained. The separate successful probe uses registered-agent Basic auth and
+proves a successful authenticated read before attempting restricted writes.
+
+Permanent `smoke-repository.ts` coverage now authenticates the agent before
+testing policy/CI denial, replacing its former invalid-Bearer-only CI test.
+`smoke-git-clients.ts` adds human-reader CI, runner, policy and secret-metadata
+denials. Both complete scripts pass on Bun and Node, including their ordinary
+Git/merge/fsck tests. The Bun repository run printed an RPC-disposal warning
+before exiting zero; its origin has not been diagnosed. No API runtime code or
+production deployment is changed by these test additions.
+
 ## Remaining scope
 
 This is checks-only work. No staging deployment, database migration, credential

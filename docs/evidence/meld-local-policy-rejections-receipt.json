@@ -1,0 +1,69 @@
+{
+  "startedAt": "2026-10-30T15:10:11.001Z",
+  "candidate": "77d528a0786106c8e943fee220c421b842a46a19",
+  "nativeRun": "469c322e-78fe-4f32-95e2-166eebd3155c",
+  "sourceCommit": "b790981e19771b13ce20b9ffdde99f4bffda1a22",
+  "scope": "isolated local actual Meld copy; synthetic membership; ordinary Git and public HTTP routes",
+  "checks": [
+    {
+      "name": "authenticated ordinary clone and strict fsck",
+      "passed": true
+    },
+    {
+      "name": "direct-main",
+      "rejected": true,
+      "exitCode": 1
+    },
+    {
+      "name": "alternate-landing",
+      "rejected": true,
+      "exitCode": 1
+    },
+    {
+      "name": "force-main",
+      "rejected": true,
+      "exitCode": 1
+    },
+    {
+      "name": "delete-main",
+      "rejected": true,
+      "exitCode": 1
+    },
+    {
+      "name": "Git-only credential denied application API",
+      "status": 401
+    },
+    {
+      "name": "registered agent authenticated read",
+      "status": 200
+    },
+    {
+      "name": "agent cannot forge live CI completion",
+      "status": 403
+    },
+    {
+      "name": "agent cannot change branch policy",
+      "status": 403
+    },
+    {
+      "name": "agent submit cannot bypass Git mode/protection",
+      "status": "rejected"
+    },
+    {
+      "name": "agent retry cannot bypass Git mode/protection",
+      "status": "rejected"
+    }
+  ],
+  "credentialsRevoked": [
+    "git",
+    "agent"
+  ],
+  "productionMutations": 0,
+  "refWritesAccepted": 0,
+  "syntheticCommit": "752156309c652da6ee696baeab465f11b47f3fa2",
+  "refsAndPolicyUnchanged": true,
+  "liveCiLeaseUndisturbed": true,
+  "acceptancePassed": true,
+  "credentialsDeniedAfterRevocation": true,
+  "finishedAt": "2026-10-30T15:10:26.722Z"
+}

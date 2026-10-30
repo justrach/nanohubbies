@@ -54,6 +54,8 @@ try {
   await git(source,"push","nanohub","feature");
   const head=await git(source,"rev-parse","HEAD"), anchor=await git(source,"rev-parse","main");
   const agentAuth={authorization:`Basic ${btoa(`fixture:${token.token}`)}`};
+  assert.equal((await f.request("GET",`${base}/branches`,undefined,agentAuth)).status,200,"registered agent must authenticate before checking its restricted capabilities");
+  assert.equal((await f.request("PUT",`${base}/protection`,{...policy,locked:true},agentAuth)).status,403,"an authenticated owner agent cannot change branch policy");
   const life=await f.json("POST",`${base}/agents/fixture/lives`,{},agentAuth);
   const rejected=await f.json("POST",`${base}/agents/fixture/submit`,{life:life.life,intent:"cannot bypass",edits:[{op:"create",path:"bypass.txt",text:"no"}]},agentAuth);
   assert.equal(rejected.status,"rejected");
@@ -76,7 +78,7 @@ try {
   assert.equal((await f.request("GET",`/git/${trunk}.git/info/refs`,undefined,readAuth)).status,200);
   assert.equal((await f.request("POST",`/git/${trunk}.git/git-receive-pack`,undefined,readAuth)).status,403);
   const completion={attempt:claim.run.attempt,results:[{name:"test",state:"success",command:"fixture roundtrip",log:"https://fixture.invalid/log",artifacts:[]}],staging:null};
-  assert.equal((await f.request("POST",`${base}/ci/runs/${claim.run.id}`,completion,{authorization:`Bearer ${token.token}`})).status,401);
+  assert.equal((await f.request("POST",`${base}/ci/runs/${claim.run.id}`,completion,agentAuth)).status,403,"an authenticated agent cannot forge a runner completion");
   await f.json("POST",`${base}/ci/runs/${claim.run.id}`,completion,ciAuth);
   await f.json("POST",`${base}/ci/runs/${claim.run.id}`,completion,ciAuth);
   const merged=await f.json("POST",`${base}/pulls/1/merge`,{commit:head,anchor},alice);
