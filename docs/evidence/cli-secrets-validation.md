@@ -23,6 +23,12 @@ Passed checks:
 - `bun run check`: three workspace checks with pinned tsrs and the existing
   operator binding/syntax checks.
 - `git diff --check`.
+- The complete repository gate: **300 unit cases** followed by the real
+  Worker/Git/CLI/review/protection/archive/recovery integration chain.
+- The exact downloadable 0.4.18 module's secret integration, with its version,
+  byte count and SHA-256 checked before execution.
+- Hosting/pool and both hosted-fixture regression commands, the four shell gate
+  runner cases, the full OpenNext build and main/Vault Wrangler dry runs.
 
 The real local RPC tests cross API Worker → private Vault Worker → per-scope
 Durable Object and back through a one-call authority capability. They exercise
@@ -71,3 +77,25 @@ the precise scope denial and reject an unsupported `secrets:values` capability.
 The first retry launch stops at its read-only Codegraff preflight because sandbox
 access cannot be verified; it never reaches source freezing or VM allocation.
 Neither attempt is counted as passing cloud acceptance.
+
+The second retry reaches a fresh VM but stops before executing candidate code:
+temporary private-registry pull credential issuance fails. A separate provider
+GET confirms destruction. Read-only Wrangler checks then report an expired login
+that cannot refresh. Routine renewal requests the unchanged permission set but
+reaches an unauthenticated Cloudflare sign-in page; no new login is completed.
+The [attempt receipt](cli-secrets-cloud-attempts.json) retains all three outcomes.
+Cloud release acceptance, disposable delivery and Vault-first rollout remain
+pending; no production deployment is requested.
+
+The full local recovery gate additionally catches a changing `serverTime` field
+in ordinary Vault metadata. The clock now appears only in the authenticated CLI
+grant response after final authorization. Persistent metadata is compared exactly
+across cold restoration; no comparison fields are discarded. New integration
+assertions verify the CLI clock bounds and its absence from ordinary metadata.
+The corrected cold recovery and complete repository gate pass, alongside fresh
+407-case API, access and tsrs reruns. The immutable CLI module remains unchanged.
+
+Implementation and acceptance corrections are published on
+`codex/standalone-git-host`. Main traffic is independently observed on
+`a37ab061-a029-4480-9fb9-2b7cefeb19e3`, serving public CLI 0.4.17. Source
+publication is not a passing hosted workflow or release deployment.

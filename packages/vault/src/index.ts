@@ -115,7 +115,6 @@ export class Vault extends DurableObject<VaultEnv> {
       : 0;
     return {
       ...this.#administration.configuration(),
-      serverTime:Date.now(),
       provider: "cloudflare-secrets-store",
       runtime: "on-demand",
       valueCustody: "cloudflare",

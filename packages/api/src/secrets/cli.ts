@@ -47,7 +47,7 @@ export async function cliSecrets(env:Env,request:Request,trunk:string,user:User,
   try{
     if(listing){
       const data=await vault.list(scope);
-      try{const readOnly=archiveLocked(await env.HUB.get(env.HUB.idFromName('hub')).repositoryArchive(trunk));await authority.authorize();if(data.conditionalWrites!==true||data.clientGrants!=='v1'||data.revisionTracking!=='storage')return json({error:'Secret administration is updating; inspect secret list again shortly'},503);return Response.json({...data,readOnly,repositoryId:trunk,delegationId:user.cli.credentialId,delegationExpiresAt:authority.delegationExpiresAt},{headers:{...headers,ETag:`"secrets-${data.revision}"`}});}
+      try{const readOnly=archiveLocked(await env.HUB.get(env.HUB.idFromName('hub')).repositoryArchive(trunk));await authority.authorize();if(data.conditionalWrites!==true||data.clientGrants!=='v1'||data.revisionTracking!=='storage')return json({error:'Secret administration is updating; inspect secret list again shortly'},503);return Response.json({...data,serverTime:Date.now(),readOnly,repositoryId:trunk,delegationId:user.cli.credentialId,delegationExpiresAt:authority.delegationExpiresAt},{headers:{...headers,ETag:`"secrets-${data.revision}"`}});}
       finally{(data as unknown as {[Symbol.dispose]?:()=>void})[Symbol.dispose]?.();}
     }
     const body=await creationBody<Record<string,unknown>>(request,32768),common={credentialId:user.cli.credentialId};
