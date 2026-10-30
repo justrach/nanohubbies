@@ -1,5 +1,10 @@
 # Deployment CLI — local acceptance, 2026-10-30
 
+This records the initial local candidate checkpoint. CLI 0.4.17 and its API were
+subsequently published with [separate release acceptance](cli-deployments-release-validation.md).
+The original local receipt and its then-current production observations below
+remain historical evidence.
+
 Source `969757d` adds `nh` / `nanohub` deployment list, view, request, approve and
 reject commands behind independent request/reviewer permissions. The
 [contract](../cli-deployments.md) documents current authority and retry behavior;

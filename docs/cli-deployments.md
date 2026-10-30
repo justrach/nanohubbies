@@ -1,9 +1,12 @@
 # Deployment requests and reviews from the CLI
 
-CLI **0.4.17 is a locally validated source candidate, not a published release**.
-Its API changes must ship with it. Production still publishes 0.4.16; see the
-[validation evidence](evidence/cli-deployments-validation.md). From this checkout,
-use `bun run nh -- ...` or `bun run nanohub -- ...` against an upgraded test host.
+CLI **0.4.17 and its deployment API are published**. See the
+[release evidence](evidence/cli-deployments-release-validation.md) for frozen
+Linux acceptance, public installation, consent and repository preservation.
+The [local tests](evidence/cli-deployments-validation.md) cover real Worker/Git
+mutations; this release's hosted check does not issue a production credential or
+submit a deployment review. From this checkout, `bun run nh -- ...` and
+`bun run nanohub -- ...` also run the commands.
 
 The commands operate on existing deployment requests and environment gates:
 

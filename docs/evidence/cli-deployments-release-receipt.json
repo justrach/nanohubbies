@@ -1,0 +1,426 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T07:32:59.660125+00:00",
+  "scope": "Native deployment approval API and CLI 0.4.17 release; publication, explicit consent and preservation, not hosted deployment execution or unrestricted production readiness",
+  "implementationCommit": "6076c3b544e4df67607ae1a2fa3da188346b2d38",
+  "runtimeCommit": "969757df608549d6f8641f2c765dd08c26978b91",
+  "acceptanceCommit": "cad4ec689092238639cecae24e9cdb4cf33ce56e",
+  "sourceFilesMatchedBeforeStagingPromotionAndDocumentation": 1048,
+  "sourceManifestSha256": "c4c9f1c4d6737259ac95c1e5e0552827121da3b50ceb8285e7ed9ea65c29811f",
+  "builtFilesMatchedBeforeStagingPromotionAndDocumentation": 1472,
+  "builtManifestSha256": "fa124c3fe0dea060126ecd1581f1704d7b2025ec2916c3756424888b54aa0403",
+  "linux": {
+    "checkedAt": "2026-10-30T07:27:53.172Z",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "toolchainDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "sandboxId": "cnd_331737f6f12a3c59d6e6e7c69b5816e6be9a6f39",
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "cleanup": {
+      "checkedAt": "2026-10-30T07:27:58.085Z",
+      "sandboxId": "cnd_331737f6f12a3c59d6e6e7c69b5816e6be9a6f39",
+      "providerState": "destroyed",
+      "deletionConfirmed": true,
+      "independentRead": true
+    },
+    "logSha256": "5ed0950f06e55d945682478209b32faf407963f7eac19fb54c528cf57c9b16db",
+    "apiUnitCases": 374,
+    "cliCases": 68,
+    "countsOverlap": true,
+    "exactReleaseModuleGatePassed": true,
+    "workspaceTypeTasks": 3,
+    "cachedTypeTasks": 0,
+    "pinnedTsrs": true
+  },
+  "earlierLinuxFailure": {
+    "sourceCommit": "6b595ec54252b89bdac6c4c8edd59f1ade48c4a1",
+    "acceptanceCommit": "b4d1e87ef256eeef278290d9b6cf41dda29a871f",
+    "failure": "Clean checkout lacked generated apps/web/worker-configuration.d.ts; fixture gate failed after the first six gates",
+    "fixCommit": "6076c3b544e4df67607ae1a2fa3da188346b2d38",
+    "fixtureCommandsNowGenerateOwnTypes": true,
+    "compoundGateWholeCommandLogs": true,
+    "realShellRegressionCases": 4,
+    "cleanup": {
+      "checkedAt": "2026-10-30T03:10:47.171Z",
+      "sandboxId": "cnd_9b74b130a169879d59b85ae1ced2eb482ec5a12a",
+      "providerState": "destroyed",
+      "deletionConfirmed": true,
+      "independentRead": true
+    },
+    "passed": false
+  },
+  "disposableWorker": {
+    "name": "nh-deploy-cli-assets-mvunhbbu-585edf74",
+    "normalVersion": "b1ad0cfd-8d2a-408a-84ff-9f52ab06daba",
+    "heldVersion": "76ea425e-2c22-4477-9280-bd1f473d3f87",
+    "productionDataBindings": false,
+    "customDomains": false,
+    "bindings": [
+      "ASSETS",
+      "CF_VERSION_METADATA"
+    ],
+    "normalChecks": 18,
+    "heldGetChecks": 24,
+    "bodylessHead": true,
+    "heldAddsOnlyRecoveryHold": true,
+    "deleteCommandExit": 0,
+    "absenceConfirmed": true,
+    "independentPreStagingAbsenceConfirmed": true,
+    "readiness": [
+      {
+        "label": "normal",
+        "attempt": 0,
+        "status": 200,
+        "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+      },
+      {
+        "label": "held",
+        "attempt": 0,
+        "status": 503,
+        "sha256": "769875105f12ae3085f7cc9457491bfba4fef51f6b441b4de799d8eef7404fe7"
+      }
+    ]
+  },
+  "production": {
+    "main": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+    "heldInactive": "7dd25d94-2189-448d-a04e-4252ca564bce",
+    "previousMain": "857257c1-18fa-4866-87f8-2e9a9216bf20",
+    "percentage": 100,
+    "deploymentId": "e6737675-47af-4754-98ad-6c87070ce000",
+    "durableObjectsCodeUpdateMode": "immediate",
+    "bindingCount": 27,
+    "allBindingDefinitionsUnchanged": true,
+    "workerFirstAssets": true,
+    "subrequests": 50000,
+    "recoveryHoldEnabled": false,
+    "vault": {
+      "checkedAt": "2026-10-30T07:31:13.786Z",
+      "version": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+      "unchanged": true
+    },
+    "automaticControllerMutationRetries": false
+  },
+  "publication": {
+    "manifest": {
+      "format": 1,
+      "version": "0.4.17",
+      "path": "/nh/releases/0.4.17/nh.mjs",
+      "bytes": 85565,
+      "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+    },
+    "assets": [
+      {
+        "path": "/nh/latest.json",
+        "bytes": 179,
+        "contentType": "application/json",
+        "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "contentType": "text/javascript",
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c"
+      },
+      {
+        "path": "/nh/releases/0.4.17/nh.mjs",
+        "bytes": 85565,
+        "contentType": "text/javascript",
+        "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+      },
+      {
+        "path": "/nh/releases/0.4.17/SHA256SUMS",
+        "bytes": 73,
+        "contentType": "",
+        "sha256": "32c6d7f03d4fb91f3fa9fd50219ea3633754856e46773b6f491667ada32e8f6a"
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "bytes": 81369,
+        "contentType": "text/javascript",
+        "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+      },
+      {
+        "path": "/nh/releases/0.4.15/nh.mjs",
+        "bytes": 74141,
+        "contentType": "text/javascript",
+        "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81"
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "bytes": 70056,
+        "contentType": "text/javascript",
+        "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "bytes": 74001,
+        "contentType": "text/javascript",
+        "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "bytes": 61139,
+        "contentType": "text/javascript",
+        "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "bytes": 53804,
+        "contentType": "text/javascript",
+        "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "bytes": 49938,
+        "contentType": "text/javascript",
+        "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "bytes": 46789,
+        "contentType": "text/javascript",
+        "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11"
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "bytes": 7287,
+        "contentType": "text/css",
+        "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356"
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "bytes": 1905,
+        "contentType": "text/css",
+        "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d"
+      },
+      {
+        "path": "/_next/static/0yTW9M3-sXMkNKCyELHkS/_buildManifest.js",
+        "bytes": 219,
+        "contentType": "text/javascript",
+        "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea"
+      },
+      {
+        "path": "/_next/static/0yTW9M3-sXMkNKCyELHkS/_clientMiddlewareManifest.js",
+        "bytes": 96,
+        "contentType": "text/javascript",
+        "sha256": "5483e3295dc35dfe29ea932efc85341c916f10ff78ff5b0e965e003710893a4a"
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "bytes": 71596,
+        "contentType": "font/woff2",
+        "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101"
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "bytes": 69760,
+        "contentType": "font/woff2",
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+      },
+      {
+        "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+        "bytes": 190,
+        "contentType": "text/css",
+        "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca"
+      },
+      {
+        "path": "/_next/static/chunks/18vdng-ava46y.css",
+        "bytes": 9317,
+        "contentType": "text/css",
+        "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba"
+      },
+      {
+        "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+        "bytes": 1524,
+        "contentType": "text/css",
+        "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a"
+      },
+      {
+        "path": "/_next/static/chunks/27mzymd5lizl7.css",
+        "bytes": 20785,
+        "contentType": "text/css",
+        "sha256": "c431bc7783286bff2aa697d2fed4bb1cc01df4a5708f14ca523e2426400cdbca"
+      },
+      {
+        "path": "/_next/static/chunks/2ab2tu-5ykczt.css",
+        "bytes": 61345,
+        "contentType": "text/css",
+        "sha256": "8f4e75891f0acd439a0c832416fc7c1801711f955c22bff06bb1fbf7a5bec248"
+      },
+      {
+        "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+        "bytes": 6246,
+        "contentType": "text/css",
+        "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2"
+      },
+      {
+        "path": "/_next/static/chunks/36srit4cbyjno.css",
+        "bytes": 5560,
+        "contentType": "text/css",
+        "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131"
+      },
+      {
+        "path": "/_next/static/chunks/3r55xobv4dda2.css",
+        "bytes": 16693,
+        "contentType": "text/css",
+        "sha256": "b61a6444f2f35785847bb7866a5b32c949c38351605f368cb8d355f894efaaaa"
+      }
+    ],
+    "priorCliAndInstallerHashesUnchanged": true,
+    "unauthenticatedCli": {
+      "checkedAt": "2026-10-30T07:31:24.814Z",
+      "checks": [
+        {
+          "path": "/api/cli/repos/rachxpradhan/prod-codeowners-20261027/deployment-requests",
+          "status": 401
+        },
+        {
+          "path": "/api/cli/repos/rachxpradhan/prod-codeowners-20261027/deployment-requests/synthetic-request-0001",
+          "status": 401
+        }
+      ]
+    },
+    "installer": {
+      "checkedAt": "2026-10-30T07:31:14.910Z",
+      "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+      "manifest": {
+        "format": 1,
+        "version": "0.4.17",
+        "path": "/nh/releases/0.4.17/nh.mjs",
+        "bytes": 85565,
+        "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+      },
+      "aliases": [
+        {
+          "name": "nh",
+          "version": "nh 0.4.17",
+          "mergeSettingsHelp": true,
+          "deploymentHelp": true
+        },
+        {
+          "name": "nanohub",
+          "version": "nh 0.4.17",
+          "mergeSettingsHelp": true,
+          "deploymentHelp": true
+        }
+      ],
+      "prefixContainsSpacesAndQuote": true,
+      "executedOutsideCheckout": true,
+      "temporaryInstallationRemoved": true,
+      "globalInstallationChanged": false
+    }
+  },
+  "repositoryPreservation": {
+    "checkedAt": "2026-10-30T07:31:24.829Z",
+    "comparisons": [
+      {
+        "resource": "branches",
+        "equal": true
+      },
+      {
+        "resource": "protection",
+        "equal": true
+      },
+      {
+        "resource": "rulesets",
+        "equal": true
+      },
+      {
+        "resource": "default-branch",
+        "equal": true
+      },
+      {
+        "resource": "archive",
+        "equal": true
+      },
+      {
+        "resource": "environments",
+        "equal": true
+      },
+      {
+        "resource": "collaborators",
+        "equal": true
+      },
+      {
+        "resource": "secrets",
+        "equal": true
+      },
+      {
+        "resource": "runners",
+        "equal": true
+      }
+    ],
+    "repositoryMutationRequests": 0,
+    "sessionExtracted": false
+  },
+  "consent": {
+    "checkedAt": "2026-10-30T07:31:59.994Z",
+    "scopesBefore": 14,
+    "scopesAfter": 16,
+    "addedScopes": [
+      "deployments:write",
+      "deployments:review"
+    ],
+    "productionCredentialsIssued": 0,
+    "productionCredentialsPresent": 0,
+    "optionalUncheckedEnabled": true,
+    "requiredReadChecked": true,
+    "sessionExtracted": false
+  },
+  "nanohubActions": {
+    "checkedAt": "2026-10-30T07:30:00.832Z",
+    "configuredNanohubKeyUsed": true,
+    "keyReplaced": false,
+    "nanohubRequests": 0,
+    "sandboxAllocations": 0,
+    "accountInventoryRetained": false,
+    "sandboxAccessVerified": false,
+    "error": {
+      "code": "sandbox_scope_required",
+      "status": 403,
+      "message": "Codegraff API key requires the sandbox scope for Actions; no CI job was claimed"
+    },
+    "providerReads": 1
+  },
+  "productionCredentialsIssued": 0,
+  "hostedDispatcherActivated": false,
+  "actualApplicationStagingAcceptance": false,
+  "completeHostedChangingGitRecovery": false,
+  "productionTrafficReadinessEstablished": false,
+  "githubPushedByThisWork": false,
+  "artifacts": {
+    "build.log": "bb88f1f71a4087a03df3be7aa414e7c20a4a487ae58e9b17195aa943bc843840",
+    "dry-run.log": "366552d3b1c003bdc572ade4f6c1e30bff2cd7ccf077dcac77cd4955eeca23b5",
+    "candidate/normal-assets.json": "241acd78602cb6f76c07000e0644c360565e43303b1aa42b63d483f431caeac1",
+    "candidate/held-assets.json": "360130f7eafb7268dbac28c5eb85a2dbe54de2e894c8138cdb3e301d2c66c4b8",
+    "stage-verdict.json": "64bea7c1788e53c6c2f022d283026e4271585ae0638a1e2dcc9bea1a073b77ba",
+    "deploy-operation.json": "e941c2b6ba8cd59ae2e62d690ae90c42dd780d9cbf652a27a67dc1678c457519",
+    "canary-preservation.json": "66445378c28fd6246d1db3217a1b8873d0bb7366f0e1ad5ae2e28ff0c732573c",
+    "consent.json": "a00fc4929ca0b39aadec2b4b06e125cc11e86f3efe057ef21a0ae4b544e8a8c6",
+    "production-deployment-consent.png": "991922948d0072b9204ff3d3bb98ee7968358915f37617f2c074f668fdaf906f"
+  },
+  "documentationFilesChangedAfterPromotion": [
+    "docs/cli-deployments.md",
+    "docs/evidence/cli-deployments-validation.md",
+    "docs/github-parity.md",
+    "docs/hosting-cli.md",
+    "docs/production-readiness.md"
+  ],
+  "documentationFilesAddedAfterPromotion": [
+    "docs/evidence/cli-deployments-release-validation.md",
+    "docs/evidence/cli-deployments-release-receipt.json",
+    "docs/evidence/cli-deployments-production.png"
+  ],
+  "runtimeFilesStillMatchAcceptance": true,
+  "fontMimeTypesVerified": true
+}

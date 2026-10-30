@@ -171,7 +171,7 @@ Clone/fetch, push, PR creation/closing, reviewing/conversations, merging and
 branch protection management are separately chosen. Readers and archived repositories can grant metadata read
 and clone/fetch. In an active repository, configured readers can also delegate
 deployment reviews through the separate `deployments:review` scope in the
-0.4.17 source candidate. Other write scopes retain their writer/admin/owner
+published CLI 0.4.17. Other write scopes retain their writer/admin/owner
 requirements; archive reopening has its separate administration exception. Values
 are shown once. Cloudflare D1 stores SHA-256 digests and minimal account identity,
 not the plaintext token or a browser session. This is a native credential flow,
@@ -218,7 +218,7 @@ Existing Git-only and registered-agent credentials gain no CLI API rights.
 
 ### Private pending reviews
 
-Published CLI **0.4.16** includes private batch reviews introduced in 0.4.13. The
+Published CLI **0.4.17** includes private batch reviews introduced in 0.4.13. The
 [earlier release validation](evidence/merge-methods-release-validation.md) records the
 frozen Linux gates, production delivery and real installer checks. Like
 [GitHub pending reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request),
@@ -275,7 +275,7 @@ cannot read or mutate a browser draft on the CLI's behalf; retry after rollout.
 
 ## Merge methods from the CLI
 
-CLI **0.4.14** introduced explicit history choices, retained in published 0.4.16:
+CLI **0.4.14** introduced explicit history choices, retained in published 0.4.17:
 
 ```sh
 nh pr merge 12 -R owner/repository --merge
@@ -305,7 +305,7 @@ signing requirements need fast-forward. Automatic rebase requires linear
 feature history and is bounded at 200 commits/16 MiB of commit metadata.
 Neither the source ref nor its existing Git objects are rewritten.
 
-The published CLI is **0.4.16**, including private reviews added in 0.4.13.
+The published CLI is **0.4.17**, including private reviews added in 0.4.13.
 See [behavioral validation](evidence/merge-methods-validation.md) and
 [current release evidence](evidence/access-capacity-release-validation.md). Generated Git
 merges and private-review mutations are covered by local and frozen Linux
@@ -331,7 +331,7 @@ refused. A lost response is not retried: inspect `repo merge-settings` before
 another edit. Ordinary merge requests bind the observed settings revision and
 generated methods also bind the current target SHA. Branch protections remain
 independent. See [the full contract](merge-settings.md) and [local validation](evidence/merge-settings-validation.md).
-CLI 0.4.15 introduced these settings, retained in published 0.4.16. Its [release record](evidence/merge-settings-release-validation.md)
+CLI 0.4.15 introduced these settings, retained in published 0.4.17. Its [release record](evidence/merge-settings-release-validation.md)
 distinguishes frozen Linux native administration checks from the live settings
 and archive smoke.
 
@@ -631,10 +631,13 @@ change. See [the contract](check-conclusions.md#success-only-migration-policy).
 
 ## Deployment environments
 
-The unpublished 0.4.17 candidate also adds native `deployment list/view/request/approve/reject`
+Published CLI 0.4.17 adds native `deployment list/view/request/approve/reject`
 with separate request/reviewer grants, current membership and revision checks.
 See [deployment CLI permissions and enforcement](cli-deployments.md). These
 commands do not grant environment administration or trusted runner reporting.
+The [release evidence](evidence/cli-deployments-release-validation.md) covers
+frozen Linux acceptance and hosted publication/consent/preservation, without
+claiming a real application deployment adapter ran.
 
 `nh env` and `nanohub env` manage the existing deployment environments through
 native API calls. They require an explicit `environments:write` CLI permission
@@ -745,7 +748,7 @@ to the credential owner. See [storage limits](standalone-host.md#migrate-committ
 
 ## Collaborator administration
 
-Published CLI 0.4.16 provides collaborator administration through
+Published CLI 0.4.17 provides collaborator administration through
 `nh access list/invite/recover/role/remove/cancel`, with the separate explicit
 `collaborators:write` grant. See [commands, private invitation files and conditional
 edit behavior](cli-collaborators.md) and [release acceptance](evidence/access-capacity-release-validation.md).

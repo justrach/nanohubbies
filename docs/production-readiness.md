@@ -10,7 +10,7 @@ pending the original migration and CI/staging acceptance.
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Native Git hosting                   | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [agent-free Meld graph migration through the packaged CLI](evidence/cli-import-validation.md), with all 178 branches/18,097 objects, independent clone/fsck and verification-only recovery                                                                                         | The [pinned hosted full-graph copy](evidence/hosted-import-validation.md) passes; the correction is [validated and deployed](evidence/pack-scan-release-validation.md); complete actual application policy/CI, capacity and cutover acceptance                                |
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md)                                                                                                                                                                                     | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract                                                                                                                                |
-| Native CLI                           | Published [0.4.16](evidence/access-capacity-release-validation.md), including scoped collaborator administration, private CLI batch reviews and merge/squash/rebase; [agent-free complete import and recovery](evidence/cli-import-validation.md), source and bundled Git/API administration, revision-checked [environments](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes                                                               | Broader command parity remains open; public release operations need the checks below                                                                                                                                                                                          |
+| Native CLI                           | Published [0.4.17](evidence/cli-deployments-release-validation.md), including deployment requests/reviews and scoped collaborator administration, private CLI batch reviews and merge/squash/rebase; [agent-free complete import and recovery](evidence/cli-import-validation.md), source and bundled Git/API administration, revision-checked [environments](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes                                                               | Broader command parity remains open; public release operations need the checks below                                                                                                                                                                                          |
 | Cloudflare-owned secrets             | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md)                                                                                                                                                                                                                                                                            | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups                                                                                                                                  |
 | Codegraff Actions                    | Real disposable cloud job through the dispatcher; [retained private full image and separate fresh-VM acceptance](evidence/private-toolchain-registry-validation.md) passes every offline project gate using per-job temporary Cloudflare pull access; both VMs are confirmed destroyed                                                                                                                    | A sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation                                                                                                                                               |
 | Staging and application cutover      | Exact candidate/version/approval/acceptance contracts and negative tests; committed Meld runbook/controller located through existing Git access, healthy controller and matching current staging version in [read-only discovery](evidence/meld-source-discovery.json)                                                                                                                                    | Live intended-application staging job from Nanohub source, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted                                                 |
@@ -45,8 +45,15 @@ the current receiver and preservation of the private canary's refs and policy.
 These establish specific paths and invariants; they do not establish a traffic
 SLO or replace an end-to-end hosted CI/staging or disaster-recovery drill.
 
-The current main Worker is `857257c1-18fa-4866-87f8-2e9a9216bf20`, with normal
-traffic enabled and the request hold off. CLI 0.4.16 is published. The
+The current main Worker is `a37ab061-a029-4480-9fb9-2b7cefeb19e3`, with normal
+traffic enabled and the request hold off. CLI 0.4.17 is published. The
+[deployment CLI release](evidence/cli-deployments-release-validation.md) passes
+all nine frozen Linux gates, including the exact release artifact, 26 exact
+public asset checks, both installed aliases, nine canary comparisons and
+unchecked request/reviewer consent. All 27 bindings remain unchanged; Vault is
+not redeployed. An inactive held version retains the deployment enforcement.
+
+The preceding main Worker was `857257c1-18fa-4866-87f8-2e9a9216bf20`. Its
 [access/capacity release](evidence/access-capacity-release-validation.md) passes
 all eight frozen Linux gates, 25 exact public asset checks, installation/execution
 of both aliases, nine exact canary comparisons and explicit unchecked collaborator
@@ -54,7 +61,7 @@ consent. Its shared capacity API is deployed; hosted dispatch is not activated.
 All 27 bindings remain unchanged, Vault is not redeployed, and an inactive held
 version retains the new enforcement.
 
-The preceding main Worker was `31d951d3-6a6d-4784-aeaf-34c39995733b`. Its
+Before that, the main Worker was `31d951d3-6a6d-4784-aeaf-34c39995733b`. Its
 [merge-settings release](evidence/merge-settings-release-validation.md) passes
 all eight frozen Linux gates, 24 exact live asset checks and nine canary state
 comparisons. Live UI save/readback and archive-fence checks pass in a separate
@@ -153,9 +160,10 @@ or restore. Independent cleanup and unchanged production versions pass. The
 follow-up diagnostic is locally validated and preserves the stop-on-uncertainty
 rule; full hosted recovery remains unpassed.
 
-The [deployment CLI candidate](evidence/cli-deployments-validation.md) adds scoped
+The published [deployment CLI](evidence/cli-deployments-release-validation.md) adds scoped
 requests and approvals/rejections, including configured reader and connected-team
-reviewers. Its local Worker/Git, source/bundled/exact-module, typecheck and build
-checks pass. It is version 0.4.17 locally; production still publishes 0.4.16.
-Frozen Linux acceptance and API/CLI release verification are pending, and it does
-not activate hosted runners or complete actual application staging/cutover.
+reviewers. Local Worker/Git, source/bundled/exact-module, all nine frozen Linux
+gates, public installation and production consent/preservation checks pass for
+0.4.17. The initial clean-checkout fixture failure is retained alongside its
+correction and successful fresh run. This does not activate hosted runners or
+complete actual application staging/cutover or hosted changing-Git recovery.
