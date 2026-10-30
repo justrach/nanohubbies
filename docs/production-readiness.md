@@ -167,3 +167,10 @@ gates, public installation and production consent/preservation checks pass for
 0.4.17. The initial clean-checkout fixture failure is retained alongside its
 correction and successful fresh run. This does not activate hosted runners or
 complete actual application staging/cutover or hosted changing-Git recovery.
+
+The recovery controller now has [retained-assets phase acceptance](evidence/recovery-retained-assets-validation.md):
+canonical owned configuration, phase-only provider resource comparison and the
+existing stop-on-uncertainty rules. Local fixtures and a disposable six-state
+Cloudflare protocol probe pass, with independent deletion and unchanged main.
+This avoids another asset completion token for phase changes. It is not the
+full recovery application, and full changing-Git restore/return remains unpassed.

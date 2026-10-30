@@ -1,0 +1,263 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-30T09:59:06.552212+00:00",
+  "scope": "Owned recovery phase asset retention: local regression and isolated real Cloudflare protocol probe; not full changing-Git restore acceptance",
+  "sourceHashes": {
+    "tools/check-operator-bindings.mjs": "5d8d9e3ceac1ff933f8b6cd3a275b336147ec18a42346a2873bb0297a03764ab",
+    "tools/hosted-recovery-fixture/phase-assets.mjs": "a9a3d0d30c5cf8082ff2c1fb299479f294ad7a3f7b09fef860b443acf77a28e5",
+    "tools/hosted-recovery-fixture/phase-deploy.test.mjs": "1d60281942621547e99ee0a042970b481e80f09a29e8a5137a98688f539944dc",
+    "tools/verify-hosted-git-import.mjs": "636f121db75975aa47a9f56181e83ea4fac17856640abe81d707c21183a6d21d"
+  },
+  "behavior": {
+    "canonicalOwnedRecoveryConfigurationRequired": true,
+    "initialDeploymentUnchanged": true,
+    "phaseUploadKeepsAssets": true,
+    "completionJwtOmitted": true,
+    "assetUploadDirectoryOmitted": true,
+    "explicitWorkerFirstRouting": true,
+    "onlyPhaseResourceChangeAllowed": true,
+    "uncertainDeploymentsStillStop": true,
+    "productionApplicationChanged": false
+  },
+  "validation": {
+    "bunFixtureCases": 95,
+    "nodeProtocolCases": 27,
+    "countsOverlap": true,
+    "actualWranglerMultipartDryRun": true,
+    "operatorTargets": 8,
+    "operatorFullJsTypeCheck": false,
+    "workspaceTypeTasks": 3,
+    "cachedWorkspaceTasks": 3,
+    "pinnedTsrs": true,
+    "newFrozenLinuxAcceptance": false
+  },
+  "cloudProbe": {
+    "worker": "nh-phase-assets-mvusrd3g-39a43b76",
+    "productionResourcesBound": false,
+    "customDomains": false,
+    "fullRecoveryAcceptance": false,
+    "states": [
+      {
+        "phase": "seed",
+        "version": "96ba0686-6de5-4620-8ac9-b1c35fa299fd",
+        "samples": [
+          {
+            "phase": "seed",
+            "version": "96ba0686-6de5-4620-8ac9-b1c35fa299fd"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      },
+      {
+        "phase": "frozen",
+        "version": "0eb22d71-cc27-4461-87f1-2eabbdbe67e4",
+        "resourceInvariant": {
+          "previousVersion": "96ba0686-6de5-4620-8ac9-b1c35fa299fd",
+          "version": "0eb22d71-cc27-4461-87f1-2eabbdbe67e4",
+          "resourceSha256": "f874d5809be1c7057932bda6082ade0fa44f51ab74d7d2315e7b9fa82f8c8507",
+          "phaseOnly": true
+        },
+        "samples": [
+          {
+            "phase": "frozen",
+            "version": "0eb22d71-cc27-4461-87f1-2eabbdbe67e4"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      },
+      {
+        "phase": "verify",
+        "version": "08aad46d-5d7d-44cb-87bf-a2ecf5e0d10d",
+        "resourceInvariant": {
+          "previousVersion": "0eb22d71-cc27-4461-87f1-2eabbdbe67e4",
+          "version": "08aad46d-5d7d-44cb-87bf-a2ecf5e0d10d",
+          "resourceSha256": "9537c6d4ffd2ae1b7d4d8fd556f12aa1262aedfc09d98903765ff2bf18251cf9",
+          "phaseOnly": true
+        },
+        "samples": [
+          {
+            "phase": "verify",
+            "version": "08aad46d-5d7d-44cb-87bf-a2ecf5e0d10d"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      },
+      {
+        "phase": "reconcile",
+        "version": "0a8f49da-5d80-414a-b5a0-35ec381dbdd7",
+        "resourceInvariant": {
+          "previousVersion": "08aad46d-5d7d-44cb-87bf-a2ecf5e0d10d",
+          "version": "0a8f49da-5d80-414a-b5a0-35ec381dbdd7",
+          "resourceSha256": "9c82983fc2a56ea1205e44ec270dbbdf0aa47217394f3700f7a2c6af9e1c8a06",
+          "phaseOnly": true
+        },
+        "samples": [
+          {
+            "phase": "reconcile",
+            "version": "0a8f49da-5d80-414a-b5a0-35ec381dbdd7"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      },
+      {
+        "phase": "frozen",
+        "version": "c83e923b-d44b-46c2-94da-9f5fb4cd8cbd",
+        "resourceInvariant": {
+          "previousVersion": "0a8f49da-5d80-414a-b5a0-35ec381dbdd7",
+          "version": "c83e923b-d44b-46c2-94da-9f5fb4cd8cbd",
+          "resourceSha256": "cf0067d88afdc91feb5ecc1043a11ae6281720ee5712f954c2785375be40a201",
+          "phaseOnly": true
+        },
+        "samples": [
+          {
+            "phase": "frozen",
+            "version": "c83e923b-d44b-46c2-94da-9f5fb4cd8cbd"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      },
+      {
+        "phase": "verify",
+        "version": "d60af584-d6e7-4146-a0e8-75621f18f921",
+        "resourceInvariant": {
+          "previousVersion": "c83e923b-d44b-46c2-94da-9f5fb4cd8cbd",
+          "version": "d60af584-d6e7-4146-a0e8-75621f18f921",
+          "resourceSha256": "9537c6d4ffd2ae1b7d4d8fd556f12aa1262aedfc09d98903765ff2bf18251cf9",
+          "phaseOnly": true
+        },
+        "samples": [
+          {
+            "phase": "verify",
+            "version": "d60af584-d6e7-4146-a0e8-75621f18f921"
+          }
+        ],
+        "assets": [
+          {
+            "path": "/nh/latest.json",
+            "bytes": 179,
+            "sha256": "e3dfad4e3407b42255e7d29fd0ee43e276c71be6d95e79ed34300904b9f56158"
+          },
+          {
+            "path": "/nh/releases/0.4.17/nh.mjs",
+            "bytes": 85565,
+            "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+          },
+          {
+            "path": "/nh/releases/0.4.16/nh.mjs",
+            "bytes": 81369,
+            "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+          }
+        ],
+        "heldGets": 3,
+        "bodylessHead": true
+      }
+    ],
+    "retainedAssetComparisons": 18,
+    "heldGets": 18,
+    "bodylessHeads": 6,
+    "independentCleanup": {
+      "checkedAt": "2026-10-30T09:58:19.414Z",
+      "name": "nh-phase-assets-mvusrd3g-39a43b76",
+      "absenceConfirmed": true,
+      "independentRead": true
+    },
+    "productionMainBefore": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+    "productionMainAfter": "a37ab061-a029-4480-9fb9-2b7cefeb19e3"
+  },
+  "logs": {
+    "recovery": "c4bd3710f7e3c47a4f7638d342e8fc1f17843f7496d5ab93e5268db48053fdbe",
+    "check": "653fa1a0e1ce4e8d309ef3b581971137d7412673a4bf625dcfea01ed9e4d083a"
+  },
+  "fullHostedChangingGitRecoveryPassed": false,
+  "productionTrafficReadinessEstablished": false
+}

@@ -37,6 +37,7 @@ import {
 } from "./hosted-recovery-fixture/vault-lifecycle.mjs";
 import { waitForFixturePhase } from "./hosted-recovery-fixture/phase.mjs";
 import { deployHeldFixturePhase } from "./hosted-recovery-fixture/phase-deploy.mjs";
+import { retainedAssetPhaseConfiguration, assertRetainedAssetPhase } from "./hosted-recovery-fixture/phase-assets.mjs";
 import { checkOperatorBindings } from "./check-operator-bindings.mjs";
 import { purgeFixturePage } from "./hosted-git-fixture/purge.mjs";
 import { waitForFixtureHealth } from "./hosted-git-fixture/health.mjs";
@@ -243,6 +244,7 @@ export async function verifyHostedGitImport(
   process.on("SIGTERM", interrupt);
   const configPaths = {
     api: join(directory, "api.json"),
+    phase: join(directory, "phase.json"),
     gate: join(directory, "gate.json"),
     retired: join(directory, "retired.json"),
     purge: join(directory, "purge.json"),
@@ -723,11 +725,13 @@ export async function verifyHostedGitImport(
           assert.equal(previous.version, record.apiVersion);
           assertFixtureBindings(previous.metadata, plan, "api");
           const previousPhase = plan.api.vars.HOSTED_REPO_PHASE;
+          const phaseConfiguration = retainedAssetPhaseConfiguration(plan, previous, phase);
+          await atomic(configPaths.phase, phaseConfiguration);
           plan.api.vars.HOSTED_REPO_PHASE = phase;
           await saveConfigs();
           const deployed = await deployHeldFixturePhase({
             accountId, runId, purpose, worker: plan.apiName, phase, previousPhase, previous,
-            deployOnce: () => wrangler(["deploy"], configPaths.api, { allowFailure: true }),
+            deployOnce: () => wrangler(["deploy"], configPaths.phase, { allowFailure: true }),
             observe: observeDeployment,
             recordRetry: async (proof) => {
               record.recoveryPhaseDeployRetries ??= [];
@@ -740,6 +744,7 @@ export async function verifyHostedGitImport(
               await persist();
             },
           });
+          const resourceInvariant = assertRetainedAssetPhase(previous, deployed, previousPhase, phase);
           record.apiVersion = deployed.version;
           assertFixtureBindings(deployed.metadata, plan, "api");
           const observed = await observePhase(phase);
@@ -748,6 +753,8 @@ export async function verifyHostedGitImport(
             phase,
             version: record.apiVersion,
             deployAttempts: deployed.attempts,
+            assetsReused: true,
+            resourceInvariant,
             dataPlaneObservation: observed,
             at: new Date().toISOString(),
           });
