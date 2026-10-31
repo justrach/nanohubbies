@@ -38,6 +38,14 @@ These guarantees target local filesystems on macOS/Linux, not a distributed lock
 service or protection against power-loss storage corruption. See the platform's
 [rename API](https://nodejs.org/docs/latest-v24.x/api/fs.html#fspromisesrenameoldpath-newpath).
 
+The root Turbo graph makes the web build depend explicitly on the CLI build.
+CLI publication always executes, including when the web task can reuse its
+cached Next output. This recreates missing current downloads and checks existing
+ones instead of restoring mutable heads from a task cache. Changes to the CLI
+also invalidate the dependent web task. The web task separately retains its
+Next output cache. Direct web builds still invoke the same publisher. These
+settings follow Turbo's [task dependency and cache configuration](https://turborepo.dev/docs/reference/configuration).
+
 ## Interrupted builds and candidate work
 
 An unresolved lock is retained. Do not remove it based on age: confirm the
@@ -55,7 +63,7 @@ catalog entries and earlier release artifacts must remain intact. A crash can
 leave temporary files; remove only files confirmed to belong to the stopped
 build. Build assets fully before uploading them.
 
-Run `bun test packages/cli/test/build.test.mjs packages/cli/test/publish.test.mjs
-packages/cli/test/install.test.mjs` for focused publication and installation
+Run `bun test packages/cli/test/build.test.mjs packages/cli/test/build-cache.test.mjs
+packages/cli/test/publish.test.mjs packages/cli/test/install.test.mjs` for focused publication and installation
 checks, or `bun run test:cli` for the complete CLI suite. The full frozen Linux
 gate additionally exercises this builder in a fresh credential-free checkout.
