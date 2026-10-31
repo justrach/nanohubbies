@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T05:23:55.466Z",
+  "implementationCommit": "238ccb50c861561a1546a66b741196666663d396",
+  "validatedSource": "37b41c3105b822da0651d6c87632b33dedc50e87",
+  "scope": "Local and fresh isolated Linux source/distribution acceptance; production release is a separate gate",
+  "cli": {
+    "format": 1,
+    "version": "0.4.20",
+    "path": "/nh/releases/0.4.20/nh.mjs",
+    "bytes": 100963,
+    "sha256": "378a7d9ef090fc88146dc6198d3ce15330a27e711506c9da311f8e399065eeb3"
+  },
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "local": {
+    "apiUnitCases": 436,
+    "cliCases": 100,
+    "cacheRendererCases": 4,
+    "repositoryFullGateSource": "238ccb50c861561a1546a66b741196666663d396",
+    "sourceAndPortableWorkerGitAcceptance": true,
+    "pinnedTsrs": true,
+    "typedTasksFresh": 2,
+    "typedTasksCached": 1,
+    "workspaceBuildFreshTasks": 2,
+    "openNextBuiltFiles": 1478,
+    "frozenSourceFiles": 1134,
+    "retainedPreviousModulesAndChecksums": 19
+  },
+  "linuxAttempts": [
+    {
+      "source": "238ccb50c861561a1546a66b741196666663d396",
+      "sandboxId": "cnd_a9ee6e14837ce1b0d041943b6e7a412bec86b74f",
+      "outcome": "failed",
+      "passedGates": [
+        "install",
+        "unit",
+        "repository"
+      ],
+      "failedGate": "cli",
+      "apiUnitCases": 435,
+      "cliCasesPassed": 96,
+      "cliCasesFailed": 2,
+      "cause": "Cache-hit log text differs under GITHUB_ACTIONS=true",
+      "independentDestructionConfirmed": true
+    },
+    {
+      "source": "238ccb50c861561a1546a66b741196666663d396",
+      "sandboxId": "cnd_7bec7dc670e2ca112e37b1f2d15f97d2b892becf",
+      "outcome": "stopped-after-local-reproduction",
+      "fullGateAcceptance": false,
+      "independentDestructionConfirmed": true
+    },
+    {
+      "source": "37b41c3105b822da0651d6c87632b33dedc50e87",
+      "sandboxId": "cnd_c2302972ab30eeca756023ed82a6072ad5481035",
+      "outcome": "passed",
+      "gates": [
+        "install",
+        "unit",
+        "repository",
+        "cli",
+        "access",
+        "hosting",
+        "fixtures",
+        "build",
+        "check"
+      ],
+      "apiUnitCases": 436,
+      "cliCases": 100,
+      "network": "none",
+      "credentialFreeCandidate": true,
+      "npmAndNpxAbsent": true,
+      "dockerSocketAbsent": true,
+      "typedTasksFresh": 3,
+      "typedTasksCached": 0,
+      "macosLinuxDistributionEqual": true,
+      "independentDestructionConfirmed": true,
+      "providerState": "destroyed",
+      "imageDigest": "sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+      "privateLogSha256": "c0fc2a793188c2dcb32490640eb1b9f04df3ce7ca996e07051e2ccbbe3be9f10"
+    }
+  ],
+  "sourcePublication": {
+    "branch": "codex/standalone-git-host",
+    "validatedSourceRemoteExact": true,
+    "mainUnchanged": true
+  },
+  "productionDeploymentClaimed": false,
+  "hostedNanohubActionsActivated": false,
+  "productionTrafficReadinessEstablished": false,
+  "fullGithubParityEstablished": false
+}
