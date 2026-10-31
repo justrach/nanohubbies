@@ -39,3 +39,13 @@ No CLI version bump or published byte change is needed. Full frozen release
 build, isolated cloud delivery and production routing acceptance remain required
 before claiming this correction is deployed. The original failed release guard
 and the subsequent valid 0.4.21 publication evidence remain unchanged.
+
+## First frozen cloud attempt
+
+The first frozen run at `d868a761bec14b2c652be4357376f33d92bc897b` stopped at
+the API unit gate: 450 passed and one older web-routing fixture still expected
+Next to serve downloads when ASSETS was absent. That fixture now supplies ASSETS,
+asserts exact asset delivery, preserves missing-file 404 and checks absent-binding
+503. The full local API suite passes all 451 cases after the correction. The
+failed VM is independently confirmed destroyed. No candidate or production
+deployment occurred in that attempt; its receipts and logs are retained.

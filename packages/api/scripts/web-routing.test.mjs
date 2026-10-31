@@ -24,11 +24,16 @@ test('legacy CLI pages/downloads and native API dispatch retain their ownership'
  assert.equal(await(await worker.fetch(new Request('https://nanohub.sh/api/cli/device'),environment,ctx)).text(),'api');
  assert.equal(await(await worker.fetch(new Request('https://nanohub.sh/other?missing=1'),environment,ctx)).text(),'legacy:/other');
 });
-test('portable CLI distribution is native and public, and missing releases never fall through to legacy',async()=>{
- const env={...environment,LEGACY_PATHS:environment.LEGACY_PATHS+',/nh'};
- for(const path of ['/nh/latest.json','/nh/install.mjs','/nh/releases/0.4.1/nh.mjs','/nh/releases/0.4.1/SHA256SUMS']){
-  const r=await worker.fetch(new Request('https://nanohub.sh'+path),env,ctx);assert.equal(await r.text(),'next:'+path);assert.equal(r.headers.get('Cache-Control'),'public, max-age=0, must-revalidate');assert.equal(r.headers.get('X-Content-Type-Options'),'nosniff');
+test('portable CLI distribution comes only from assets; missing downloads never reach Next or legacy',async()=>{
+ const paths=['/nh/latest.json','/nh/install.mjs','/nh/releases/0.4.1/nh.mjs','/nh/releases/0.4.1/SHA256SUMS'];
+ const env={...environment,LEGACY_PATHS:environment.LEGACY_PATHS+',/nh',ASSETS:{fetch:async request=>{
+  const path=new URL(request.url).pathname;
+  return paths.includes(path)?new Response('asset:'+path):new Response('Asset not found',{status:404});
+ }}};
+ for(const path of paths){
+  const r=await worker.fetch(new Request('https://nanohub.sh'+path),env,ctx);assert.equal(r.status,200);assert.equal(await r.text(),'asset:'+path);assert.equal(r.headers.get('Cache-Control'),'public, max-age=0, must-revalidate');assert.equal(r.headers.get('X-Content-Type-Options'),'nosniff');
  }
- const missing=await worker.fetch(new Request('https://nanohub.sh/nh/releases/9.9.9/nh.mjs?missing=1'),env,ctx);assert.equal(missing.status,404);assert.equal(await missing.text(),'next:/nh/releases/9.9.9/nh.mjs');
+ const missing=await worker.fetch(new Request('https://nanohub.sh/nh/releases/9.9.9/nh.mjs'),env,ctx);assert.equal(missing.status,404);assert.equal(await missing.text(),'Asset not found');assert.equal(missing.headers.get('Cache-Control'),'private, no-store');
+ const unavailable=await worker.fetch(new Request('https://nanohub.sh/nh/latest.json'),{...env,ASSETS:undefined},ctx);assert.equal(unavailable.status,503);assert.equal(unavailable.headers.get('Retry-After'),'60');assert.equal(unavailable.headers.get('Cache-Control'),'private, no-store');
  assert.equal(await(await worker.fetch(new Request('https://nanohub.sh/nh/other'),env,ctx)).text(),'legacy:/nh/other');
 });
