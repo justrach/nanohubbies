@@ -113,5 +113,10 @@
     "activationEstablished": false
   },
   "productionTrafficReadinessEstablished": false,
-  "fullGithubParityEstablished": false
+  "fullGithubParityEstablished": false,
+  "productionMobile": {
+    "viewport": 390,
+    "documentWidth": 390,
+    "horizontalOverflow": false
+  }
 }

@@ -20,7 +20,10 @@ The [CLI publication guard](evidence/cli-publication-validation.md) now records
 20 published releases. Every earlier module and checksum is retained. Cache
 integration checks inspect structured results under terminal and Actions settings.
 General help in 0.4.20 omits the implemented `branches:write` grant explanation;
-the hosting guide documents the explicit permission while a later CLI corrects it.
+the hosting guide documents the explicit permission. The
+[0.4.21 source candidate](evidence/cli-branch-help-validation.md) corrects the help
+and passes 101 local CLI cases plus focused Worker/Git acceptance, without a new
+production deployment or fresh full Linux claim.
 
 Earlier [0.4.19 release acceptance](evidence/review-requests-release-validation.md)
 adds requested reviewers and secret administration, including the compatible

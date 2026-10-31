@@ -50,6 +50,10 @@ General help in 0.4.20 lists the branch commands but omits the grant explanation
 the permission above is implemented and documented here. Existing credentials
 gain no new permissions.
 
+The [0.4.21 source candidate](evidence/cli-branch-help-validation.md) adds that
+missing help explanation and a portable-help regression check. It is not yet
+published; production remains 0.4.20.
+
 Contributors can also run the CLI from this checkout:
 
 ```sh

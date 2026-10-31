@@ -83,6 +83,10 @@ mutations in this release.
 
 ![Existing lock rejects the owner](branch-rename-production-lock.png)
 
+The deployed branch/tree view also passes a 390px viewport check with the long
+synthetic branch name: document width stays 390px, with no horizontal page
+overflow. The viewport is reset afterward. [Mobile capture](branch-rename-production-mobile.png).
+
 ## Known help omission and remaining gates
 
 The first public/installer verifier expected general help to mention the new
@@ -91,7 +95,9 @@ The grant is implemented, documented and exposed by the production permission
 form; exact CLI behavior is covered in Linux. Those original verifier failures
 are retained. Corrected delivery checks assert the command help and permission
 in the exact release bytes, without claiming the missing help text exists. The
-help description needs a subsequent immutable CLI release; 0.4.20 is not rewritten.
+help description is corrected in the [0.4.21 source candidate](cli-branch-help-validation.md),
+with 101 local CLI cases and focused Worker/Git acceptance. It still needs release
+acceptance; 0.4.20 is not rewritten.
 
 A fresh intended Nanohub Actions account probe still returns
 403/`sandbox_scope_required`, with zero claims or allocations. Isolated acceptance
