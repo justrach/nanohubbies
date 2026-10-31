@@ -82,6 +82,8 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="GET"&&resource==="protection")scope="read";
   if(method==="GET"&&resource==="archive")scope="read";
   if(method==="GET"&&resource==="default-branch")scope="read";
+  if(method==='GET'&&resource==='branch-rename')scope='read';
+  if(method==='POST'&&resource==='branch-rename')scope='branches:write';
   if(method==='GET'&&resource==='merge-settings')scope='read';
   if(['GET','POST','PATCH','DELETE'].includes(method)&&resource==='collaborators')scope='collaborators:write';
   if(['GET','POST'].includes(method)&&resource==='ci/runners'||method==='DELETE'&&/^ci\/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resource))scope='runners:write';

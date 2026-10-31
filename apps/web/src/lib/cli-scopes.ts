@@ -9,6 +9,7 @@ export const cliPermissions=[
   ["protections:write","Change or remove branch protection rules (repository admins only)"],
   ["repository:archive","Archive or unarchive this repository (repository admins only)"],
   ["repository:default","Change the default branch (repository admins only)"],
+  ["branches:write","Rename branches (admins required for default or protected branches)"],
   ['repository:merge','Change allowed merge methods and the default (repository admins only)'],
   ["environments:write","Manage deployment environments, reviewers and source restrictions (repository admins only)"],
   ['deployments:write','Request deployments (repository writers; environment gates still apply)'],

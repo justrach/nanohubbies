@@ -35,6 +35,12 @@ immutable version files and serialized publication. Different bytes require a
 new version; interrupted locks require explicit reconciliation. The root build
 also runs publication before cached web output; see [macOS/Linux acceptance](evidence/cli-publication-validation.md).
 
+The local **0.4.20 candidate** adds `nh branch list` and `nh branch rename OLD NEW`,
+with a separate explicit `branches:write` grant, current admin checks for protected
+or default names, and one revision-checked rename. See the [branch rename contract](branch-rename.md).
+These commands are not included in published production 0.4.19; server and release
+acceptance remain pending.
+
 Contributors can also run the CLI from this checkout:
 
 ```sh

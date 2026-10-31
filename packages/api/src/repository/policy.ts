@@ -38,7 +38,11 @@ export class Policies {
   }
   /** Overlapping rules compose; adding an exact rule cannot weaken a glob. */
   get(branch: string): BranchPolicy | undefined {
-    const matches = this.list().filter((p) => matchesBranch(p.branch, branch));
+    return this.combined(branch,[branch]);
+  }
+  /** A rename retains both source and destination requirements. */
+  combined(branch:string,names:string[]):BranchPolicy|undefined {
+    const matches = this.list().filter((p) => names.some(name=>matchesBranch(p.branch, name)));
     if (!matches.length) return;
     const allowed = matches
       .filter((p) => p.allowPush !== undefined)

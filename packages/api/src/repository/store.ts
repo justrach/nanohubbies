@@ -76,7 +76,8 @@ export class Repository {
     const version = this.sql.exec<{ v: number }>("SELECT MAX(version) AS v FROM versions").toArray()[0]?.v ?? 0;
     return { version, commit: ref.commit, tree: ref.tree };
   }
-  update(name: string, old: string | null, next: { commit: string; tree: string } | null, fastForward: boolean, actor: string, merge = false, proof?:RefProof, human = false,branchContext?:string,deploymentBase?:string|null) {
+  update(name: string, old: string | null, next: { commit: string; tree: string } | null, fastForward: boolean, actor: string, merge = false, proof?:RefProof, human = false,branchContext?:string,deploymentBase?:string|null,metadataOnly=false) {
+    if(metadataOnly&&(old!==null||!next))throw Error('Metadata-only ref creation requires a new ref');
     if(this.authority&&(!currentRulesetActor(this.authority,actor)||!['owner','admin','writer'].includes(this.authority.role??'')))throw Error('Current repository write membership is required; refresh and retry');
     assertRepositoryWritable(this.sql);
     if (!this.mode()) throw new Error("This workspace uses text snapshot mode");
@@ -107,7 +108,7 @@ export class Repository {
       this.sql.exec("INSERT INTO repository_refs VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET commit_sha=excluded.commit_sha, tree_sha=excluded.tree_sha, updated_at=excluded.updated_at", name, next.commit, next.tree, Date.now());
       if (name === defaultRef(this.sql)) this.recordDefaultHead(next);
     } else this.sql.exec("DELETE FROM repository_refs WHERE name = ?", name);
-    const reviewable=!!next&&current?.tree!==next.tree;
+    const reviewable=!metadataOnly&&!!next&&current?.tree!==next.tree;
     this.audit({ actor, ref: name, old, next: next?.commit ?? null, merge, human,...(old&&next&&old!==next.commit&&!fastForward?{force:true}:{}), ...(branch?{reviewable}:{}), ...(bypassedRulesets.length?{bypassedRulesets,...(this.authority?{bypassRole:{role:this.authority.role,checkedAt:this.authority.checkedAt}}:{})}:{}) });
     if(branch&&next&&reviewable)dismissAfterHeadChange(this.sql,branch,next,event=>this.audit(event));
     if (branch && next) {

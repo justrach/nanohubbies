@@ -12,6 +12,12 @@ reused. It passes nine frozen Linux gates plus 95 CLI cases on macOS and in a
 targeted Linux cache-graph follow-up. Published 0.4.19 and installer bytes remain
 unchanged; this is source/build acceptance with no new application deployment.
 
+A [branch rename candidate](branch-rename.md) now adds the UI and CLI 0.4.20
+commands with storage revisions, current role/grant checks, retained protections,
+original-pusher review independence and atomic PR/default/CI/alias updates.
+Local real Worker/Git acceptance and [scoped design review](evidence/branch-rename-design-validation.md)
+pass. It is not deployed; production remains 0.4.19 pending release acceptance.
+
 Published CLI **0.4.19** adds [requested reviewers](review-requests.md) and
 [secret administration](cli-secrets.md). The [release acceptance](evidence/review-requests-release-validation.md)
 passes all nine frozen Linux gates, disposable normal/held delivery, compatible

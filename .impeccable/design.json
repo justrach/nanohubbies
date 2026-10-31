@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T04:50:47.445450+00:00",
+  "title": "Design System: Nanohub",
+  "extensions": {
+    "colorMeta": {
+      "paper-brand": {
+        "role": "primary",
+        "displayName": "Paper Brand",
+        "tonalRamp": [
+          "oklch(15.0% 0.0418 64.49)",
+          "oklch(26.0% 0.0877 64.49)",
+          "oklch(38.0% 0.1044 64.49)",
+          "oklch(49.0% 0.1044 64.49)",
+          "oklch(61.0% 0.1044 64.49)",
+          "oklch(72.0% 0.1044 64.49)",
+          "oklch(84.0% 0.0928 64.49)",
+          "oklch(95.0% 0.029 64.49)"
+        ]
+      },
+      "paper-action": {
+        "role": "primary",
+        "displayName": "Paper Action",
+        "tonalRamp": [
+          "oklch(15.0% 0.054 65.94)",
+          "oklch(26.0% 0.1134 65.94)",
+          "oklch(38.0% 0.1351 65.94)",
+          "oklch(49.0% 0.1351 65.94)",
+          "oklch(61.0% 0.1351 65.94)",
+          "oklch(72.0% 0.1351 65.94)",
+          "oklch(84.0% 0.12 65.94)",
+          "oklch(95.0% 0.0375 65.94)"
+        ]
+      },
+      "paper-page": {
+        "role": "neutral",
+        "displayName": "Paper Page",
+        "tonalRamp": [
+          "oklch(15.0% 0.0028 88.64)",
+          "oklch(26.0% 0.0058 88.64)",
+          "oklch(38.0% 0.007 88.64)",
+          "oklch(49.0% 0.007 88.64)",
+          "oklch(61.0% 0.007 88.64)",
+          "oklch(72.0% 0.007 88.64)",
+          "oklch(84.0% 0.0062 88.64)",
+          "oklch(95.0% 0.0019 88.64)"
+        ]
+      },
+      "paper-surface": {
+        "role": "neutral",
+        "displayName": "Paper Surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0028 88.64)",
+          "oklch(26.0% 0.0058 88.64)",
+          "oklch(38.0% 0.007 88.64)",
+          "oklch(49.0% 0.007 88.64)",
+          "oklch(61.0% 0.007 88.64)",
+          "oklch(72.0% 0.007 88.64)",
+          "oklch(84.0% 0.0062 88.64)",
+          "oklch(95.0% 0.0019 88.64)"
+        ]
+      },
+      "paper-raised": {
+        "role": "neutral",
+        "displayName": "Paper Raised",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 84.59)",
+          "oklch(26.0% 0.0146 84.59)",
+          "oklch(38.0% 0.0174 84.59)",
+          "oklch(49.0% 0.0174 84.59)",
+          "oklch(61.0% 0.0174 84.59)",
+          "oklch(72.0% 0.0174 84.59)",
+          "oklch(84.0% 0.0154 84.59)",
+          "oklch(95.0% 0.0048 84.59)"
+        ]
+      },
+      "paper-ink": {
+        "role": "neutral",
+        "displayName": "Paper Ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.004 88.8)",
+          "oklch(26.0% 0.0084 88.8)",
+          "oklch(38.0% 0.01 88.8)",
+          "oklch(49.0% 0.01 88.8)",
+          "oklch(61.0% 0.01 88.8)",
+          "oklch(72.0% 0.01 88.8)",
+          "oklch(84.0% 0.0089 88.8)",
+          "oklch(95.0% 0.0028 88.8)"
+        ]
+      },
+      "paper-ink-2": {
+        "role": "neutral",
+        "displayName": "Paper Ink 2",
+        "tonalRamp": [
+          "oklch(15.0% 0.0081 88.08)",
+          "oklch(26.0% 0.0171 88.08)",
+          "oklch(38.0% 0.0204 88.08)",
+          "oklch(49.0% 0.0204 88.08)",
+          "oklch(61.0% 0.0204 88.08)",
+          "oklch(72.0% 0.0204 88.08)",
+          "oklch(84.0% 0.0181 88.08)",
+          "oklch(95.0% 0.0057 88.08)"
+        ]
+      },
+      "paper-muted": {
+        "role": "neutral",
+        "displayName": "Paper Muted",
+        "tonalRamp": [
+          "oklch(15.0% 0.0091 87.57)",
+          "oklch(26.0% 0.0191 87.57)",
+          "oklch(38.0% 0.0227 87.57)",
+          "oklch(49.0% 0.0227 87.57)",
+          "oklch(61.0% 0.0227 87.57)",
+          "oklch(72.0% 0.0227 87.57)",
+          "oklch(84.0% 0.0202 87.57)",
+          "oklch(95.0% 0.0063 87.57)"
+        ]
+      },
+      "paper-line": {
+        "role": "neutral",
+        "displayName": "Paper Line",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 84.59)",
+          "oklch(26.0% 0.0148 84.59)",
+          "oklch(38.0% 0.0176 84.59)",
+          "oklch(49.0% 0.0176 84.59)",
+          "oklch(61.0% 0.0176 84.59)",
+          "oklch(72.0% 0.0176 84.59)",
+          "oklch(84.0% 0.0156 84.59)",
+          "oklch(95.0% 0.0049 84.59)"
+        ]
+      },
+      "paper-wash": {
+        "role": "neutral",
+        "displayName": "Paper Wash",
+        "tonalRamp": [
+          "oklch(15.0% 0.0051 86.83)",
+          "oklch(26.0% 0.0107 86.83)",
+          "oklch(38.0% 0.0127 86.83)",
+          "oklch(49.0% 0.0127 86.83)",
+          "oklch(61.0% 0.0127 86.83)",
+          "oklch(72.0% 0.0127 86.83)",
+          "oklch(84.0% 0.0113 86.83)",
+          "oklch(95.0% 0.0035 86.83)"
+        ]
+      },
+      "paper-good-text": {
+        "role": "status",
+        "displayName": "Paper Good Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0312 134.79)",
+          "oklch(26.0% 0.0655 134.79)",
+          "oklch(38.0% 0.078 134.79)",
+          "oklch(49.0% 0.078 134.79)",
+          "oklch(61.0% 0.078 134.79)",
+          "oklch(72.0% 0.078 134.79)",
+          "oklch(84.0% 0.0693 134.79)",
+          "oklch(95.0% 0.0217 134.79)"
+        ]
+      },
+      "paper-warning": {
+        "role": "status",
+        "displayName": "Paper Warning",
+        "tonalRamp": [
+          "oklch(15.0% 0.0436 78.06)",
+          "oklch(26.0% 0.0915 78.06)",
+          "oklch(38.0% 0.1089 78.06)",
+          "oklch(49.0% 0.1089 78.06)",
+          "oklch(61.0% 0.1089 78.06)",
+          "oklch(72.0% 0.1089 78.06)",
+          "oklch(84.0% 0.0968 78.06)",
+          "oklch(95.0% 0.0303 78.06)"
+        ]
+      },
+      "paper-critical": {
+        "role": "status",
+        "displayName": "Paper Critical",
+        "tonalRamp": [
+          "oklch(15.0% 0.0601 34.52)",
+          "oklch(26.0% 0.1263 34.52)",
+          "oklch(38.0% 0.1504 34.52)",
+          "oklch(49.0% 0.1504 34.52)",
+          "oklch(61.0% 0.1504 34.52)",
+          "oklch(72.0% 0.1504 34.52)",
+          "oklch(84.0% 0.1337 34.52)",
+          "oklch(95.0% 0.0418 34.52)"
+        ]
+      },
+      "graphite-brand": {
+        "role": "primary",
+        "displayName": "Graphite Brand",
+        "tonalRamp": [
+          "oklch(15.0% 0.056 72.95)",
+          "oklch(26.0% 0.1175 72.95)",
+          "oklch(38.0% 0.1399 72.95)",
+          "oklch(49.0% 0.1399 72.95)",
+          "oklch(61.0% 0.1399 72.95)",
+          "oklch(72.0% 0.1399 72.95)",
+          "oklch(84.0% 0.1243 72.95)",
+          "oklch(95.0% 0.0389 72.95)"
+        ]
+      },
+      "graphite-action": {
+        "role": "primary",
+        "displayName": "Graphite Action",
+        "tonalRamp": [
+          "oklch(15.0% 0.056 72.95)",
+          "oklch(26.0% 0.1175 72.95)",
+          "oklch(38.0% 0.1399 72.95)",
+          "oklch(49.0% 0.1399 72.95)",
+          "oklch(61.0% 0.1399 72.95)",
+          "oklch(72.0% 0.1399 72.95)",
+          "oklch(84.0% 0.1243 72.95)",
+          "oklch(95.0% 0.0389 72.95)"
+        ]
+      },
+      "graphite-page": {
+        "role": "neutral",
+        "displayName": "Graphite Page",
+        "tonalRamp": [
+          "oklch(15.0% 0.0041 88.81)",
+          "oklch(26.0% 0.0086 88.81)",
+          "oklch(38.0% 0.0102 88.81)",
+          "oklch(49.0% 0.0102 88.81)",
+          "oklch(61.0% 0.0102 88.81)",
+          "oklch(72.0% 0.0102 88.81)",
+          "oklch(84.0% 0.0091 88.81)",
+          "oklch(95.0% 0.0028 88.81)"
+        ]
+      },
+      "graphite-surface": {
+        "role": "neutral",
+        "displayName": "Graphite Surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0048 84.55)",
+          "oklch(26.0% 0.0102 84.55)",
+          "oklch(38.0% 0.0121 84.55)",
+          "oklch(49.0% 0.0121 84.55)",
+          "oklch(61.0% 0.0121 84.55)",
+          "oklch(72.0% 0.0121 84.55)",
+          "oklch(84.0% 0.0108 84.55)",
+          "oklch(95.0% 0.0034 84.55)"
+        ]
+      },
+      "graphite-raised": {
+        "role": "neutral",
+        "displayName": "Graphite Raised",
+        "tonalRamp": [
+          "oklch(15.0% 0.0062 84.54)",
+          "oklch(26.0% 0.013 84.54)",
+          "oklch(38.0% 0.0154 84.54)",
+          "oklch(49.0% 0.0154 84.54)",
+          "oklch(61.0% 0.0154 84.54)",
+          "oklch(72.0% 0.0154 84.54)",
+          "oklch(84.0% 0.0137 84.54)",
+          "oklch(95.0% 0.0043 84.54)"
+        ]
+      },
+      "graphite-ink": {
+        "role": "neutral",
+        "displayName": "Graphite Ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.0045 89.73)",
+          "oklch(26.0% 0.0094 89.73)",
+          "oklch(38.0% 0.0112 89.73)",
+          "oklch(49.0% 0.0112 89.73)",
+          "oklch(61.0% 0.0112 89.73)",
+          "oklch(72.0% 0.0112 89.73)",
+          "oklch(84.0% 0.0099 89.73)",
+          "oklch(95.0% 0.0031 89.73)"
+        ]
+      },
+      "graphite-ink-2": {
+        "role": "neutral",
+        "displayName": "Graphite Ink 2",
+        "tonalRamp": [
+          "oklch(15.0% 0.0099 88.26)",
+          "oklch(26.0% 0.0207 88.26)",
+          "oklch(38.0% 0.0247 88.26)",
+          "oklch(49.0% 0.0247 88.26)",
+          "oklch(61.0% 0.0247 88.26)",
+          "oklch(72.0% 0.0247 88.26)",
+          "oklch(84.0% 0.0219 88.26)",
+          "oklch(95.0% 0.0068 88.26)"
+        ]
+      },
+      "graphite-muted": {
+        "role": "neutral",
+        "displayName": "Graphite Muted",
+        "tonalRamp": [
+          "oklch(15.0% 0.0092 85.96)",
+          "oklch(26.0% 0.0194 85.96)",
+          "oklch(38.0% 0.0231 85.96)",
+          "oklch(49.0% 0.0231 85.96)",
+          "oklch(61.0% 0.0231 85.96)",
+          "oklch(72.0% 0.0231 85.96)",
+          "oklch(84.0% 0.0206 85.96)",
+          "oklch(95.0% 0.0064 85.96)"
+        ]
+      },
+      "graphite-line": {
+        "role": "neutral",
+        "displayName": "Graphite Line",
+        "tonalRamp": [
+          "oklch(15.0% 0.0073 84.55)",
+          "oklch(26.0% 0.0153 84.55)",
+          "oklch(38.0% 0.0182 84.55)",
+          "oklch(49.0% 0.0182 84.55)",
+          "oklch(61.0% 0.0182 84.55)",
+          "oklch(72.0% 0.0182 84.55)",
+          "oklch(84.0% 0.0162 84.55)",
+          "oklch(95.0% 0.0051 84.55)"
+        ]
+      },
+      "graphite-wash": {
+        "role": "neutral",
+        "displayName": "Graphite Wash",
+        "tonalRamp": [
+          "oklch(15.0% 0.0048 84.55)",
+          "oklch(26.0% 0.0102 84.55)",
+          "oklch(38.0% 0.0121 84.55)",
+          "oklch(49.0% 0.0121 84.55)",
+          "oklch(61.0% 0.0121 84.55)",
+          "oklch(72.0% 0.0121 84.55)",
+          "oklch(84.0% 0.0108 84.55)",
+          "oklch(95.0% 0.0034 84.55)"
+        ]
+      },
+      "graphite-good-text": {
+        "role": "status",
+        "displayName": "Graphite Good Text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0387 135.82)",
+          "oklch(26.0% 0.0813 135.82)",
+          "oklch(38.0% 0.0968 135.82)",
+          "oklch(49.0% 0.0968 135.82)",
+          "oklch(61.0% 0.0968 135.82)",
+          "oklch(72.0% 0.0968 135.82)",
+          "oklch(84.0% 0.0861 135.82)",
+          "oklch(95.0% 0.0269 135.82)"
+        ]
+      },
+      "graphite-warning": {
+        "role": "status",
+        "displayName": "Graphite Warning",
+        "tonalRamp": [
+          "oklch(15.0% 0.0518 79.85)",
+          "oklch(26.0% 0.1088 79.85)",
+          "oklch(38.0% 0.1295 79.85)",
+          "oklch(49.0% 0.1295 79.85)",
+          "oklch(61.0% 0.1295 79.85)",
+          "oklch(72.0% 0.1295 79.85)",
+          "oklch(84.0% 0.1151 79.85)",
+          "oklch(95.0% 0.036 79.85)"
+        ]
+      },
+      "graphite-critical": {
+        "role": "status",
+        "displayName": "Graphite Critical",
+        "tonalRamp": [
+          "oklch(15.0% 0.0563 33.93)",
+          "oklch(26.0% 0.1181 33.93)",
+          "oklch(38.0% 0.1406 33.93)",
+          "oklch(49.0% 0.1406 33.93)",
+          "oklch(61.0% 0.1406 33.93)",
+          "oklch(72.0% 0.1406 33.93)",
+          "oklch(84.0% 0.125 33.93)",
+          "oklch(95.0% 0.0391 33.93)"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "none",
+        "purpose": "Ordinary repository content panels."
+      },
+      {
+        "name": "repository-overflow",
+        "value": "0 8px 24px #0002",
+        "purpose": "Anchored repository overflow menu only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "140ms",
+        "purpose": "Shared control transition duration."
+      },
+      {
+        "name": "button-easing",
+        "value": "cubic-bezier(0.32,0.72,0,1)",
+        "purpose": "Underlying shared button easing; reduced-motion disables transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "branch-narrow",
+        "value": "440px"
+      },
+      {
+        "name": "workspace-mobile",
+        "value": "640px"
+      },
+      {
+        "name": "actions-stack",
+        "value": "800px"
+      },
+      {
+        "name": "compact-header",
+        "value": "900px"
+      },
+      {
+        "name": "code-aside-stack",
+        "value": "1023px"
+      }
+    ],
+    "notes": [
+      "The tonal ramps are synthesized OKLCH swatch-preview metadata; they are not runtime palette values or new theme tokens.",
+      "Component previews are reduced source extracts. They inherit runtime CSS variables through the host; DESIGN.md frontmatter records the observed primitives."
+    ]
+  },
+  "components": [
+    {
+      "name": "Workspace primary button",
+      "kind": "button",
+      "description": "Small primary control; inherits the current runtime theme.",
+      "html": "<button class=\"ds-button ds-primary\">Review rename</button>",
+      "css": ".ds-button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius-control);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:background-color var(--duration-fast),color var(--duration-fast)}.ds-button:focus-visible{outline:2px solid var(--series-1);outline-offset:2px}.ds-button:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-primary{background:var(--action);color:var(--action-ink);border-color:color-mix(in srgb,var(--action) 85%,#000)}.ds-primary:hover{background:color-mix(in srgb,var(--action) 92%,var(--ink))}.ds-primary:active{background:color-mix(in srgb,var(--action) 85%,var(--ink))}",
+      "refersTo": "button-primary-paper"
+    },
+    {
+      "name": "Workspace secondary button",
+      "kind": "button",
+      "description": "Bordered secondary repository control.",
+      "html": "<button class=\"ds-button ds-secondary\">Refresh branches</button>",
+      "css": ".ds-button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius-control);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:background-color var(--duration-fast),color var(--duration-fast)}.ds-button:focus-visible{outline:2px solid var(--series-1);outline-offset:2px}.ds-button:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-secondary{background:var(--wash);color:var(--ink)}.ds-secondary:hover,.ds-secondary:active{background:var(--wash)}"
+    },
+    {
+      "name": "Workspace ghost action",
+      "kind": "button",
+      "description": "Quiet inline action.",
+      "html": "<button class=\"ds-button ds-ghost\">Cancel</button>",
+      "css": ".ds-button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius-control);font-family:var(--font-sans);font-size:13px;font-weight:500;cursor:pointer;transition:background-color var(--duration-fast),color var(--duration-fast)}.ds-button:focus-visible{outline:2px solid var(--series-1);outline-offset:2px}.ds-button:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-ghost{background:transparent;border-color:transparent;color:var(--ink-2)}.ds-ghost:hover,.ds-ghost:active{background:var(--wash);color:var(--ink)}"
+    },
+    {
+      "name": "Rename field",
+      "kind": "input",
+      "description": "Existing labeled review field with rename geometry.",
+      "html": "<label class=\"ds-label\">New branch name<input class=\"ds-field\" value=\"feature/new-name\" spellcheck=\"false\"></label>",
+      "css": ".ds-label{display:grid;gap:5px;max-width:480px;color:var(--muted);font-family:var(--font-sans);font-size:12px}.ds-field{width:100%;min-width:0;height:34px;padding:8px 12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius-control);font-family:var(--font-sans);font-size:13px;outline:none}.ds-field:hover{border-color:var(--line)}.ds-field:focus-visible{border-color:var(--series-1)}.ds-field:disabled{cursor:default}"
+    },
+    {
+      "name": "Repository tabs",
+      "kind": "nav",
+      "description": "Shared horizontal tabs; this minimal text sample omits the source icons and Graphite active-tab rule.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Repository\"><a href=\"#code\">Code</a><a href=\"#branches\" aria-current=\"page\">Branches</a></nav>",
+      "css": ".ds-tabs{display:flex;gap:8px;overflow-x:auto;font-family:var(--font-sans)}.ds-tabs a{position:relative;padding:10px 12px;color:var(--ink-2);font-size:14px;text-decoration:none;white-space:nowrap;border-radius:6px}.ds-tabs a:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}.ds-tabs a[aria-current]{background:var(--raised);color:var(--ink);font-weight:600}.ds-tabs a:focus-visible{outline:2px solid var(--series-1);outline-offset:-2px}@media(max-width:640px){.ds-tabs{gap:0}.ds-tabs a{padding-inline:10px;font-size:13px}}"
+    },
+    {
+      "name": "Repository visibility",
+      "kind": "chip",
+      "description": "Noninteractive repository metadata; no hover or focus state.",
+      "html": "<span class=\"ds-visibility\">Private</span>",
+      "css": ".ds-visibility{display:inline-flex;align-items:center;gap:4px;background:var(--wash);color:var(--muted);font-family:var(--font-sans);font-size:12px;font-weight:500;line-height:18px;padding:0 7px;border-radius:20px}"
+    },
+    {
+      "name": "Repository card",
+      "kind": "card",
+      "description": "Flat shared card with the protection panel header treatment.",
+      "html": "<section class=\"ds-card\"><header class=\"ds-header\">Protection activity</header><div class=\"ds-content\">Rule changes and accepted ref updates.</div></section>",
+      "css": ".ds-card{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:none;overflow:hidden;font-family:var(--font-sans)}.ds-header{background:var(--wash);padding:16px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600}.ds-content{padding:16px;color:var(--muted);font-size:12px;line-height:1.5}",
+      "refersTo": "repository-card-paper"
+    }
+  ],
+  "narrative": {
+    "northStar": "Harness Paper/Graphite",
+    "overview": "Harness Paper/Graphite is the approved incumbent repository world: warm cream or charcoal surfaces, dark or pale ink, amber actions and compact Geist text. This record captures the built repository workspace; it introduces no new visual direction.\n\nShared top navigation, bordered lists and modestly rounded controls keep code and repository state prominent. Branch administration extends the existing rows inline. The approved direction is recorded in `docs/design-variations/2026-10-26/selected-design.md`; the source remains authoritative for implementation.",
+    "keyCharacteristics": [
+      "Warm Paper/Graphite themes with amber actions.",
+      "Compact Geist interface text and Geist Mono identifiers.",
+      "Flat panels, visible dividers and shared top navigation."
+    ],
+    "rules": [
+      {
+        "name": "The Shared Theme Rule",
+        "body": "Reuse the shared theme variables for local repository extensions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Panel Rule",
+        "body": "Ordinary repository panels remain shadowless; anchored overlays may use their existing elevation.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the shared theme variables in both light and dark modes.",
+      "Do preserve compact top navigation and the existing repository component geometry.",
+      "Do let long repository and branch names wrap; let action groups wrap on narrow screens.",
+      "Do preserve visible focus and explicit review, pending, error and uncertain outcomes."
+    ],
+    "donts": [
+      "Don't introduce a rail as the shared repository navigation.",
+      "Don't replace the incumbent palette or type pairing for a local extension.",
+      "Don't give ordinary repository panels decorative elevation.",
+      "Don't represent a pending or uncertain write as confirmed success."
+    ]
+  }
+}

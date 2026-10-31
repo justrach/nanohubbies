@@ -68,7 +68,14 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
   if (action === "branches") {
     if (method === "GET" && !id) return json(s);
     if (method === "GET" && id === "tree") {
-      const b = branch(url.searchParams.get("name") ?? s.defaultBranch??"main");
+      const requested=url.searchParams.get('name')??s.defaultBranch??'main';
+      let canonical:string|null=requested;
+      if(!s.branches.some(b=>b.name===requested))try{canonical=await seq.resolveRenamedBranch(requested);}catch(error){
+        if(error instanceof Error&&error.message.includes('does not implement the method "resolveRenamedBranch"'))return json({error:'Branch redirects are updating; retry browsing shortly'},{status:503,headers:{'Retry-After':'5'}});
+        throw error;
+      }
+      if(!canonical)return json({error:'No such branch'},{status:404});
+      const b = branch(canonical);
       const path = url.searchParams.get("path") ?? "";
       if (path.split("/").some((p) => p === ".." || p === ".") || path.includes("\\")) throw new Error("Invalid path");
       const e = await entryAt(objects, b.tree, path);

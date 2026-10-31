@@ -1,6 +1,6 @@
 import type {User} from "../auth";
 
-export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review","secrets:read","secrets:write","secrets:grant"] as const;
+export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review","secrets:read","secrets:write","secrets:grant","branches:write"] as const;
 export type CliScope=typeof cliScopes[number];
 export const cliScopeWrites=(scope:CliScope)=>!["read","contents:read","secrets:read"].includes(scope);
 export const cliScopeNeedsWriter=(scope:CliScope)=>cliScopeWrites(scope)&&scope!=="deployments:review";

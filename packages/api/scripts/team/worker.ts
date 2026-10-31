@@ -11,6 +11,7 @@ let dropNextCollaboratorAcknowledgement=false;
 let dropNextDeploymentAcknowledgement=false;
 let dropImportAcknowledgement:string|null=null;
 let dropNextSecretGrantAcknowledgement=false;
+let dropNextBranchRenameAcknowledgement=false;
 let vaultAuthorityRace:{trunk:string;actor:string;owner:string;credentialId?:string;role?:'reader'|'writer'}|null=null;
 let workloadAuthorityRace:{trunk:string;actor:string;owner:string}|null=null;
 const importPosts={objects:0,refs:0};
@@ -22,6 +23,33 @@ class FixtureVaultAuthority extends RpcTarget {
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
+  branchRenameFault(input:{missingRead?:boolean;missingWrite?:boolean;late?:boolean;legacy?:{branch:string;commit:string;tree:string}}){
+    return this.ctx.storage.transactionSync(()=>{
+      const sql=this.ctx.storage.sql;
+      sql.exec('CREATE TABLE IF NOT EXISTS fixture_branch_rename_receiver (id INTEGER PRIMARY KEY,missing_read INTEGER NOT NULL,missing_write INTEGER NOT NULL)');
+      sql.exec('INSERT OR REPLACE INTO fixture_branch_rename_receiver VALUES (1,?,?)',Number(input.missingRead===true),Number(input.missingWrite===true));
+      sql.exec('DROP TRIGGER IF EXISTS fixture_branch_rename_late');
+      if(input.late)sql.exec("CREATE TRIGGER fixture_branch_rename_late BEFORE INSERT ON repository_branch_renames BEGIN SELECT RAISE(ABORT,'synthetic late rename failure'); END");
+      if(input.legacy)sql.exec('UPDATE repository_refs SET commit_sha=?,tree_sha=? WHERE name=?',input.legacy.commit,input.legacy.tree,'refs/heads/'+input.legacy.branch);
+      return {armed:true};
+    });
+  }
+  private branchRenameMissing(kind:'missing_read'|'missing_write'){
+    const sql=this.ctx.storage.sql;
+    return !!sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fixture_branch_rename_receiver'").toArray().length&&!!sql.exec<{missing:number}>('SELECT '+kind+' AS missing FROM fixture_branch_rename_receiver WHERE id=1').toArray()[0]?.missing;
+  }
+  branchRenameConfiguration(){
+    if(this.branchRenameMissing('missing_read'))throw Error('The RPC receiver does not implement the method "branchRenameConfiguration".');
+    return super.branchRenameConfiguration();
+  }
+  resolveRenamedBranch(name:string){
+    if(this.branchRenameMissing('missing_read'))throw Error('The RPC receiver does not implement the method "resolveRenamedBranch".');
+    return super.resolveRenamedBranch(name);
+  }
+  async renameRepositoryBranch(...args:Parameters<ProductionSequencer['renameRepositoryBranch']>){
+    if(this.branchRenameMissing('missing_write'))throw Error('The RPC receiver does not implement the method "renameRepositoryBranch".');
+    return super.renameRepositoryBranch(...args);
+  }
   legacyRequestStorage(input:{operation:'review'|'request'|'drop-answer'|'audit-failure'|'audit-recover';number:number;data?:Record<string,unknown>}){
     return this.ctx.storage.transactionSync(()=>{
       const sql=this.ctx.storage.sql;
@@ -125,6 +153,22 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/branch-rename-fault'){
+      const body=await request.json<{trunk:string;missingRead?:boolean;missingWrite?:boolean;late?:boolean;legacy?:{branch:string;commit:string;tree:string}}>();
+      return Response.json(await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {branchRenameFault:(input:typeof body)=>Promise<unknown>}).branchRenameFault(body));
+    }
+    if(url.pathname==='/fixture/conditional-branch-rename'){
+      const body=await request.json<import('../../src/repository/branch-rename-types').BranchRenameInput&{trunk:string;actor:string;credentialId?:string}>();
+      const seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)),plan=await seq.graphPlan();
+      try{return Response.json(await seq.renameRepositoryBranch(body,body.actor,url.origin,
+        {old:null,next:body.commit,linear:true,rules:{revision:plan.revision,ref:'refs/heads/'+body.to,fileTransitions:true,violations:[]}},
+        {old:body.commit,next:body.commit,linear:true,rules:{revision:plan.revision,ref:'refs/heads/'+body.from,violations:[]}},body.credentialId));
+      }catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
+    if(url.pathname==='/fixture/drop-branch-rename-acknowledgement'){dropNextBranchRenameAcknowledgement=true;return Response.json({armed:true});}
+    if(dropNextBranchRenameAcknowledgement&&request.method==='POST'&&/^\/api\/cli\/(trunks|repos)\/.+\/branch-rename$/.test(url.pathname)){
+      dropNextBranchRenameAcknowledgement=false;const response=await api.fetch(request,env);if(!response.ok)return response;await response.body?.cancel();return Response.json({error:'Synthetic lost branch rename acknowledgement'},{status:503});
+    }
     if(url.pathname==='/fixture/vault-legacy-read'){
       const body=await request.json<{scope:import('../../../vault/src/provider').VaultScope;token:string;method:'principal'|'redeem'}>();
       const vault=env.VAULT as unknown as import('../../../vault/src/index').VaultService;

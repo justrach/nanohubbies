@@ -16,6 +16,8 @@ export interface RepositoryEvent {
   via?:{kind:"cli";credentialId:string};
   reviewRequest?:{pull:number;operation:'request'|'remove'|'answer';reviewers:string[];reviewId?:number;reconciled?:boolean};
   runnerRegistration?:{id:string;name:string;revoked:boolean};
+  branchRename?:{from:string;to:string;commit:string;defaultBranch:boolean;retargetedPulls:number[];closedPulls:number[];updatedRulesets:number[]};
+  forwardedPush?:{sourceEvent:number;sourceRef:string;renamedBy:string};
   defaultBranch?:{previous:string;next:string;commit:string;revision:number};
   mergeSettings?:{previous:import('./merge-settings-types').MergeSettings;next:import('./merge-settings-types').MergeSettings};
   ref?: string;

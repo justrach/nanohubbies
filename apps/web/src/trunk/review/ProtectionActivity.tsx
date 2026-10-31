@@ -9,6 +9,8 @@ import { field, Notice } from "./shared";
 import { RulesetRestore } from "./RulesetRestore";
 
 function title(event: RepositoryEvent) {
+  if(event.branchRename)return `Renamed branch ${event.branchRename.from} to ${event.branchRename.to}`;
+  if(event.forwardedPush)return `Retained reviewable push from ${event.forwardedPush.sourceRef} after branch rename`;
   if(event.runnerRegistration)return `${event.runnerRegistration.revoked?'Revoked':'Registered'} runner “${event.runnerRegistration.name}”`;
   if(event.defaultBranch)return `Default branch changed from ${event.defaultBranch.previous} to ${event.defaultBranch.next}`;
   if(event.mergeSettings)return `Merge methods changed to ${event.mergeSettings.next.allowedMethods.join(', ')}; default ${event.mergeSettings.next.defaultMethod}`;

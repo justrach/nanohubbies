@@ -5,6 +5,8 @@ import type {RulesetActor} from './repository/bypass';
 import {currentRulesetActor} from './repository/bypass';
 import {DeploymentRequests} from "./deployments/requests";
 import {currentCliGrant} from './cli/credentials';
+import {BranchRenames} from './repository/branch-rename';
+import type {BranchRenameInput} from './repository/branch-rename-types';
 import type {CliDeploymentMutation} from './deployments/cli';
 import {Contributions} from './contributions/store';
 import type {ContributionAgent,WorkStart,WorkReport,ContributionFilter} from './contributions/types';
@@ -122,6 +124,18 @@ export class Sequencer extends DurableObject<Env> {
   repositoryImportLimit(){return INITIAL_IMPORT_MAX_REFS;}
   repositoryConfiguration(){const repo=new Repository(this.sql);return {mode:repo.mode()?"git" as const:"snapshot" as const,...repo.configuration(),branches:repo.refs().filter(ref=>ref.name.startsWith("refs/heads/")).map(ref=>({...ref,name:ref.name.slice(11)}))};}
   defaultBranchConfiguration(){return {...this.repositoryConfiguration(),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
+  branchRenameConfiguration(){return this.ctx.storage.transactionSync(()=>new BranchRenames(this.sql).configuration());}
+  branchRenamePreview(from:string,to:string){return this.ctx.storage.transactionSync(()=>new BranchRenames(this.sql).preview(from,to));}
+  resolveRenamedBranch(name:string){return this.ctx.storage.transactionSync(()=>new BranchRenames(this.sql).resolve(name));}
+  async renameRepositoryBranch(input:BranchRenameInput,actor:string,origin:string,proof:import('./repository/types').RefProof,sourceProof:import('./repository/types').RefProof,credentialId?:string){
+    const trunk=this.meta<string>('trunk');if(!trunk)throw Error('Repository identity unavailable');
+    const authority=await rulesetActor(this.env,trunk,actor,origin);
+    const grant=credentialId?await currentCliGrant(this.env,credentialId,actor,trunk,origin,'branches:write'):null;
+    return this.ctx.storage.transactionSync(()=>{
+      if(credentialId&&(!grant||grant.expiresAt<=Date.now()))throw Error('Current branches:write credential is required');
+      return new BranchRenames(this.sql).rename(input,actor,authority,proof,sourceProof,!credentialId,credentialId?{kind:'cli',credentialId}:undefined);
+    });
+  }
   mergeSettingsConfiguration(){const repo=new Repository(this.sql),configuration=new MergeSettingsStore(this.sql).get();return {mode:repo.mode()?"git" as const:"snapshot" as const,...configuration,...(!repo.mode()?{allowedMethods:["fast-forward" as const],defaultMethod:"fast-forward" as const}:{}),conditionalWrites:true as const,cliAudit:true as const,revisionTracking:"storage" as const};}
   async configureMergeSettings(input:MergeSettingsInput&{revision:number;origin:string;credentialId?:string},actor:string) {
     const trunk=this.meta<string>("trunk");if(!trunk)throw Error("Repository identity unavailable");
