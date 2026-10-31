@@ -19,6 +19,7 @@ export interface ReviewRequests {
   revision:number;
   revisionTracking?:'storage';
   answerTracking?:'storage-v2';
+  readerFeedback?:'v1';
   requests:ReviewRequest[];
   access?:Record<string,import('./reviewer-types').ReviewerStatus>;
   canManage?:boolean;

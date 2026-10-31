@@ -17,13 +17,14 @@ import type { Owner } from "../types";
 import { mergeBase, mergeEdits, publishObjects, replay, restackCommit } from "./graph";
 import { branchName, type Branch, type Review } from "./types";
 import { pullCommentRoute } from "./pull-comment-route";
-import { pendingReviewRoute } from "./pending-route";
+import { pendingReviewRoute,readPendingReview } from "./pending-route";
 import { suggestionRoute } from "./suggestion-route";
 import {reviewRequestRoute} from './request-route';
 import {applies} from "../repository/rulesets";
 import {signatureGate} from "../signing/gate";
 import {buildMerge} from "./merge-methods";
 import type {MergeMethod} from "./merge-types";
+import {feedbackError} from './feedback-http';
 
 /** Called only after the workspace's ordinary authorization boundary. */
 export async function reviewRoute(env: Env, request: Request, trunk: string, action: string, id: string | undefined, operation: string | undefined, user: User | null, access:TeamAccess|null = null, tail: string[] = []) {
@@ -37,11 +38,14 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
   s.canConfigure = !!user && !user.cli && (await env.HUB.get(env.HUB.idFromName("hub")).find(trunk))?.owner === user.id;
   const accountWriter=!!user&&!request.headers.has("authorization")&&(access?canWrite(access):s.canConfigure===true);
   const humanWriter=accountWriter&&!user?.cli;
+  const accountReader=!!user&&!request.headers.has('authorization')&&(!!access||s.canConfigure===true);
+  const humanReader=accountReader&&!user?.cli;
+  const accountReviewer=accountReader&&(!user?.cli||user.cli.scopes.includes('reviews:write'));
   const json = (value: unknown, init?: ResponseInit) => {
     // Apply the same view to GET snapshots and mutation responses. A writer
     // must not learn bypass identities by creating a branch or review.
     if(value && typeof value === "object" && "rulesets" in value && Array.isArray(value.rulesets))
-      return Response.json({...value,canMerge:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:merge")),canReview:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("reviews:write")),canManagePulls:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:write")),archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},init);
+      return Response.json({...value,canMerge:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:merge")),canReview:writable&&accountReviewer,reviewRole:accountReader?accountWriter?'writer':'reader':null,canApplySuggestions:writable&&humanWriter,canManagePulls:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:write")),archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},init);
     return Response.json(value,init);
   };
   const objects = new TrunkObjects(env, trunk, 16000);
@@ -138,9 +142,9 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
           s={...next,canProtect:s.canProtect,canConfigure:s.canConfigure};p=s.pulls.find(row=>row.number===Number(id))!;
         }
       }
-      if (operation === "comments") return pullCommentRoute(env, request, trunk, p, head, objects, user, accountWriter);
+      if (operation === "comments") return pullCommentRoute(env, request, trunk, p, head, objects, user, writable&&accountReviewer,accountWriter||user?.id===p.author.id);
       if (operation === 'requested-reviewers') return reviewRequestRoute(env,request,trunk,p,head,user,accountWriter);
-      if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,accountWriter,tail[0]==="submit");
+      if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,accountReviewer,tail[0]==="submit",humanWriter);
       if (suggestionOperation) return suggestionRoute(env,request,trunk,p,head,objects,user,humanWriter);
       if (method === "GET" && operation === "file") {
         const before = url.searchParams.get("side") === "base", path = url.searchParams.get("path") ?? "";
@@ -149,6 +153,8 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         return json({ path, commit: before ? p.anchor : head.commit, text: blobText(await objects.body(file.sha, "blob")), mode: file.mode });
       }
       if (method === "GET" && !operation) {
+        let pendingReview=null;
+        if(humanReader)try{pendingReview=(await readPendingReview(seq,{op:'get',number:p.number,actor:{id:user!.id,origin:url.origin}},humanWriter)).pending;}catch(error){return feedbackError(error);}
         const authority:RulesetActor|undefined=humanWriter&&access?{actor:user!.id,role:access.proof.role==='member'?'writer':access.proof.role,checkedAt:access.proof.verifiedAt,expiresAt:access.proof.verifiedAt+30000}:undefined;
         const signatureRequired=!!s.effectivePolicies?.[p.base]?.requireSignedCommits||!!s.rulesets?.some(rule=>applies(rule,`refs/heads/${p.base}`,s.defaultBranch)&&rule.rules.some(r=>r.type==="required_signatures")&&!rulesetBypass(rule,user?.id??"",humanWriter,true,authority));
         const linearRequired=!!s.effectivePolicies?.[p.base]?.requireLinearHistory||!!s.rulesets?.some(rule=>applies(rule,`refs/heads/${p.base}`,s.defaultBranch)&&rule.rules.some(r=>r.type==="required_linear_history")&&!rulesetBypass(rule,user?.id??"",humanWriter,true,authority));
@@ -156,14 +162,23 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         const codeOwners=s.repositoryMode?(p.state==="open"?await seq.codeOwnersStatus(p.number,await codeOwnerEvidence(objects,branch(p.base),head),url.origin):p.codeOwners):undefined;
         const deployments=s.repositoryMode?(p.state==="open"?await seq.deploymentGate(p.base,head.commit,branch(p.base).commit,user?.id??"",humanWriter,p.head,url.origin):p.deployments):undefined;
         const allowed=s.effectivePolicies?.[p.base]?.allowDismiss;
-        return json({ ...s, mergeMethods:s.mergeMethods?.filter(method=>method!=="merge"||!linearRequired), pull: p, head, codeOwners,signatures,deployments,canDismissReviews:writable&&humanWriter&&(allowed===undefined||allowed.includes(user!.id)),pendingReview:humanWriter?(await seq.pendingReview({op:"get",number:p.number,actor:{id:user!.id,origin:url.origin}})).pending:null,discussion:{...await seq.pullComments({op:"list",number:p.number}),canComment:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("reviews:write"))&&p.state==="open"},reviewGate:await seq.reviewGate(p.number,head.commit,p.anchor,url.origin), ...(await changesBetween(objects, p.anchorTree, head.tree)) });
+        return json({ ...s, mergeMethods:s.mergeMethods?.filter(method=>method!=="merge"||!linearRequired), pull: p, head, codeOwners,signatures,deployments,canDismissReviews:writable&&humanWriter&&(allowed===undefined||allowed.includes(user!.id)),pendingReview,discussion:{...await seq.pullComments({op:"list",number:p.number}),canComment:writable&&accountReviewer&&p.state==="open",canResolveAll:writable&&accountReviewer&&(accountWriter||user?.id===p.author.id)},reviewGate:await seq.reviewGate(p.number,head.commit,p.anchor,url.origin), ...(await changesBetween(objects, p.anchorTree, head.tree)) });
       }
       if (method === "POST" && operation === "close") return json(await seq.review({ op: "close", number: p.number }));
       if (method === "POST" && ["reviews", "restack", "merge"].includes(operation ?? "")) {
         const body = await creationBody<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"];method?:MergeMethod;targetBase?:string;message?:string;mergeSettingsRevision?:number }>(request,operation==="merge"?512*1024:64*1024);
         if (operation === "merge" && p.state === "merged") return json(s);
         if (body.commit !== head.commit || body.anchor !== p.anchor) return json({ error: "PR changed; refresh and review its latest diff" }, { status: 409 });
-        if (operation === "reviews") return json(await seq.review({ op: "review", number: p.number, author: actor!, body: body.body ?? "", verdict: body.verdict ?? "COMMENT", commit: head.commit, anchor: p.anchor, independent:independent||!!user?.cli,origin:url.origin,...(user?.cli?{via:{kind:"cli" as const,credentialId:user.cli.credentialId}}:{}) }));
+        if(operation==='reviews'){
+          if(Object.keys(body).some(key=>!['commit','anchor','body','verdict'].includes(key)))return json({error:'Unknown review field'}, {status:400});
+          if(independent||user?.cli){
+            if(!accountReviewer)return json({error:'Current repository read access and review permission required'},{status:403});
+            if(!sameOrigin(env,request))return json({error:'Same-origin request required'},{status:403});
+            try{return json(await seq.submitHumanReview({number:p.number,author:actor!,body:body.body??'',verdict:body.verdict??'COMMENT',commit:head.commit,anchor:p.anchor,origin:url.origin,...(user?.cli?{via:{kind:'cli' as const,credentialId:user.cli.credentialId}}:{})}));}
+            catch(error){return feedbackError(error);}
+          }
+          return json(await seq.review({op:'review',number:p.number,author:actor!,body:body.body??'',verdict:body.verdict??'COMMENT',commit:head.commit,anchor:p.anchor,independent:false,origin:url.origin}));
+        }
         if (operation === "merge" && !s.repositoryMode&&p.base !== "main") return json({ error: "Merge the parent PR first" }, { status: 409 });
         if(operation==="merge"&&!s.repositoryMode&&body.method&&body.method!=="fast-forward")return json({error:"Generated merge methods require Git repository mode"},{status:400});
         const base = branch(p.base);

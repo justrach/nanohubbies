@@ -116,6 +116,14 @@ export class Hub extends DurableObject<Env> {
     for(const id of ids)accounts[id]=(members?["owner","admin","writer"].includes(members.role(trunk,id)??""):!binding&&owner===id)?"writer":"no_write";
     return {binding,accounts,checkedAt:Date.now()};
   }
+  /** A distinct RPC prevents a reader-aware caller from trusting old role hints. */
+  reviewFeedbackAccess(trunk:string,ids:string[]) {
+    if(!Array.isArray(ids)||ids.length>2000||ids.some(id=>typeof id!=='string'||!id||id.length>256))throw Error('Invalid reviewer lookup');
+    const binding=this.teams.get(trunk),members=binding?.kind==='owner'?new Collaborators(this.sql):null,owner=!binding?this.find(trunk)?.owner:null;
+    const accounts:Record<string,'writer'|'reader'|'no_write'>={};
+    for(const id of ids){const role=members?members.role(trunk,id):!binding&&owner===id?'owner':null;accounts[id]=role==='reader'?'reader':role&&['owner','admin','writer'].includes(role)?'writer':'no_write';}
+    return {binding,accounts,checkedAt:Date.now(),readerFeedback:'v1' as const};
+  }
   deploymentReviewerAccess(trunk:string,ids:string[]) {
     if(!Array.isArray(ids)||ids.length>128||ids.some(id=>typeof id!=="string"||!id||id.length>256))throw Error("Invalid deployment reviewer lookup");
     const binding=this.teams.get(trunk),members=binding?.kind==="owner"?new Collaborators(this.sql):null,owner=!binding?this.find(trunk)?.owner:null;

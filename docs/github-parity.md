@@ -1,5 +1,10 @@
 # GitHub compatibility and restrictions
 
+Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+readers can submit feedback and private drafts, and writers can request them as
+reviewers. Required approvals still need eligible write access. This extension
+is not deployed; the published behavior described below remains separate.
+
 Nanohub is a standalone private Git host with repository membership, PRs, protected refs, native check storage and a Codegraff execution backend. It is not yet a drop-in GitHub replacement. This document tracks the requested parity work against [GitHub protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches) and [ruleset controls](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
 
 ## Current coverage

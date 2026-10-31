@@ -26,7 +26,7 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   pr create --title T --head B [--body T]   Open a pull request (--base uses the repository default)
   pr review NUMBER --verdict DECISION       comment, approve or request-changes; --body TEXT
   pr reviewers NUMBER                      Inspect requested reviewers and revision
-  pr request-review NUMBER --reviewer ID --revision N Request review from current writers
+  pr request-review NUMBER --reviewer ID --revision N Request review from repository members
   pr remove-reviewer NUMBER --reviewer ID --revision N Remove an outstanding request
   pr draft NUMBER                          Inspect this CLI credential's private review
   pr comment NUMBER --draft --revision N   Collect a private hunk comment (0 starts a draft)
@@ -122,7 +122,9 @@ Runner administration requires runners:write and your current owner role.
 Collaborator administration requires collaborators:write and current admin access
 in an independently managed repository. Only the owner can manage admins.
 Issued runner credentials have an independent lifetime and last until revoked.
-Private CLI drafts require reviews:write and current writer access. Each CLI
+Private CLI drafts require reviews:write and current repository read access.
+Reader decisions are feedback only; required approvals need current write access.
+Pull request authors can submit Comment reviews only. Each CLI
 credential has its own draft; browser drafts stay separate. Stale diffs cannot
 be submitted. Inspect pr draft after a lost response before repeating a write.
 `;

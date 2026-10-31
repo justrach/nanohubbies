@@ -104,6 +104,8 @@ test('delegated draft routes never fall back to browser RPCs on an older receive
   const response=await pendingReviewRoute(env,request,'fixture',pull,head,{},user,true,submit);assert.equal(response.status,503);assert.ok(!(await response.text()).includes('browser-private-review'));
  }
  assert.equal(browserCalls,0);
- const response=await pendingReviewRoute(env,new Request('http://localhost/api/trunks/fixture/pulls/1/pending-review'),'fixture',pull,head,{}, {...user,cli:undefined},true,false);
+ const reader=await pendingReviewRoute(env,new Request('http://localhost/api/trunks/fixture/pulls/1/pending-review'),'fixture',pull,head,{}, {...user,cli:undefined},true,false);
+ assert.equal(reader.status,503);assert.equal(browserCalls,0,'A reader cannot downgrade to a writer-only browser draft receiver');
+ const response=await pendingReviewRoute(env,new Request('http://localhost/api/trunks/fixture/pulls/1/pending-review'),'fixture',pull,head,{}, {...user,cli:undefined},true,false,true);
  assert.equal((await response.json()).pending.id,'browser-private-review');assert.equal(browserCalls,1,'Old browser drafts remain readable by their browser owner');
 });

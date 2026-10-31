@@ -103,7 +103,7 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(["GET","POST","PATCH","DELETE"].includes(method)&&/^pulls\/[1-9]\d{0,8}\/pending-review$/.test(resource)||method==="POST"&&/^pulls\/[1-9]\d{0,8}\/pending-review\/submit$/.test(resource))scope="reviews:write";
   if(!scope)return json({error:"CLI operation not supported"},404);
   if(!info.scopes.includes(scope))return new Response(JSON.stringify({error:`CLI credential requires ${scope}`}),{status:403,headers:{"Content-Type":"application/json","WWW-Authenticate":`Bearer error="insufficient_scope", scope="${scope}"`}});
-  if((method!=="GET"||scope==="reviews:write")&&scope!=='deployments:review'&&!canWrite(access))return json({error:"Current repository write access required"},403);
+  if((method!=="GET"||scope==="reviews:write")&&!['deployments:review','reviews:write'].includes(scope)&&!canWrite(access))return json({error:"Current repository write access required"},403);
   if(cliAdminScope(scope)&&!canAdmin(access))return json({error:"Current repository admin access required"},403);
   if(cliOwnerScope(scope)&&access.proof.role!=='owner')return json({error:'Current repository owner access required'},403);
   const target=new URL(url);target.pathname=`/api/trunks/${trunk}/${resource}`;

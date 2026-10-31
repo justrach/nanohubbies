@@ -3,7 +3,7 @@ import type {User} from "../auth";
 export const cliScopes=["read","contents:read","contents:write","pulls:write","reviews:write","pulls:merge","protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","runners:write","collaborators:write","deployments:write","deployments:review","secrets:read","secrets:write","secrets:grant","branches:write"] as const;
 export type CliScope=typeof cliScopes[number];
 export const cliScopeWrites=(scope:CliScope)=>!["read","contents:read","secrets:read"].includes(scope);
-export const cliScopeNeedsWriter=(scope:CliScope)=>cliScopeWrites(scope)&&scope!=="deployments:review";
+export const cliScopeNeedsWriter=(scope:CliScope)=>cliScopeWrites(scope)&&scope!=="deployments:review"&&scope!=='reviews:write';
 export const cliAdminScope=(scope:CliScope)=>["protections:write","rulesets:write","repository:archive","repository:default","repository:merge","environments:write","collaborators:write","secrets:read","secrets:write","secrets:grant"].includes(scope);
 export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 /** Lifecycle control remains delegable while archived, so an admin can reopen.
@@ -11,7 +11,7 @@ export const cliOwnerScope=(scope:CliScope)=>scope==='runners:write';
 export const cliScopeAllowed=(scope:CliScope,role:string,writable:boolean,independent=true)=>{
   if(scope==='collaborators:write'&&!independent||cliAdminScope(scope)&&!["owner","admin"].includes(role)||cliOwnerScope(scope)&&role!=='owner')return false;
   if(scope==='repository:archive'||scope==='secrets:grant')return true;
-  return !cliScopeWrites(scope)||writable&&(scope==='deployments:review'?['owner','admin','writer','reader','member'].includes(role):role!=="reader");
+  return !cliScopeWrites(scope)||writable&&(['deployments:review','reviews:write'].includes(scope)?['owner','admin','writer','reader','member'].includes(role):role!=="reader");
 };
 export interface CliCredential {id:string;label:string;trunk:string;origin:string;scopes:CliScope[];createdAt:number;expiresAt:number;usedAt:number|null}
 interface Stored extends Omit<CliCredential,"scopes"> {owner:string;scopes:string}

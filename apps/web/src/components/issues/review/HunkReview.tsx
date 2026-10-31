@@ -13,6 +13,7 @@ export function HunkReview({
   draftKey,
   comments,
   canComment,
+  canResolve,
   pending,
   onComment,
   onResolve,
@@ -25,6 +26,7 @@ export function HunkReview({
   draftKey: string;
   comments: CodeComment[];
   canComment: boolean;
+  canResolve?:(root:CodeComment)=>boolean;
   pending: boolean;
   onComment: (
     anchor: CodeAnchor,
@@ -255,6 +257,7 @@ export function HunkReview({
                 root={root}
                 replies={comments.filter((c) => c.replyTo === root.id)}
                 canComment={canComment}
+                canResolve={canResolve?.(root)??canComment}
                 pending={pending}
                 onReply={(text) => onComment(root, text, root.id)}
                 onResolve={() => onResolve(root)}

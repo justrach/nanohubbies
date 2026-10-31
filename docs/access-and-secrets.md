@@ -1,5 +1,10 @@
 # Repository collaborators and the vault service
 
+Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+readers can submit feedback and private drafts, and writers can request them as
+reviewers. Required approvals still need eligible write access. This extension
+is not deployed; the published behavior described below remains separate.
+
 Repository access and the private vault service are deployed. Hosted secrets lifecycle checks passed with an isolated synthetic Cloudflare-held value; see [the production receipt](evidence/production-validation-2026-10-26.md#hosted-secrets-lifecycle). No existing Meld credentials have been copied, replaced or migrated.
 
 ## Direct repository access

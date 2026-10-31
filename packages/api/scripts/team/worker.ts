@@ -272,6 +272,11 @@ export default {
       try{return Response.json(await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {legacyRequestStorage:Sequencer['legacyRequestStorage']}).legacyRequestStorage(body.input));}
       catch(error){return Response.json({error:(error as Error).message},{status:400});}
     }
+    if(url.pathname==='/fixture/conditional-human-review'){
+      const body=await request.json<{trunk:string;input:Parameters<ProductionSequencer['submitHumanReview']>[0]}>();
+      try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).submitHumanReview({...body.input,origin:url.origin}));}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
+    }
     if(url.pathname==='/fixture/conditional-review-request'){
       const body=await request.json<{trunk:string;input:Parameters<ProductionSequencer['editRequestedReviews']>[0]}>();
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).editRequestedReviews({...body.input,origin:url.origin}));}

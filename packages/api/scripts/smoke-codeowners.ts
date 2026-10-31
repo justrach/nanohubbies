@@ -44,7 +44,8 @@ try {
   assert.ok(snapshot.codeOwners.groups.every((g:{owners:string[]})=>g.owners.includes("@ReViewer")),"Base ownership wins over the proposed head");
   const observed=()=>({commit:head,anchor:initial});
   const merge=()=>f.request("POST",`${base}/pulls/1/merge`,{...observed(),codeOwners:{base:initial,head,groups:[]},codeOwnerAccounts:{"@ReViewer":"codegraff:author"}},author);
-  await f.json("POST",`${base}/pulls/1/reviews`,{...observed(),verdict:"APPROVE"},author);
+  assert.equal((await f.request("POST",`${base}/pulls/1/reviews`,{...observed(),verdict:"APPROVE"},author)).status,403);
+  await f.json("POST","/fixture/legacy-request-storage",{trunk,input:{operation:"review",number:1,data:{pull:1,author:{id:"codegraff:author",name:"Author"},...observed(),verdict:"APPROVE",body:"Historical author approval remains non-counting",independent:true,at:Date.now()}}});
   assert.equal((await merge()).status,400,"Author approval and injected ownership JSON cannot bypass the gate");
   await f.json("POST",`${base}/agents`,{handle:"reviewer-bot",type:"test"},reviewer);
   const agent=await f.json("POST",`${base}/agents/reviewer-bot/token`,{},reviewer);

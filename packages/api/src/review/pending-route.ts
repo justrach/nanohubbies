@@ -4,13 +4,24 @@ import type { TrunkObjects } from "../browse/objects";
 import { sameOrigin } from "../team/access";
 import { reviewSelection } from "./selection";
 import type { Branch, Pull, Review } from "./types";
+import {feedbackError,feedbackUnavailable} from './feedback-http';
+import type {PendingCommand} from './pending';
+import type {PendingResult} from './pending-types';
 
-export async function pendingReviewRoute(env:Env,request:Request,trunk:string,pull:Pull,head:Branch,objects:TrunkObjects,user:User|null,accountWriter:boolean,submit:boolean) {
-  if(!accountWriter||!user||user.cli&&!user.cli.scopes.includes("reviews:write"))return Response.json({error:"Pending review requires a signed-in repository writer with review permission"},{status:403});
+export async function readPendingReview(seq:{pendingReviewWithFeedback(c:PendingCommand):Promise<PendingResult>;pendingReview(c:PendingCommand):Promise<PendingResult>},command:PendingCommand,legacyBrowserWriter=false){
+ try{return await seq.pendingReviewWithFeedback(command);}
+ catch(error){
+  if(command.op==='get'&&!command.actor.via&&legacyBrowserWriter&&feedbackUnavailable(error))return seq.pendingReview(command);
+  throw error;
+ }
+}
+
+export async function pendingReviewRoute(env:Env,request:Request,trunk:string,pull:Pull,head:Branch,objects:TrunkObjects,user:User|null,accountWriter:boolean,submit:boolean,legacyBrowserWriter=false) {
+  if(!accountWriter||!user||user.cli&&!user.cli.scopes.includes("reviews:write"))return Response.json({error:"Pending review requires current repository read access and review permission"},{status:403});
   const via=user.cli?{kind:"cli" as const,credentialId:user.cli.credentialId}:undefined;
   const seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk)),actor={id:user.id,origin:new URL(request.url).origin,...(via?{via}:{})},identity={number:pull.number,actor};
   // Never send a delegated identity to an old browser-only draft receiver.
-  const pending=(command:Parameters<typeof seq.pendingReview>[0])=>via?seq.cliPendingReview(command):seq.pendingReview(command);
+  const pending=(command:Parameters<typeof seq.pendingReview>[0])=>readPendingReview(seq,command,legacyBrowserWriter);
   try {
     if(request.method==="GET"&&!submit)return Response.json(await pending({...identity,op:"get"}));
     if(!["POST","PATCH","DELETE"].includes(request.method)||submit&&request.method!=="POST")return Response.json({error:"Pending review method not supported"},{status:405});
@@ -23,7 +34,7 @@ export async function pendingReviewRoute(env:Env,request:Request,trunk:string,pu
     if(submit) {
       if(typeof body.commit!=="string"||typeof body.anchor!=="string"||typeof body.body!=="string"||body.body.length>16000||!["COMMENT","APPROVE","REQUEST_CHANGES"].includes(body.verdict as string))throw Error("Invalid review");
       const command={...observed,commit:body.commit,anchor:body.anchor,verdict:body.verdict as Review["verdict"],body:body.body};
-      return Response.json(await (via?seq.cliSubmitPendingReview(command):seq.submitPendingReview(command)));
+      return Response.json(await seq.submitPendingReviewWithFeedback(command));
     }
     if(request.method==="POST") {
       if(body.commit!==head.commit||body.anchor!==pull.anchor)return Response.json({error:"PR changed; refresh and review its latest diff"},{status:409});
@@ -40,8 +51,6 @@ export async function pendingReviewRoute(env:Env,request:Request,trunk:string,pu
     }
     return Response.json(await pending(typeof body.commentId==="string"?{...observed,op:"remove",commentId:body.commentId}:{...observed,op:"discard"}));
   }catch(error) {
-    const message=(error as Error).message;
-    if(via&&/cli(?:Submit)?PendingReview.*(?:not a function|not implemented|does not exist)|(?:does not implement|has no method).*cli(?:Submit)?PendingReview/i.test(message))return Response.json({error:"Private CLI reviews are not available on this receiver yet; retry after deployment completes"},{status:503});
-    return Response.json({error:message},{status:/No pending|No such/.test(message)?404:/changed|earlier diff|no longer open|already used|was discarded/.test(message)?409:/signed-in repository writer/.test(message)?403:400});
+    return feedbackError(error);
   }
 }

@@ -18,8 +18,8 @@ import { PendingReview } from "./PendingReview";
 import { ApplySuggestions } from "./ApplySuggestions";
 
 /** One bounded file at a time; discussions always retain their original diff. */
-export function PullFiles({ trunk, pull, commit, anchor, files, initial, initialPending, open,git }: {
-  trunk:string; pull:number; commit:string; anchor:string; files:ChangedFile[]; initial:PullDiscussion; initialPending:Draft|null; open:boolean;git:boolean;
+export function PullFiles({ trunk, pull, commit, anchor, files, initial, initialPending, open,git,canApplySuggestions,feedbackOnly,ownPull }: {
+  trunk:string; pull:number; commit:string; anchor:string; files:ChangedFile[]; initial:PullDiscussion; initialPending:Draft|null; open:boolean;git:boolean;canApplySuggestions:boolean;feedbackOnly:boolean;ownPull:boolean;
 }) {
   const router = useRouter(), { user } = useSession();
   const [path, setPath] = useState(files[0]?.path ?? "");
@@ -51,6 +51,7 @@ export function PullFiles({ trunk, pull, commit, anchor, files, initial, initial
   const at = file ? files.indexOf(file) : -1;
   const {readOnly}=useTrunk();
   const canComment = !readOnly && !!user && !!discussion.canComment && open;
+  const canResolve = (root:{author:{id:string}}) => canComment&&(discussion.canResolveAll===true||root.author.id===user?.id);
   const current = (c:PullComment) => c.commit === commit && c.anchor === anchor;
   const outdated = discussion.comments.filter(c => !c.replyTo && !current(c));
   const unresolved = discussion.comments.filter(c => !c.replyTo && !c.resolved).length;
@@ -144,17 +145,17 @@ export function PullFiles({ trunk, pull, commit, anchor, files, initial, initial
         <a href={`/t/${trunk}/pulls/${pull}/file?${new URLSearchParams({path:file.path,side:file.status==="removed"?"base":"head"})}`} aria-label="Open full file"><ExternalLink size={14}/></a>
       </div>
       <div ref={panel} className={styles.panel} tabIndex={0} aria-label={`Diff for ${file.path}`}>
-        <HunkReview key={`${user?.id}:${commit}:${anchor}:${file.path}`} file={file} draftKey={`${user?.id??"guest"}:${trunk}:pull:${pull}:${commit}:${anchor}:${file.path}`} comments={discussion.comments.filter(c=>c.path===file.path&&current(c))} canComment={canComment} pending={busy} onComment={post} onPendingComment={addPending} pendingLabel={draft?"Add to review":"Start a review"} onResolve={root=>resolve(root as PullComment)} onChooseSuggestion={git&&canComment?chooseSuggestion:undefined} selectedSuggestions={selectedSuggestions}/>
+        <HunkReview key={`${user?.id}:${commit}:${anchor}:${file.path}`} file={file} draftKey={`${user?.id??"guest"}:${trunk}:pull:${pull}:${commit}:${anchor}:${file.path}`} comments={discussion.comments.filter(c=>c.path===file.path&&current(c))} canComment={canComment} canResolve={canResolve} pending={busy} onComment={post} onPendingComment={addPending} pendingLabel={draft?"Add to review":"Start a review"} onResolve={root=>resolve(root as PullComment)} onChooseSuggestion={git&&canComment&&canApplySuggestions?chooseSuggestion:undefined} selectedSuggestions={selectedSuggestions}/>
       </div>
     </div>}
-    {draft&&<fieldset disabled={readOnly} className="min-w-0"><PendingReview key={draft.id} draft={draft} busy={busy} stale={draft.commit!==commit||draft.anchor!==anchor} open={open} onEdit={async(id,body)=>{const ok=await changeDraft({commentId:id,body},"PATCH");if(ok)setFocusThread(`pending-comment-${id}`);return ok;}} onRemove={async id=>{const ok=await changeDraft({commentId:id},"DELETE");if(ok)setFocusThread("pending-review");return ok;}} onDiscard={async()=>{const ok=await changeDraft({},"DELETE");if(ok){draftId.current=crypto.randomUUID();setStatus("Pending review discarded.");setFocusThread("pull-files");}return ok;}} onSubmit={submitDraft}/></fieldset>}
+    {draft&&<fieldset disabled={readOnly} className="min-w-0"><PendingReview key={draft.id} draft={draft} feedbackOnly={feedbackOnly} ownPull={ownPull} busy={busy} stale={draft.commit!==commit||draft.anchor!==anchor} open={open} onEdit={async(id,body)=>{const ok=await changeDraft({commentId:id,body},"PATCH");if(ok)setFocusThread(`pending-comment-${id}`);return ok;}} onRemove={async id=>{const ok=await changeDraft({commentId:id},"DELETE");if(ok)setFocusThread("pending-review");return ok;}} onDiscard={async()=>{const ok=await changeDraft({},"DELETE");if(ok){draftId.current=crypto.randomUUID();setStatus("Pending review discarded.");setFocusThread("pull-files");}return ok;}} onSubmit={submitDraft}/></fieldset>}
     {outdated.length>0 && <details className={styles.outdated} open={showEarlier} onToggle={event=>setShowEarlier(event.currentTarget.open)}>
       <summary>Earlier revisions · {outdated.length} {outdated.length===1?"thread":"threads"}</summary>
       <p>These comments refer to their original code. Unresolved threads still count toward conversation protection.</p>
       {outdated.map(root=><section key={root.id} className={styles.oldThread} aria-label={`Earlier thread on ${root.path}`}>
         <header><code>{root.path}</code><span>{root.commit.slice(0,7)} · base {root.anchor.slice(0,7)}</span></header>
         {root.excerpt && <details><summary>Show original hunk</summary><pre>{root.excerpt}</pre></details>}
-        <ReviewThread root={root} replies={discussion.comments.filter(c=>c.replyTo===root.id)} canComment={canComment} pending={busy} onReply={body=>post(root,body,root.id)} onResolve={()=>resolve(root)}/>
+        <ReviewThread root={root} replies={discussion.comments.filter(c=>c.replyTo===root.id)} canComment={canComment} canResolve={canResolve(root)} pending={busy} onReply={body=>post(root,body,root.id)} onResolve={()=>resolve(root)}/>
       </section>)}
     </details>}
     {discussion.truncated&&<p role="status">More comments exist than this page can display. Conversation protection checks every thread.</p>}

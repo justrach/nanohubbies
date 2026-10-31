@@ -38,7 +38,7 @@ export async function pendingCommand({action,number,opts,get,post,output}) {
  }
  if(action==='review') {
   const result=await post(path+'/submit',{...identity,commit:pending.commit,anchor:pending.anchor,verdict:verdicts[opts.verdict??'comment'],body:opts.body??''});
-  output(result,`Published pending review ${result.reviewId} and ${pending.comments.length} comments on #${number}.`);return;
+  output(result,`Published pending review ${result.reviewId} and ${pending.comments.length} comments on #${number}.${result.feedback?.role==='reader'?' Reader feedback only; required approvals need writer access.':''}`);return;
  }
  const result=await post(path,{...identity,...(opts.edit!==undefined?{commentId:opts.edit,body:opts.body}:opts.remove!==undefined?{commentId:opts.remove}:{})},opts.edit!==undefined?'PATCH':'DELETE');
  output(result,result.pending?`Saved draft revision ${result.pending.revision}.`:'Discarded private CLI review.');

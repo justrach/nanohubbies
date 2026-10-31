@@ -6,6 +6,8 @@ import {join} from "node:path";
 import {teamFixture} from "./team/fixture.ts";
 const f=await teamFixture(),exec=promisify(execFile);
 const base="/api/trunks/git-clients";
+// Keep user/global credential helpers out of this deliberately plain-Git fixture.
+const gitEnv={...process.env,GIT_TERMINAL_PROMPT:"0",GIT_CONFIG_NOSYSTEM:"1",GIT_CONFIG_GLOBAL:"/dev/null"};
 try {
   const owner=await f.login("owner","101"),reader=await f.login("reader","202"),outsider=await f.login("outsider","303");
   await f.json("POST",base,{mode:"git"},owner);
@@ -22,17 +24,17 @@ try {
     assert.equal((await f.request("GET",`${base}/${path}`,undefined,auth)).status,401,"Git token must not grant HTTP API access");
   assert.equal((await f.request("GET","/git/other-client-repo.git/HEAD",undefined,auth)).status,401);
   const source=join(f.dir,"plain-client");await mkdir(source);
-  const git=async(...args:string[])=> (await exec("git",["-C",source,"-c","user.name=Human contributor","-c","user.email=human@example.invalid",...args],{env:{...process.env,GIT_TERMINAL_PROMPT:"0",GIT_CONFIG_NOSYSTEM:"1"}})).stdout.trim();
+  const git=async(...args:string[])=> (await exec("git",["-C",source,"-c","user.name=Human contributor","-c","user.email=human@example.invalid",...args],{env:gitEnv})).stdout.trim();
   await git("init","-b","main");await writeFile(join(source,"README.md"),"Plain Git, no registered agent.\n");await git("add",".");await git("commit","-m","Human initial commit");
   const remote=`${f.origin}/git/git-clients.git`;
   // Standard Git credential environment, with no provider-specific client,
   // agent registration, API integration or token in the remote URL.
   await git("config","credential.helper",`!f() { test "$1" = get && printf 'username=git\\npassword=%s\\n' "$NANOHUB_GIT_TEST_TOKEN"; }; f`);
-  const transport=async(...args:string[])=>exec("git",["-C",source,...args],{env:{...process.env,GIT_TERMINAL_PROMPT:"0",NANOHUB_GIT_TEST_TOKEN:issued.token}});
+  const transport=async(...args:string[])=>exec("git",["-C",source,...args],{env:{...gitEnv,NANOHUB_GIT_TEST_TOKEN:issued.token}});
   await transport("push",remote,"main");
   const head=await git("rev-parse","HEAD");
   const clone=join(f.dir,"fresh-human-clone");
-  await exec("git",["-c",`http.extraHeader=${auth.authorization.startsWith("Basic ")?`Authorization: ${auth.authorization}`:""}`,"clone",remote,clone],{env:{...process.env,GIT_TERMINAL_PROMPT:"0"}});
+  await exec("git",["-c",`http.extraHeader=${auth.authorization.startsWith("Basic ")?`Authorization: ${auth.authorization}`:""}`,"clone",remote,clone],{env:gitEnv});
   assert.equal((await exec("git",["-C",clone,"rev-parse","HEAD"])).stdout.trim(),head);
   await exec("git",["-C",clone,"fsck","--strict"]);
   const room=await f.json("GET",`${base}/agents`,undefined,owner);

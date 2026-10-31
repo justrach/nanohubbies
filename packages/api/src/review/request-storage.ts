@@ -1,8 +1,12 @@
 import type {Review} from './types';
+import {feedbackStorage} from './feedback-storage';
 
 const names=['review_request_insert_v2','review_request_update_v2','review_request_delete_v2','review_request_answer_v2'];
 const pending=(data:string)=>`json_extract(${data},'$.state')='requested'`;
-const validReview=(data:string,pull:string)=>`json_type(${data},'$.independent')='true' AND json_type(${data},'$.author.id')='text'
+const validReview=(data:string,pull:string)=>`(json_type(${data},'$.independent')='true' OR (
+  json_extract(${data},'$.feedback.role')='reader' AND json_type(${data},'$.independent')='false'
+  AND json_extract(${data},'$.verdict')='COMMENT' AND json_extract(${data},'$.feedback.verdict') IN ('COMMENT','APPROVE','REQUEST_CHANGES')))
+  AND json_type(${data},'$.author.id')='text'
   AND json_type(${data},'$.pull')='integer' AND json_extract(${data},'$.pull')=${pull}
   AND json_type(${data},'$.at')='integer' AND json_extract(${data},'$.at')>=0
   AND json_extract(${data},'$.verdict') IN ('COMMENT','APPROVE','REQUEST_CHANGES')`;
@@ -25,11 +29,16 @@ export function requestStorage(sql:SqlStorage){
   sql.exec('CREATE TABLE IF NOT EXISTS review_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, pull INTEGER NOT NULL, data TEXT NOT NULL)');
   sql.exec('CREATE INDEX IF NOT EXISTS review_request_review_order ON review_reviews(pull,id)');
   sql.exec('CREATE TABLE IF NOT EXISTS repository_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL)');
+  feedbackStorage(sql);
   const installed=sql.exec<{n:number}>(`SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger' AND name IN (${names.map(name=>`'${name}'`).join(',')})`).toArray()[0].n;
+  const readerAnswers=sql.exec("SELECT 1 FROM sqlite_master WHERE type='trigger' AND name='review_request_answer_v2' AND instr(sql,'$.feedback.role')>0").toArray().length>0;
   const untracked=sql.exec(`SELECT 1 FROM review_requests q LEFT JOIN review_request_tracking t ON t.pull=q.pull AND t.reviewer=q.reviewer
     WHERE ${pending('q.data')} AND (t.request_data IS NOT q.data OR typeof(t.after_review) IS NOT 'integer' OR t.after_review<0
       OR json_type(q.data,'$.generation') IS NOT 'text' OR length(json_extract(q.data,'$.generation'))=0) LIMIT 1`).toArray().length>0;
-  if(installed===names.length&&!untracked)return;
+  if(installed===names.length&&!untracked&&readerAnswers)return;
+  // Keep v2 names and ordering semantics: older healthy receivers leave the
+  // extended hook in place rather than installing a duplicate answer trigger.
+  sql.exec('DROP TRIGGER IF EXISTS review_request_answer_v2');
 
   // Invalidate old observations on migration/repair. A missing counter is never
   // recreated from a request snapshot; partial authority restores must stay closed.

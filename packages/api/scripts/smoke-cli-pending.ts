@@ -70,14 +70,14 @@ try {
  failed=await cli(['review','1','--pending','--revision','1','--verdict','approve'],grant);assert.notEqual(failed.code,0);assert.match(failed.stdout,/PR changed/);assert.equal((await get()).pending.comments.length,1);assert.equal((await view()).reviews.length,1);
  assert.equal((await f.request('POST',path+'/submit',{reviewId:draft.id,revision:1,commit,anchor,verdict:'APPROVE',body:'Forged refresh'},auth(grant))).status,409);
  failed=await cli(['comment','1','--draft','--revision','1','--path','README.md','--line','1','--body','New diff'],grant);assert.notEqual(failed.code,0);assert.match(failed.stdout,/earlier diff/);
- await f.json('PATCH',base+'/collaborators',{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await f.request('GET',path,undefined,auth(grant))).status,403);assert.equal((await f.request('DELETE',path,{reviewId:draft.id,revision:1},auth(grant))).status,403);
+ await f.json('PATCH',base+'/collaborators',{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await f.json('GET',path,undefined,auth(grant))).pending.id,draft.id);assert.equal((await f.request('DELETE',path,{reviewId:draft.id,revision:0},auth(grant))).status,409);
  await f.json('PATCH',base+'/collaborators',{userId:'codegraff:writer',role:'writer'},owner);
  await f.json('POST',base+'/archive',{archived:true,revision:0,confirmation:trunk},owner);assert.equal((await success(['draft','1'],grant)).pending.id,draft.id);failed=await cli(['draft','1','--discard','--revision','1'],grant);assert.notEqual(failed.code,0);assert.match(failed.stdout,/archived/);
  await f.json('POST',base+'/archive',{archived:false,revision:1,confirmation:trunk},owner);assert.equal((await success(['draft','1','--discard','--revision','1'],grant)).pending,null);
  assert.equal((await f.json('GET',browserPath,undefined,writer)).pending.id,browser.reviewId);
- // Self approval still cannot count, including publication of an entire batch.
+ // Authors cannot approve their own work, including publication of an entire batch.
  let own=(await success(['comment','1','--draft','--revision','0','--path','README.md','--line','1','--body','Author review'],ownerGrant)).pending;
- await success(['review','1','--pending','--revision',String(own.revision),'--verdict','approve'],ownerGrant);assert.equal((await view()).reviewGate.approvals,0);
+ failed=await cli(['review','1','--pending','--revision',String(own.revision),'--verdict','approve'],ownerGrant);assert.notEqual(failed.code,0);assert.match(failed.stdout,/authors can comment/);assert.equal((await view()).reviewGate.approvals,0);await success(['review','1','--pending','--revision',String(own.revision),'--body','Author explanation'],ownerGrant);
  await f.json('PUT',base+`/pulls/1/reviews/${receipt.reviewId}/dismissals`,{message:'Complete synthetic batch lifecycle'},owner);
  for(const c of (await view()).discussion.comments)await f.json('PATCH',base+'/pulls/1/comments',{id:c.id,commit,anchor,resolved:true},writer);
  draft=(await success(['comment','1','--draft','--revision','0','--path','other.txt','--line','1','--body','Reviewed exact updated diff'],grant)).pending;

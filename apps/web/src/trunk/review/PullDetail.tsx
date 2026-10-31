@@ -1,11 +1,12 @@
 "use client";
 
 import {useTrunk} from "../context";
+import {useState} from 'react';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GitPullRequest, ArrowDown } from "lucide-react";
 import type { Branch, Pull, ReviewSnapshot } from "@swarm/api/review";
-import { checkFailure, conclusionLabel } from "@swarm/api/review";
+import { checkFailure, conclusionLabel, reviewDecision } from "@swarm/api/review";
 import { Button } from "@/components/controls";
 import { Card, Pill } from "@/components/ui";
 import { useSession } from "@/lib/session";
@@ -23,6 +24,8 @@ export type PullView = ReviewSnapshot & { pull: Pull; head: Branch; files: Chang
 export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
   const router = useRouter(), action = useReviewAction(trunk);
   const { user } = useSession();
+  const [decision,setDecision]=useState('COMMENT');
+  const ownPull=user?.id===view.pull.author.id,feedbackOnly=view.reviewRole==='reader';
   const {readOnly}=useTrunk();
   const p = view.pull, base = view.branches.find((b) => b.name === p.base);
   const parents: Pull[] = [], seen = new Set<number>([p.number]);
@@ -94,23 +97,25 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
       </div></Card></aside>
     </div>
     <section aria-label="Changed files"><div className="mb-4 flex flex-wrap gap-4 text-xs text-muted"><span>{view.files.length} changed files</span><span className="text-series-1">+{view.files.reduce((n, f) => n + f.additions, 0)}</span><span>−{view.files.reduce((n, f) => n + f.deletions, 0)}</span>{view.truncated.map((t) => <span key={t}>{t}</span>)}</div>
-      <PullFiles trunk={trunk} pull={p.number} commit={view.head.commit} anchor={p.anchor} files={view.files} initial={view.discussion??{comments:[],truncated:false}} initialPending={view.pendingReview??null} open={p.state==="open"} git={!!view.repositoryMode}/>
+      <PullFiles trunk={trunk} pull={p.number} commit={view.head.commit} anchor={p.anchor} files={view.files} initial={view.discussion??{comments:[],truncated:false}} initialPending={view.pendingReview??null} open={p.state==="open"} git={!!view.repositoryMode} canApplySuggestions={view.canApplySuggestions===true} feedbackOnly={feedbackOnly} ownPull={ownPull}/>
     </section>
     <section id="pull-review-decision" className="scroll-mt-6"><Card className="p-5"><h2 className="mb-4 text-sm font-semibold text-ink">Reviews</h2>
       {!reviews.length && <p className="mb-4 text-xs text-muted">No reviews yet.</p>}
-      <ul className="space-y-4">{reviews.map((r) => <li key={r.id} id={`review-${r.id}`} tabIndex={-1} className="scroll-mt-4 border-b border-line pb-4 text-sm"><div className="flex flex-wrap gap-2"><strong className="text-ink">{r.author.name}</strong><span className="text-xs text-muted">{r.dismissed?r.dismissed.kind==="stale"?"automatically dismissed · originally ":"dismissed · originally ":""}{r.verdict.toLowerCase().replaceAll("_", " ")}</span>
-        {r.via?.kind==="cli"&&<span className="text-xs text-muted">via CLI</span>}{(r.commit !== view.head.commit || r.anchor !== p.anchor) && <span className="text-xs text-muted">· {policy?.dismissStaleReviews===false&&r.verdict==="APPROVE"&&!r.dismissed?"approval carried forward":"earlier revision"}</span>}</div><p className="mt-2 whitespace-pre-wrap break-words text-ink-2">{r.body}</p>{!!r.commentIds?.length&&<p className="mt-2 text-xs text-muted">{r.commentIds.length} inline {r.commentIds.length===1?"comment":"comments"}</p>}
+      <ul className="space-y-4">{reviews.map((r) => <li key={r.id} id={`review-${r.id}`} tabIndex={-1} className="scroll-mt-4 border-b border-line pb-4 text-sm"><div className="flex flex-wrap gap-2"><strong className="text-ink">{r.author.name}</strong><span className="text-xs text-muted">{r.dismissed?r.dismissed.kind==="stale"?"automatically dismissed · originally ":"dismissed · originally ":""}{reviewDecision(r).toLowerCase().replaceAll("_", " ")}</span>
+        {r.feedback?.role==='reader'&&<span className="text-xs text-muted">· Reader feedback</span>}{r.via?.kind==="cli"&&<span className="text-xs text-muted">via CLI</span>}{(r.commit !== view.head.commit || r.anchor !== p.anchor) && <span className="text-xs text-muted">· {policy?.dismissStaleReviews===false&&r.verdict==="APPROVE"&&!r.dismissed?"approval carried forward":"earlier revision"}</span>}</div><p className="mt-2 whitespace-pre-wrap break-words text-ink-2">{r.body}</p>{!!r.commentIds?.length&&<p className="mt-2 text-xs text-muted">{r.commentIds.length} inline {r.commentIds.length===1?"comment":"comments"}</p>}
         {!r.dismissed&&r.verdict==="APPROVE"&&view.reviewGate?.reviewerAccess?.[r.author.id]==="no_write"&&<p className="mt-2 text-xs text-muted">Approval not counted: this reviewer no longer has repository write access.</p>}
         {!r.dismissed&&r.verdict==="APPROVE"&&view.reviewGate?.reviewerAccess?.[r.author.id]==="unavailable"&&<p className="mt-2 text-xs text-muted">Approval not counted: current write access could not be verified.</p>}
+        {r.feedback?.role==='reader'&&<p className="mt-2 text-xs text-muted">This feedback does not count toward required approvals or block merging as a change request.</p>}
         {r.dismissed&&<div role="status" className="mt-3 space-y-1 text-sm"><p className="text-xs text-muted">Dismissed by {r.dismissed.actor.name} · <time dateTime={new Date(r.dismissed.at).toISOString()}>{new Date(r.dismissed.at).toLocaleString()}</time></p><p className="whitespace-pre-wrap break-words text-ink-2">{r.dismissed.reason}</p></div>}
-        {!readOnly&&view.canDismissReviews&&p.state==="open"&&!r.dismissed&&r.verdict!=="COMMENT"&&<DismissReview trunk={trunk} pull={p.number} review={r.id} author={r.author.name}/>}
+        {!readOnly&&view.canDismissReviews&&p.state==="open"&&!r.dismissed&&reviewDecision(r)!=="COMMENT"&&<DismissReview trunk={trunk} pull={p.number} review={r.id} author={r.author.name}/>}
       </li>)}</ul>
       {view.pendingReview&&<p className="mt-4 text-sm text-muted">Your inline feedback is pending. <a href="#pending-review" className="underline">Finish your review</a> to publish it with a decision.</p>}
       {!readOnly && user && view.canReview!==false && p.state === "open" && !view.pendingReview && <form className="mt-4 space-y-3" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); void run("reviews", { verdict: form.get("verdict"), body: form.get("body") }); }}>
-        <label className="block space-y-1 text-xs text-muted">Review<textarea className={field} name="body" rows={3} maxLength={16000} placeholder="Leave feedback on this revision" /></label>
-        <div className="flex flex-wrap gap-3"><select aria-label="Review decision" className={field + " max-w-56"} name="verdict"><option value="COMMENT">Comment</option><option value="APPROVE">Approve</option><option value="REQUEST_CHANGES">Request changes</option></select><Button disabled={action.busy} type="submit">Submit review</Button></div>
+        {ownPull?<p className="text-xs leading-5 text-muted">You can comment on your own pull request. Another reviewer must approve it or request changes.</p>:feedbackOnly&&<p className="text-xs leading-5 text-muted">You have read access. Your review is feedback only; required approvals need write access. Unresolved conversations can still block merging.</p>}
+        <label className="block space-y-1 text-xs text-muted">Review<textarea required={decision==='COMMENT'} className={field} name="body" rows={3} maxLength={16000} placeholder="Leave feedback on this revision" /></label>
+        <div className="flex flex-wrap gap-3"><select aria-label="Review decision" className={field + " max-w-56"} name="verdict" value={decision} onChange={event=>setDecision(event.target.value)}><option value="COMMENT">Comment</option><option value="APPROVE" disabled={ownPull}>{feedbackOnly?'Approve · feedback only':'Approve'}</option><option value="REQUEST_CHANGES" disabled={ownPull}>{feedbackOnly?'Request changes · feedback only':'Request changes'}</option></select><Button disabled={action.busy} type="submit">Submit review</Button></div>
       </form>}
-      {!readOnly&&user&&view.canReview===false&&p.state==="open"&&<p className="mt-4 text-sm text-muted">Repository write access is required to submit a review.</p>}
+      {!readOnly&&user&&view.canReview===false&&p.state==="open"&&<p className="mt-4 text-sm text-muted">Current repository read access is required to submit a review. Refresh after your access changes.</p>}
     </Card></section>
   </main>;
 }

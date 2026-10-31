@@ -8,4 +8,4 @@ export interface PullComment extends CodeComment {
   reviewId?: number;
   via?: {kind:"cli";credentialId:string};
 }
-export interface PullDiscussion { comments: PullComment[]; truncated: boolean; canComment?: boolean }
+export interface PullDiscussion { comments: PullComment[]; truncated: boolean; canComment?: boolean;canResolveAll?:boolean }

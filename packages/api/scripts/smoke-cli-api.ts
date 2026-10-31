@@ -27,7 +27,7 @@ try {
   assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'No session',scopes:['read'],days:1})).status,404);
   assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'Cross origin',scopes:['read'],days:1},{...owner,Origin:'https://other.invalid'})).status,403);
   for(const body of [{label:'Bad',scopes:[],days:1},{label:'Bad',scopes:['read','secrets:values'],days:1},{label:'Bad',scopes:['read'],days:31},{label:'Bad',scopes:['read'],days:1,owner:'spoof'}])assert.equal((await f.request('POST',`${base}/cli-credentials`,body,owner)).status,400);
-  assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'Reader cannot write',scopes:['read','reviews:write'],days:1},reader)).status,403);
+  assert.equal((await f.request('POST',`${base}/cli-credentials`,{label:'Reader cannot create pull requests',scopes:['read','pulls:write'],days:1},reader)).status,403);
   const read=await make(reader,['read']),author=await make(owner,['read','pulls:write','reviews:write','pulls:merge']),reviewer=await make(writer,['read','reviews:write']);
   const auth=(c:any)=>({Authorization:`Bearer ${c.token}`});
   const listing=await f.json('GET',`${base}/cli-credentials`,undefined,owner);assert.ok(!JSON.stringify(listing).includes(author.token));assert.equal(listing.credentials.length,1);
@@ -53,7 +53,7 @@ try {
   result=await cli(['pr','view','1']);assert.equal(result.code,0,result.stdout);let view=JSON.parse(result.stdout);assert.equal(view.canProtect,false);assert.equal(view.canConfigure,false);assert.equal(view.pendingReview,null);assert.equal(view.canDismissReviews,false);
   result=await cli(['pr','diff','1']);assert.equal(result.code,0,result.stdout);assert.match(JSON.parse(result.stdout).files[0].patch,/Candidate/);assert.deepEqual(JSON.parse(result.stdout).truncated,[]);
   assert.equal((await f.request('POST',gateway+'/pulls/1/reviews',{commit,anchor,verdict:'APPROVE'},auth(read))).status,403);
-  result=await cli(['pr','review','1','--verdict','approve']);assert.equal(result.code,0,result.stdout);assert.equal((await f.json('GET',`${base}/pulls/1`,undefined,owner)).reviewGate.ready,false,'Author self-approval cannot count');
+  result=await cli(['pr','review','1','--verdict','approve']);assert.equal(result.code,1,result.stdout);assert.match(JSON.parse(result.stdout).error,/authors can comment/);assert.equal((await f.json('GET',`${base}/pulls/1`,undefined,owner)).reviewGate.ready,false,'Author self-approval cannot count');
   result=await cli(['pr','review','1','--verdict','approve','--body','Reviewed through CLI'],'',reviewer.token);assert.equal(result.code,0,result.stdout);assert.equal(JSON.parse(result.stdout).review.via.credentialId,reviewer.id);
   // CLI read permission cannot inspect even its own private browser draft.
   await f.json('POST',`${base}/pulls/1/pending-review`,{reviewId:'private-owner-review',revision:0,commit,anchor,comment:{id:'private-comment-1',path:'README.md',side:'RIGHT',startLine:1,line:1,body:'Private draft'}},owner);
@@ -62,7 +62,7 @@ try {
   assert.equal((await f.request('POST',gateway+'/pulls/1/comments',{id:'bad-hunk-selection',commit,anchor,path:'README.md',side:'RIGHT',startLine:900,line:900,body:'Invisible'},auth(reviewer))).status,400);
   assert.equal((await f.request('POST',gateway+'/pulls/1/reviews',{commit:'0'.repeat(40),anchor,verdict:'APPROVE'},auth(reviewer))).status,409);
   result=await cli(['pr','merge','1']);assert.equal(result.code,1);assert.match(JSON.parse(result.stdout).error,/Resolve all review conversations/);
-  await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await f.request('PATCH',gateway+'/pulls/1/comments',{id:thread,commit,anchor,resolved:true},auth(reviewer))).status,403);assert.equal((await f.json('GET',`${base}/pulls/1`,undefined,owner)).reviewGate.approvals,0);
+  await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'reader'},owner);assert.equal((await f.request('PATCH',gateway+'/pulls/1/comments',{id:thread,commit,anchor,resolved:true},auth(reviewer))).status,200);assert.equal((await f.json('GET',`${base}/pulls/1`,undefined,owner)).reviewGate.approvals,0);
   await f.json('PATCH',`${base}/collaborators`,{userId:'codegraff:writer',role:'writer'},owner);
   result=await cli(['pr','resolve','1','--thread',thread],'',reviewer.token);assert.equal(result.code,0,result.stdout);
   const rule=await f.json('POST',`${base}/rulesets`,{name:'Only browser bypass',target:'branch',enforcement:'active',conditions:{ref_name:{include:['refs/heads/main'],exclude:[]}},rules:[{type:'update'}],bypass_actors:[{actor_type:'User',actor_id:'codegraff:owner',bypass_mode:'always'}]},owner);

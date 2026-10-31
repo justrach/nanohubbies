@@ -22,10 +22,10 @@ try {
  const view=(who=author)=>f.json('GET',`${base}/pulls/1`,undefined,who),path=`${base}/pulls/1/pending-review`,publicPath=`${base}/pulls/1/comments`,observed=()=>({commit,anchor});
  const pending=(who=writer)=>f.json('GET',path,undefined,who),identity={reviewId:'writer-pending-review',revision:0},comment={id:'private-comment-1',path:'README.md',side:'RIGHT',startLine:2,line:3,body:'PRIVATE reviewer rationale before publication'};
  const add={...identity,...observed(),comment};
- assert.equal((await f.request('POST',path,add,reader)).status,403);assert.equal((await f.request('POST',path,add,{...writer,Origin:''})).status,403);
+ const readerDraft=(await f.json('POST',path,{...add,reviewId:'reader-private-draft',comment:{...comment,id:'reader-private-comment'}},reader)).pending;assert.equal(readerDraft.revision,1);assert.equal((await pending()).pending,null);await f.json('DELETE',path,{reviewId:readerDraft.id,revision:1},reader);assert.equal((await f.request('POST',path,add,{...writer,Origin:''})).status,403);
  assert.equal((await f.request('POST',path,{...add,actor:{id:'author'}},writer)).status,400);assert.equal((await f.request('POST',path,{...add,comment:{...comment,author:{id:'author'}}},writer)).status,400);
  assert.equal((await f.request('POST',path,{...add,comment:{...comment,line:400}},writer)).status,400);
- assert.equal((await f.request('GET',path,undefined,reader)).status,403);assert.equal((await f.request('GET',path,undefined,{authorization:`Basic ${btoa(`git:${issued.token}`)}`})).status,401);
+ assert.equal((await f.json('GET',path,undefined,reader)).pending,null);assert.equal((await f.request('GET',path,undefined,{authorization:`Basic ${btoa(`git:${issued.token}`)}`})).status,401);
  await f.json('POST',`${base}/agents`,{handle:'review-bot',type:'test'},author);const agent=await f.json('POST',`${base}/agents/review-bot/token`,{},author),agentHeader={authorization:`Basic ${btoa(`review-bot:${agent.token}`)}`};
  assert.equal((await f.request('POST',path,add,agentHeader)).status,403);assert.equal((await f.request('GET',path,undefined,{...writer,...agentHeader})).status,403);
  let draft=(await f.json('POST',path,add,writer)).pending;assert.equal(draft.revision,1);

@@ -111,3 +111,9 @@ test('incomplete ruleset exports and lost mutation responses do not silently rep
  for(const value of [null,[],{revision:0,configuration:{name:'Missing bypass identities'}},{revision:0,configuration:{bypass_actors:[]},extra:true},{revision:-1,configuration:{bypass_actors:[]}}]){f.io.readProtectionFile=async()=>JSON.stringify(value);await expect(run(['ruleset','update','1','--file','ruleset.json','-R','team/project'],f.io)).rejects.toThrow();}
  expect(calls).toBe(0);f.io.readProtectionFile=async()=>JSON.stringify({revision:0,configuration:{bypass_actors:[]}});await expect(run(['ruleset','create','--file','ruleset.json','-R','team/project'],f.io)).rejects.toThrow('Inspect ruleset list or ruleset export');expect(calls).toBe(1);
 });
+test('reader review output preserves the requested opinion while explaining that it grants no required approval',async()=>{
+ const f=fixture(),review={id:1,verdict:'COMMENT',independent:false,feedback:{role:'reader',verdict:'APPROVE'}};
+ f.io.fetcher=async(url)=>Response.json(url.endsWith('/reviews')?{reviews:[review]}:f.view);
+ await run(['pr','review','1','--verdict','approve','-R','team/project'],f.io);expect(f.output.at(-1)).toContain('Submitted approve');expect(f.output.at(-1)).toContain('Reader feedback only; required approvals need writer access.');
+ await run(['pr','review','1','--verdict','approve','-R','team/project','--json'],f.io);expect(JSON.parse(f.output.at(-1)).review).toEqual(review);
+});

@@ -15,7 +15,7 @@ export class RequestedReviews {
     const stored=this.sql.exec<{revision:number}>('SELECT revision FROM review_request_revisions WHERE pull=?',number).toArray()[0]?.revision;
     const requests=this.sql.exec<{data:string}>('SELECT data FROM review_requests WHERE pull=? ORDER BY reviewer',number).toArray().map(row=>JSON.parse(row.data) as ReviewRequest);
     if(stored===undefined&&requests.length||stored!==undefined&&(!Number.isSafeInteger(stored)||stored<0))throw Error('Review request revision is unavailable; keep edits closed');
-    return {protocol:1,revision:stored??0,requests,revisionTracking:'storage',answerTracking:'storage-v2'};
+    return {protocol:1,revision:stored??0,requests,revisionTracking:'storage',answerTracking:'storage-v2',readerFeedback:'v1'};
   }
   private save(number:number,request:ReviewRequest){this.sql.exec('INSERT INTO review_requests VALUES(?,?,?) ON CONFLICT(pull,reviewer) DO UPDATE SET data=excluded.data',number,request.reviewer,JSON.stringify(request));}
   edit(input:ReviewRequestEdit,pull:Pull,head:string){

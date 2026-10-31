@@ -3,7 +3,7 @@ export const cliPermissions=[
   ["contents:read","Clone and fetch repository contents"],
   ["contents:write","Push repository contents"],
   ["pulls:write","Create and close pull requests and manage reviewer requests"],
-  ["reviews:write","Submit reviews and manage inline conversations"],
+  ["reviews:write","Submit review feedback and inline comments"],
   ["pulls:merge","Merge pull requests that satisfy repository rules"],
   ["rulesets:write","Create, change or remove rulesets and bypass accounts (repository admins only)"],
   ["protections:write","Change or remove branch protection rules (repository admins only)"],

@@ -31,12 +31,13 @@ import { ReviewStore } from "./review/store";
 import {sharedHeadReviewBlockers,sharedHeadReviewMessage} from "./review/shared-head";
 import { reviewWriter } from "./review/access";
 import { reviewerMembership } from "./review/reviewer-access";
+import {currentReviewAccess,assertReviewAccess,reviewDecisionAllowed,feedbackMembership} from './review/feedback-access';
 import {RequestedReviews,reviewerId} from './review/requests';
 import type {ReviewRequestEdit} from './review/request-types';
 import type { ReviewerMembership } from "./review/reviewer-types";
 import { CodeComments, type CommentCommand } from "./review/comments";
 import { PullComments, type PullCommentCommand } from "./review/pull-comments";
-import { PendingReviews, type PendingCommand, type SubmitPending } from "./review/pending";
+import { PendingReviews, humanPendingReviews, type PendingCommand, type SubmitPending } from "./review/pending";
 import { SuggestionApplications,type ApplySuggestions } from "./review/suggestion-store";
 import {branchFingerprint} from "./signing/ref-proof";
 import type { ReviewCommand, ReviewSnapshot } from "./review/types";
@@ -457,6 +458,7 @@ export class Sequencer extends DurableObject<Env> {
     return codeOwnerDecision(evidence,accounts,new Policies(this.sql,membership).eligibleApprovals(current,latest.reviews,currentHead.commit).map(r=>r.author.id),!!new Policies(this.sql).get(current.base)?.requireCodeOwnerReview);
   }
   async review(command: ReviewCommand) {
+    if(command.op==='review'&&command.feedback)throw Error('Reader feedback requires the current human review writer');
     const refActor=command.op==='merge'&&command.human?command.request.owner?.id:(command.op==='branch'||command.op==='restack')&&command.human?command.actor:undefined;
     const authority=refActor?await this.currentRulesetActor(refActor,'origin' in command?command.origin??'':''):undefined;
     if(command.op==="review"&&command.independent&&(!command.origin||!await reviewWriter(this.env,this.meta<string>("trunk")!,command.origin,command.author.id)))throw Error("Review requires a signed-in current repository writer");
@@ -482,6 +484,60 @@ export class Sequencer extends DurableObject<Env> {
     }
   }
 
+  /** Human reviews require this receiver. Reader decisions are stored as fenced
+   * COMMENT rows so old merge code cannot mistake feedback for a required vote. */
+  async submitHumanReview(command:Omit<Extract<ReviewCommand,{op:'review'}>,'op'|'independent'|'feedback'|'batch'|'origin'>&{origin:string}){
+    const actor={id:command.author.id,origin:command.origin,via:command.via},access=await currentReviewAccess(this.env,this.meta<string>('trunk')!,actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertReviewAccess(access);
+      const reviews=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()),snapshot=reviews.snapshot(),pull=snapshot.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error('No such pull request');
+      reviewDecisionAllowed(pull,actor.id,command.verdict,command.body);
+      return reviews.run({op:'review',number:command.number,author:command.author,commit:command.commit,anchor:command.anchor,body:command.body,origin:actor.origin,via:actor.via,
+        verdict:access.role==='writer'?command.verdict:'COMMENT',independent:access.role==='writer',...(access.role==='reader'?{feedback:{role:'reader' as const,verdict:command.verdict}}:{})},()=>{throw Error('Unexpected review landing');});
+    });
+  }
+
+  async pendingReviewWithFeedback(command:PendingCommand){
+    const access=await currentReviewAccess(this.env,this.meta<string>('trunk')!,command.actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertReviewAccess(access);
+      const snapshot=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),pull=snapshot.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error('No such pull request');
+      return humanPendingReviews(this.sql,pull.number,command.actor,access.role==='writer','reviewId'in command?command.reviewId:undefined).run(command,pull,snapshot.branches.find(b=>b.name===pull.head));
+    });
+  }
+
+  async submitPendingReviewWithFeedback(command:SubmitPending){
+    const access=await currentReviewAccess(this.env,this.meta<string>('trunk')!,command.actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertReviewAccess(access);
+      const reviews=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()),snapshot=reviews.snapshot(),pull=snapshot.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error('No such pull request');
+      const result=humanPendingReviews(this.sql,pull.number,command.actor,access.role==='writer',command.reviewId).submit(command,pull,snapshot.branches.find(b=>b.name===pull.head),draft=>{
+        reviewDecisionAllowed(pull,command.actor.id,command.verdict,command.body,draft.comments.length);
+        const next=reviews.run({op:'review',number:pull.number,author:draft.author,commit:command.commit,anchor:command.anchor,body:command.body,origin:command.actor.origin,via:command.actor.via,
+          verdict:access.role==='writer'?command.verdict:'COMMENT',independent:access.role==='writer',...(access.role==='reader'?{feedback:{role:'reader' as const,verdict:command.verdict}}:{}),batch:{id:draft.id,comments:draft.comments.map(c=>c.id)}},()=>{throw Error('Unexpected review landing');});
+        return next.reviews.at(-1)!;
+      });
+      const published=this.sql.exec<{data:string}>('SELECT data FROM review_reviews WHERE id=?',result.reviewId).toArray()[0];
+      const feedback=published?(JSON.parse(published.data) as import('./review/types').Review).feedback:undefined;
+      return {...result,...(feedback?{feedback}:{})};
+    });
+  }
+
+  async pullCommentsWithFeedback(command:Exclude<PullCommentCommand,{op:'list'}>){
+    const access=await currentReviewAccess(this.env,this.meta<string>('trunk')!,command.actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertReviewAccess(access);
+      const snapshot=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),pull=snapshot.pulls.find(p=>p.number===command.number);
+      if(!pull)throw Error('No such pull request');
+      if(command.op==='add'&&JSON.stringify(command.comment.via)!==JSON.stringify(command.actor.via))throw Error('Review comment credential identity does not match');
+      const canResolveAll=access.role==='writer'||pull.author.id===command.actor.id;
+      return {...new PullComments(this.sql).run({...command,canResolveAll},pull,snapshot.branches.find(b=>b.name===pull.head)),canResolveAll};
+    });
+  }
+
   /** New routes never downgrade to a receiver without shared-head review checks. */
   async mergeReviewedPull(command:Extract<ReviewCommand,{op:"merge"}>) {
     if(command.op!=="merge")throw Error("Expected a protected pull request merge");
@@ -503,18 +559,26 @@ export class Sequencer extends DurableObject<Env> {
   async requestedReviews(number:number,origin:string){
     const before=this.ctx.storage.transactionSync(()=>new RequestedReviews(this.sql).list(number));
     const ids=before.requests.filter(row=>row.state==='requested').map(row=>row.reviewer);
-    const membership=await reviewerMembership(this.env,this.meta<string>('trunk')!,origin,ids);
+    const membership=await feedbackMembership(this.env,this.meta<string>('trunk')!,origin,ids);
     const after=this.ctx.storage.transactionSync(()=>new RequestedReviews(this.sql).list(number));
     if(after.revision!==before.revision||membership.expiresAt<=Date.now())throw Error('Review requests changed while checking membership; refresh');
     return {...after,access:membership.accounts};
   }
 
   async editRequestedReviews(input:ReviewRequestEdit){
+    return this.editRequestedReviewsForAccess(input,false);
+  }
+
+  async editRequestedReviewsWithFeedback(input:ReviewRequestEdit){
+    return this.editRequestedReviewsForAccess(input,true);
+  }
+
+  private async editRequestedReviewsForAccess(input:ReviewRequestEdit,readers:boolean){
     if(!input.actor||!reviewerId(input.actor.id)||!Array.isArray(input.reviewers)||!input.reviewers.length||input.reviewers.length>15||!input.reviewers.every(reviewerId)||!['request','remove'].includes(input.operation))throw Error('Choose 1–15 reviewer account IDs');
     const trunk=this.meta<string>('trunk')!;
-    const membership=await reviewerMembership(this.env,trunk,input.origin,[input.actor.id,...(input.operation==='request'?input.reviewers:[])]);
+    const membership=await (readers?feedbackMembership:reviewerMembership)(this.env,trunk,input.origin,[input.actor.id,...(input.operation==='request'?input.reviewers:[])]);
     if(membership.accounts[input.actor.id]!=='writer')throw Error('Current repository writer access required to manage review requests');
-    if(input.operation==='request'&&input.reviewers.some(id=>membership.accounts[id]!=='writer'))throw Error('Requested reviewers must have current repository write access');
+    if(input.operation==='request'&&input.reviewers.some(id=>membership.accounts[id]!=='writer'&&!(readers&&membership.accounts[id]==='reader')))throw Error(readers?'Requested reviewers must have current repository read access':'Requested reviewers must have current repository write access');
     const grant=input.credentialId?await currentCliGrant(this.env,input.credentialId,input.actor.id,trunk,input.origin,'pulls:write'):null;
     if(input.credentialId&&!grant)throw Error('CLI pull request permission expired or was revoked');
     return this.ctx.storage.transactionSync(()=>{

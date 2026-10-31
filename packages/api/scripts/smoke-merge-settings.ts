@@ -34,7 +34,7 @@ try {
  await f.json('POST',base+'/pulls',{title:'Repository merge methods',head:'feature'},owner);
  const view=()=>f.json('GET',base+'/pulls/1',undefined,owner),unchanged=async()=>assert.equal((await view()).branches.find((branch:any)=>branch.name==='main').commit,anchor);
  assert.equal((await f.json('GET',base+'/pulls/1',undefined,reader)).canMerge,false);
- assert.equal((await f.json('GET',base+'/pulls/1',undefined,reader)).canReview,false);
+ assert.equal((await f.json('GET',base+'/pulls/1',undefined,reader)).canReview,true);
  assert.equal((await f.json('GET',base+'/pulls/1',undefined,reader)).canManagePulls,false);
  assert.equal((await f.json('GET',base+'/pulls/1',undefined,writer)).canReview,true);
  assert.equal((await view()).canMerge,true);

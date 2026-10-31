@@ -1,5 +1,10 @@
 # Requested reviewers
 
+Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+readers can submit feedback and private drafts, and writers can request them as
+reviewers. Required approvals still need eligible write access. This extension
+is not deployed; the published behavior described below remains separate.
+
 Published CLI **0.4.19** and the deployed PR UI add individual reviewer requests.
 The [release acceptance](evidence/review-requests-release-validation.md) covers
 all nine frozen Linux gates, Vault-first rollout, public delivery, consent and

@@ -9,6 +9,7 @@ export function ReviewThread({
   root,
   replies,
   canComment,
+  canResolve=canComment,
   pending,
   onReply,
   onResolve,
@@ -18,6 +19,7 @@ export function ReviewThread({
   root: CodeComment;
   replies: CodeComment[];
   canComment: boolean;
+  canResolve?: boolean;
   pending: boolean;
   onReply: (body: string) => Promise<boolean>;
   onResolve: () => Promise<void>;
@@ -45,7 +47,7 @@ export function ReviewThread({
           {root.line !== root.startLine ? `–${root.line}` : ""}
         </span>
         {root.resolved && <span>Resolved</span>}
-        {canComment && (
+        {canResolve && (
           <button
             type="button"
             disabled={pending}

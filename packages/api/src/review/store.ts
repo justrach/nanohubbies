@@ -14,6 +14,8 @@ import { dismissChangedApprovals, dismissAfterHeadChange } from "./stale";
 import {requireSharedHeadReviews} from "./shared-head";
 import {reviewedMergeHead} from "./merge-evidence";
 import {RequestedReviews} from './requests';
+import {feedbackStorage} from './feedback-storage';
+import {reviewDecision} from './feedback';
 import type { ReviewerMembership } from "./reviewer-types";
 import type { ChangeRequest, Head, Submitted } from "../types";
 import { branchName, type Branch, type Pull, type Review, type ReviewCommand, type ReviewSnapshot } from "./types";
@@ -25,6 +27,7 @@ export class ReviewStore {
     sql.exec("CREATE TABLE IF NOT EXISTS review_branches (name TEXT PRIMARY KEY, commit_sha TEXT NOT NULL, tree_sha TEXT NOT NULL, updated_at INTEGER NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS review_pulls (number INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS review_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, pull INTEGER NOT NULL, data TEXT NOT NULL)");
+    feedbackStorage(sql);
   }
 
   snapshot(): ReviewSnapshot {
@@ -137,6 +140,7 @@ export class ReviewStore {
         const r: Omit<Review, "id"> = { pull: p.number, author: c.author, body: c.body, verdict: c.verdict, commit: c.commit, anchor: c.anchor, tree:branch(p.head).tree,anchorTree:p.anchorTree,independent: c.independent === true, pushEvent: policies.pushEvent(p.head), at: Date.now() };
         if(c.batch){r.batchId=c.batch.id;r.commentIds=c.batch.comments;}
         if(c.via)r.via=c.via;
+        if(c.feedback)r.feedback=c.feedback;
         new RequestedReviews(this.sql);
         this.sql.exec("INSERT INTO review_reviews (pull, data) VALUES (?, ?)", p.number, JSON.stringify(r));
       }
@@ -147,7 +151,8 @@ export class ReviewStore {
           throw Error("Provide a review ID and a dismissal reason of up to 16000 characters");
         const review=s.reviews.find(r=>r.id===c.reviewId&&r.pull===p.number);
         if (!review) throw Error("No such review on this pull request");
-        if (review.verdict === "COMMENT") throw Error("Comment-only reviews cannot be dismissed");
+        const verdict=reviewDecision(review);
+        if (verdict === "COMMENT") throw Error("Comment-only reviews cannot be dismissed");
         const reason=c.reason.trim();
         if (review.dismissed) {
           if (review.dismissed.actor.id === c.actor.id && review.dismissed.reason === reason) return s;
@@ -155,7 +160,7 @@ export class ReviewStore {
         }
         review.dismissed={actor:c.actor,reason,at:Date.now()};
         this.sql.exec("UPDATE review_reviews SET data = ? WHERE id = ? AND pull = ?",JSON.stringify(review),review.id,p.number);
-        new Repository(this.sql,this.observe,this.authority).audit({actor:c.actor.id,human:true,dismissal:{pull:p.number,review:review.id,branch:p.base,reason,previousVerdict:review.verdict}});
+        new Repository(this.sql,this.observe,this.authority).audit({actor:c.actor.id,human:true,dismissal:{pull:p.number,review:review.id,branch:p.base,reason,previousVerdict:verdict}});
       }
       if (c.op === "compare") {
         if(p.head!==c.head.name||p.base!==c.base.name||(p.anchor!==c.previousAnchor&&p.anchor!==c.anchor))throw Error("PR changed; refresh and try again");

@@ -20,7 +20,7 @@ try {
  let policy={branch:"main",pullRequest:true,approvals:1,checks:[],beforeOpen:[],preventForce:true,preventDelete:true,requireCodeOwnerReview:true,dismissStaleReviews:true,requireLastPushApproval:true};await f.json("PUT",`${base}/protection`,policy,author);
  await f.json("POST",`${base}/pulls`,{title:"Review freshness candidate",head:"feature"},author);
  const view=(number=1)=>f.json("GET",`${base}/pulls/${number}`,undefined,author);
- const review=async(who=reviewer,verdict="APPROVE",number=1)=>{const v=await view(number);const s=await f.json("POST",`${base}/pulls/${number}/reviews`,{commit:v.head.commit,anchor:v.pull.anchor,verdict,body:"Synthetic independent review",tree:"forged-tree",anchorTree:"forged-anchor-tree"},who);return s.reviews.filter((r:any)=>r.pull===number).at(-1);};
+ const review=async(who=reviewer,verdict="APPROVE",number=1)=>{const v=await view(number);const s=await f.json("POST",`${base}/pulls/${number}/reviews`,{commit:v.head.commit,anchor:v.pull.anchor,verdict,body:"Synthetic independent review"},who);return s.reviews.filter((r:any)=>r.pull===number).at(-1);};
  const first=await review();assert.notEqual(first.tree,"forged-tree");assert.notEqual(first.anchorTree,"forged-anchor-tree");assert.equal((await view()).reviewGate.ready,true);
  await git("commit","--allow-empty","-m","Metadata-only commit");head=await git("rev-parse","HEAD");await transport(reviewerToken.token,"push",remote,"feature");let v=await view();assert.equal(v.reviewGate.ready,true);assert.equal(v.codeOwners.missing,0);assert.equal(v.reviews.find((r:any)=>r.id===first.id).dismissed,undefined);
  await writeFile(join(source,"README.md"),"Changed files\n");await git("add",".");await git("commit","-m","Changed files");

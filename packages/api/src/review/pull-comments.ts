@@ -4,8 +4,8 @@ import type { Branch, Pull } from "./types";
 
 export type PullCommentCommand = { number: number } & (
   | { op: "list" }
-  | { op: "add"; commit: string; anchor: string; comment: PullComment; actor: { id: string; origin: string } }
-  | { op: "resolve"; commit: string; anchor: string; id: string; resolved: boolean; actor: { id: string; origin: string } }
+  | { op: "add"; commit: string; anchor: string; comment: PullComment; actor: { id: string; origin: string;via?:PullComment['via'] };canResolveAll?:boolean }
+  | { op: "resolve"; commit: string; anchor: string; id: string; resolved: boolean; actor: { id: string; origin: string;via?:PullComment['via'] };canResolveAll?:boolean }
 );
 
 /** PR scope and original comparison survive branch pushes, rebases and removal. */
@@ -23,6 +23,7 @@ export class PullComments {
       if (c.op === "resolve") {
         const root = this.find(c.id, c.number);
         if (!root || root.replyTo) throw Error("No such review thread");
+        if(c.canResolveAll===false&&root.author.id!==c.actor.id)throw Error('Only the thread author, pull request author or a current writer can resolve this conversation');
         this.sql.exec("UPDATE pull_comments SET data = ? WHERE id = ? AND pull = ?", JSON.stringify({ ...root, resolved: c.resolved }), root.id, c.number);
       } else {
         const next = c.comment;

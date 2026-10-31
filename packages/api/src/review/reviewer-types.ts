@@ -1,4 +1,4 @@
-export type ReviewerStatus = "writer" | "no_write" | "unavailable";
+export type ReviewerStatus = "writer" | "reader" | "no_write" | "unavailable";
 /** Trusted membership read, never accepted from HTTP JSON. */
 export interface ReviewerMembership {
   accounts: Record<string,ReviewerStatus>;

@@ -114,7 +114,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
   const verdict={'comment':'COMMENT','approve':'APPROVE','request-changes':'REQUEST_CHANGES'}[opts.verdict??'comment'];
   if(!verdict)throw Error('Choose --verdict comment, approve or request-changes');
   result=await post(`/pulls/${number}/reviews`,{...observed,verdict,body:opts.body??''});
-  const review=result.reviews.at(-1);output({review},`Submitted ${verdict.toLowerCase().replaceAll('_',' ')} on #${number} at ${observed.commit.slice(0,7)}.`);return;
+  const review=result.reviews.at(-1);output({review},`Submitted ${verdict.toLowerCase().replaceAll('_',' ')} on #${number} at ${observed.commit.slice(0,7)}.${review.feedback?.role==='reader'?' Reader feedback only; required approvals need writer access.':''}`);return;
  }
  if(action==='comment') {
   if(!opts.body?.trim())throw Error('Provide --body for the inline comment');

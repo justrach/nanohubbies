@@ -5,7 +5,7 @@ import type { PullComment } from "./pull-comment-types";
 import type { PendingReview, PendingResult } from "./pending-types";
 import { PullComments } from "./pull-comments";
 
-type Actor = {id:string;origin:string;via?:Review["via"]};
+export type Actor = {id:string;origin:string;via?:Review["via"]};
 // Browser drafts keep their existing account key. A delegated CLI credential
 // owns a separate private workspace, even when issued to the same account.
 // Account IDs have provider prefixes; a JSON tuple cannot alias an account key.
@@ -24,11 +24,15 @@ export type SubmitPending = Identity & Observed & {commit:string;anchor:string;v
 
 /** Private drafts never enter ReviewSnapshot or public discussion storage. */
 export class PendingReviews {
-  constructor(private sql:SqlStorage) {
+  private drafts:string;
+  private submissions:string;
+  constructor(private sql:SqlStorage,feedback=false) {
+    this.drafts=feedback?'review_feedback_drafts':'review_drafts';
+    this.submissions=feedback?'review_feedback_submissions':'review_draft_submissions';
     new PullComments(sql);
-    sql.exec("CREATE TABLE IF NOT EXISTS review_drafts (id TEXT PRIMARY KEY, pull INTEGER NOT NULL, author TEXT NOT NULL, data TEXT NOT NULL)");
-    sql.exec("CREATE UNIQUE INDEX IF NOT EXISTS review_drafts_person ON review_drafts(pull,author)");
-    sql.exec("CREATE TABLE IF NOT EXISTS review_draft_submissions (id TEXT PRIMARY KEY, pull INTEGER NOT NULL, author TEXT NOT NULL, data TEXT NOT NULL)");
+    sql.exec(`CREATE TABLE IF NOT EXISTS ${this.drafts} (id TEXT PRIMARY KEY, pull INTEGER NOT NULL, author TEXT NOT NULL, data TEXT NOT NULL)`);
+    sql.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${this.drafts}_person ON ${this.drafts}(pull,author)`);
+    sql.exec(`CREATE TABLE IF NOT EXISTS ${this.submissions} (id TEXT PRIMARY KEY, pull INTEGER NOT NULL, author TEXT NOT NULL, data TEXT NOT NULL)`);
   }
   run(c:PendingCommand,pull:Pull,head?:Branch):PendingResult {
     if (pull.number!==c.number) throw Error("No such pull request");
@@ -50,23 +54,23 @@ export class PendingReviews {
       }
       if ((draft?.revision??0)!==c.revision) throw Error("Pending review changed; refresh before editing it");
       if(!draft) {
-        if(this.sql.exec("SELECT 1 FROM review_drafts WHERE id = ? UNION ALL SELECT 1 FROM review_draft_submissions WHERE id = ?",c.reviewId,c.reviewId).toArray().length)throw Error("Pending review id already used");
-        if(this.sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM review_drafts").toArray()[0].n>=1000)throw Error("Repository pending review limit reached");
+        if(this.sql.exec(`SELECT 1 FROM ${this.drafts} WHERE id = ? UNION ALL SELECT 1 FROM ${this.submissions} WHERE id = ?`,c.reviewId,c.reviewId).toArray().length)throw Error("Pending review id already used");
+        if(this.sql.exec<{n:number}>(`SELECT COUNT(*) AS n FROM ${this.drafts}`).toArray()[0].n>=1000)throw Error("Repository pending review limit reached");
       }
       if((draft?.comments.length??0)>=100)throw Error("A pending review can contain at most 100 comments");
       const now=Date.now(),saved:PendingReview={...(draft??{id:c.reviewId,pull:c.number,author:c.author,commit:c.commit,anchor:c.anchor,createdAt:now}),revision:c.revision+1,comments:[...(draft?.comments??[]),next],updatedAt:now};
       this.save(saved,owner);return {pending:saved};
     }
     if(!draft&&c.op==="discard") {
-      const old=this.sql.exec<{pull:number;author:string;data:string}>("SELECT pull,author,data FROM review_draft_submissions WHERE id = ?",c.reviewId).toArray()[0];
+      const old=this.sql.exec<{pull:number;author:string;data:string}>(`SELECT pull,author,data FROM ${this.submissions} WHERE id = ?`,c.reviewId).toArray()[0];
       const data=old&&JSON.parse(old.data);
       if(old?.pull===c.number&&old.author===owner&&data.discarded&&data.revision===c.revision)return {pending:null};
     }
     if(!draft)throw Error("No pending review");
     if(draft.revision!==c.revision)throw Error("Pending review changed; refresh before editing it");
     if(c.op==="discard") {
-      this.sql.exec("INSERT INTO review_draft_submissions VALUES (?, ?, ?, ?)",draft.id,c.number,owner,JSON.stringify({discarded:true,revision:draft.revision}));
-      this.sql.exec("DELETE FROM review_drafts WHERE id = ? AND author = ?",draft.id,owner);
+      this.sql.exec(`INSERT INTO ${this.submissions} VALUES (?, ?, ?, ?)`,draft.id,c.number,owner,JSON.stringify({discarded:true,revision:draft.revision}));
+      this.sql.exec(`DELETE FROM ${this.drafts} WHERE id = ? AND author = ?`,draft.id,owner);
       return {pending:null};
     }
     const comment=draft.comments.find(comment=>comment.id===c.commentId);
@@ -81,7 +85,7 @@ export class PendingReviews {
   submit(c:SubmitPending,pull:Pull,head:Branch|undefined,publish:(draft:PendingReview)=>Review):{pending:null;reviewId:number} {
     assertRepositoryWritable(this.sql);
     const owner=privateOwner(c.actor),fingerprint=JSON.stringify([c.revision,c.commit,c.anchor,c.verdict,c.body]);
-    const receipt=this.sql.exec<{pull:number;author:string;data:string}>("SELECT pull,author,data FROM review_draft_submissions WHERE id = ?",c.reviewId).toArray()[0];
+    const receipt=this.sql.exec<{pull:number;author:string;data:string}>(`SELECT pull,author,data FROM ${this.submissions} WHERE id = ?`,c.reviewId).toArray()[0];
     if(receipt) {
       const data=JSON.parse(receipt.data);
       if(data.discarded)throw Error("This pending review was discarded; start a new review");
@@ -97,17 +101,49 @@ export class PendingReviews {
     for(const comment of draft.comments)if(this.sql.exec("SELECT 1 FROM pull_comments WHERE id = ?",comment.id).toArray().length)throw Error("Comment id already used");
     const review=publish(draft),comments=new PullComments(this.sql);
     for(const comment of draft.comments)comments.run({op:"add",number:c.number,commit:c.commit,anchor:c.anchor,actor:c.actor,comment:{...comment,reviewId:review.id,at:Date.now()}},pull,head);
-    this.sql.exec("INSERT INTO review_draft_submissions VALUES (?, ?, ?, ?)",draft.id,c.number,owner,JSON.stringify({fingerprint,reviewId:review.id}));
-    this.sql.exec("DELETE FROM review_drafts WHERE id = ? AND author = ?",draft.id,owner);
+    this.sql.exec(`INSERT INTO ${this.submissions} VALUES (?, ?, ?, ?)`,draft.id,c.number,owner,JSON.stringify({fingerprint,reviewId:review.id}));
+    this.sql.exec(`DELETE FROM ${this.drafts} WHERE id = ? AND author = ?`,draft.id,owner);
     return {pending:null,reviewId:review.id};
   }
+  owns(pull:number,actor:Actor){return !!this.get(pull,privateOwner(actor));}
+  ownsReceipt(id:string,pull:number,actor:Actor){return this.sql.exec(`SELECT 1 FROM ${this.submissions} WHERE id=? AND pull=? AND author=?`,id,pull,privateOwner(actor)).toArray().length>0;}
   private get(pull:number,author:string):PendingReview|null {
-    const row=this.sql.exec<{data:string}>("SELECT data FROM review_drafts WHERE pull = ? AND author = ?",pull,author).toArray()[0];
+    const row=this.sql.exec<{data:string}>(`SELECT data FROM ${this.drafts} WHERE pull = ? AND author = ?`,pull,author).toArray()[0];
     return row?JSON.parse(row.data):null;
   }
   private save(draft:PendingReview,owner:string) {
     const data=JSON.stringify(draft);
     if(new TextEncoder().encode(data).length>1024*1024)throw Error("Pending review exceeds its 1 MiB storage limit");
-    this.sql.exec("INSERT INTO review_drafts VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET data=excluded.data",draft.id,draft.pull,owner,data);
+    this.sql.exec(`INSERT INTO ${this.drafts} VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET data=excluded.data`,draft.id,draft.pull,owner,data);
   }
+}
+
+/** Reader drafts never enter the legacy table that same-head gates inspect.
+ * Existing own drafts and retry receipts remain accessible after role changes. */
+export function humanPendingReviews(sql:SqlStorage,number:number,actor:Actor,writer:boolean,id?:string){
+ const stores=[new PendingReviews(sql),new PendingReviews(sql,true)];
+ for(const [drafts,submissions,otherDrafts,otherSubmissions]of [
+  ['review_drafts','review_draft_submissions','review_feedback_drafts','review_feedback_submissions'],
+  ['review_feedback_drafts','review_feedback_submissions','review_drafts','review_draft_submissions'],
+ ]){
+  sql.exec(`CREATE TRIGGER IF NOT EXISTS ${drafts}_cross_identity BEFORE INSERT ON ${drafts}
+   WHEN EXISTS(SELECT 1 FROM ${otherDrafts} WHERE id=NEW.id UNION ALL SELECT 1 FROM ${otherSubmissions} WHERE id=NEW.id)
+   BEGIN SELECT RAISE(ABORT,'Pending review id already used'); END`);
+  sql.exec(`CREATE TRIGGER IF NOT EXISTS ${drafts}_cross_owner BEFORE INSERT ON ${drafts}
+   WHEN EXISTS(SELECT 1 FROM ${otherDrafts} WHERE pull=NEW.pull AND author=NEW.author)
+   BEGIN SELECT RAISE(ABORT,'A private review already exists; use the current review service'); END`);
+  sql.exec(`CREATE TRIGGER IF NOT EXISTS ${submissions}_cross_identity BEFORE INSERT ON ${submissions}
+   WHEN EXISTS(SELECT 1 FROM ${otherDrafts} WHERE id=NEW.id UNION ALL SELECT 1 FROM ${otherSubmissions} WHERE id=NEW.id)
+   BEGIN SELECT RAISE(ABORT,'Pending review id already used'); END`);
+  sql.exec(`CREATE TRIGGER IF NOT EXISTS ${drafts}_shared_capacity BEFORE INSERT ON ${drafts}
+   WHEN NOT EXISTS(SELECT 1 FROM ${drafts} WHERE id=NEW.id)
+    AND (SELECT COUNT(*) FROM review_drafts)+(SELECT COUNT(*) FROM review_feedback_drafts)>=1000
+   BEGIN SELECT RAISE(ABORT,'Repository pending review limit reached'); END`);
+ }
+ const receipts=id?stores.filter(store=>store.ownsReceipt(id,number,actor)):[];
+ if(receipts.length>1)throw Error('Pending review receipt is ambiguous; keep edits closed');
+ if(receipts.length)return receipts[0];
+ const existing=stores.filter(store=>store.owns(number,actor));
+ if(existing.length>1)throw Error('Pending review ownership is ambiguous; keep edits closed');
+ return existing[0]??stores[writer?0:1];
 }

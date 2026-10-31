@@ -1,5 +1,10 @@
 # Nanohub CLI
 
+Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+readers can submit feedback and private drafts, and writers can request them as
+reviewers. Required approvals still need eligible write access. This extension
+is not deployed; the published behavior described below remains separate.
+
 The hosting CLI is available as `nh` and `nanohub`. The macOS/Linux installer
 requires Bun 1.4 or newer, and Git must be available for repository operations.
 Download the installer, then run it with Bun:
