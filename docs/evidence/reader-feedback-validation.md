@@ -4,6 +4,9 @@ The unpublished **0.4.21** candidate adds [reader review feedback](../reader-fee
 to the browser, API and native CLI. Production CLI 0.4.20, its immutable release
 catalog and deployed Workers are unchanged by this work. This is scoped local
 acceptance, not a release, complete GitHub parity or traffic-readiness claim.
+The [receipt](reader-feedback-receipt.json) pins implementation commit
+`c759bf8b11dcd74d48f51cef34b81c0ce8496d21`, test-log hashes, candidate bytes,
+capture identities and the remaining gates.
 
 ## Implemented boundary
 

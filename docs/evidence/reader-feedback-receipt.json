@@ -1,0 +1,182 @@
+{
+  "kind": "nanohub-reader-feedback-local-candidate",
+  "format": 1,
+  "recordedAt": "2026-10-31T06:20:03.622Z",
+  "sourceCommit": "c759bf8b11dcd74d48f51cef34b81c0ce8496d21",
+  "branch": "codex/standalone-git-host",
+  "published": false,
+  "checks": [
+    {
+      "command": "bun run --filter @swarm/api test:unit",
+      "result": "pass",
+      "summary": "451 API cases",
+      "log": "unit-accepted.log",
+      "bytes": 71449,
+      "sha256": "9f1a42b7e74864be6515b1d864fcbc44de0a097742c571cbdd724a5c87302872"
+    },
+    {
+      "command": "bun run test:cli",
+      "result": "pass",
+      "summary": "103 CLI cases",
+      "log": "cli-final.log",
+      "bytes": 15224,
+      "sha256": "42ee038938335028963a8459c593740854d6651209a6d335362f1f7bfc864ea1"
+    },
+    {
+      "command": "bun run test:repository",
+      "result": "pass",
+      "summary": "343 selected unit cases and all configured Worker/Git/CLI/recovery commands",
+      "log": "repository-accepted.log",
+      "bytes": 82338,
+      "sha256": "c3fab0549ab5e51e9111142975869c9f6dde80ff754bfcbc06eb6f4879057129"
+    },
+    {
+      "command": "bun run --filter @swarm/api test:reader-feedback",
+      "result": "pass",
+      "summary": "26 focused cases; real Worker/Git source and actual portable CLI distribution",
+      "log": "focused-frozen.log",
+      "bytes": 5411,
+      "sha256": "fc9a62a5244d93359e4a2cf18e566e56c1cbcc790f24e47faa28752946416f4e"
+    },
+    {
+      "command": "bun run --filter @swarm/api test:cli-pending",
+      "result": "pass",
+      "summary": "existing private CLI source and portable distribution lifecycle",
+      "log": "cli-pending-final.log",
+      "bytes": 2678,
+      "sha256": "39dc58e1b0b2b014d97262663744cc87f8bcc183b70993d117f43952b80cce5c"
+    },
+    {
+      "command": "bun run check",
+      "result": "pass",
+      "summary": "three typed workspace tasks; one cached",
+      "log": "check-final-source.log",
+      "bytes": 10508,
+      "sha256": "8002665191dde535061d7da34f4c2ba0d6ccea246384eebe713b45841a0fce9d"
+    }
+  ],
+  "candidate": {
+    "format": 1,
+    "version": "0.4.21",
+    "path": "/nh/releases/0.4.21/nh.mjs",
+    "bytes": 101486,
+    "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+  },
+  "publishedCatalog": {
+    "count": 20,
+    "sha256": "53297b9343b570761114f6b57e03bf62aff0691c0fa5299f69ff355cd371ad25",
+    "unchanged": true
+  },
+  "publicManifestObservation": {
+    "observedAt": "2026-10-31T06:17:58.760Z",
+    "url": "https://nanohub.sh/nh/latest.json",
+    "manifest": {
+      "format": 1,
+      "version": "0.4.20",
+      "path": "/nh/releases/0.4.20/nh.mjs",
+      "bytes": 100963,
+      "sha256": "378a7d9ef090fc88146dc6198d3ce15330a27e711506c9da311f8e399065eeb3"
+    }
+  },
+  "stagedDiffScan": {
+    "tool": "gitleaks stdin --redact",
+    "findings": 0,
+    "scope": "staged patch; not a general secret audit"
+  },
+  "design": [
+    {
+      "path": "DESIGN.md",
+      "sha256": "fe1f77008c581e200e735ad47f5e1aa48bf0e031576466b56df3dfe5df2c9dc9",
+      "unchangedFrom": "ea7a89a4163eed91dfb3e7aaf66a4c71c2b2001d"
+    },
+    {
+      "path": ".impeccable/design.json",
+      "sha256": "76b1119113f23a42b708434559f04752db3904945969a5789ea05d4efe3b15bf",
+      "unchangedFrom": "ea7a89a4163eed91dfb3e7aaf66a4c71c2b2001d"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "docs/evidence/reader-feedback-desktop.jpg",
+      "bytes": 53361,
+      "sha256": "0b693866779f24a3ff66fa4f55f7d52a286a07ee64d240037238548fb182e809",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "path": "docs/evidence/reader-feedback-pending.jpg",
+      "bytes": 50212,
+      "sha256": "c2c26c1eb781fe508b5dd6f63a4262a4815c654b93ae4bdbefd7897ffffb70d3",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "path": "docs/evidence/reader-feedback-success.jpg",
+      "bytes": 53592,
+      "sha256": "d11a35c1da83b85d38b81fc5e2d0a36b5087c97e971dc3a4c5cc6d3dcaf49460",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "path": "docs/evidence/reader-feedback-dark.jpg",
+      "bytes": 50574,
+      "sha256": "fb50963620a9067aeac10568f75e2606304b8d41fc85a4b31d6a47f136783d4a",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "path": "docs/evidence/reader-feedback-author.jpg",
+      "bytes": 46971,
+      "sha256": "859b7db14336201f7b4a1602ac25533ac9a9bca4a97a4bb720eaab4aef50aa3d",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "path": "docs/evidence/reader-feedback-request.jpg",
+      "bytes": 61861,
+      "sha256": "e05cb41569f0cb444f563a339d2228bf5fbff1f3fa97c55984eaca03fa2a63c6",
+      "encoding": "JPEG",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    }
+  ],
+  "uiReview": {
+    "disposition": "recapture",
+    "desktop": "no material UI fixes identified in the six supplied captures",
+    "mobile": "open: viewport override did not change actual 1280x720 DOM dimensions",
+    "detector": "unavailable: permission denied / exit 126",
+    "qualityBarResult": null
+  },
+  "productionChanges": {
+    "workerDeployment": false,
+    "vaultDeployment": false,
+    "credentialsIssued": 0,
+    "cloudSandboxesAllocated": 0
+  },
+  "remaining": [
+    "genuine narrow-viewport UI acceptance",
+    "frozen Linux and production build/delivery acceptance",
+    "compatible live rollout and multi-account production feedback checks",
+    "intended Actions account sandbox scope and unattended hosted dispatch",
+    "actual application CI/staging/cutover",
+    "complete production recovery, load/SLO and operations",
+    "remaining GitHub compatibility"
+  ]
+}
