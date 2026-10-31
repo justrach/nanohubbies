@@ -25,7 +25,7 @@ export function acceptanceGateScript(gates=acceptanceGates,logDirectory='/tmp') 
     seen.add(name);
     const log=quote(join(logDirectory,'gate-'+name+'.log'));
     return `printf '\\nNANOHUB_GATE_START ${name}\\n'
-if ( ${command} ) > ${log} 2>&1; then tail -n 8 ${log}; else tail -n 35 ${log}; exit 1; fi
+if ( ${command} ) > ${log} 2>&1; then tail -n 8 ${log}; else tail -n 1000 ${log}; exit 1; fi
 printf '\\nNANOHUB_GATE_PASS ${name}\\n'`;
   }).join('\n');
 }

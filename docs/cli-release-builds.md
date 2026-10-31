@@ -46,6 +46,14 @@ also invalidate the dependent web task. The web task separately retains its
 Next output cache. Direct web builds still invoke the same publisher. These
 settings follow Turbo's [task dependency and cache configuration](https://turborepo.dev/docs/reference/configuration).
 
+The cache integrations run with both terminal and GitHub Actions log settings.
+They check actual cache hits and misses through Turbo's
+[JSON run summaries](https://turborepo.dev/docs/reference/run#--summarize), while
+also checking restored bytes and the old graph's stale-output regression.
+Human log prefixes differ between those environments and are not cache evidence.
+Failed acceptance gates retain up to 1,000 log lines before the existing bounded
+runner-output tail is collected; private job output is still size-limited.
+
 ## Interrupted builds and candidate work
 
 An unresolved lock is retained. Do not remove it based on age: confirm the

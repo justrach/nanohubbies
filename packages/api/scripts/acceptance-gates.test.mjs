@@ -12,6 +12,11 @@ test('a failed second command retains both commands output and has no success ma
  const script=acceptanceGateScript([['compound',"printf 'first\\n' && { printf 'second error\\n' >&2; exit 17; }"]],logs);
  await assert.rejects(exec('/bin/sh',['-c',script]),error=>{assert.equal(error.code,1);assert.match(error.stdout,/first\nsecond error/);assert.doesNotMatch(error.stdout,/NANOHUB_GATE_PASS/);return true;});assert.equal(await readFile(join(logs,'gate-compound.log'),'utf8'),'first\nsecond error\n');
 }));
+test('failure diagnostics survive a later test summary in the collected job output',async()=>fixture(async logs=>{
+ const command="printf 'original assertion: expected MISS, observed HIT\\n'; n=0; while test \"$n\" -lt 50; do printf 'subsequent passing test\\n'; n=$((n+1)); done; printf '1 failed, 50 passed\\n'; exit 1";
+ const script=acceptanceGateScript([['tests',command],['later',"printf 'UNEXPECTED LATER'"]],logs);
+ await assert.rejects(exec('/bin/sh',['-c',script]),error=>{assert.equal(error.code,1);assert.match(error.stdout,/original assertion: expected MISS, observed HIT/);assert.match(error.stdout,/1 failed, 50 passed/);assert.doesNotMatch(error.stdout,/NANOHUB_GATE_PASS|UNEXPECTED LATER/);return true;});
+}));
 test('successful compound and subsequent gates preserve their separate logs, including quoted directories',async()=>fixture(async logs=>{
  const script=acceptanceGateScript([['compound',"printf 'first\\n' && printf 'second\\n'"],['next',"printf 'third\\n'"]],logs),result=await exec('/bin/sh',['-c',script]);assert.equal(result.stderr,'');assert.match(result.stdout,/NANOHUB_GATE_PASS compound/);assert.match(result.stdout,/NANOHUB_GATE_PASS next/);assert.equal(await readFile(join(logs,'gate-compound.log'),'utf8'),'first\nsecond\n');assert.equal(await readFile(join(logs,'gate-next.log'),'utf8'),'third\n');
 }));
