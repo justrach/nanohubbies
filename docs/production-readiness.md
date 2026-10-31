@@ -186,6 +186,12 @@ replay. Native isolated Codegraff execution remains the path for feature-branch
 CI; intended-application isolated execution, staging and cutover acceptance are
 still required. The prior failed harness records remain unchanged.
 
+The [native Meld preparation](meld-native-ci.md) now extracts six committed
+dependency inputs from the frozen actual main into a private image context and
+generates a workflow that compiles through the native parser. This prepares the
+isolated path; image publication, fresh-VM full-suite/native-callback acceptance
+and real-service staging remain open.
+
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)
