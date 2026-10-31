@@ -30,6 +30,10 @@ available at its installed path. Releases are built with the
 The new `/nh/` distribution does not replace the older `/install.sh`, `/cli` or
 `/download` swarm endpoints.
 
+[Release builds](cli-release-builds.md) enforce the committed public hash catalog,
+immutable version files and serialized publication. Different bytes require a
+new version; interrupted locks require explicit reconciliation.
+
 Contributors can also run the CLI from this checkout:
 
 ```sh
