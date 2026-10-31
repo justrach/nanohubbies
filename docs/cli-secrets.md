@@ -1,10 +1,13 @@
 # Secret references and workload grants in the CLI
 
-Candidate **0.4.18** adds native `nh secret` / `nanohub secret` commands. Local
-acceptance passes; cloud release validation and rollout are pending. The current
-public CLI remains 0.4.17. See [validation](evidence/cli-secrets-validation.md).
-The commands are also included in candidate **0.4.19**, alongside
-[requested reviewers](review-requests.md); neither candidate is a published release.
+Published **0.4.19** includes native `nh secret` / `nanohub secret` commands,
+introduced in candidate 0.4.18, alongside [requested reviewers](review-requests.md).
+The [release acceptance](evidence/review-requests-release-validation.md) covers
+all nine frozen Linux gates, compatible Vault-first rollout, public installation,
+explicit unchecked permissions and retained production state. Hosted delegated
+grant mutations remain separate from those publication checks. The earlier
+[local validation](evidence/cli-secrets-validation.md) retains its original scope
+and failed cloud attempts.
 
 Nanohub manages references to values retained in Cloudflare Secrets Store. These
 commands do not accept, upload or print Cloudflare secret values. Create or

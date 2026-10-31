@@ -1,0 +1,377 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T03:51:10.748560+00:00",
+  "status": "released-private-beta",
+  "implementationCommit": "233bd3f9847f2c2e07871625d9efb0ea4346620c",
+  "frozenSourceFiles": 1100,
+  "runtimeAndOtherNonDocFilesStillMatch": 719,
+  "frozenSourceManifestSha256": "febff305f50e50a68dd306305f3133575ce97ad03a2a3ccdfe0d9cf7815fcf89",
+  "builtFiles": 1476,
+  "sourceHashes": {
+    "packages/api/src/review/request-storage.ts": "6339cb9f70e43bf4ac5f271d882d4cc71769630aac4ad1a31068c8ec0b07446e",
+    "packages/api/src/review/requests.ts": "aa3a925f4183525113bddb198ea21941722a34884487687499ecd9ccfdd671f4",
+    "packages/api/src/review/request-route.ts": "3ea64e276e5ae4dc6976f222998c8ab641ef5246c0818788f69b2ad6c1183d19",
+    "packages/api/src/review/request-types.ts": "3a3c48d91559fa7e4b8cb5ac5f36ac0c3e8bbceee349421d7dc02a83d1c3c8ba",
+    "packages/api/src/review/store.ts": "89303c846bb29195cd9107c16caecb948d7c4d84322d6d8378f45439674ceb89",
+    "packages/api/src/sequencer.ts": "48705858e4d2ebfae6b5e62b68361efc588f042efcf74e6a4f2962193ea6ccff",
+    "packages/api/src/secrets/cli.ts": "1137e1c8fb9274daed5c94aab162995e8a9960f92c4a96282bb28f8434182390",
+    "packages/api/src/secrets/routes.ts": "7e44dc8d52031544430e7c065db803a0ff00112f96f568123eb97cf5e01601fc",
+    "packages/api/src/secrets/workload-authority.ts": "e4dc79a00cbebe9a5ba5585cb81f0c182d57fbe154ed955e0ab9422ebb6b66ff",
+    "packages/vault/src/index.ts": "58a013fe9b6dbde742ca0c694ad6098eba0972b1219d14dcb2e676300aa5e635",
+    "packages/vault/src/administration.ts": "e1a227d65e3108bfcc66ef91a1b650e63ba54ea47575c3ca5d629e57e4f75466",
+    "packages/vault/src/provider.ts": "d6079790a26f71de26a85cf2e73ea52872df857635af85545f960efabde68ff6",
+    "packages/cli/src/secrets.mjs": "bfeb170a04787d17e79d7f4ffefdbdec46e034d9a694b924c521aff2a56fd550",
+    "packages/cli/src/reviewers.mjs": "c22eb0103563143771f990fb8380b58fd3fd593b82fb4e52cbe61c41b959bfd3",
+    "packages/cli/src/main.mjs": "940ae1cc3ffc0fe04904742b5040a1bd000ea356e79f7f8372687a9ef148a7a3",
+    "packages/cli/package.json": "3f524bc07d410c0114d7cc31b97c2d63930da32e4c32796ac09b0a9cf5ce1bca",
+    "apps/web/src/trunk/review/RequestedReviewers.tsx": "c939824e5f79816769ed8dada9e3210469b485f35e469933361da6ee167367bc",
+    "apps/web/src/trunk/review/PullDetail.tsx": "5d89ce0d03830918070baf7e37549015bb5708fac641344d83212556dc90c5af",
+    "apps/web/src/lib/cli-scopes.ts": "6b4b80d45bfad05e412c59c2db0dfc3b1a6bc76daa2090543182e969b2f5d096",
+    "tools/acceptance-gates.mjs": "70cb7fcd62e61f9f21b0a28ac65b4bb829ad1bcb6f627d4aae742e6e81c98a53"
+  },
+  "artifact": {
+    "format": 1,
+    "version": "0.4.19",
+    "path": "/nh/releases/0.4.19/nh.mjs",
+    "bytes": 97845,
+    "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+  },
+  "linux": {
+    "checkedAt": "2026-10-31T03:36:04.777Z",
+    "productionCodegraff": true,
+    "hostedNanohub": false,
+    "source": "233bd3f9847f2c2e07871625d9efb0ea4346620c",
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/nanohub-ci@sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "registryProvider": "cloudflare",
+    "sandboxId": "cnd_221308bdd4648b1994a55eb547e8724deca63878",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "cleanupDeleted": true
+  },
+  "independentLinuxCleanup": {
+    "checkedAt": "2026-10-31T03:36:41.995Z",
+    "sandboxId": "cnd_221308bdd4648b1994a55eb547e8724deca63878",
+    "providerState": "destroyed",
+    "deletionConfirmed": true,
+    "independentRead": true
+  },
+  "tests": {
+    "apiUnitPassed": 424,
+    "cliPassed": 79,
+    "allNineFrozenGatesPassed": true,
+    "fullRepositoryCommandPassed": true,
+    "checkWorkspaceTasks": 3,
+    "checkCacheHits": 0,
+    "exactDistributionReviewerSecretDeploymentPassed": true
+  },
+  "disposableDelivery": {
+    "name": "nh-review-cli-assets-mvvunpde-241c1d2f",
+    "normalVersion": "1e4b92c3-b118-462e-8b8b-eb8bfd49e0f6",
+    "heldVersion": "0791db6d-a541-46e3-b077-eb432997e268",
+    "normalAssetChecks": 20,
+    "heldGetChecks": 26,
+    "headBodyless": true,
+    "absenceConfirmed": true,
+    "independentlyRecheckedBeforeStaging": true,
+    "productionBindingsAttached": false
+  },
+  "deployment": {
+    "previousMain": "a37ab061-a029-4480-9fb9-2b7cefeb19e3",
+    "main": "3f71f23f-a748-4799-b813-b57392714f49",
+    "held": "fcd06c4d-04bd-490a-b78c-b347f8505ad0",
+    "mainTrafficPercent": 100,
+    "previousVault": "02dcb88b-5c99-49d9-a4b6-cb95451e6bb5",
+    "vault": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+    "vaultTrafficPercent": 100,
+    "vaultFirst": true,
+    "durableObjectsCodeUpdateMode": "immediate",
+    "normalBindingCount": 27,
+    "vaultBindingCount": 3,
+    "normalBindingsUnchanged": true,
+    "vaultBindingsUnchanged": true,
+    "heldAddsOnlyRecoveryFlag": true,
+    "workerFirst": true,
+    "subrequests": 50000
+  },
+  "public": {
+    "assetChecks": 28,
+    "assetReceipts": [
+      {
+        "path": "/nh/latest.json",
+        "bytes": 179,
+        "contentType": "application/json",
+        "sha256": "7426389268abf59bcdfb7434069844bff135b92d3ecfa203e7b32fb997b7a25b"
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "contentType": "text/javascript",
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c"
+      },
+      {
+        "path": "/nh/releases/0.4.19/nh.mjs",
+        "bytes": 97845,
+        "contentType": "text/javascript",
+        "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+      },
+      {
+        "path": "/nh/releases/0.4.19/SHA256SUMS",
+        "bytes": 73,
+        "contentType": "",
+        "sha256": "96cb9ba6723ef9fbb0e82965cf17e6991dbc2464cdfedf7a36e8195543a44747"
+      },
+      {
+        "path": "/nh/releases/0.4.18/nh.mjs",
+        "bytes": 95151,
+        "contentType": "text/javascript",
+        "sha256": "893019ceef9abaa623a527b99e436ce7d4fee868d029195f0fa7556e8748b10c"
+      },
+      {
+        "path": "/nh/releases/0.4.17/nh.mjs",
+        "bytes": 85565,
+        "contentType": "text/javascript",
+        "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+      },
+      {
+        "path": "/nh/releases/0.4.16/nh.mjs",
+        "bytes": 81369,
+        "contentType": "text/javascript",
+        "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+      },
+      {
+        "path": "/nh/releases/0.4.15/nh.mjs",
+        "bytes": 74141,
+        "contentType": "text/javascript",
+        "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81"
+      },
+      {
+        "path": "/nh/releases/0.4.14/nh.mjs",
+        "bytes": 70056,
+        "contentType": "text/javascript",
+        "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+      },
+      {
+        "path": "/nh/releases/0.4.12/nh.mjs",
+        "bytes": 74001,
+        "contentType": "text/javascript",
+        "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+      },
+      {
+        "path": "/nh/releases/0.4.11/nh.mjs",
+        "bytes": 61139,
+        "contentType": "text/javascript",
+        "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+      },
+      {
+        "path": "/nh/releases/0.4.10/nh.mjs",
+        "bytes": 53804,
+        "contentType": "text/javascript",
+        "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+      },
+      {
+        "path": "/nh/releases/0.4.9/nh.mjs",
+        "bytes": 49938,
+        "contentType": "text/javascript",
+        "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+      },
+      {
+        "path": "/nh/releases/0.4.8/nh.mjs",
+        "bytes": 46789,
+        "contentType": "text/javascript",
+        "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11"
+      },
+      {
+        "path": "/_next/static/chunks/0681m6fdekw8q.css",
+        "bytes": 7287,
+        "contentType": "text/css",
+        "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356"
+      },
+      {
+        "path": "/_next/static/chunks/10wreoau2i_4v.css",
+        "bytes": 1905,
+        "contentType": "text/css",
+        "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d"
+      },
+      {
+        "path": "/_next/static/ZrGf6dhjQi_8zc6SJV4X1/_buildManifest.js",
+        "bytes": 219,
+        "contentType": "text/javascript",
+        "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea"
+      },
+      {
+        "path": "/_next/static/ZrGf6dhjQi_8zc6SJV4X1/_clientMiddlewareManifest.js",
+        "bytes": 96,
+        "contentType": "text/javascript",
+        "sha256": "5483e3295dc35dfe29ea932efc85341c916f10ff78ff5b0e965e003710893a4a"
+      },
+      {
+        "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+        "bytes": 71596,
+        "contentType": "font/woff2",
+        "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101"
+      },
+      {
+        "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+        "bytes": 69760,
+        "contentType": "font/woff2",
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+      },
+      {
+        "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+        "bytes": 190,
+        "contentType": "text/css",
+        "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca"
+      },
+      {
+        "path": "/_next/static/chunks/18vdng-ava46y.css",
+        "bytes": 9317,
+        "contentType": "text/css",
+        "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba"
+      },
+      {
+        "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+        "bytes": 1524,
+        "contentType": "text/css",
+        "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a"
+      },
+      {
+        "path": "/_next/static/chunks/27mzymd5lizl7.css",
+        "bytes": 20785,
+        "contentType": "text/css",
+        "sha256": "c431bc7783286bff2aa697d2fed4bb1cc01df4a5708f14ca523e2426400cdbca"
+      },
+      {
+        "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+        "bytes": 6246,
+        "contentType": "text/css",
+        "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2"
+      },
+      {
+        "path": "/_next/static/chunks/2vorx39uxa7pg.css",
+        "bytes": 61378,
+        "contentType": "text/css",
+        "sha256": "aabbdbb5ce2133762424c2b91c77b44495677b66551c69c6306570305088b9a3"
+      },
+      {
+        "path": "/_next/static/chunks/36srit4cbyjno.css",
+        "bytes": 5560,
+        "contentType": "text/css",
+        "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131"
+      },
+      {
+        "path": "/_next/static/chunks/3r55xobv4dda2.css",
+        "bytes": 16693,
+        "contentType": "text/css",
+        "sha256": "b61a6444f2f35785847bb7866a5b32c949c38351605f368cb8d355f894efaaaa"
+      }
+    ],
+    "previousCliAndInstallerHashesPreserved": true,
+    "aliases": [
+      {
+        "name": "nh",
+        "version": "nh 0.4.19",
+        "mergeSettingsHelp": true,
+        "deploymentHelp": true,
+        "reviewerHelp": true,
+        "secretHelp": true
+      },
+      {
+        "name": "nanohub",
+        "version": "nh 0.4.19",
+        "mergeSettingsHelp": true,
+        "deploymentHelp": true,
+        "reviewerHelp": true,
+        "secretHelp": true
+      }
+    ],
+    "temporaryInstallationRemoved": true,
+    "globalInstallationChanged": false
+  },
+  "preservation": {
+    "resources": 9,
+    "postVaultExistingFieldsExactlyPreserved": true,
+    "expectedVaultAdditions": [
+      "revision",
+      "conditionalWrites",
+      "revisionTracking",
+      "clientGrants",
+      "cliAudit"
+    ],
+    "postMainAllFieldsExactlyMatchPostVault": true,
+    "idleVaultAlarmAbsent": true,
+    "liveRequestTracking": "storage-v2",
+    "requestRevisionTracking": "storage",
+    "cliScopesOffered": 19,
+    "optionalScopesEnabledAndUnchecked": 18,
+    "requiredReadChecked": true,
+    "activeCanaryCliCredentials": 0,
+    "anonymousNewCliOperationsDenied": 6
+  },
+  "scope": {
+    "cloudflareAuthScopeSetUnchanged": true,
+    "cloudSandboxesAllocated": 1,
+    "productionCredentialsIssued": 0,
+    "productionGitRefsChanged": false,
+    "productionReviewRequestsEdited": false,
+    "productionSecretGrantsCreated": false,
+    "customerSecretValuesReadOrModified": false,
+    "browserAuthenticationExported": false,
+    "hostedMultiAccountRequestMutationsTested": false,
+    "hostedDelegatedGrantMutationsTested": false,
+    "hostedHistoricalVersionRollingTested": false,
+    "hostedFleetActivated": false,
+    "actualApplicationStagingEstablished": false,
+    "primaryHostCutoverEstablished": false,
+    "productionTrafficReadinessEstablished": false
+  },
+  "configuredNanohubActions": {
+    "checkedAt": "2026-10-31T03:32:16.647Z",
+    "account": "configured Nanohub Actions",
+    "claims": 0,
+    "allocations": 0,
+    "verified": false,
+    "status": 403,
+    "code": "sandbox_scope_required",
+    "providerReads": 1
+  },
+  "privateEvidenceHashes": {
+    "linux/toolchain-full.log": "cce1d95105686d8ef3e37588b4fa2d6cecfc84af0c881f811ee883e2ec9b98da",
+    "linux-controller.log": "2b3c886de431325b89f4e4f570aee036a0f8f0d513ba77eaf5b4658318d0dfff",
+    "independent-linux-cleanup.json": "de669e45db2b9bd608fc66eeac0506dcaab6d79f7363782761e875b584e5434f",
+    "candidate/normal-assets.json": "ebd958907b253685ac1ddc4ab8afafe7f8ed1ee4203ccb48048946c54b29f79e",
+    "candidate/held-assets.json": "bef8110c7e87d118df304b9918fdbb03aba9f6bb933d28388b93c03b33a5780f",
+    "candidate/operation.json": "1d727e86b15f2223b29b22220bccaa6d6284e6df0db2c7e622ce951decb329bc",
+    "vault-stage-operation.json": "c86b8d1cea454158d2885f1411f32eca904715c5754e4215b6f4dd00e5cbba93",
+    "vault-deploy-operation.json": "32a36fb21329c4be5d6c77d472c79d3552b9ff00fdf8c7b968f0093f233a7685",
+    "vault-canary-verification.json": "035167a54c8f3df4d5272052771d44591f9cbe4d6a5acb169534eefa502014ef",
+    "stage-verdict.json": "3d5cf0f56698d45614efa6f3eadc379c9509adb5f3efdc5ca73565125fc21a60",
+    "deploy-operation.json": "ddc25c6500d56c7208a0aaa25428b66a8cf000fba52d6d390df5603c63e61deb",
+    "public.json": "0e7a1a84d2865ef390e36787bdb47c47fd484854a17ad5f0f2fb130256479e09",
+    "installer.json": "ed4888645df73ae2daba4ddb361321c7755ca3db52e76d08d25aca9c44d15b09",
+    "canary-verification.json": "828b75f15bb78a1f8929b09758ad64ad5b518e0eee43d6b0f329a686991e8951",
+    "live-review-tracking.json": "7669db6d77d3c2b1046f5ffb97ddbab06d939c63f5e9505658107db31349a1bb",
+    "after-cli-access.json": "93e32e47d8259cb363b9032563a2645d50c5d00fcefdfe8ec51ca36f90ea4490",
+    "consent-defaults.json": "a33d2ee4add6fb7d526dc9bd6c298ba7bcac8e602f2967f0dee031f0471b5510",
+    "new-cli-auth-boundaries.json": "66bdfe882037d7bb54165bac3b8d635e93fbd5eb3a238bce1bf4f913bc03d552",
+    "nanohub-actions-preflight.json": "096e14ed6f941a05f193a0647dc050bd446ffc16f3b5cf228b7e98905a9c3c2c",
+    "auth-renewal.json": "d60655cffcfd6a1bc145616b873fcd149d0868b21ef6a2daa5004bb31c47a3b7"
+  },
+  "remaining": [
+    "Hosted multi-account request and delegated secret-grant mutations",
+    "Hosted historical-version rolling upgrade/rollback acceptance",
+    "Reader feedback with separate required-approval authority, teams, automatic CODEOWNERS requests, notifications and broader GitHub/Actions parity",
+    "Intended Nanohub account sandbox scope and unattended dispatcher activation",
+    "Original CI/staging/cutover and full production DR/authority reconciliation, load/security/operations gates"
+  ]
+}

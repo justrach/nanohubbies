@@ -44,16 +44,17 @@ Endpoints support `?environment=staging` (default), `production` or a custom low
 - `PUT` there: `{name, binding}` connects a preconfigured Cloudflare binding. A `value` field is rejected.
 - `DELETE` there: `{name}` disconnects a reference and revokes grants using it; the Cloudflare value remains. `{grantId}` revokes a grant.
 - `POST` there: `{names: ["DEPLOY_TOKEN"], ttlSeconds: 900}` → `{id, token, expires}`.
-- `POST /api/trunks/:repo/secrets/read?environment=staging` with `Authorization: Bearer <nhv_...>` → `{values: {...}}`. Sessions, agent credentials and CI lease tokens cannot redeem it.
+- `POST /api/trunks/:repo/secrets/read?environment=staging` with `Authorization: Bearer <workload-grant>` → `{values: {...}}`. Browser grants use `nhv_`; parent-bound CLI grants use `nhw_`. Sessions, agent credentials and CI lease tokens cannot redeem it.
 
 Keep grants and returned values in a trusted deployment controller. Candidate Codegraff jobs receive no vault grants or deployment secrets automatically. This implementation does not migrate Meld's existing credentials.
 
-Candidate CLI 0.4.18 adds [explicit secret administration](cli-secrets.md):
+Published CLI 0.4.19 includes [explicit secret administration](cli-secrets.md):
 metadata/reference/grant permissions are separate and admin-only. Delegated
 workload grants are stored in private local files, stop with their parent CLI
-credential and cannot be resurrected by recovery. The source and bundled local
-tests pass; rollout remains pending. Existing browser grants keep their current
-independent lifecycle and Cloudflare retains values in both cases.
+credential and cannot be resurrected by recovery. The source, bundle and exact
+release module pass the [frozen Linux release gates](evidence/review-requests-release-validation.md),
+and the compatible Vault/API rollout is deployed. Existing browser grants keep
+their current independent lifecycle and Cloudflare retains values in both cases.
 
 ## Provisioning
 

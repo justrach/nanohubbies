@@ -1,5 +1,10 @@
 # Requested reviewers — local candidate 0.4.19
 
+This is the pre-release local record. [Later release acceptance](review-requests-release-validation.md)
+passes the frozen Linux and compatible Vault/API rollout gates; the expired
+authentication and pending publication described below belong to the earlier
+observation. Its original counts and scope are retained.
+
 This validates the native PR request feature described in
 [the contract](../review-requests.md). Production API/CLI deployment, cloud
 acceptance and full GitHub parity remain unproved. The existing Cloudflare

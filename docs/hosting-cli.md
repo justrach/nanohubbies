@@ -826,21 +826,22 @@ nor control credential.
 
 ## Secret references and workload grants
 
-Candidate 0.4.18 adds native `secret list`, `secret connect`, `secret disconnect`,
+Published 0.4.19 includes native `secret list`, `secret connect`, `secret disconnect`,
 `secret grant`, `secret recover` and `secret revoke`. All require explicit
 current-admin secret permissions; existing credentials gain no capabilities.
 Values remain in Cloudflare. Grant credentials are saved only to owner-only
 files outside Git, are bounded by their parent CLI credential and cannot be
 renewed or resurrected by recovery. See the [command contract](cli-secrets.md)
-and [local validation](evidence/cli-secrets-validation.md). Public rollout is
-pending.
+and [release acceptance](evidence/review-requests-release-validation.md).
 
-## Requested reviewers — candidate 0.4.19
+## Requested reviewers — 0.4.19
 
 Native `nh pr reviewers NUMBER` lists request state and its revision.
 `nh pr request-review NUMBER --reviewer ACCOUNT --revision N` requests review;
 `nh pr remove-reviewer NUMBER --reviewer ACCOUNT --revision N` removes a request.
 Mutations use `pulls:write` plus current writer eligibility and do not change
-required approvals. Both aliases include the preceding candidate secret commands.
-These commands are locally validated; public CLI remains 0.4.17 pending cloud
-acceptance and rollout. See [requested reviewers](review-requests.md).
+required approvals. Both published aliases include the secret commands.
+All nine frozen Linux gates and compatible Vault-first rollout pass; hosted
+multi-account mutations and historical-version rolling validation remain
+separate. See [requested reviewers](review-requests.md) and
+[release acceptance](evidence/review-requests-release-validation.md).

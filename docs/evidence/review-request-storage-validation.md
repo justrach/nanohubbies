@@ -1,8 +1,9 @@
 # Requested reviewer storage and recovery — local validation
 
 This extends [candidate 0.4.19 acceptance](review-requests-validation.md) with
-persisted answer/revision tracking. Source and local validation pass. Cloud
-acceptance and deployment remain pending; this does not certify production
+persisted answer/revision tracking. This is the original local validation record;
+[later release acceptance](review-requests-release-validation.md) covers frozen
+Linux and the compatible Vault/API rollout. Neither establishes production
 traffic readiness or full GitHub compatibility.
 
 Previously, application code marked a reviewer request answered after inserting
@@ -64,10 +65,11 @@ review remains historical evidence for that unchanged UI.
 
 The [receipt](review-request-storage-receipt.json) records the exact runtime and
 fixture hashes, validation log hashes and scope. Private logs retain the prior
-intermediate attempts as well as final passing runs. Cloudflare authentication
-remains expired; a same-scope browser renewal reaches sign-in but saved-password
-selection does not fill it. No cloud sandbox, production credential, customer
-secret value or deployment is created by this correction. Frozen Linux gates,
-disposable full-app delivery, compatible Vault-first rollout and live
-mixed-version acceptance remain open alongside the original staging/cutover,
-hosted dispatcher and production recovery/load/operations requirements.
+intermediate attempts as well as final passing runs. At that observation,
+Cloudflare authentication was expired; a same-scope browser renewal reached
+sign-in but saved-password selection did not fill it. Those local checks created
+no cloud sandbox, production credential or deployment and read no customer
+secret value. The later release completes frozen Linux, disposable delivery
+and compatible Vault-first rollout acceptance. Hosted historical-version rolling
+checks, original staging/cutover, hosted dispatcher activation and production
+recovery/load/operations requirements remain open.

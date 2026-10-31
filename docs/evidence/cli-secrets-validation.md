@@ -1,5 +1,9 @@
 # CLI secret administration — local candidate 0.4.18
 
+This records the earlier local candidate and unsuccessful cloud attempts.
+The commands are now included in [published 0.4.19](review-requests-release-validation.md).
+The original observations and outcomes below retain their historical scope.
+
 This is local source/bundled CLI and real Worker/DO/D1/Secrets Store emulator
 acceptance. **No production API/Vault deployment or cloud release acceptance is
 claimed.** Public CLI 0.4.17 was independently read on 2026-10-30 at 21:28 UTC:

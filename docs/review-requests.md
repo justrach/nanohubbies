@@ -1,9 +1,11 @@
 # Requested reviewers
 
-Candidate CLI **0.4.19** and the local PR UI add individual reviewer requests.
-Source and local acceptance are available; production remains on CLI 0.4.17.
-The preceding secret commands in candidate 0.4.18 are included in 0.4.19.
-Both candidates still need full cloud acceptance and release validation.
+Published CLI **0.4.19** and the deployed PR UI add individual reviewer requests.
+The [release acceptance](evidence/review-requests-release-validation.md) covers
+all nine frozen Linux gates, Vault-first rollout, public delivery, consent and
+state preservation. It also includes the preceding secret-administration
+commands. Hosted multi-account request mutations and historical-version rolling
+upgrade/rollback acceptance remain separate from publication checks.
 
 The PR's **Reviewers** panel lets a repository writer request, remove or renew
 a request. A submitted independent review answers the outstanding request,
