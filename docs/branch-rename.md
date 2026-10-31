@@ -1,7 +1,8 @@
 # Branch renaming
 
-Branch rename is implemented and locally verified in the CLI **0.4.20 candidate**.
-Production release acceptance is pending; published production remains 0.4.19.
+Branch rename is published in CLI **0.4.20** and the production UI. The
+[release acceptance](evidence/branch-rename-release-validation.md) includes nine
+frozen Linux gates, public installation, a live rename and lock rejection.
 This follows GitHub's [head-PR closure and base-PR retargeting behavior](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch),
 with the explicit restrictions and compatibility limits below.
 

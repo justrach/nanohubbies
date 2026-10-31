@@ -1,0 +1,117 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T05:32:50.347Z",
+  "implementationCommit": "238ccb50c861561a1546a66b741196666663d396",
+  "validatedSource": "37b41c3105b822da0651d6c87632b33dedc50e87",
+  "workerVersion": "16f0ccba-1ecc-421c-a970-b8a62009393e",
+  "previousWorkerVersion": "3f71f23f-a748-4799-b813-b57392714f49",
+  "heldWorkerVersion": "9e10182f-db86-447f-ac87-89d8128c8844",
+  "vaultVersion": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+  "vaultRedeployed": false,
+  "trafficPercentage": 100,
+  "durableObjectsCodeUpdateMode": "immediate",
+  "cli": {
+    "format": 1,
+    "version": "0.4.20",
+    "path": "/nh/releases/0.4.20/nh.mjs",
+    "bytes": 100963,
+    "sha256": "378a7d9ef090fc88146dc6198d3ce15330a27e711506c9da311f8e399065eeb3"
+  },
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "apiUnitCases": 436,
+    "cliCases": 100,
+    "typedTasksFresh": 3,
+    "typedTasksCached": 0,
+    "sandboxId": "cnd_c2302972ab30eeca756023ed82a6072ad5481035",
+    "independentDestructionConfirmed": true,
+    "macosLinuxDistributionEqual": true
+  },
+  "frozenSourceFiles": 1134,
+  "builtFiles": 1478,
+  "disposableDelivery": {
+    "normalChecks": 48,
+    "heldGetChecks": 54,
+    "heldHeadBodyless": true,
+    "absenceConfirmed": true,
+    "independentAbsenceBeforeStaging": true,
+    "productionResourcesBound": false
+  },
+  "productionDelivery": {
+    "assetChecks": 56,
+    "allBuiltStylesheetsChecked": true,
+    "olderCliModulesAndChecksumsPreserved": 19,
+    "normalBindingsUnchanged": true,
+    "normalBindingCount": 27,
+    "heldAddsOnlyRecoveryHold": true,
+    "heldBindingCount": 28,
+    "workerFirst": true,
+    "subrequests": 50000,
+    "installedAliases": [
+      "nh",
+      "nanohub"
+    ],
+    "temporaryInstallationRemoved": true,
+    "globalInstallationChanged": false
+  },
+  "preservationBeforeSmoke": {
+    "resources": 9,
+    "exactlyPreserved": true
+  },
+  "productionSmoke": {
+    "checkedAt": "2026-10-31T05:31:54.258Z",
+    "originalRefsExactlyPreserved": 6,
+    "originalPullsReviewsRunsAndSettingsExactlyPreserved": true,
+    "defaultBranchAndRevisionUnchanged": true,
+    "successfulRenames": 1,
+    "lockRejectedWithIdenticalConfiguration": true,
+    "oldFixtureRunSuperseded": true,
+    "newFixtureRunQueued": true,
+    "attributedRenameAuditEvents": 1,
+    "fixtureBranchRetained": "branch-rename-smoke-20261031/renamed",
+    "newCredentials": 0,
+    "oldBranchLinkCanonical": true,
+    "unusedVaultAlarmAbsent": true,
+    "savedSecretValuesReadOrChanged": false
+  },
+  "permissionControls": {
+    "count": 20,
+    "requiredReadChecked": true,
+    "optionalControlsUnchecked": true,
+    "branchRenameControlPresent": true,
+    "credentialsCreated": 0
+  },
+  "anonymousBranchRequests": {
+    "get": 401,
+    "post": 401
+  },
+  "knownHelpOmission": {
+    "scope": "branches:write",
+    "branchCommandsListed": true,
+    "grantImplementedAndDocumented": true,
+    "scopeDescriptionMissingFromGeneralHelp": true,
+    "initialVerifierFailuresRetained": true,
+    "nextCliHelpCorrectionRequired": true
+  },
+  "hostedActions": {
+    "intendedAccountAccessVerified": false,
+    "status": 403,
+    "code": "sandbox_scope_required",
+    "claims": 0,
+    "allocations": 0,
+    "activationEstablished": false
+  },
+  "productionTrafficReadinessEstablished": false,
+  "fullGithubParityEstablished": false
+}
