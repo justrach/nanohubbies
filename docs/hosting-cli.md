@@ -1,9 +1,10 @@
 # Nanohub CLI
 
-Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+Published **0.4.21** adds [reader review feedback](reader-feedback.md):
 readers can submit feedback and private drafts, and writers can request them as
-reviewers. Required approvals still need eligible write access. This extension
-is not deployed; the published behavior described below remains separate.
+reviewers. Required approvals still need eligible write access. The
+[release evidence](evidence/reader-feedback-release-validation.md) covers exact
+public bytes and fresh temporary installations of both aliases.
 
 The hosting CLI is available as `nh` and `nanohub`. The macOS/Linux installer
 requires Bun 1.4 or newer, and Git must be available for repository operations.
@@ -55,9 +56,9 @@ General help in 0.4.20 lists the branch commands but omits the grant explanation
 the permission above is implemented and documented here. Existing credentials
 gain no new permissions.
 
-The [0.4.21 source candidate](evidence/cli-branch-help-validation.md) adds that
-missing help explanation and a portable-help regression check. It is not yet
-published; production remains 0.4.20.
+Published **0.4.21** adds the [missing help explanation and portable-help
+regression check](evidence/cli-branch-help-validation.md). Existing credentials
+gain no new permissions.
 
 Contributors can also run the CLI from this checkout:
 
@@ -272,8 +273,9 @@ publication require the exact observed revision. Draft comments use the same
 comments and 1 MiB of retained draft data. Pending replies are unsupported.
 
 Every explicit pending-review read or write requires **reviews:write** and
-current repository writer access. Ordinary `read`, Git-only and agent tokens
-cannot inspect it. Each CLI credential owns a separate private workspace under
+current repository read access. Reader decisions remain feedback only. Ordinary
+`read` alone, Git-only and agent tokens cannot inspect it. Each CLI credential
+owns a separate private workspace under
 its bound account; neither a sibling credential nor the same account's browser
 can read/edit that workspace. Existing browser drafts remain account-private
 and are not exposed to CLI credentials. Replacing a credential does not transfer
@@ -287,9 +289,11 @@ PR to clear the blocker. See [shared-head reviews](github-parity.md#reviews-on-a
 A push or changed comparison leaves old feedback private. Submission uses the
 draft's original head and comparison; the CLI never replaces them with newer
 IDs to make a stale review pass. Inspect and discard the old draft before
-starting on the new diff. Reads remain available to current writers while
-archived, but every draft mutation and publication is denied. Demotion,
-membership removal, credential expiry or revocation denies draft access.
+starting on the new diff. Explicit draft reads remain available to current
+members with the review grant while archived, but every draft mutation and
+publication is denied. Membership removal, credential expiry or revocation
+denies draft access. Publication uses the freshly verified role; a demoted
+writer can publish reader feedback without gaining approval authority.
 
 Published reviews and threads identify the owning account and issuing CLI
 credential. Self-approval, current independent reviewers, CODEOWNERS and

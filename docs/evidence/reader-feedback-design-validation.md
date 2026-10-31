@@ -9,12 +9,15 @@ remain the visual direction. No new token or redesign is introduced.
 
 ## Evidence inspected
 
-This documentation pass directly read the current local source below and
-visually inspected all six captures with `view_image`. It did not run a new
-browser session or repeat functional tests. The finish reviewer reported no
-material desktop UI fixes. Its final disposition is **recapture**: genuine
-mobile evidence is required before release acceptance; no release approval is
-claimed.
+This documentation workflow directly read the local source below and inspected
+all seventeen captures with `view_image`: six desktop and eleven narrow-context
+images. It also read the retained narrow-viewport observations and reproduction
+fixture. It did not run a new browser session or independently repeat functional
+tests. The fresh finish reviewer inspected the seven UI sources, associated CSS
+and all seventeen captures and returned the canonical disposition **ship**, with
+no material fixes. This supersedes the earlier **recapture** disposition for
+missing narrow evidence. It closes the narrow-layout gate at 390×640 only and
+does not grant release approval.
 
 | Source | Evidence recorded |
 | --- | --- |
@@ -29,8 +32,9 @@ claimed.
 The associated `PullFiles.module.css` and `Review.module.css` were also read.
 They use incumbent theme variables, compact type, flat bordered surfaces,
 bounded scrolling and visible focus styles. The file toolbar has a 600px
-wrapping rule; hunk headers wrap below 900px. These source rules do not establish
-actual mobile rendering or accessibility conformance.
+wrapping rule; hunk headers wrap below 900px. The narrow captures below now
+provide rendered evidence; source rules alone do not establish accessibility
+conformance.
 
 ## Captured desktop states
 
@@ -55,6 +59,64 @@ The finish review found no material desktop correction. These scoped
 observations do not constitute a full accessibility, performance or cross-browser
 audit.
 
+## Captured narrow-context states
+
+All eleven new images are native JPEG captures at 390×640, independently checked
+from metadata and byte-compared with their originals in `.impeccable/review/`.
+They are not resized desktop screenshots. This documentation pass inspected
+each image directly; the interaction and DOM measurements below were supplied
+by the implementation workflow and retained in its observations file.
+
+| Capture | Direct visual observation and limit |
+| --- | --- |
+| [reader-feedback-mobile.jpg](reader-feedback-mobile.jpg) | Reader decisions, feedback-only explanations and immediate review form wrap within the narrow page. The viewport shows a scrolled section, not the entire page. |
+| [reader-feedback-mobile-composer.jpg](reader-feedback-mobile-composer.jpg) | Actual inline after-side hunk composer, Suggest change, textarea and all three footer actions: Start a review, Post single comment and Cancel. The capture uses the existing local PR author, with the same shared `HunkReview` component/actions as the reader. |
+| [reader-feedback-mobile-pending.jpg](reader-feedback-mobile-pending.jpg) | Reader private pending comment, edit/remove actions, privacy and feedback-only explanations, summary, decision, submit and discard controls. Actions wrap within the viewport. |
+| [reader-feedback-mobile-published.jpg](reader-feedback-mobile-published.jpg) | Published reader Request changes feedback with one inline comment and the explanation that it supplies neither required approval nor a change-request veto. |
+| [reader-feedback-mobile-resolved.jpg](reader-feedback-mobile-resolved.jpg) | Reader's published thread shows Resolved/Reopen, while another member's thread has a reply action and no reader Resolve control. |
+| [reader-feedback-mobile-dark.jpg](reader-feedback-mobile-dark.jpg) | Graphite reader feedback and immediate review form, including a visible native Tab focus ring on Submit review. |
+| [reader-feedback-mobile-author.jpg](reader-feedback-mobile-author.jpg) | Author Comment-only explanation and immediate form with visible Submit review focus. Closed-select disabled options were checked in the recorded DOM observations. |
+| [reader-feedback-mobile-author-pending.jpg](reader-feedback-mobile-author-pending.jpg) | Author private pending review with Comment-only explanation, summary, decision, submit and discard; the submit focus ring remains visible. |
+| [reader-feedback-mobile-request.jpg](reader-feedback-mobile-request.jpg) | Reviewer request form selects the reader with feedback-only labeling and explanatory text; Send request has visible focus. |
+| [reader-feedback-mobile-request-sent.jpg](reader-feedback-mobile-request-sent.jpg) | Requested reader now shows Waiting for review, Reader · feedback only, and Remove request. Required independent approvals remain at zero above it. |
+| [reader-feedback-mobile-top.jpg](reader-feedback-mobile-top.jpg) | Narrow shared top navigation, repository tabs, wrapped PR title, metadata and protection panel. Horizontal tab scrolling remains local to its row. |
+
+The corrected composer capture replaces the earlier inadequate composer
+evidence. Recorded button right edges are 142.28125px, 296.125px and
+364.4453125px, all inside the 390px context. The supplied workflow exercised
+reader private save, publication and own-thread resolution; reader requests;
+author Comment-only decisions in both forms and author publication; and native
+Tab focus. Both author decision selects recorded Comment enabled and Approve /
+Request changes disabled. These are supplied interaction results, not new
+runtime tests by this documentation pass.
+
+## Narrow capture provenance and verdict history
+
+The first review correctly returned **recapture**: attempts to call
+`viewport.set({width:390,height:844})`, reload and open a new tab left the actual
+DOM viewport at 1280×720. Those desktop images supplied no mobile evidence.
+
+The later workflow used a temporary same-origin HTML parent hosting the
+unchanged app in an iframe set to 390px wide and 640px high. CUA observations
+recorded actual iframe `innerWidth:390`, `innerHeight:640`, HTML
+`scrollWidth:390` and a matching `max-width:600px` media query. The outer browser
+remained 1280×720. Native browser screenshots were clipped to the iframe
+rectangle `(0,0,390,640)` with no image resizing or app CSS alteration. This is
+genuine narrow browsing-context layout evidence. The temporary public HTML was
+removed; it was excluded from the frozen build.
+
+Private reproduction evidence is retained at
+`/Users/blackfloofie/.config/nanohub/reader-feedback-release-2026-10-31/responsive-fixture.html`
+and
+`/Users/blackfloofie/.config/nanohub/reader-feedback-release-2026-10-31/mobile-observations.json`.
+This pass read both files. They describe the capture method and measurements;
+the reproduction HTML does not change app styles.
+
+The fresh reviewer's **ship** verdict follows inspection of all seventeen
+captures, the seven UI sources and associated CSS, with no material UI fix.
+**The narrow-layout gate is CLOSED at 390×640 only.** This does not establish
+iOS/Android touch, device, virtual-keyboard or comprehensive accessibility QA.
+
 ## Permission meaning
 
 Readers can contribute review decisions and inline feedback; their Approve and
@@ -74,30 +136,36 @@ repository write authority. Server authorization, current membership and
 credential scopes remain authoritative; this pass inspected presentation and
 capability use rather than independently validating server enforcement.
 
-## Open validation gates and release boundary
-
-**Mobile gate: OPEN.** The supplied workflow attempted
-`viewport.set({width:390,height:844})`, reloaded and opened a new tab, but the actual DOM
-viewport remained 1280×720. No current reader-feedback mobile screenshots exist.
-None of these six captures is mobile evidence. Genuine narrow-viewport
-rendering and interaction checks remain necessary before mobile acceptance;
-desktop acceptance does not close that gate.
+## Validation limits and release boundary
 
 The Impeccable context launcher and single detector attempt failed with
 permission denied / exit 126 in the parent workflow. No detector verdict or
 QUALITY BAR result is claimed. The launcher was not repaired or rerun by this
-documentation pass.
+documentation pass. No second detector attempt was made.
 
 The pre-existing shared review `Notice` danger-token drift remains out of
 scope: its `border-danger/30` / `bg-danger/5` usage is not promoted to a new
 design token or repaired here. Error, stale, closed, suggestion application,
-keyboard and assistive-technology paths were inspected only where described in
-source; no dedicated capture or new interaction test for those paths is claimed.
+and assistive-technology paths were inspected only where described in source;
+no dedicated capture or new interaction test for those paths is claimed. Native
+Tab focus was exercised within the narrow context, as recorded above; it does
+not establish comprehensive keyboard or assistive-technology coverage.
 
-Current local source candidate CLI **0.4.21 is unpublished**. Deployed CLI
-**0.4.20** and the deployed server remain unchanged. This design documentation
-does not establish deployment, production validation, complete GitHub parity,
-release approval or readiness.
+Separately, the implementation owner supplied Linux acceptance for frozen
+source `b04e1eb178e7fb6ffa40e818068b3443901b6d04`: all nine frozen gates passed,
+including 451 API and 103 CLI cases. The exact candidate 0.4.21 CLI was 101486
+bytes with SHA-256
+`b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e`.
+The sandbox provider was destroyed after the run. These are supplied parent
+results, not independent runtime validation performed by this documentation
+pass.
+
+At the time of this design documentation pass, candidate CLI **0.4.21 was
+unpublished**, with CLI 0.4.20 and its server unchanged. The implementation owner
+subsequently deployed 0.4.21; [release acceptance](reader-feedback-release-validation.md)
+records the separate delivery and production smoke evidence. This design
+documentation itself does not establish deployment, production validation,
+complete GitHub parity, release approval or readiness.
 
 ## Persistence
 

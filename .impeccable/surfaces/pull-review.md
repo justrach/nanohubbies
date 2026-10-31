@@ -26,15 +26,18 @@ separate writer action.
 FIRST VIEWPORT: Preserve the pull title, branch/protection information, merge
 area, reviewer sidebar and PR stack. Continue into the existing Files changed
 surface, one file at a time, followed by Reviews. This is an extension of the
-existing layout; the supplied captures show scrolled desktop states.
+existing layout; the supplied captures show desktop and genuine narrow-context
+states, including the page top.
 
 FORM: Code-led, bounded review using existing cards, fields, buttons, native
 selects and thread components. No concept roll or design-system replacement is
 needed. Keep permission explanations adjacent to their actions.
 
-FINISH: The scoped desktop review found no material UI fix. Documentation must
-retain the open mobile validation gate and the unavailable detector result;
-desktop acceptance is not release approval.
+FINISH: The fresh reviewer inspected the seven UI source files, associated CSS
+and all seventeen captures and returned **ship**, with no material UI fix. The
+narrow-layout gate is closed at 390×640 only. Preserve the earlier recapture
+history, unavailable detector result and device-testing limits; this scoped
+design verdict is not release approval.
 
 ## Permission and feedback contract
 
@@ -82,23 +85,35 @@ reader as an anonymous visitor or as a writer.
   containers. These source behaviors are not a claim of a complete keyboard or
   assistive-technology test.
 
-## Evidence and unresolved gates
+## Evidence and validation limits
 
 The [design validation record](../../docs/evidence/reader-feedback-design-validation.md)
-records direct inspection of the seven UI source files and all six supplied
-1280×720 captures in Paper/Graphite. No material desktop UI fix was identified
-by the finish reviewer; its final disposition is recapture because genuine
-mobile evidence remains a release gate.
+records the seven UI source files, six 1280×720 desktop captures and eleven
+390×640 narrow captures in Paper/Graphite. All captures were visually inspected.
+The fresh reviewer's canonical disposition is **ship**, with no material fixes.
 
-**Mobile gate: OPEN.** The attempted `viewport.set({width:390,height:844})`, reload and new-tab
-checks left the actual DOM viewport at 1280×720. There are no current mobile
-reader-feedback captures. Existing CSS wrapping rules are source evidence, not
-mobile acceptance. Obtain genuine narrow-viewport rendering and interaction
-evidence before closing that gate.
+**Narrow-layout gate: CLOSED at 390×640 only.** Earlier
+`viewport.set({width:390,height:844})`, reload and new-tab attempts left the DOM
+viewport at 1280×720, leading to the earlier recapture disposition. The later
+evidence uses the unchanged app inside a temporary same-origin HTML parent's
+390×640 iframe. Its actual `innerWidth`/`innerHeight` were 390/640, HTML
+`scrollWidth` was 390 and the 600px media query matched; the outer browser stayed
+1280×720. Native screenshots were clipped to the iframe rectangle without image
+resizing or app CSS alteration. The temporary public fixture was removed and a
+private reproduction copy and observations retained, as detailed in the record.
+
+Narrow checks exercised reader private saving, publication and own-thread
+resolution; reader requests; author Comment-only decisions in both forms and
+author publication; and native Tab focus. The corrected inline-composer capture
+uses the existing local PR author and the same shared `HunkReview` actions as
+the reader. Start a review, Post single comment and Cancel all fit within 390px.
+This is genuine narrow browsing-context layout evidence, not iOS/Android device,
+touch, virtual-keyboard or comprehensive accessibility QA. Stale, closed, error
+and suggestion-application paths remain source-inspected only.
 
 The context launcher and the single detector attempt failed with permission
 denied / exit 126. No detector verdict or QUALITY BAR result exists. The shared
-`Notice` danger-token drift is pre-existing and outside this extension. The
-source candidate CLI is 0.4.21 and unpublished; deployed CLI 0.4.20 and server
-remain unchanged. This record establishes neither release readiness nor full
-GitHub parity.
+`Notice` danger-token drift is pre-existing and outside this extension. At the time of the design documentation pass, CLI 0.4.21 was unpublished.
+The later [release acceptance](../../docs/evidence/reader-feedback-release-validation.md)
+records its deployment and production smoke separately. This design record
+establishes neither overall production readiness nor full GitHub parity.

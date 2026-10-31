@@ -1,0 +1,354 @@
+{
+  "checkedAt": "2026-10-31T07:19:38.422Z",
+  "workerVersion": "b3298aee-d026-4a79-8407-ee8071b5c776",
+  "checks": [
+    {
+      "path": "/nh/latest.json",
+      "bytes": 180,
+      "contentType": "application/json",
+      "sha256": "9851da8057056c1438929d9091867545b8c8e036a770d8b23d09e21ccdae30fe"
+    },
+    {
+      "path": "/nh/install.mjs",
+      "bytes": 4680,
+      "contentType": "text/javascript",
+      "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c"
+    },
+    {
+      "path": "/nh/releases/0.4.21/nh.mjs",
+      "bytes": 101486,
+      "contentType": "text/javascript",
+      "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    {
+      "path": "/nh/releases/0.4.21/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "03d0fb0172e0d5f7aa3571b42497e8add31c223cf5a65b2a48a19855459333e6"
+    },
+    {
+      "path": "/nh/releases/0.4.1/nh.mjs",
+      "bytes": 35111,
+      "contentType": "text/javascript",
+      "sha256": "3876c9adc945b07a5c42b20272e30bac6237494053591106a6444aa34cf30269"
+    },
+    {
+      "path": "/nh/releases/0.4.1/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "0a7948669f9c9c7ca6c5f72b2fbf3e50c3fa4752b139a5ad26116c466918c3d4"
+    },
+    {
+      "path": "/nh/releases/0.4.2/nh.mjs",
+      "bytes": 35129,
+      "contentType": "text/javascript",
+      "sha256": "44289490c75e248ed17853c28cb0f8706dd870ed554378d5f9213553d2d2c272"
+    },
+    {
+      "path": "/nh/releases/0.4.2/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "ec3b53e9e7ad4eabd6244ad22c453f9c9923fff739fa38f03169886101149e9b"
+    },
+    {
+      "path": "/nh/releases/0.4.3/nh.mjs",
+      "bytes": 35285,
+      "contentType": "text/javascript",
+      "sha256": "7b8d0d5aec46c89251c57c3f3a3c810baf784474747e2015d5f6e950caecb49a"
+    },
+    {
+      "path": "/nh/releases/0.4.3/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "f8de2d51d2a11abdc123ea89ab9f1ebc321a6ad51efc82adc7228ac14c096140"
+    },
+    {
+      "path": "/nh/releases/0.4.4/nh.mjs",
+      "bytes": 35413,
+      "contentType": "text/javascript",
+      "sha256": "5c7173bdb72a8e8e411475149ff132300a3bac9e9ffed0a39522ef05da121a7d"
+    },
+    {
+      "path": "/nh/releases/0.4.4/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "f5fb22344be0b99f833f158e96e5d1bb5bce4001064c5d8825dd77e667a5b28f"
+    },
+    {
+      "path": "/nh/releases/0.4.5/nh.mjs",
+      "bytes": 39890,
+      "contentType": "text/javascript",
+      "sha256": "46dc1a6253744b1097c0062f7a16a7dfcfd6de32aa2513a195f13c8c7aea3716"
+    },
+    {
+      "path": "/nh/releases/0.4.5/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "afb74a335e078f5c687bd69308f283990aaa3c8daadae935dd5e7d868b8faa08"
+    },
+    {
+      "path": "/nh/releases/0.4.6/nh.mjs",
+      "bytes": 40011,
+      "contentType": "text/javascript",
+      "sha256": "6f70ef1a2596cea4ec05af682459369be20d387d1a550f0c79f5d8351814b06c"
+    },
+    {
+      "path": "/nh/releases/0.4.6/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "97d8ae80a5a0be1fb83ea526526eafdcae58a47d3775ba6f319d67d0657cda88"
+    },
+    {
+      "path": "/nh/releases/0.4.7/nh.mjs",
+      "bytes": 43944,
+      "contentType": "text/javascript",
+      "sha256": "449394c143fe0d033f459e4e2bb98a86addcceb0d79c85a32ed625338c0588f2"
+    },
+    {
+      "path": "/nh/releases/0.4.7/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "ef8e50d2de104a7b64780dba52b9b9d48a73fcba623ef12b1daa10feb8324806"
+    },
+    {
+      "path": "/nh/releases/0.4.8/nh.mjs",
+      "bytes": 46789,
+      "contentType": "text/javascript",
+      "sha256": "db5a3b089b91c03161f85c9d86c512f6bead424cb9afa131ad6449b53babcf11"
+    },
+    {
+      "path": "/nh/releases/0.4.8/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "15c7e753d4494ef4095b89fcff940d44dc240434fe6acf9bfa18f92bdc7f2b3a"
+    },
+    {
+      "path": "/nh/releases/0.4.9/nh.mjs",
+      "bytes": 49938,
+      "contentType": "text/javascript",
+      "sha256": "4cc9da686a99dc6d89d7c9dedb1afc9dbe2e633b9718ff33156caa6ed321db9a"
+    },
+    {
+      "path": "/nh/releases/0.4.9/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "8a2c6d626ed80a0b0675e5158df711aaca6bf4ff919055ea99dda21783eda5fd"
+    },
+    {
+      "path": "/nh/releases/0.4.10/nh.mjs",
+      "bytes": 53804,
+      "contentType": "text/javascript",
+      "sha256": "671d6075bdf2cb6e136665282b884372d0d7ad05a9050fcecfb16728895394a9"
+    },
+    {
+      "path": "/nh/releases/0.4.10/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "4b82d6f3839d204b3d54518d154753ab69cb615ff1e2216cb1d783510e622957"
+    },
+    {
+      "path": "/nh/releases/0.4.11/nh.mjs",
+      "bytes": 61139,
+      "contentType": "text/javascript",
+      "sha256": "371745af800fb7116e5d5b8a403030e9af25d44fcec7884cab5a71132695404e"
+    },
+    {
+      "path": "/nh/releases/0.4.11/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "713c93239f1b1f5b1f96f4aa72efeaca1c0af3dbc293aff5e8a30188623211b1"
+    },
+    {
+      "path": "/nh/releases/0.4.12/nh.mjs",
+      "bytes": 74001,
+      "contentType": "text/javascript",
+      "sha256": "7e86443cd1570ded5bcf9c6e95da5659a3a2506f11f6ade4d77238187881a0d3"
+    },
+    {
+      "path": "/nh/releases/0.4.12/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "a17bb9f42f03ffc9af90aead0371b28f964c23bbb637c510bbcb3c6251686e29"
+    },
+    {
+      "path": "/nh/releases/0.4.13/nh.mjs",
+      "bytes": 79444,
+      "contentType": "text/javascript",
+      "sha256": "0c23c44a1c5c8bd42a89dcb9bafdc18022dbccb788cf1f7dbedcff743c42c2b0"
+    },
+    {
+      "path": "/nh/releases/0.4.13/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "4493ce118c300886d00f6f0e80f0038d2595ab90df745b556341792f1227abe7"
+    },
+    {
+      "path": "/nh/releases/0.4.14/nh.mjs",
+      "bytes": 70056,
+      "contentType": "text/javascript",
+      "sha256": "2e0cc05c1efaf28acaa75f1c6bd4214994961df3416141709ae245b6936c4eb3"
+    },
+    {
+      "path": "/nh/releases/0.4.14/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "96a5222ca19cbd52815d413505cf660180f1ac17e527809638ac855079f5decb"
+    },
+    {
+      "path": "/nh/releases/0.4.15/nh.mjs",
+      "bytes": 74141,
+      "contentType": "text/javascript",
+      "sha256": "1ae5bb99a22299d7703e2cdf562e3c4e56c8b0276f1673ff2548faa27befba81"
+    },
+    {
+      "path": "/nh/releases/0.4.15/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "2794c77e0a1c9d6e63d96280d64b39fbfb121ffbcf3db40322354d4aa9b6b05e"
+    },
+    {
+      "path": "/nh/releases/0.4.16/nh.mjs",
+      "bytes": 81369,
+      "contentType": "text/javascript",
+      "sha256": "c3f19c95d57ad22e5658c3dc53e837f68bb6af8e24467c9248cb589969f7a9b4"
+    },
+    {
+      "path": "/nh/releases/0.4.16/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "42890777509821cddfc901c7c3941f1a8778565b66725c558e86594484d716a3"
+    },
+    {
+      "path": "/nh/releases/0.4.17/nh.mjs",
+      "bytes": 85565,
+      "contentType": "text/javascript",
+      "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+    },
+    {
+      "path": "/nh/releases/0.4.17/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "32c6d7f03d4fb91f3fa9fd50219ea3633754856e46773b6f491667ada32e8f6a"
+    },
+    {
+      "path": "/nh/releases/0.4.18/nh.mjs",
+      "bytes": 95151,
+      "contentType": "text/javascript",
+      "sha256": "893019ceef9abaa623a527b99e436ce7d4fee868d029195f0fa7556e8748b10c"
+    },
+    {
+      "path": "/nh/releases/0.4.18/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "f0ea3fb51956f2628bc2e8342d91eb4add254ce9c40cfb9a403bbf529e388d00"
+    },
+    {
+      "path": "/nh/releases/0.4.19/nh.mjs",
+      "bytes": 97845,
+      "contentType": "text/javascript",
+      "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+    },
+    {
+      "path": "/nh/releases/0.4.19/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "96cb9ba6723ef9fbb0e82965cf17e6991dbc2464cdfedf7a36e8195543a44747"
+    },
+    {
+      "path": "/nh/releases/0.4.20/nh.mjs",
+      "bytes": 100963,
+      "contentType": "text/javascript",
+      "sha256": "378a7d9ef090fc88146dc6198d3ce15330a27e711506c9da311f8e399065eeb3"
+    },
+    {
+      "path": "/nh/releases/0.4.20/SHA256SUMS",
+      "bytes": 73,
+      "contentType": "",
+      "sha256": "4513d6678fdee7d136743e7db3fa2e90a8290135b6fb5f7c210a52bc08fb9795"
+    },
+    {
+      "path": "/_next/static/chunks/0681m6fdekw8q.css",
+      "bytes": 7287,
+      "contentType": "text/css",
+      "sha256": "847506e791bb7865f3e369b817e082f33927380456d273464d602f58bfb26356"
+    },
+    {
+      "path": "/_next/static/chunks/10wreoau2i_4v.css",
+      "bytes": 1905,
+      "contentType": "text/css",
+      "sha256": "741dd508407c529a8c97059b3006cf72b1276ec013359b9a6b3fb0f0ca54f79d"
+    },
+    {
+      "path": "/_next/static/2HKJpQrFo4wODVPKF1PwX/_buildManifest.js",
+      "bytes": 219,
+      "contentType": "text/javascript",
+      "sha256": "9476e0afd3f9da68a64e6ec58631191fd3eaca62c9f5a377e7517fe9a89e59ea"
+    },
+    {
+      "path": "/_next/static/2HKJpQrFo4wODVPKF1PwX/_clientMiddlewareManifest.js",
+      "bytes": 96,
+      "contentType": "text/javascript",
+      "sha256": "5483e3295dc35dfe29ea932efc85341c916f10ff78ff5b0e965e003710893a4a"
+    },
+    {
+      "path": "/_next/static/media/GeistMono_Variable-s.p.3x-_q69-5-na5.woff2",
+      "bytes": 71596,
+      "contentType": "font/woff2",
+      "sha256": "afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101"
+    },
+    {
+      "path": "/_next/static/media/Geist_Variable-s.p.07llyuw7ush_n.woff2",
+      "bytes": 69760,
+      "contentType": "font/woff2",
+      "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+    },
+    {
+      "path": "/_next/static/chunks/14k_00bjq4mmn.css",
+      "bytes": 190,
+      "contentType": "text/css",
+      "sha256": "fdced406fde20e100371b29a4aa2a99233ccda6679feaa7fcb0d1b074e1d34ca"
+    },
+    {
+      "path": "/_next/static/chunks/18vdng-ava46y.css",
+      "bytes": 9317,
+      "contentType": "text/css",
+      "sha256": "b64c4692905e8f8443dd3f078fc9d05a39e338d1f0e8d739f3cf48850abd41ba"
+    },
+    {
+      "path": "/_next/static/chunks/1q44r7v9_y9gt.css",
+      "bytes": 1524,
+      "contentType": "text/css",
+      "sha256": "2b2230871ec5226c3d6c730eab6fba3267d7812454786c18a8f161bedde9672a"
+    },
+    {
+      "path": "/_next/static/chunks/27mzymd5lizl7.css",
+      "bytes": 20785,
+      "contentType": "text/css",
+      "sha256": "c431bc7783286bff2aa697d2fed4bb1cc01df4a5708f14ca523e2426400cdbca"
+    },
+    {
+      "path": "/_next/static/chunks/2vfl_o9gc_yl3.css",
+      "bytes": 6246,
+      "contentType": "text/css",
+      "sha256": "716e80263341403afe6403762cfd18b34eea4841cdac64dbd092104a6285c1c2"
+    },
+    {
+      "path": "/_next/static/chunks/2vorx39uxa7pg.css",
+      "bytes": 61378,
+      "contentType": "text/css",
+      "sha256": "aabbdbb5ce2133762424c2b91c77b44495677b66551c69c6306570305088b9a3"
+    },
+    {
+      "path": "/_next/static/chunks/33sxxl9k54o5g.css",
+      "bytes": 17339,
+      "contentType": "text/css",
+      "sha256": "c861d2c02d4248f874d5db73db53f471ba25ed381fc68581cb91162087b62d93"
+    },
+    {
+      "path": "/_next/static/chunks/36srit4cbyjno.css",
+      "bytes": 5560,
+      "contentType": "text/css",
+      "sha256": "9ca26dc4669cc25da0cc7b544e5f4dbf16bfeab97ab145e16e21cc3963d85131"
+    }
+  ]
+}

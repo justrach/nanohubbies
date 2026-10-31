@@ -1,8 +1,11 @@
 # Reader review feedback
 
-This is **source candidate 0.4.21**, not deployed behavior. Production still serves
-CLI 0.4.20 and the branch-rename release. Local Worker/Git and portable CLI checks
-cover this extension; mobile UI and release acceptance remain open.
+Published **0.4.21** and the deployed review UI add reader participation.
+[Release acceptance](evidence/reader-feedback-release-validation.md) covers all
+nine frozen Linux gates, the exact downloadable CLI, both installed aliases,
+desktop and 390×640 layout evidence, and a production author COMMENT with a
+private hunk comment and thread resolution. Multi-account reader mutations are
+covered by real local Worker/Git tests; they were not repeated in production.
 
 Repository readers can submit Comment, Approve or Request changes feedback and
 leave bounded inline comments on an open pull request. Required approvals still
@@ -95,4 +98,7 @@ activation, production recovery and traffic-readiness gates also remain open.
 Run `bun run --filter @swarm/api test:reader-feedback` for focused storage/route,
 real Worker/Git and portable CLI acceptance. See
 [validation evidence](evidence/reader-feedback-validation.md) and
-[the UI review record](evidence/reader-feedback-design-validation.md).
+[the UI review record](evidence/reader-feedback-design-validation.md). The build
+gate also runs `test:cli-reader-distribution` against the actual release module,
+checking its manifest, version, byte length and SHA-256 before fixture credentials
+are issued.

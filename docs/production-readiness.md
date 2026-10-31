@@ -6,27 +6,27 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
-Published CLI **0.4.20** and the [branch rename UI](branch-rename.md) add
-storage revisions, current role/grant checks, retained protections, original-pusher
-review independence and atomic PR/default/CI/alias updates. The
-[release acceptance](evidence/branch-rename-release-validation.md) passes all nine
-frozen Linux gates, 436 API cases, 100 CLI cases, disposable normal/held delivery,
-56 public asset comparisons and both installed aliases. A live synthetic rename,
-old-link resolution and owner lock rejection pass with original repository state
-preserved. Main Worker is `16f0ccba-1ecc-421c-a970-b8a62009393e`; Vault remains
-`0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`. All normal bindings and budgets remain.
+Published CLI **0.4.21** and the deployed review UI add
+[reader feedback](reader-feedback.md), isolated private drafts, reader reviewer
+requests and author Comment-only decisions. Required approvals remain tied to
+eligible independent writers. [Release acceptance](evidence/reader-feedback-release-validation.md)
+passes all nine frozen Linux gates, 451 API and 103 CLI cases, the exact CLI
+artifact's reader workflow, disposable normal/held delivery, 58 public asset
+comparisons and both installed aliases. Desktop and genuine 390×640 layout
+capture passed the scoped finish review; device/touch/accessibility acceptance
+is broader work. A live author COMMENT/private-hunk/resolution smoke preserves
+all existing refs, reviews, comments and settings, with zero new credentials.
+Production multi-account reader mutations were not performed.
 
-The [CLI publication guard](evidence/cli-publication-validation.md) now records
-20 published releases. Every earlier module and checksum is retained. Cache
-integration checks inspect structured results under terminal and Actions settings.
-General help in 0.4.20 omits the implemented `branches:write` grant explanation;
-the hosting guide documents the explicit permission. The
-[0.4.21 source candidate](evidence/reader-feedback-validation.md) now extends the
-help correction with reader review feedback, isolated private drafts and reader
-reviewer requests. Local acceptance includes 451 API cases, 103 CLI cases and
-real Worker/Git source and portable CLI checks. Required approvals remain tied
-to eligible writers. Genuine mobile capture and release acceptance remain open;
-there is no new production deployment or fresh full Linux claim.
+Main Worker is `b3298aee-d026-4a79-8407-ee8071b5c776` at 100%; Vault remains
+`0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`. All 27 normal bindings, Worker-first
+routing and the 50000-subrequest limit remain. The
+[CLI publication guard](evidence/cli-publication-validation.md) now records
+21 published releases, retaining all 20 older modules/checksums. Version 0.4.21
+also corrects the earlier missing `branches:write` general-help explanation.
+An unknown release URL returned Nanohub's HTML not-found page with HTTP 200
+before promotion; its original failed status-only guard and body classification
+are retained. Correct HTTP status for unknown CLI assets remains open hardening.
 
 Earlier [0.4.19 release acceptance](evidence/review-requests-release-validation.md)
 adds requested reviewers and secret administration, including the compatible
@@ -40,7 +40,7 @@ load or operations gates.
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Native Git hosting                   | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [agent-free Meld graph migration through the packaged CLI](evidence/cli-import-validation.md), with all 178 branches/18,097 objects, independent clone/fsck and verification-only recovery                                                                                         | The [pinned hosted full-graph copy](evidence/hosted-import-validation.md) passes; the correction is [validated and deployed](evidence/pack-scan-release-validation.md); complete actual application policy/CI, capacity and cutover acceptance                                |
 | Permissions, reviews and protections | Server-side roles, scoped credentials, current independent reviewers, hunk conversations, rulesets/locks, signatures, exact-candidate CI gates; [success-only acceptance](evidence/success-only-checks-validation.md)                                                                                                                                                                                     | Apply and verify the actual application's policy in its isolated copy; remaining GitHub compatibility gaps are explicit in the parity contract                                                                                                                                |
-| Native CLI                           | Published [0.4.20](evidence/branch-rename-release-validation.md), including branch rename, requested reviewers, secret administration, deployment requests/reviews and scoped collaborator administration, private CLI batch reviews and merge/squash/rebase; [agent-free complete import and recovery](evidence/cli-import-validation.md), source and bundled Git/API administration, revision-checked [environments](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes                                                               | Broader command parity remains open; public release operations need the checks below                                                                                                                                                                                          |
+| Native CLI                           | Published [0.4.21](evidence/reader-feedback-release-validation.md), including reader feedback, branch rename, requested reviewers, secret administration, deployment requests/reviews and scoped collaborator administration, private CLI batch reviews and merge/squash/rebase; [agent-free complete import and recovery](evidence/cli-import-validation.md), source and bundled Git/API administration, revision-checked [environments](evidence/cli-environments-validation.md) and owner-only [runner registration/recovery/revocation](evidence/cli-runners-validation.md); immutable download hashes                                                               | Broader command parity remains open; public release operations need the checks below                                                                                                                                                                                          |
 | Cloudflare-owned secrets             | Separate private on-demand vault, hosted synthetic lifecycle/retention/revocation; [access and secrets](access-and-secrets.md)                                                                                                                                                                                                                                                                            | Actual runtime eviction remains platform-controlled; keep values in Cloudflare during recovery and never export them into repository backups                                                                                                                                  |
 | Codegraff Actions                    | Real disposable cloud job through the dispatcher; [retained private full image and separate fresh-VM acceptance](evidence/private-toolchain-registry-validation.md) passes every offline project gate using per-job temporary Cloudflare pull access; both VMs are confirmed destroyed                                                                                                                    | A sandbox-scoped Nanohub key, unattended dispatcher, repository registration, hosted callbacks and capacity/cleanup observation                                                                                                                                               |
 | Staging and application cutover      | Exact candidate/version/approval/acceptance contracts and negative tests; committed Meld runbook/controller located through existing Git access, healthy controller and matching current staging version in [read-only discovery](evidence/meld-source-discovery.json)                                                                                                                                    | Live intended-application staging job from Nanohub source, version checks before/after real-service acceptance, isolated PR-head Success, compliant and deliberately rejected merges; preserve current remotes until accepted                                                 |

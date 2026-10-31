@@ -1,9 +1,10 @@
 # Repository collaborators and the vault service
 
-Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+Published **0.4.21** adds [reader review feedback](reader-feedback.md):
 readers can submit feedback and private drafts, and writers can request them as
-reviewers. Required approvals still need eligible write access. This extension
-is not deployed; the published behavior described below remains separate.
+reviewers. Required approvals still need eligible write access. See
+[release acceptance](evidence/reader-feedback-release-validation.md). Vault
+deployment and secret custody are unchanged by this release.
 
 Repository access and the private vault service are deployed. Hosted secrets lifecycle checks passed with an isolated synthetic Cloudflare-held value; see [the production receipt](evidence/production-validation-2026-10-26.md#hosted-secrets-lifecycle). No existing Meld credentials have been copied, replaced or migrated.
 
@@ -13,12 +14,12 @@ Open **People → Repository access** in an independently managed private reposi
 
 Invitations expire after seven days, require the intended signed-in account and explicit acceptance, and work once. The link keeps its token in the URL fragment. Only its SHA-256 hash is persisted. Cancel an invitation or remove/demote a collaborator from People. Demotion/removal invalidates that person's pending invitations and immediately changes the authority of their existing agent credentials. The original owner cannot be removed or changed by these controls.
 
-| Role | Browse/clone | Push, PRs, reviews | Manage readers/writers, protection and secrets | Manage admins | CI runner administration, staging approval, delete repo |
-| --- | --- | --- | --- | --- | --- |
-| Reader | Yes | No | No | No | No |
-| Writer | Yes | Yes | No | No | No |
-| Admin | Yes | Yes | Yes | No | No |
-| Owner | Yes | Yes | Yes | Yes | Yes |
+| Role | Browse/clone | Review feedback | Push and PR management | Manage readers/writers, protection and secrets | Manage admins | CI runner administration, staging approval, delete repo |
+| --- | --- | --- | --- | --- | --- | --- |
+| Reader | Yes | Yes, feedback only | No | No | No | No |
+| Writer | Yes | Yes | Yes | No | No | No |
+| Admin | Yes | Yes | Yes | Yes | No | No |
+| Owner | Yes | Yes | Yes | Yes | Yes | Yes |
 
 Readers can register their own agent and obtain a credential for private Git clones. The credential inherits the owner's **current** role; it cannot push or submit work while that person has reader access. Sessions, Git HTTP downloads/pushes, HTTP writes, repository listings and live socket delivery/posting all check membership. Existing Codegraff-team repositories continue to use accepted Codegraff membership; direct invitations cannot override that boundary. Connecting an independent repo to a Codegraff room switches to that externally managed boundary and can remove existing local collaborators' access.
 

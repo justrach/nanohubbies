@@ -1,9 +1,10 @@
 # Requested reviewers
 
-Source candidate **0.4.21** adds [reader review feedback](reader-feedback.md):
+Published **0.4.21** adds [reader review feedback](reader-feedback.md):
 readers can submit feedback and private drafts, and writers can request them as
-reviewers. Required approvals still need eligible write access. This extension
-is not deployed; the published behavior described below remains separate.
+reviewers. Required approvals still need eligible write access. See
+[release acceptance](evidence/reader-feedback-release-validation.md); production
+multi-account request mutations remain open.
 
 Published CLI **0.4.19** and the deployed PR UI add individual reviewer requests.
 The [release acceptance](evidence/review-requests-release-validation.md) covers
@@ -13,9 +14,10 @@ commands. Hosted multi-account request mutations and historical-version rolling
 upgrade/rollback acceptance remain separate from publication checks.
 
 The PR's **Reviewers** panel lets a repository writer request, remove or renew
-a request. A submitted independent review answers the outstanding request,
-including reviews published with pending hunk comments. The original requester
-and CLI provenance are retained separately from the submitted review.
+a request. A submitted independent writer review or reader feedback review
+answers the outstanding request, including reviews published with pending hunk
+comments. The original requester and CLI provenance are retained separately from
+the submitted review.
 
 Requests ask for feedback. They neither supply an approval nor change branch
 protection, CODEOWNERS, change requests, conversation resolution or CI gates.
@@ -42,9 +44,10 @@ automatically. Inspect `pr reviewers` before deciding whether to repeat a write.
 
 ## Eligibility and boundaries
 
-Nanohub's existing independent review policy requires current writer access.
-Requested people must therefore be current owners, admins or writers, and
-cannot be the PR author. Native repositories offer the eligible account IDs;
+Nanohub's independent approval policy requires current writer access. Requests
+can also ask current readers for feedback; their decisions do not satisfy that
+policy. Requested people must be current members and cannot be the PR author.
+Native repositories offer the eligible account IDs with reader feedback labels;
 externally managed rooms use an account-ID field and current Codegraff membership
 verification. Invitations grant no review eligibility before acceptance.
 
@@ -90,16 +93,18 @@ Both require `If-Match: "review-requests-0"` matching the body's revision.
 Actor and credential identity come from authentication; request JSON cannot
 override them. Browser mutations require same-origin account access. Metadata
 responses are private/no-store. Reads and mutations require the receiver's
-`revisionTracking: "storage"` and `answerTracking: "storage-v2"` capabilities.
-An older or incomplete receiver returns 503 before the mutation RPC is called;
+`revisionTracking: "storage"`, `answerTracking: "storage-v2"` and
+`readerFeedback: "v1"` capabilities. An older or incomplete receiver returns 503
+before the mutation RPC is called;
 there is no fallback to a legacy writer. Retry after deployment completes,
 then inspect the current revision before editing.
 
 This is an incremental compatibility feature. [GitHub permits requests to
 readers and teams and supplies notifications and automatic CODEOWNERS
 requests](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/requesting-a-pull-request-review).
-Reader reviews, team selection, automatic CODEOWNERS requests, notifications,
-assignment inboxes and hosted mixed-version validation remain open here.
+Reader feedback is deployed. Team selection, automatic CODEOWNERS requests,
+notifications, assignment inboxes and hosted mixed-version validation remain
+open here.
 Request metadata is advisory; it never stands in for the independently enforced
 review/merge decision or the current-authority recovery procedure.
 

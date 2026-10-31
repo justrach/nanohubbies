@@ -1,0 +1,187 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T07:30:40.701Z",
+  "implementationCommit": "c759bf8b11dcd74d48f51cef34b81c0ce8496d21",
+  "validatedSource": "b04e1eb178e7fb6ffa40e818068b3443901b6d04",
+  "workerVersion": "b3298aee-d026-4a79-8407-ee8071b5c776",
+  "previousWorkerVersion": "16f0ccba-1ecc-421c-a970-b8a62009393e",
+  "heldWorkerVersion": "f4fd1a8b-e24f-4757-8e13-af04275409a4",
+  "vaultVersion": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+  "vaultRedeployed": false,
+  "trafficPercentage": 100,
+  "durableObjectsCodeUpdateMode": "immediate",
+  "cli": {
+    "format": 1,
+    "version": "0.4.21",
+    "path": "/nh/releases/0.4.21/nh.mjs",
+    "bytes": 101486,
+    "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+  },
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "apiUnitCases": 451,
+    "cliCases": 103,
+    "typedTasksFresh": 3,
+    "typedTasksCached": 0,
+    "sandboxId": "cnd_fe4670e5465dbcf55d5c5a51a49ea3c4a1dd3b77",
+    "independentDestructionConfirmed": true,
+    "macosLinuxDistributionEqual": true,
+    "exactReaderDistributionWorkflowPassed": true,
+    "network": "none",
+    "credentialFreeCandidate": true
+  },
+  "frozenSourceFiles": 1166,
+  "builtFiles": 1480,
+  "privateManifestSha256": {
+    "source": "f3d3dcc2eb8e364c45f2295b4af87137e9998177286bc364b8a78f35e8ec92f1",
+    "built": "b8148e77ed147fbd0709c3000bd143456b386308ba14a8213c877bd79611e024"
+  },
+  "exactConfiguredKeyAbsence": {
+    "checkedAt": "2026-10-31T07:06:48.104Z",
+    "configuredKeysChecked": [
+      "intended-actions",
+      "independent-ci"
+    ],
+    "filesChecked": 2646,
+    "exactConfiguredKeysAbsent": true,
+    "scope": "exact configured Codegraff keys only; not a general secret audit"
+  },
+  "disposableDelivery": {
+    "normalChecks": 50,
+    "heldGetChecks": 56,
+    "heldHeadBodyless": true,
+    "absenceConfirmed": true,
+    "independentAbsenceBeforeStaging": true,
+    "productionResourcesBound": false
+  },
+  "productionDelivery": {
+    "assetChecks": 58,
+    "allBuiltStylesheetsChecked": true,
+    "olderCliModulesAndChecksumsPreserved": 20,
+    "normalBindingsUnchanged": true,
+    "normalBindingCount": 27,
+    "heldAddsOnlyRecoveryHold": true,
+    "heldBindingCount": 28,
+    "workerFirst": true,
+    "subrequests": 50000,
+    "installedAliases": [
+      "nh",
+      "nanohub"
+    ],
+    "temporaryInstallationRemoved": true,
+    "globalInstallationChanged": false
+  },
+  "preservationBeforeSmoke": {
+    "originalCanaryResources": 9,
+    "reviewAndCredentialResources": 5,
+    "oldFieldsPreserved": true,
+    "newCapabilityFields": [
+      "comments.canResolveAll",
+      "pull.canApplySuggestions",
+      "pull.discussion.canResolveAll",
+      "pull.reviewRole",
+      "requests.readerFeedback"
+    ]
+  },
+  "productionSmoke": {
+    "checkedAt": "2026-10-31T07:27:00.920Z",
+    "repository": "rachxpradhan/prod-codeowners-20261027",
+    "oldReviewsPreserved": 5,
+    "oldCommentsPreserved": 7,
+    "gitRefsPreserved": 7,
+    "settingsResourcesPreserved": 8,
+    "newReview": {
+      "id": 6,
+      "verdict": "COMMENT",
+      "author": true,
+      "commentCount": 1
+    },
+    "newThread": {
+      "path": ".github/CODEOWNERS",
+      "side": "RIGHT",
+      "startLine": 1,
+      "line": 1,
+      "resolved": true
+    },
+    "pendingReview": null,
+    "authorApproveAndRequestChangesDisabled": true,
+    "eligibleApprovals": 0,
+    "missingCodeOwnerGroups": 2,
+    "requiredDeploymentSatisfied": false,
+    "mergeDisabled": true,
+    "gitCredentials": 0,
+    "cliCredentials": 0,
+    "productionMultiAccountReaderMutations": false,
+    "gitMutations": false,
+    "vaultMutations": false,
+    "changedPaths": [
+      "pull.pulls.0.updatedAt",
+      "pull.reviews.5",
+      "pull.pull.updatedAt",
+      "pull.discussion.comments.7",
+      "comments.comments.7"
+    ],
+    "canaryChangedPaths": [
+      "branches.pulls.0.updatedAt",
+      "branches.reviews.5"
+    ]
+  },
+  "design": {
+    "desktopCaptures": 6,
+    "narrowCaptures": 11,
+    "narrowWidth": 390,
+    "narrowHeight": 640,
+    "actualNarrowBrowsingContext": true,
+    "finishReviewDisposition": "ship",
+    "deviceTouchKeyboardOrComprehensiveA11yEstablished": false,
+    "detectorVerdictAvailable": false
+  },
+  "publication": {
+    "frozenSourcePushed": true,
+    "publishedCatalogEntries": 21,
+    "olderCatalogEntriesPreserved": 20,
+    "rootDistributionMatchesPublic": true,
+    "mainBranchChanged": false
+  },
+  "releasePathGuard": {
+    "checkedAt": "2026-10-31T07:14:41.555Z",
+    "originalObservation": {
+      "checkedAt": "2026-10-31T07:12:58.204Z",
+      "url": "https://nanohub.sh/nh/releases/0.4.21/nh.mjs",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 19099,
+      "sha256": "9ed6e5e64fc249b19c38d7b8e3022d64918db46fabddb8bb1e222d2f91dd2e87",
+      "html": true
+    },
+    "classification": "Nanohub HTML not-found page; no executable CLI module at this URL in the observed response",
+    "statusOnly404Assertion": "failed and retained; unknown asset paths fall through to an HTML 200 application response",
+    "immutablePublishedModules": "still protected by catalog, exact module/checksum verification and retained-version comparisons",
+    "remainingBehavior": "unknown CLI asset HTTP status should be hardened separately"
+  },
+  "hostedActions": {
+    "checkedAt": "2026-10-31T07:27:26.120Z",
+    "configuration": "Nanohub Actions account",
+    "providerReads": 1,
+    "nanohubClaims": 0,
+    "sandboxAllocations": 0,
+    "outcome": "denied",
+    "code": "sandbox_scope_required",
+    "status": 403,
+    "intendedAccountAccessVerified": false,
+    "activationEstablished": false
+  },
+  "productionTrafficReadinessEstablished": false,
+  "fullGithubParityEstablished": false
+}
