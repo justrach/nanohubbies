@@ -834,3 +834,13 @@ files outside Git, are bounded by their parent CLI credential and cannot be
 renewed or resurrected by recovery. See the [command contract](cli-secrets.md)
 and [local validation](evidence/cli-secrets-validation.md). Public rollout is
 pending.
+
+## Requested reviewers — candidate 0.4.19
+
+Native `nh pr reviewers NUMBER` lists request state and its revision.
+`nh pr request-review NUMBER --reviewer ACCOUNT --revision N` requests review;
+`nh pr remove-reviewer NUMBER --reviewer ACCOUNT --revision N` removes a request.
+Mutations use `pulls:write` plus current writer eligibility and do not change
+required approvals. Both aliases include the preceding candidate secret commands.
+These commands are locally validated; public CLI remains 0.4.17 pending cloud
+acceptance and rollout. See [requested reviewers](review-requests.md).

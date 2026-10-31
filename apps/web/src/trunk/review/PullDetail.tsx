@@ -16,6 +16,7 @@ import { PullFiles } from "./PullFiles";
 import { AgentContributions } from "../contributions/AgentContributions";
 import {RelatedPullReviews} from "./RelatedPullReviews";
 import {MergeAction} from "./MergeAction";
+import {RequestedReviewers} from './RequestedReviewers';
 
 export type PullView = ReviewSnapshot & { pull: Pull; head: Branch; files: ChangedFile[]; truncated: string[];deployments?:import("@swarm/api/review").DeploymentGate;signatures?:import("@swarm/api/review").SignatureGate;pendingReview?:import("@swarm/api/review").PendingReview|null;discussion?:import("@swarm/api/review").PullDiscussion;codeOwners?:import("@swarm/api/review").CodeOwnerStatus;canDismissReviews?:boolean;reviewGate?:import("@swarm/api/review").ReviewGate };
 
@@ -72,7 +73,7 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
       </li>)}</ul>
       {view.codeOwners.warnings.length>0 && <details><summary className="cursor-pointer text-xs text-series-1">Ownership notices ({view.codeOwners.warnings.length})</summary><ul className="mt-2 space-y-1 text-xs text-muted">{view.codeOwners.warnings.map((warning,index)=><li key={index}>{warning.line?`Line ${warning.line}: `:""}{warning.message}</li>)}</ul></details>}
     </section>}
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <Card className="space-y-4 p-5"><h2 className="text-sm font-semibold text-ink">{p.state === "merged" ? `Merged into ${p.base}` : p.state === "closed" ? "Closed without merging" : "Ready for review"}</h2>
         <p className="text-xs leading-5 text-muted">{p.state === "merged" ? `Merged as ${p.mergedCommit?.slice(0,10)}. Dependent PRs now target ${p.base}.` : p.state === "closed" ? "The final diff is retained below." : !view.repositoryMode&&p.base !== "main" ? `Merge the PR for ${p.base} first. This diff includes only this layer’s changes.` : `Merge updates ${p.base} through its current protection and conflict checks.`}</p>
         {p.state === "open" && <div className="flex flex-wrap gap-2">
@@ -84,12 +85,13 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
         {p.state==="open"&&!!view.reviewGate?.sharedHeadBlockers?.length&&<RelatedPullReviews trunk={trunk} blockers={view.reviewGate.sharedHeadBlockers} />}
         {p.state === "open" && base?.commit !== p.anchor && <p className="text-xs text-muted">The base moved. Restack replays this layer on its latest commit; competing edits are left for you to resolve locally. Fetch the updated branch afterward.</p>}
       </Card>
+      <aside className="min-w-0 space-y-4" aria-label="Pull request details"><RequestedReviewers trunk={trunk} pull={p.number} commit={view.head.commit} anchor={p.anchor} open={p.state==='open'} readOnly={!!readOnly}/>
       <Card className="p-5"><h2 className="mb-3 text-sm font-semibold text-ink">PR stack</h2><div className="space-y-2 text-xs">
         <span className="text-muted">{parents[0]?.base??p.base}</span>{[...parents, p].map((q) => <div key={q.number}><ArrowDown size={12} className="my-2 text-muted" />
           <Link href={`/t/${trunk}/pulls/${q.number}`} aria-current={q.number === p.number ? "page" : undefined} className={`flex items-start gap-2 rounded-md p-2 ${q.number === p.number ? "bg-wash text-ink" : "text-muted hover:text-ink"}`}>
             <GitPullRequest size={14} className="mt-0.5 shrink-0" /><span>#{q.number} {q.title} {q.state === "merged" && "· merged"}<code className="mt-1 block break-all text-[11px] text-muted">{q.head}</code></span></Link></div>)}
         {children.length > 0 && <div className="border-t border-line pt-3"><p className="mb-2 text-muted">Dependent PRs</p>{children.map((q) => <Link key={q.number} href={`/t/${trunk}/pulls/${q.number}`} className="block py-1 text-series-1">#{q.number} {q.title}</Link>)}</div>}
-      </div></Card>
+      </div></Card></aside>
     </div>
     <section aria-label="Changed files"><div className="mb-4 flex flex-wrap gap-4 text-xs text-muted"><span>{view.files.length} changed files</span><span className="text-series-1">+{view.files.reduce((n, f) => n + f.additions, 0)}</span><span>−{view.files.reduce((n, f) => n + f.deletions, 0)}</span>{view.truncated.map((t) => <span key={t}>{t}</span>)}</div>
       <PullFiles trunk={trunk} pull={p.number} commit={view.head.commit} anchor={p.anchor} files={view.files} initial={view.discussion??{comments:[],truncated:false}} initialPending={view.pendingReview??null} open={p.state==="open"} git={!!view.repositoryMode}/>

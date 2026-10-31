@@ -19,6 +19,7 @@ import { branchName, type Branch, type Review } from "./types";
 import { pullCommentRoute } from "./pull-comment-route";
 import { pendingReviewRoute } from "./pending-route";
 import { suggestionRoute } from "./suggestion-route";
+import {reviewRequestRoute} from './request-route';
 import {applies} from "../repository/rulesets";
 import {signatureGate} from "../signing/gate";
 import {buildMerge} from "./merge-methods";
@@ -131,6 +132,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         }
       }
       if (operation === "comments") return pullCommentRoute(env, request, trunk, p, head, objects, user, accountWriter);
+      if (operation === 'requested-reviewers') return reviewRequestRoute(env,request,trunk,p,head,user,accountWriter);
       if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,accountWriter,tail[0]==="submit");
       if (suggestionOperation) return suggestionRoute(env,request,trunk,p,head,objects,user,humanWriter);
       if (method === "GET" && operation === "file") {

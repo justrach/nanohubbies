@@ -29,6 +29,8 @@ import { ReviewStore } from "./review/store";
 import {sharedHeadReviewBlockers,sharedHeadReviewMessage} from "./review/shared-head";
 import { reviewWriter } from "./review/access";
 import { reviewerMembership } from "./review/reviewer-access";
+import {RequestedReviews,reviewerId} from './review/requests';
+import type {ReviewRequestEdit} from './review/request-types';
 import type { ReviewerMembership } from "./review/reviewer-types";
 import { CodeComments, type CommentCommand } from "./review/comments";
 import { PullComments, type PullCommentCommand } from "./review/pull-comments";
@@ -482,6 +484,32 @@ export class Sequencer extends DurableObject<Env> {
     if(command.op!=="merge"||!Number.isSafeInteger(command.mergeSettingsRevision)||(command.mergeSettingsRevision??-1)<0)
       throw Error('Current merge settings revision is required');
     return this.review(command);
+  }
+
+  async requestedReviews(number:number,origin:string){
+    const before=new RequestedReviews(this.sql).list(number);
+    const ids=before.requests.filter(row=>row.state==='requested').map(row=>row.reviewer);
+    const membership=await reviewerMembership(this.env,this.meta<string>('trunk')!,origin,ids);
+    const after=new RequestedReviews(this.sql).list(number);
+    if(after.revision!==before.revision||membership.expiresAt<=Date.now())throw Error('Review requests changed while checking membership; refresh');
+    return {...after,access:membership.accounts};
+  }
+
+  async editRequestedReviews(input:ReviewRequestEdit){
+    if(!input.actor||!reviewerId(input.actor.id)||!Array.isArray(input.reviewers)||!input.reviewers.length||input.reviewers.length>15||!input.reviewers.every(reviewerId)||!['request','remove'].includes(input.operation))throw Error('Choose 1–15 reviewer account IDs');
+    const trunk=this.meta<string>('trunk')!;
+    const membership=await reviewerMembership(this.env,trunk,input.origin,[input.actor.id,...(input.operation==='request'?input.reviewers:[])]);
+    if(membership.accounts[input.actor.id]!=='writer')throw Error('Current repository writer access required to manage review requests');
+    if(input.operation==='request'&&input.reviewers.some(id=>membership.accounts[id]!=='writer'))throw Error('Requested reviewers must have current repository write access');
+    const grant=input.credentialId?await currentCliGrant(this.env,input.credentialId,input.actor.id,trunk,input.origin,'pulls:write'):null;
+    if(input.credentialId&&!grant)throw Error('CLI pull request permission expired or was revoked');
+    return this.ctx.storage.transactionSync(()=>{
+      if(membership.expiresAt<=Date.now()||grant&&grant.expiresAt<=Date.now())throw Error('Review request authorization expired; refresh');
+      const s=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot(),pull=s.pulls.find(row=>row.number===input.number);
+      if(!pull)throw Error('No such pull request');
+      const head=s.branches.find(row=>row.name===pull.head);
+      return new RequestedReviews(this.sql).edit(input,pull,head?.commit??pull.headCommit);
+    });
   }
 
   async reviewGate(number: number, head: string, anchor: string,origin:string) {

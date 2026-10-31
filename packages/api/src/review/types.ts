@@ -1,4 +1,5 @@
 import type { ChangeRequest, Head, Owner } from "../types";
+export type {ReviewRequest,ReviewRequests,ReviewRequestEdit} from './request-types';
 export type {MergeMethod} from "./merge-types";
 export type {MergeSettings,MergeSettingsInput} from '../repository/merge-settings-types';
 

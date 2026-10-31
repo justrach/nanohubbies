@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T02:34:44.199393+00:00",
+  "status": "local-candidate-passed; cloud acceptance and rollout pending",
+  "artifact": {
+    "format": 1,
+    "version": "0.4.19",
+    "path": "/nh/releases/0.4.19/nh.mjs",
+    "bytes": 97845,
+    "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+  },
+  "sourceHashes": {
+    "packages/api/src/review/requests.ts": "1c15770f960ac9eb5f4074cc7ce36a528ddb67c8082d91c6860ead81db522385",
+    "packages/api/src/review/request-route.ts": "fb784fc9c7d1ee57bb40bb941f404f496bea8e6e82e1bfd8a0be470e62f154f8",
+    "packages/api/src/review/request-types.ts": "51952d358647e4a503377f3b440e5c473bab109132ea3a508cb529631e185c5d",
+    "packages/api/src/review/store.ts": "ae6c31d4dd3149ced9c3d3fd2ca5c85b151990e3d32d6cd73b271661257af07a",
+    "packages/api/src/sequencer.ts": "e739e3971249ff46ddd3921c5967e72a6e7abd2afd6a0efde85d794c3b8f4ec4",
+    "packages/api/src/cli/routes.ts": "e7f2687be933399a7d2b2f6677868c2aaedd26bb60c4f77e396b2ce5f02b8b26",
+    "packages/cli/src/reviewers.mjs": "c22eb0103563143771f990fb8380b58fd3fd593b82fb4e52cbe61c41b959bfd3",
+    "packages/cli/src/main.mjs": "940ae1cc3ffc0fe04904742b5040a1bd000ea356e79f7f8372687a9ef148a7a3",
+    "packages/cli/src/api.mjs": "4fee5c115e5e4cf7b938dc57e6e95adf0dc45bda72d73c26bff8726159dbe046",
+    "apps/web/src/trunk/review/RequestedReviewers.tsx": "c939824e5f79816769ed8dada9e3210469b485f35e469933361da6ee167367bc",
+    "apps/web/src/trunk/review/PullDetail.tsx": "5d89ce0d03830918070baf7e37549015bb5708fac641344d83212556dc90c5af",
+    "apps/web/src/lib/cli-scopes.ts": "6b4b80d45bfad05e412c59c2db0dfc3b1a6bc76daa2090543182e969b2f5d096"
+  },
+  "tests": {
+    "apiUnitPassed": 413,
+    "cliPassed": 79,
+    "repositoryUnitPassed": 306,
+    "repositoryIntegrationChainPassed": true,
+    "requestStorePassed": 6,
+    "sourceAndBundledRequestIntegrationPassed": true,
+    "exactDistributionIntegrationPassed": true,
+    "coldRequestHistoryRecoveryPassed": true,
+    "pinnedTsrsPassed": true,
+    "opennextBuildPassed": true,
+    "scopedVisualReviewDisposition": "ship",
+    "mainWorkerDryRunPassed": true
+  },
+  "scope": {
+    "identity": "synthetic local fixture",
+    "productionDeployed": false,
+    "cloudAcceptancePassed": false,
+    "cloudSandboxesAllocatedThisFeature": 0,
+    "productionCredentialsIssued": 0,
+    "customerSecretValuesReadOrModified": 0,
+    "hostedFleetActivated": false
+  },
+  "remaining": [
+    "Renew existing Cloudflare deployment authentication",
+    "Frozen full Linux acceptance at exact source",
+    "Disposable full-app delivery, Vault-first compatible rollout and public CLI validation",
+    "Reader reviews, teams, automatic CODEOWNERS requests, notifications and old-version answer reconciliation",
+    "Original staging/cutover, hosted fleet and production DR/load/operations gates"
+  ],
+  "runnerPreflight": {
+    "account": "configured Nanohub Actions",
+    "status": 403,
+    "code": "sandbox_scope_required",
+    "claims": 0,
+    "allocations": 0
+  }
+}

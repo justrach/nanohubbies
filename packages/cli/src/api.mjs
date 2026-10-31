@@ -7,6 +7,7 @@ import {deploymentCommand} from './deployments.mjs';
 import {runnerCommand} from './runners.mjs';
 import {collaboratorCommand} from './collaborators.mjs';
 import {secretCommand} from './secrets.mjs';
+import {reviewerCommand} from './reviewers.mjs';
 import {pendingCommand,inlineSelection} from './pending.mjs';
 const redact=value=>String(value).replace(/nh(?:ci|c|g|d|i|v|w)_[a-f0-9]{32,}/gi,'[redacted]');
 export class CliApiError extends Error {constructor(message,status){super(message);this.status=status;}}
@@ -60,6 +61,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
  if(group==='runner')return runnerCommand({action,pos,opts,target,base,token,request,output,cwd});
  if(group==='access')return collaboratorCommand({action,pos,opts,target,base,token,request,output,cwd});
  if(group==='secret')return secretCommand({action,pos,opts,target,base,token,request,output,cwd});
+ if(group==='pr'&&['reviewers','request-review','remove-reviewer'].includes(action))return reviewerCommand({action,pos,opts,base,token,request,output});
  if(group==='rules') {
   if(action==='list'||action==='get') {
    if(pos.length!==(action==='get'?1:0))throw Error('Use rules list or rules get EXACT_PATTERN');

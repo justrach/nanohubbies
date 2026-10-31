@@ -6,6 +6,14 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
+Candidate CLI **0.4.19** adds [requested reviewers](review-requests.md) to the
+preceding secret-administration candidate. Its [local acceptance](evidence/review-requests-validation.md)
+covers the PR UI, native CLI, exact distribution, role/revision boundaries and
+cold request-history recovery. Public CLI is still **0.4.17**. Cloud acceptance
+and the Vault-first API rollout await renewal of the expired Cloudflare login;
+the desktop renewal currently needs the Mac unlocked. Source publication does
+not close those release gates or activate hosted dispatch.
+
 | Area                                 | Current evidence                                                                                                                                                                                                                                                                                                                                                                                          | Remaining release requirement                                                                                                                                                                                                                                                 |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Native Git hosting                   | Real private production push/clone/protection checks; lossless fixture refs, history, binaries, modes and tags; actual [agent-free Meld graph migration through the packaged CLI](evidence/cli-import-validation.md), with all 178 branches/18,097 objects, independent clone/fsck and verification-only recovery                                                                                         | The [pinned hosted full-graph copy](evidence/hosted-import-validation.md) passes; the correction is [validated and deployed](evidence/pack-scan-release-validation.md); complete actual application policy/CI, capacity and cutover acceptance                                |

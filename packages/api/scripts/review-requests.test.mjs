@@ -1,0 +1,32 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import {build} from 'esbuild';
+const output=await build({entryPoints:['review/requests','review/store','repository/store','repository/policy'].map(n=>new URL(`../src/${n}.ts`,import.meta.url).pathname),bundle:true,platform:'node',format:'esm',write:false,outdir:'/virtual'});
+const [{RequestedReviews},{ReviewStore},{Repository},{Policies}]=await Promise.all(output.outputFiles.map(o=>import('data:text/javascript;base64,'+Buffer.from(o.text).toString('base64'))));
+const sha=c=>c.repeat(40),author={id:'author',name:'Author'},actor={id:'maintainer',name:'Maintainer'};
+function fixture(){
+ const db=new DatabaseSync(':memory:'),sql={exec(q,...a){const rows=db.prepare(q).all(...a);return {toArray:()=>rows};}};sql.exec('CREATE TABLE versions(version INTEGER PRIMARY KEY,commit_sha TEXT,tree_sha TEXT)');
+ const repo=new Repository(sql);repo.initialize();repo.update('refs/heads/main',null,{commit:sha('a'),tree:sha('1')},false,author.id);repo.update('refs/heads/topic',null,{commit:sha('b'),tree:sha('2')},true,author.id);
+ const reviews=new ReviewStore(sql,()=>repo.main(),true),run=c=>reviews.run(c,()=>{throw Error('Unexpected landing');}),branch=n=>reviews.branches().find(b=>b.name===n);
+ run({op:'open',title:'Review requests',body:'',head:branch('topic'),base:branch('main'),anchor:sha('a'),anchorTree:sha('1'),author});
+ const store=new RequestedReviews(sql),pull=()=>reviews.snapshot().pulls[0],head=()=>branch('topic').commit,transaction=fn=>{db.exec('BEGIN');try{const result=fn();db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}};
+ const edit=(extra={})=>transaction(()=>store.edit({number:1,operation:'request',reviewers:['reviewer'],revision:store.list(1).revision,commit:head(),anchor:pull().anchor,actor,origin:'https://nanohub.invalid',...extra},pull(),head()));
+ const review=(extra={})=>transaction(()=>run({op:'review',number:1,author:{id:'reviewer',name:'Reviewer'},body:'Feedback',verdict:'COMMENT',commit:head(),anchor:pull().anchor,independent:true,...extra}));
+ return {db,sql,repo,reviews,store,pull,head,edit,review,transaction};
+}
+test('requests are revision-checked, bounded, idempotent and cannot resurrect through an old revision',()=>{
+ const f=fixture();try{assert.equal(f.edit().revision,1);assert.equal(f.edit().revision,1);assert.equal(f.edit({operation:'remove'}).revision,2);assert.equal(f.edit({revision:0}).conflict,true);assert.equal(f.store.list(1).requests[0].state,'removed');assert.equal(f.edit().revision,3);assert.equal(f.store.list(2).requests.length,0);assert.throws(()=>f.edit({reviewers:['author']}),/authors cannot/);assert.throws(()=>f.edit({reviewers:['reviewer','reviewer']}),/distinct/);assert.throws(()=>f.edit({reviewers:['bad\naccount']}),/distinct/);assert.throws(()=>f.edit({reviewers:Array.from({length:15},(_,i)=>'another-'+i)}),/15 outstanding/);}finally{f.db.close();}
+});
+test('requests cannot follow a stale diff, change a closed pull or write through archival',()=>{
+ const f=fixture();try{assert.throws(()=>f.edit({commit:sha('c')}),/changed/);assert.throws(()=>f.edit({anchor:sha('c')}),/changed/);f.db.exec("UPDATE review_pulls SET data=json_set(data,'$.state','closed')");assert.throws(()=>f.edit(),/open pull/);f.db.exec("UPDATE review_pulls SET data=json_set(data,'$.state','open')");f.sql.exec('INSERT INTO repository_archives VALUES(?,?)','',JSON.stringify({archived:true,revision:1,actor:author.id,updatedAt:1,transition:null}));assert.throws(()=>f.edit(),/archived|read-only/i);assert.equal(f.store.list(1).revision,0);}finally{f.db.close();}
+});
+test('only submitted independent reviews answer requests; rerequest never erases approvals or requested changes',()=>{
+ const f=fixture();try{f.edit();f.review({independent:false});assert.equal(f.store.list(1).requests[0].state,'requested');const result=f.review({verdict:'REQUEST_CHANGES'}),answered=f.store.list(1);assert.equal(answered.revision,2);assert.equal(answered.requests[0].reviewId,result.reviews.at(-1).id);assert.equal(answered.requests[0].state,'reviewed');f.edit();assert.equal(f.store.list(1).requests[0].state,'requested');f.edit({operation:'remove'});assert.match(new Policies(f.sql).reviewGate(f.pull(),f.reviews.snapshot().reviews,f.head()).error,/requested changes/);assert.equal(f.reviews.snapshot().reviews.length,2);}finally{f.db.close();}
+});
+test('late audit failure rolls back request, revision and submitted review together',()=>{
+ const f=fixture();try{f.edit();const before=f.store.list(1);f.sql.exec("CREATE TRIGGER fail_request_audit BEFORE INSERT ON repository_audit WHEN json_type(NEW.data,'$.reviewRequest') IS NOT NULL BEGIN SELECT RAISE(ABORT,'injected audit failure'); END");assert.throws(()=>f.review(),/injected audit/);assert.deepEqual(f.store.list(1),before);assert.equal(f.reviews.snapshot().reviews.length,0);assert.throws(()=>f.edit({operation:'remove'}),/injected audit/);assert.deepEqual(f.store.list(1),before);}finally{f.db.close();}
+});
+test('request attribution persists independently from final review attribution',()=>{
+ const f=fixture();try{const credentialId='11111111-1111-4111-8111-111111111111';f.edit({credentialId});f.review({via:{kind:'cli',credentialId:'22222222-2222-4222-8222-222222222222'}});const row=f.store.list(1).requests[0];assert.equal(row.via.credentialId,credentialId);assert.equal(row.requestedBy.id,actor.id);assert.equal(row.state,'reviewed');const events=f.sql.exec("SELECT data FROM repository_audit WHERE json_type(data,'$.reviewRequest') IS NOT NULL").toArray().map(row=>JSON.parse(row.data));assert.equal(events[0].via.credentialId,credentialId);assert.equal(events[1].via.credentialId,'22222222-2222-4222-8222-222222222222');assert.deepEqual(new RequestedReviews(f.sql).list(1),f.store.list(1));}finally{f.db.close();}
+});
+test('removing requests cannot evade the per-PR bound on retained distinct accounts',()=>{
+ const f=fixture();try{for(let i=0;i<100;i++){f.edit({reviewers:['reviewer-'+i]});f.edit({operation:'remove',reviewers:['reviewer-'+i]});}const before=f.store.list(1);assert.equal(before.requests.length,100);assert.equal(before.revision,200);assert.throws(()=>f.edit({reviewers:['one-more-reviewer']}),/100 distinct/);assert.deepEqual(f.store.list(1),before);assert.equal(f.edit({reviewers:['reviewer-0']}).revision,201);}finally{f.db.close();}
+});

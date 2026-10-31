@@ -91,6 +91,8 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==="POST"&&resource==="archive")scope="repository:archive";
   if(["PUT","DELETE"].includes(method)&&resource==="protection")scope="protections:write";
   if(method==="GET"&&/^pulls\/[1-9]\d{0,8}(\/comments)?$/.test(resource))scope="read";
+  if(method==='GET'&&/^pulls\/[1-9]\d{0,8}\/requested-reviewers$/.test(resource))scope='read';
+  if(['POST','DELETE'].includes(method)&&/^pulls\/[1-9]\d{0,8}\/requested-reviewers$/.test(resource))scope='pulls:write';
   if(method==="POST"&&resource==="pulls")scope="pulls:write";
   if(method==="POST"&&/^pulls\/[1-9]\d{0,8}\/close$/.test(resource))scope="pulls:write";
   if(method==="POST"&&/^pulls\/[1-9]\d{0,8}\/merge$/.test(resource))scope="pulls:merge";

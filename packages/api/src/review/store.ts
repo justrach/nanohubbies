@@ -13,6 +13,7 @@ import { codeOwnerDecision } from "../repository/codeowners";
 import { dismissChangedApprovals, dismissAfterHeadChange } from "./stale";
 import {requireSharedHeadReviews} from "./shared-head";
 import {reviewedMergeHead} from "./merge-evidence";
+import {RequestedReviews} from './requests';
 import type { ReviewerMembership } from "./reviewer-types";
 import type { ChangeRequest, Head, Submitted } from "../types";
 import { branchName, type Branch, type Pull, type Review, type ReviewCommand, type ReviewSnapshot } from "./types";
@@ -137,6 +138,8 @@ export class ReviewStore {
         if(c.batch){r.batchId=c.batch.id;r.commentIds=c.batch.comments;}
         if(c.via)r.via=c.via;
         this.sql.exec("INSERT INTO review_reviews (pull, data) VALUES (?, ?)", p.number, JSON.stringify(r));
+        const id=this.sql.exec<{id:number}>('SELECT last_insert_rowid() AS id').toArray()[0].id;
+        new RequestedReviews(this.sql).answer({...r,id});
       }
       if (c.op === "dismiss") {
         if (!c.human) throw Error("Review dismissal requires a signed-in repository writer");

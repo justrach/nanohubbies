@@ -58,7 +58,11 @@ try {
   await f.json("PUT", base + "/protection", { ...policy, branch: "locked/*", locked: true }, owner);
   await f.json("POST", base + "/rulesets", { name: "Retain release tags", target: "tag", enforcement: "active", conditions: { ref_name: { include: ["~ALL"], exclude: [] } }, rules: [{ type: "deletion" }, { type: "non_fast_forward" }], bypass_actors: [] }, owner);
   await f.json("POST", base + "/pulls", { title: "Recovery review", head: "検証/restore-🚀" }, owner);
+  const reviewerRequest={reviewers:['codegraff:writer'],revision:0,commit,anchor};
+  await f.json('POST',base+'/pulls/1/requested-reviewers',reviewerRequest,{...owner,'If-Match':'"review-requests-0"'});
   await f.json("POST", base + "/pulls/1/reviews", { commit, anchor, verdict: "APPROVE", body: "Independent review retained" }, writer);
+  const answeredRequest=await f.json('GET',base+'/pulls/1/requested-reviewers',undefined,owner);assert.equal(answeredRequest.requests[0].state,'reviewed');assert.equal(answeredRequest.revision,2);
+  await f.json('POST',base+'/pulls/1/requested-reviewers',{...reviewerRequest,revision:2},{...owner,'If-Match':'"review-requests-2"'});
   await f.json("POST", base + "/pulls/1/comments", { id: "recovery-hunk", commit, anchor, path: "README.md", side: "RIGHT", startLine: 2, line: 2, body: "Keep this thread unresolved" }, writer);
   await f.json("POST", base + "/issues", { title: "Recovery issue", body: "Room metadata must survive" }, owner);
   const mcp = new Client({ name: "Cold recovery fixture", version: "1" }); clients.push(mcp);
@@ -93,7 +97,7 @@ try {
     assert.equal((await f.request("POST", base + "/agents/builder/mcp", {}, bearer(agent))).status, 401);
   };
   await revoke(); await revoked(); await cloudflare.update(rotated);
-  const paths = ["/repository", "/branches", "/default-branch", "/protection", "/rulesets", "/repository/audit", "/issues", "/contributions", "/secrets", "/ci/runners"];
+  const paths = ["/repository", "/branches", "/default-branch", "/protection", "/rulesets", "/repository/audit", "/issues", "/contributions", "/secrets", "/ci/runners", "/pulls/1/requested-reviewers"];
   const before = await Promise.all(paths.map(path => f.json("GET", base + path, undefined, owner)));
   const beforePull = await f.json("GET", base + "/pulls/1", undefined, owner);
   assert.equal(beforePull.reviews.length, 1);

@@ -14,6 +14,7 @@ export interface RepositoryEvent {
   at: number;
   actor: string;
   via?:{kind:"cli";credentialId:string};
+  reviewRequest?:{pull:number;operation:'request'|'remove'|'answer';reviewers:string[];reviewId?:number};
   runnerRegistration?:{id:string;name:string;revoked:boolean};
   defaultBranch?:{previous:string;next:string;commit:string;revision:number};
   mergeSettings?:{previous:import('./merge-settings-types').MergeSettings;next:import('./merge-settings-types').MergeSettings};
