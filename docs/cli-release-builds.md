@@ -21,6 +21,12 @@ uses older tooling or uploads assets directly can bypass it. It does not fetch
 or reconstruct earlier release modules in a fresh output directory; release
 operations must also retain and verify the older assets.
 
+The web Worker serves CLI download routes only through ASSETS. Missing versioned
+downloads return 404, errors use private/no-store and HEAD is bodyless. They do
+not fall through to Next or the legacy Worker; other owner/repo routes keep
+their existing routing. Recovery hold remains the first check. See the
+[deployed routing acceptance](evidence/cli-download-release-validation.md).
+
 Within an output directory, a complete version contains `nh.mjs` and
 `SHA256SUMS`. Both become visible through one directory rename. Existing module
 and checksum bytes are never overwritten, including locally built candidates.

@@ -1,7 +1,9 @@
 # CLI download routing correction — 2026-10-31
 
-This is a **source correction, not yet deployed**. Production remains the
-[reader feedback release](reader-feedback-release-validation.md), CLI 0.4.21.
+The correction is now **deployed** with CLI 0.4.21 unchanged. The following
+records the initial local validation and failed first cloud attempt. See
+[release acceptance](cli-download-release-validation.md) for the subsequent
+passing frozen run, production rollout and exact preservation checks.
 
 The release check exposed an unknown canonical CLI module URL returning a Next
 HTML not-found page with HTTP 200. The web Worker now serves download routes
@@ -35,10 +37,10 @@ Local evidence:
   CLI remains 101486 bytes, SHA-256
   `b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e`.
 
-No CLI version bump or published byte change is needed. Full frozen release
-build, isolated cloud delivery and production routing acceptance remain required
-before claiming this correction is deployed. The original failed release guard
-and the subsequent valid 0.4.21 publication evidence remain unchanged.
+No CLI version bump or published byte change is needed. At the time of this
+initial record, full frozen/cloud/production acceptance had not been performed;
+the later release record establishes it separately. The original failed release
+guard and valid 0.4.21 publication evidence remain unchanged.
 
 ## First frozen cloud attempt
 

@@ -1,0 +1,158 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T08:09:45.911Z",
+  "implementationCommit": "d868a761bec14b2c652be4357376f33d92bc897b",
+  "validatedSource": "59fa95f634f24af85261bfb1265a12e5fce10112",
+  "workerVersion": "0b68079f-c6cf-4c0d-bf5d-92082fd354b5",
+  "previousWorkerVersion": "b3298aee-d026-4a79-8407-ee8071b5c776",
+  "heldWorkerVersion": "97a65949-5916-4636-b47f-2f137042e6ea",
+  "vaultVersion": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+  "vaultRedeployed": false,
+  "trafficPercentage": 100,
+  "durableObjectsCodeUpdateMode": "immediate",
+  "cli": {
+    "format": 1,
+    "version": "0.4.21",
+    "path": "/nh/releases/0.4.21/nh.mjs",
+    "bytes": 101486,
+    "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+  },
+  "cliBytesChanged": false,
+  "catalogEntries": 21,
+  "catalogChanged": false,
+  "installerSha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "apiUnitCases": 451,
+    "cliCases": 103,
+    "typedTasksFresh": 3,
+    "typedTasksCached": 0,
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "sandboxId": "cnd_1093bebdac925a8957e3e74d5261ca8af4e086d9",
+    "independentDestructionConfirmed": true,
+    "exactReaderDistributionWorkflowPassed": true,
+    "actualAssetRoutingPassed": true
+  },
+  "firstAttempt": {
+    "source": "d868a761bec14b2c652be4357376f33d92bc897b",
+    "outcome": "failed",
+    "gate": "unit",
+    "passed": 450,
+    "failed": 1,
+    "reason": "older web-routing fixture expected Next without ASSETS; corrected asset-only fixture and all 451 cases passed before rerun",
+    "sandboxId": "cnd_09021fe61dbb893a06e127a4a0f7f7111472cce3",
+    "independentDestructionConfirmed": true,
+    "productionDeployed": false
+  },
+  "frozenSourceFiles": 1194,
+  "builtFiles": 1480,
+  "privateManifestSha256": {
+    "source": "6acc7013173476154ef5b61001af5faa242046f336f18e5ea9a4887a1066b5e9",
+    "built": "d21178a861398cf3752f84b840d37d4a82c6d4f7d52cf3e9b35e9b61d752068b"
+  },
+  "exactConfiguredKeyAbsence": {
+    "checkedAt": "2026-10-31T07:50:11.869Z",
+    "configuredKeysChecked": [
+      "intended-actions",
+      "independent-ci"
+    ],
+    "filesChecked": 2674,
+    "exactConfiguredKeysAbsent": true,
+    "scope": "exact configured Codegraff keys only; not a general secret audit"
+  },
+  "disposableDelivery": {
+    "normalAssetChecks": 50,
+    "normalRoutingChecks": 16,
+    "heldGetChecks": 60,
+    "heldRoutingChecks": 16,
+    "heldHeadBodyless": true,
+    "absenceConfirmed": true,
+    "independentAbsenceBeforeStaging": true,
+    "productionResourcesBound": false
+  },
+  "productionDelivery": {
+    "assetChecks": 58,
+    "routingChecks": 16,
+    "allBuiltStylesheetsChecked": true,
+    "allPublishedModulesAndChecksumsPreserved": 21,
+    "normalBindingsUnchanged": true,
+    "normalBindingCount": 27,
+    "heldAddsOnlyRecoveryHold": true,
+    "heldBindingCount": 28,
+    "workerFirst": true,
+    "subrequests": 50000,
+    "installedAliases": [
+      "nh",
+      "nanohub"
+    ],
+    "temporaryInstallationRemoved": true,
+    "globalInstallationChanged": false
+  },
+  "missingDownload": {
+    "path": "/nh/releases/999.0.0/nh.mjs",
+    "before": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 19101,
+      "sha256": "89ccc599b3be29fd43160d8d586402c450ecc85968c849348fe2ca66bb2fdff1",
+      "html": true
+    },
+    "after": {
+      "getStatus": 404,
+      "headStatus": 404,
+      "getBytes": 0,
+      "headBytes": 0,
+      "contentType": null,
+      "cacheControl": "private, no-store"
+    }
+  },
+  "productionPreservation": {
+    "checkedAt": "2026-10-31T08:09:14.207Z",
+    "canaryResources": 9,
+    "reviewResources": 5,
+    "exactMatch": true,
+    "refs": 7,
+    "reviews": 6,
+    "comments": 8,
+    "runs": 11,
+    "privatePending": null,
+    "gitCredentials": 0,
+    "cliCredentials": 0,
+    "eligibleApprovals": 0,
+    "codeOwnerGroupsMissing": 2,
+    "requiredDeploymentSatisfied": false,
+    "mergeDisabled": true,
+    "authorApproveAndRequestChangesDisabled": true,
+    "vaultReferences": 0,
+    "vaultGrants": 0,
+    "vaultNextCleanupAt": null,
+    "newCredentials": 0,
+    "gitMutations": false,
+    "reviewMutations": false
+  },
+  "apiVaultClientAndCliRuntimeSourcesUnchanged": true,
+  "hostedActions": {
+    "checkedAt": "2026-10-31T07:49:36.741Z",
+    "account": "intended Nanohub Actions",
+    "providerReads": 1,
+    "nanohubClaims": 0,
+    "allocations": 0,
+    "outcome": "denied",
+    "code": "sandbox_scope_required",
+    "status": 403,
+    "activationEstablished": false
+  },
+  "productionTrafficReadinessEstablished": false,
+  "fullGithubParityEstablished": false
+}

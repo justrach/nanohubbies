@@ -18,7 +18,13 @@ is broader work. A live author COMMENT/private-hunk/resolution smoke preserves
 all existing refs, reviews, comments and settings, with zero new credentials.
 Production multi-account reader mutations were not performed.
 
-Main Worker is `b3298aee-d026-4a79-8407-ee8071b5c776` at 100%; Vault remains
+The latest [server-only routing release](evidence/cli-download-release-validation.md)
+preserves all 21 CLI modules and changes missing versioned downloads from HTML
+200 to private/no-store 404. Its corrected second frozen run passes all nine
+gates, 58 public asset comparisons and 16 routing checks; all fourteen canary
+resources remain exactly unchanged. The first unit-gate failure is retained.
+
+Main Worker is `0b68079f-c6cf-4c0d-bf5d-92082fd354b5` at 100%; Vault remains
 `0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`. All 27 normal bindings, Worker-first
 routing and the 50000-subrequest limit remain. The
 [CLI publication guard](evidence/cli-publication-validation.md) now records
@@ -26,9 +32,8 @@ routing and the 50000-subrequest limit remain. The
 also corrects the earlier missing `branches:write` general-help explanation.
 An unknown release URL returned Nanohub's HTML not-found page with HTTP 200
 before promotion; its original failed status-only guard and body classification
-are retained. A [source correction](evidence/cli-download-routing-validation.md)
-passes actual-handler and real Miniflare checks; production rollout and hosted
-acceptance of correct missing-download status remain open.
+are retained. The routing correction is now deployed with fresh hosted
+missing-download, HEAD, method and recovery-hold acceptance.
 
 Earlier [0.4.19 release acceptance](evidence/review-requests-release-validation.md)
 adds requested reviewers and secret administration, including the compatible
