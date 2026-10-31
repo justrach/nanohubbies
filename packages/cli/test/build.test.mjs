@@ -5,6 +5,31 @@ import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
 import { buildDistribution } from "../scripts/build.mjs";
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+test("portable help explains the branch rename grant and retained role/lock restrictions without credentials", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "nh-branch-help-"));
+  try {
+    const manifest = await buildDistribution(directory),
+      module = join(directory, manifest.path.replace(/^\/nh\//, "")),
+      child = Bun.spawn([process.execPath, module, "--help"], {
+        cwd: directory,
+        env: { PATH: process.env.PATH, HOME: directory, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+    const [code, help, error] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+    expect({ code, error }).toEqual({ code: 0, error: "" });
+    expect(help).toContain("branch rename OLD NEW");
+    expect(help).toContain("Branch renames require branches:write.");
+    expect(help).toContain("default or protected branches require current admin access.");
+    expect(help).toContain("Locks still apply.");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 test("API, web and unrelated working directories publish identical release bytes", async () => {
   const directory = await mkdtemp(join(tmpdir(), "nh-reproducible-build-")),
     root = resolve(import.meta.dirname, "../../.."),

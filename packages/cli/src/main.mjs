@@ -107,6 +107,8 @@ protections:write grant; ruleset edits/export require rulesets:write. Both requi
 your current repository admin role. Archive and unarchive require the separate
 repository:archive permission; it remains available to admins while archived.
 Default branch edits require repository:default and an active repository.
+Branch renames require branches:write. Writers may rename unprotected non-default
+branches; default or protected branches require current admin access. Locks still apply.
 Merge-method edits require repository:merge, your current admin role and the
 revision from repo merge-settings. Branch protections still apply to every merge.
 Secret metadata requires secrets:read and your current admin role. Reference edits use
