@@ -1,4 +1,5 @@
 const sha=/^[a-f0-9]{40}$/;
+export const meldRepository='https://github.com/yourmeld/meld2.git';
 export const meldJobId=value=>typeof value==='string'&&/^[1-9]\d{12,15}-[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(value);
 const phases=new Set(['queued','starting','building','deploying','verifying','cleanup','reporting','passed','failed','superseded']);
 export const meldRequiredSteps=['locked install','pipeline regression checks','typechecks','unit and package checks','browser installation','browser checks','production bundle'];

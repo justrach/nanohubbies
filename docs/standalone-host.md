@@ -156,6 +156,16 @@ Ordinary branch events push a `nanohub-ci/<run-id>/<attempt>` mirror and request
 - The approved adapter fetches GitHub's shared staging ref, proves it is an ancestor of the Nanohub candidate, and pushes with a normal fast-forward update. Divergence fails and requests a reviewed integration candidate in Nanohub; there is no force-push/reset path.
 - Each new Nanohub attempt must dispatch a fresh controller job; an older matching pass cannot satisfy it. The adapter retains a private intent before pushing or calling `/run` or `/check`. Only an acknowledged receipt with the identical run/attempt/head/base/kind/ref/authorization binding can resume without another mutation. An unacknowledged operation requires reconciliation and is never automatically replayed. `/run` resolves the current staging head itself. Any unrelated SHA, ref or run kind is rejected. A newer same-SHA job invalidates the result; failed/superseded jobs, incomplete suites and unfinished cleanup/reporting do not pass.
 
+Successful checks-only attempts now retire their exact owned mirror ref before
+native completion, while the verified checkout still exists. The deletion uses
+an expected-old-SHA lease and a private intent; changed/recreated refs, pending
+jobs and unknown deletion outcomes stay closed. Absence can reconcile a lost
+reply without another delete. Shared staging is never retired. A final job read
+after cleanup rejects newer external reruns. Staging also requires a loadable
+trusted acceptance module outside candidate execution before any staging push
+or dispatch, including rejection of candidate-targeting symlinks. See the
+[lifecycle validation and opt-in live harness](evidence/meld-bridge-lifecycle-validation.md).
+
 Transient controller GET failures re-observe only that acknowledged job, within
 the original wait deadline. Authentication/schema errors fail immediately;
 dispatch POSTs and Git pushes are never retried by this observation loop. The

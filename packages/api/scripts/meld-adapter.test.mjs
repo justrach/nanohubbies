@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,readFile,writeFile,rm,stat,rename} from 'node:fs/promises';
+import {mkdtemp,mkdir,readFile,writeFile,rm,stat,rename,symlink} from 'node:fs/promises';
 import {join} from 'node:path';import {tmpdir} from 'node:os';import {createServer} from 'node:http';
-import {createMeldAdapter} from '../../../tools/meld-staging-adapter.mjs';
+import {createMeldAdapter,execute} from '../../../tools/meld-staging-adapter.mjs';
 import {meldRuns,currentMeldJob,meldRequiredSteps} from '../../../tools/meld-pipeline-state.mjs';
 import {stagingGate} from '../../../tools/ci-runner.mjs';
 const head='a'.repeat(40),base='b'.repeat(40),timestamp=1700000000000;
@@ -13,9 +13,10 @@ function job({at=timestamp,deploy=false,ref=deploy?'staging':'nanohub-ci/event-1
 }
 async function fixture(work){
  const dir=await mkdtemp(join(tmpdir(),'nh-meld-attempt-'));await mkdir(join(dir,'source'));await mkdir(join(dir,'artifacts'));
+ const acceptance=join(dir,'acceptance.mjs');await writeFile(acceptance,"export const accept=async()=>[{url:'https://evidence.invalid/unit-fixture',realService:true}];");
  const context={source:join(dir,'source'),artifacts:join(dir,'artifacts'),run:{id:'event-1',attempt:1,head,base,deploymentApprovedBy:null},stagingOrigin:'https://staging.meld.space',versionPrefixLength:7};
- const state={calls:[],posts:0,pushes:0,jobs:[],active:null,queued:[],tick:timestamp,clock:0};
- const git=async(_,command,...args)=>{state.calls.push([command,...args]);if(command==='rev-parse')return head;if(command==='push')state.pushes++;return '';};
+ const state={calls:[],posts:0,pushes:0,jobs:[],active:null,queued:[],tick:timestamp,clock:0,mirror:null};
+ const git=async(_,command,...args)=>{state.calls.push([command,...args]);if(command==='rev-parse')return head;if(command==='ls-remote')return state.mirror?`${state.mirror}\trefs/heads/nanohub-ci/event-1/1`:'';if(command==='push'){state.pushes++;state.mirror=args.at(-1).startsWith(':')?null:head;}return '';};
  const view=()=>({active:state.active,queued:state.queued,runs:state.jobs});
  const fetcher=async(url,options)=>{
   assert.equal(new URL(url).origin,'https://meld-staging-ci.phedayatnia.workers.dev');assert.equal(options.redirect,'error');
@@ -23,8 +24,9 @@ async function fixture(work){
   state.posts++;state.tick+=1000;const deploy=new URL(url).pathname==='/run',ref=deploy?'staging':JSON.parse(options.body).ref;
   const created=job({at:state.tick,deploy,ref});state.jobs.unshift(created);return Response.json({id:created.id,sha:created.sha,deploy});
  };
- const make=(overrides={})=>createMeldAdapter({env,git,fetcher,now:()=>state.clock,sleep:async()=>{state.clock+=101;},...overrides});
- try{await work({dir,context,state,git,fetcher,view,make});}finally{await rm(dir,{recursive:true,force:true});}
+ const options={env:{...env,MELD_ACCEPTANCE_MODULE:acceptance},git,fetcher,now:()=>state.clock,sleep:async()=>{state.clock+=101;}};
+ const make=(overrides={})=>createMeldAdapter({...options,...overrides});
+ try{await work({dir,context,state,git,fetcher,view,make,options,acceptance});}finally{await rm(dir,{recursive:true,force:true});}
 }
 test('fresh attempt dispatch preserves staging history, pins the SHA and records an explicit new job',async()=>fixture(async f=>{
  f.context.run.deploymentApprovedBy='owner';const adapter=f.make(),result=await adapter.dispatch(f.context);
@@ -145,4 +147,37 @@ test('real HTTP observation socket reset recovers only by reading the same ackno
 test('Meld build IDs match the exact prefix and are rechecked after acceptance',async()=>{
  const context={run:{head,base},stagingOrigin:'https://staging.meld.space',versionPrefixLength:7};const adapter={dispatch:async()=>({runId:'run'}),wait:async()=>({state:'success',kind:'deployment',candidate:head}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};
  assert.equal((await stagingGate(adapter,context,async()=>Response.json({buildId:head.slice(0,7)}))).version,head);let reads=0;await assert.rejects(stagingGate(adapter,context,async()=>Response.json({buildId:++reads===1?head.slice(0,7):base.slice(0,7)})),/version mismatch/);
+});
+test('staging preflights a trusted callable acceptance module before pushing or dispatching',async()=>{
+ for(const kind of ['missing','relative','candidate','candidate-symlink','invalid-export','import-error'])await fixture(async f=>{
+  f.context.run.deploymentApprovedBy='owner';let path=f.acceptance;
+  if(kind==='missing')path=undefined;
+  if(kind==='relative')path='acceptance.mjs';
+  if(kind==='candidate'){path=join(f.context.source,'untrusted.mjs');await writeFile(path,"throw Error('candidate code must not load');");}
+  if(kind==='candidate-symlink'){const target=join(f.context.source,'untrusted.mjs');await writeFile(target,"throw Error('candidate code must not load');");path=join(f.dir,'indirect.mjs');await symlink(target,path);}
+  if(kind==='invalid-export')await writeFile(path,'export const accept=42;');
+  if(kind==='import-error')await writeFile(path,"throw Error('private import detail must not escape');");
+  await assert.rejects(f.make({env:{...env,MELD_ACCEPTANCE_MODULE:path}}).dispatch(f.context),error=>!error.message.includes('private import detail')&&!error.message.includes('candidate code must not load'));
+  assert.equal(f.state.posts,0);assert.equal(f.state.pushes,0);
+ });
+});
+test('acceptance cannot switch to a different trusted module after staging dispatch',async()=>fixture(async f=>{
+ const configuration={...f.options.env};f.context.run.deploymentApprovedBy='owner';const adapter=f.make({env:configuration});await adapter.dispatch(f.context);
+ const other=join(f.dir,'other.mjs');await writeFile(other,'export const accept=async()=>[];');configuration.MELD_ACCEPTANCE_MODULE=other;
+ await assert.rejects(adapter.accept(f.context),/changed during/);assert.equal(f.state.posts,1);
+}));
+test('checks execute retires its mirror before returning success and can reopen the same receipt',async()=>fixture(async f=>{
+ const result=await execute(f.context,f.options);assert.equal(result.results[0].state,'success');assert.equal(f.state.posts,1);assert.equal(f.state.pushes,2);assert.equal(f.state.mirror,null);
+ const saved=JSON.parse(await readFile(join(f.context.artifacts,'meld-pipeline.json'),'utf8'));assert.equal(saved.mirrorCleanup.removed,true);assert.equal(saved.pipelineEvidence.steps.length,7);
+ assert.ok(f.state.calls.some(row=>row[0]==='push'&&row.includes('--force-with-lease=refs/heads/nanohub-ci/event-1/1:'+head)&&row.at(-1)===':refs/heads/nanohub-ci/event-1/1'));
+ assert.equal((await execute(f.context,f.options)).results[0].state,'success');assert.equal(f.state.posts,1);assert.equal(f.state.pushes,2);
+}));
+test('a newer rerun during mirror cleanup cannot become an older native success',async()=>fixture(async f=>{
+ const git=async(...args)=>{const result=await f.git(...args);if(args[1]==='push'&&args.at(-1).startsWith(':'))f.state.queued=[job({at:f.state.tick+1000,phase:'queued'})];return result;};
+ await assert.rejects(execute(f.context,{...f.options,git}),/newer or ambiguously ordered/);assert.equal(f.state.mirror,null);assert.equal(f.state.posts,1);
+ const cleanup=JSON.parse(await readFile(join(f.context.artifacts,'meld-mirror-cleanup.json'),'utf8'));assert.equal(cleanup.state,'removed');
+}));
+test('retirement rejects changed context and never deletes shared staging',async()=>{
+ await fixture(async f=>{const adapter=f.make(),{runId}=await adapter.dispatch(f.context);await assert.rejects(adapter.retire(runId,{...f.context,run:{...f.context.run,base:'c'.repeat(40)}}),/context changed/);assert.equal(f.state.pushes,1);});
+ await fixture(async f=>{f.context.run.deploymentApprovedBy='owner';const adapter=f.make(),{runId}=await adapter.dispatch(f.context);await assert.rejects(adapter.retire(runId,f.context),/attempt-owned checks mirror/);assert.equal(f.state.pushes,1);assert.equal(f.state.calls.some(row=>row.at(-1)?.startsWith(':')),false);});
 });

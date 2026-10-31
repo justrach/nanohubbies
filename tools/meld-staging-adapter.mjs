@@ -10,15 +10,29 @@ import { isAbsolute, join } from 'node:path';
 import {randomUUID} from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { stagingGate } from './ci-runner.mjs';
-import {meldJobId,meldRuns,currentMeldJob,verifiedMeldSteps} from './meld-pipeline-state.mjs';
+import {meldJobId,meldRuns,currentMeldJob,verifiedMeldSteps,meldRepository as REPOSITORY} from './meld-pipeline-state.mjs';
+import {retireMeldMirror} from './meld-mirror-cleanup.mjs';
 const exec=promisify(execFile);
-const REPOSITORY='https://github.com/yourmeld/meld2.git';
 const retryableReadStatuses=new Set([408,429,500,502,503,504]);
 const readUnavailable=()=>Object.assign(Error('Meld controller read is temporarily unavailable'),{code:'meld_read_unavailable'});
 export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride,sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=Date.now}={}) {
   const origin=new URL(env.MELD_STAGING_CI_URL||'https://meld-staging-ci.phedayatnia.workers.dev');
   if(origin.href!=='https://meld-staging-ci.phedayatnia.workers.dev/'||!env.PIPELINE_ADMIN_SECRET)throw Error('Existing Meld staging controller configuration is required');
   const dispatched=new Map();
+  let acceptance;
+  const prepareAcceptance=async context=>{
+    if(!env.MELD_ACCEPTANCE_MODULE||!isAbsolute(env.MELD_ACCEPTANCE_MODULE))throw Error('A trusted real-service acceptance module is required before staging dispatch');
+    let source,path;
+    try{source=await realpath(context.source);path=await realpath(env.MELD_ACCEPTANCE_MODULE);}catch{throw Error('The trusted real-service acceptance module is unavailable before staging dispatch');}
+    if(path===source||path.startsWith(source+'/'))throw Error('Keep the trusted acceptance module outside candidate execution');
+    if(acceptance&&acceptance.path!==path)throw Error('The trusted real-service acceptance module changed during the attempt');
+    if(!acceptance){
+      let module;try{module=await import(pathToFileURL(path).href);}catch{throw Error('The trusted real-service acceptance module could not be loaded');}
+      if(typeof module.accept!=='function')throw Error('The trusted real-service acceptance module must export accept');
+      acceptance={path,accept:module.accept};
+    }
+    return acceptance.accept;
+  };
   const api=async(path,method='GET',body,deadline=Infinity)=>{
     let r;
     try{r=await fetcher(new URL(path,origin),{method,redirect:'error',headers:{authorization:`Bearer ${env.PIPELINE_ADMIN_SECRET}`,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(Math.max(1,Math.min(30_000,Math.ceil(deadline-now()))))});}
@@ -38,6 +52,7 @@ export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride
       if(!/^[a-f0-9]{40}$/.test(sha)||!/^[a-f0-9]{40}$/.test(context.run.base??'')||!/^[a-z0-9][a-z0-9-]{0,79}$/.test(context.run.id??'')||!Number.isSafeInteger(context.run.attempt)||context.run.attempt<1||!isAbsolute(context.source??'')||!isAbsolute(context.artifacts??''))throw Error('Invalid Nanohub attempt or private dispatch artifacts');
       if(await git(context.source,'rev-parse','HEAD')!==sha)throw Error('Nanohub checkout changed before staging');
       const deploy=!!context.run.deploymentApprovedBy;
+      if(deploy)await prepareAcceptance(context);
       const ref=deploy?'staging':`nanohub-ci/${context.run.id}/${context.run.attempt}`;
       const source=await realpath(context.source),artifacts=await realpath(context.artifacts);
       if(artifacts===source||artifacts.startsWith(source+'/'))throw Error('Keep dispatch receipts outside candidate execution');
@@ -93,17 +108,22 @@ export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride
       }
       throw Error('Timed out waiting for the exact Codegraff deployment job');
     },
+    async retire(runId,context) {
+      const value=dispatched.get(runId);
+      if(!value)throw Error('Mirror cleanup requires this attempt\'s acknowledged dispatch');
+      const {id,...binding}=value;
+      if(context.run.id!==binding.runId||context.run.attempt!==binding.attempt||context.run.head!==binding.sha||context.run.base!==binding.base||!!context.run.deploymentApprovedBy!==binding.deploy||(context.deploymentAuthorization?.id??null)!==binding.authorizationId)throw Error('Mirror cleanup context changed');
+      return retireMeldMirror({binding,jobId:id,source:context.source,artifacts:context.artifacts,git,observe:async()=>meldRuns(await api('/runs')),now});
+    },
     async accept(context) {
-      if(!env.MELD_ACCEPTANCE_MODULE||!isAbsolute(env.MELD_ACCEPTANCE_MODULE))throw Error('A trusted real-service acceptance module is required; deployment success alone is insufficient');
-      const module=await import(pathToFileURL(env.MELD_ACCEPTANCE_MODULE).href);
-      return module.accept(context);
+      return (await prepareAcceptance(context))(context);
     },
   };
 }
 
-export async function execute(context) {
-  const adapter=createMeldAdapter();
-  let staged=null,jobId,pipelineEvidence;
+export async function execute(context,options) {
+  const adapter=createMeldAdapter(options);
+  let staged=null,jobId,pipelineEvidence,mirrorCleanup=null;
   if(context.run.deploymentApprovedBy) {
     staged=await stagingGate(adapter,{...context,stagingOrigin:'https://staging.meld.space',versionPrefixLength:7});
     jobId=staged.runId;
@@ -113,8 +133,11 @@ export async function execute(context) {
     const check=await adapter.wait(jobId,context.run.head,false);
     if(check.state!=='success'||check.kind!=='checks'||check.candidate!==context.run.head)throw Error('Exact candidate checks did not succeed');
     pipelineEvidence=check;
+    mirrorCleanup=await adapter.retire(jobId,context);
+    // Cleanup is asynchronous; observe again before publishing native success.
+    pipelineEvidence=await adapter.wait(jobId,context.run.head,false);
   }
-  const receipt={candidate:context.run.head,base:context.run.base,nanohubRun:context.run.id,nanohubAttempt:context.run.attempt,source:'Nanohub authenticated private clone',transportMirror:'yourmeld/meld2',runId:jobId,pipelineEvidence,staging:staged,limits:['GitHub remains the current CI transport mirror','Staging requires explicit owner approval of this head and base','Real-service acceptance is supplied by the trusted acceptance module','Independent external reruns after the final observation require callback integration; this adapter is not an unattended controller']};
+  const receipt={candidate:context.run.head,base:context.run.base,nanohubRun:context.run.id,nanohubAttempt:context.run.attempt,source:'Nanohub authenticated private clone',transportMirror:'yourmeld/meld2',runId:jobId,pipelineEvidence,mirrorCleanup,staging:staged,limits:['GitHub remains the current CI transport mirror','Staging requires explicit owner approval of this head and base','Real-service acceptance is supplied by the trusted acceptance module','Independent external reruns after the final observation require callback integration; this adapter is not an unattended controller']};
   await writeFile(join(context.artifacts,'meld-pipeline.json'),JSON.stringify(receipt,null,2));
   const buildLog=`https://meld-staging-ci.phedayatnia.workers.dev/runs/${jobId}/logs/build`;
   const results=[{name:'codegraff-ci',state:'success',command:'Meld Codegraff pipeline: '+pipelineEvidence.steps.map(step=>step.name).join('; '),log:buildLog,artifacts:[buildLog]}];
