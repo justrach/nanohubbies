@@ -11,8 +11,11 @@ preceding secret-administration candidate. Its [local acceptance](evidence/revie
 covers the PR UI, native CLI, exact distribution, role/revision boundaries and
 cold request-history recovery. Public CLI is still **0.4.17**. Cloud acceptance
 and the Vault-first API rollout await renewal of the expired Cloudflare login;
-the desktop renewal currently needs the Mac unlocked. Source publication does
-not close those release gates or activate hosted dispatch.
+the same-scope desktop renewal now reaches sign-in but saved-password filling
+does not complete. [Later local storage validation](evidence/review-request-storage-validation.md)
+adds durable answers for legacy review writes, conservative ordering migration,
+receiver capability checks and recovery/rollback acceptance. Source publication
+does not close the cloud release gates or activate hosted dispatch.
 
 | Area                                 | Current evidence                                                                                                                                                                                                                                                                                                                                                                                          | Remaining release requirement                                                                                                                                                                                                                                                 |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

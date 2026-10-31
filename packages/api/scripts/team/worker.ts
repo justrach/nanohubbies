@@ -22,6 +22,25 @@ class FixtureVaultAuthority extends RpcTarget {
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
+  legacyRequestStorage(input:{operation:'review'|'request'|'drop-answer'|'audit-failure'|'audit-recover';number:number;data?:Record<string,unknown>}){
+    return this.ctx.storage.transactionSync(()=>{
+      const sql=this.ctx.storage.sql;
+      if(input.operation==='drop-answer')sql.exec('DROP TRIGGER review_request_answer_v2');
+      else if(input.operation==='audit-failure')sql.exec("CREATE TRIGGER fixture_request_audit_failure BEFORE INSERT ON repository_audit WHEN json_extract(NEW.data,'$.reviewRequest.operation')='answer' BEGIN SELECT RAISE(ABORT,'synthetic answer audit failure'); END");
+      else if(input.operation==='audit-recover')sql.exec('DROP TRIGGER fixture_request_audit_failure');
+      else if(input.operation==='review'){
+        // Exact storage statement from the pre-request ReviewStore. This path
+        // deliberately never constructs RequestedReviews or calls answer().
+        sql.exec('INSERT INTO review_reviews(pull,data) VALUES(?,?)',input.number,JSON.stringify(input.data));
+      }else if(input.operation==='request'){
+        const id=String(input.data?.reviewer);
+        sql.exec('INSERT INTO review_requests VALUES(?,?,?) ON CONFLICT(pull,reviewer) DO UPDATE SET data=excluded.data',input.number,id,JSON.stringify(input.data));
+        // v1 performed its own increment, in addition to retained v2 hooks.
+        sql.exec('INSERT INTO review_request_revisions VALUES(?,1) ON CONFLICT(pull) DO UPDATE SET revision=revision+1',input.number);
+      }else throw Error('Unknown synthetic legacy operation');
+      return {ok:true};
+    });
+  }
   missingSharedHeadReceiver(missing:boolean) {
     this.ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS fixture_merge_receiver (id INTEGER PRIMARY KEY, missing INTEGER NOT NULL)");
     this.ctx.storage.sql.exec("INSERT INTO fixture_merge_receiver VALUES (1,?) ON CONFLICT(id) DO UPDATE SET missing=excluded.missing",Number(missing));
@@ -203,6 +222,11 @@ export default {
       const body=await request.json<{trunk:string;actor:string;revision:number;id?:string;configuration?:import('../../src/deployments/types').EnvironmentInput}>();
       try{return Response.json(await env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)).configureEnvironment({...body,credentialId:'fixture-direct-environment',origin:url.origin},body.actor));}
       catch(error){return Response.json({error:String(error)},{status:400});}
+    }
+    if(url.pathname==='/fixture/legacy-request-storage'){
+      const body=await request.json<{trunk:string;input:Parameters<Sequencer['legacyRequestStorage']>[0]}>();
+      try{return Response.json(await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {legacyRequestStorage:Sequencer['legacyRequestStorage']}).legacyRequestStorage(body.input));}
+      catch(error){return Response.json({error:(error as Error).message},{status:400});}
     }
     if(url.pathname==='/fixture/conditional-review-request'){
       const body=await request.json<{trunk:string;input:Parameters<ProductionSequencer['editRequestedReviews']>[0]}>();

@@ -6,6 +6,8 @@ export interface ReviewRequest {
   requestedBy:Owner;
   requestedAt:number;
   state:'requested'|'reviewed'|'removed';
+  /** Opaque generation identity; callers cannot supply it in an edit. */
+  generation?:string;
   via?:Review['via'];
   reviewId?:number;
   answeredAt?:number;
@@ -15,6 +17,8 @@ export interface ReviewRequest {
 export interface ReviewRequests {
   protocol:1;
   revision:number;
+  revisionTracking?:'storage';
+  answerTracking?:'storage-v2';
   requests:ReviewRequest[];
   access?:Record<string,import('./reviewer-types').ReviewerStatus>;
   canManage?:boolean;

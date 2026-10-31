@@ -487,10 +487,10 @@ export class Sequencer extends DurableObject<Env> {
   }
 
   async requestedReviews(number:number,origin:string){
-    const before=new RequestedReviews(this.sql).list(number);
+    const before=this.ctx.storage.transactionSync(()=>new RequestedReviews(this.sql).list(number));
     const ids=before.requests.filter(row=>row.state==='requested').map(row=>row.reviewer);
     const membership=await reviewerMembership(this.env,this.meta<string>('trunk')!,origin,ids);
-    const after=new RequestedReviews(this.sql).list(number);
+    const after=this.ctx.storage.transactionSync(()=>new RequestedReviews(this.sql).list(number));
     if(after.revision!==before.revision||membership.expiresAt<=Date.now())throw Error('Review requests changed while checking membership; refresh');
     return {...after,access:membership.accounts};
   }

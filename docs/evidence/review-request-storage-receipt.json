@@ -1,0 +1,115 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-31T03:20:44.623484+00:00",
+  "status": "local-validation-passed; cloud acceptance and deployment pending",
+  "sourceBase": "460a2b3400b436d3ee0f6a6028abba2ae563db6b",
+  "sourceHashes": {
+    "packages/api/src/review/request-storage.ts": "6339cb9f70e43bf4ac5f271d882d4cc71769630aac4ad1a31068c8ec0b07446e",
+    "packages/api/src/review/requests.ts": "aa3a925f4183525113bddb198ea21941722a34884487687499ecd9ccfdd671f4",
+    "packages/api/src/review/request-route.ts": "3ea64e276e5ae4dc6976f222998c8ab641ef5246c0818788f69b2ad6c1183d19",
+    "packages/api/src/review/request-types.ts": "3a3c48d91559fa7e4b8cb5ac5f36ac0c3e8bbceee349421d7dc02a83d1c3c8ba",
+    "packages/api/src/review/store.ts": "89303c846bb29195cd9107c16caecb948d7c4d84322d6d8378f45439674ceb89",
+    "packages/api/src/sequencer.ts": "48705858e4d2ebfae6b5e62b68361efc588f042efcf74e6a4f2962193ea6ccff",
+    "packages/api/src/repository/activity-types.ts": "f94e7eef92f8df989d78fc7091fb3781138c79ba0a6cf5f21386bd435bbfa633",
+    "packages/api/scripts/review-requests.test.mjs": "d222c33f320abf7fe1c97835ebabaec19515121d1f6e196d32d312c0d3754f1b",
+    "packages/api/scripts/review-request-route.test.mjs": "3d6ee26d553e776d51b6b589b32444d82596aad22516235162d90e15f8dc4664",
+    "packages/api/scripts/smoke-review-request-storage.ts": "938c038e9543682458b3e4c59df6239acfe23be1d7d20532b726511240803550",
+    "packages/api/scripts/team/worker.ts": "5a3cf755f0d7fb8fd81a2a64c9ad4b3a7356e12ddc15828fd4b5da61ce2c95db",
+    "packages/api/package.json": "26e5531d4676097bfc3d5cc816d3a04b9b307f4b1a1e4f4682cc2bcc677e8ee7"
+  },
+  "tests": {
+    "apiUnitPassed": 424,
+    "repositoryUnitPassed": 317,
+    "repositoryIntegrationChainPassed": true,
+    "requestStorePassed": 14,
+    "receiverRoutePassed": 3,
+    "legacySqlWorkerPassed": true,
+    "sourceAndBundledReviewerIntegrationPassed": true,
+    "exactReviewerDistributionPassed": true,
+    "exactDeploymentDistributionPassed": true,
+    "exactSecretDistributionPassed": true,
+    "coldDoD1R2RequestStorageRecoveryPassed": true,
+    "pinnedTsrsPassed": true,
+    "unchangedVaultCheckCached": true,
+    "opennextBuildPassed": true,
+    "mainWorkerDryRunPassed": true,
+    "legacyFixtureAbsentFromDeploymentBundle": true
+  },
+  "artifact": {
+    "format": 1,
+    "version": "0.4.19",
+    "path": "/nh/releases/0.4.19/nh.mjs",
+    "bytes": 97845,
+    "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+  },
+  "olderLocalArtifacts": {
+    "0.4.17": {
+      "bytes": 85565,
+      "sha256": "44d029819890d81384324fa159cb4c471cfb3c36e8b61e6c313eb7d96738d579"
+    },
+    "0.4.18": {
+      "bytes": 95151,
+      "sha256": "893019ceef9abaa623a527b99e436ce7d4fee868d029195f0fa7556e8748b10c"
+    }
+  },
+  "logHashes": {
+    "nanohub-review-request-storage-api-current.log": {
+      "bytes": 67410,
+      "sha256": "46798028f9a9b5cd2c2f6cc72cb8853e33eb39d007db146d77f3be35654cc5db"
+    },
+    "nanohub-review-request-storage-repository-final.log": {
+      "bytes": 76719,
+      "sha256": "8c3640c7281f21fcdb51b803127511d8c032e1617ef066831a24a3d15018060e"
+    },
+    "nanohub-review-request-storage-check-final.log": {
+      "bytes": 10508,
+      "sha256": "b754c3212a956f195491e772d9a391023adeea182f62a5e839f64f18a7c58039"
+    },
+    "nanohub-review-request-storage-opennext-final.log": {
+      "bytes": 2936,
+      "sha256": "b38f3f0bbf873e6857f5deb8d98b395dbc7a27a34a71659637255b4d1c094c88"
+    },
+    "nanohub-review-request-storage-main-dry-run.log": {
+      "bytes": 3037,
+      "sha256": "7ecd4158c5b73d1c92143ae08938a5d77a61b897cf854c3fc4e96fe54122a361"
+    },
+    "nanohub-review-request-storage-deployment-distribution-final.log": {
+      "bytes": 552,
+      "sha256": "e645395a30ea11ddfc7f35f65d2097ca863ebf1077fa9f01b542f6b747468d5b"
+    },
+    "nanohub-review-request-storage-secret-distribution-final.log": {
+      "bytes": 380,
+      "sha256": "80f55f6ca3a561e74302d1f876b8b85e2fec93bc72e956d5eafa7414453d9799"
+    },
+    "nanohub-review-request-storage-reviewer-distribution-final.log": {
+      "bytes": 471,
+      "sha256": "2e495f832c7312a667dd3feecaeac56ea1d56a1014845f3b50633de466591d3e"
+    },
+    "nanohub-review-request-storage-feature-final.log": {
+      "bytes": 3874,
+      "sha256": "02489b2782d05f4d905561b70c5db0134915546fd67824da0c975f3d45cbc07a"
+    },
+    "nanohub-review-request-storage-route.log": {
+      "bytes": 413,
+      "sha256": "e4170e9e2f9356ef790183a78fc4ed1cbb9d3e71d25b83937372519be8d6f9dd"
+    }
+  },
+  "scope": {
+    "productionDeployed": false,
+    "hostedMixedVersionDeploymentTested": false,
+    "fullCloudAcceptancePassed": false,
+    "cloudSandboxesAllocated": 0,
+    "productionCredentialsIssued": 0,
+    "customerSecretValuesReadOrModified": 0,
+    "hostedFleetActivated": false,
+    "cliOrUiSourceChanged": false
+  },
+  "remaining": [
+    "Same-scope Cloudflare browser sign-in and renewal",
+    "Frozen full Linux acceptance and compatible Vault-first release validation",
+    "Hosted mixed-version upgrade/rollback acceptance",
+    "Ambiguous pre-receipt historical answers are deliberately not inferred",
+    "Reader reviews, teams, automatic CODEOWNERS requests, notifications/inboxes and broader parity",
+    "Original CI/staging/cutover, hosted fleet and production DR/load/operations"
+  ]
+}

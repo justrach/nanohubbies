@@ -54,8 +54,9 @@ Removing a stale request does not require its former reviewer to remain eligible
 
 At most 15 requests may be outstanding on a PR, with up to 100 distinct requested
 accounts retained over its lifetime. Repeated requests for an already waiting
-person are idempotent at the current revision. A submitted answer or an actual
-request change advances the revision. Old revisions cannot resurrect a removed
+person are idempotent at the current revision. A submitted answer or each changed
+request row advances the revision. Revisions are opaque: batches and older
+writers can advance them more than once. Old revisions cannot resurrect a removed
 request. Request edits, answers, revisions and audit records commit atomically
 with their corresponding operation. The admin review-activity API includes
 request, removal and answer events without credential values.
@@ -81,13 +82,46 @@ native candidate directory; read-only callers do not receive that directory.
 Both require `If-Match: "review-requests-0"` matching the body's revision.
 Actor and credential identity come from authentication; request JSON cannot
 override them. Browser mutations require same-origin account access. Metadata
-responses are private/no-store. New private RPC entrypoints have no fallback to
-an older receiver that lacks request management.
+responses are private/no-store. Reads and mutations require the receiver's
+`revisionTracking: "storage"` and `answerTracking: "storage-v2"` capabilities.
+An older or incomplete receiver returns 503 before the mutation RPC is called;
+there is no fallback to a legacy writer. Retry after deployment completes,
+then inspect the current revision before editing.
 
 This is an incremental compatibility feature. [GitHub permits requests to
 readers and teams and supplies notifications and automatic CODEOWNERS
 requests](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/requesting-a-pull-request-review).
 Reader reviews, team selection, automatic CODEOWNERS requests, notifications,
-assignment inboxes and old-version answer reconciliation remain open here.
+assignment inboxes and hosted mixed-version validation remain open here.
 Request metadata is advisory; it never stands in for the independently enforced
 review/merge decision or the current-authority recovery procedure.
+
+## Stored answers across code rollback
+
+The current backend advertises `answerTracking: "storage-v2"` and
+`revisionTracking: "storage"` without changing the HTTP protocol or CLI artifact.
+Every new request has an opaque generation and a private high-water mark in the
+review-ID history. Persisted SQLite hooks answer it when a later independent
+review is inserted, including the storage write used by older receivers. Wall
+clock order is not used. The request, revision and answer audit update atomically
+with that review; a late audit failure rolls the review back too. Ordinary
+requests still have no authority over approvals, policy or repository access.
+
+A missing hook can be repaired transactionally. When the exact current request
+generation and ordering receipt survive, the first qualifying later review is
+reconciled once and its audit event records `reconciled: true`. Missing revision
+authority keeps changes closed rather than treating the request as revision zero.
+Legacy request writes acquire a generation through stored hooks, so remove/re-add
+cannot reuse an older view even when timestamps repeat.
+
+Pending rows predating ordering receipts are preserved. Migration starts tracking
+future submissions; it does not guess whether a historical review followed the
+request. Likewise, an untracked replacement establishes a new baseline. Remove
+and renew a request when a new review is needed. A full backup restore can still
+restore old authority; the independent-authority recovery requirements remain.
+
+[Storage validation](evidence/review-request-storage-validation.md) covers the
+legacy SQL write boundary in real local Workers, restart, cold DO/D1/R2 recovery
+and repair/rollback cases. It is not a hosted deployment of historical Worker
+versions. Persisted hooks rely on [SQLite trigger semantics](https://www.sqlite.org/lang_createtrigger.html)
+and schema repair uses [Durable Object synchronous transactions](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/).

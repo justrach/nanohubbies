@@ -137,9 +137,8 @@ export class ReviewStore {
         const r: Omit<Review, "id"> = { pull: p.number, author: c.author, body: c.body, verdict: c.verdict, commit: c.commit, anchor: c.anchor, tree:branch(p.head).tree,anchorTree:p.anchorTree,independent: c.independent === true, pushEvent: policies.pushEvent(p.head), at: Date.now() };
         if(c.batch){r.batchId=c.batch.id;r.commentIds=c.batch.comments;}
         if(c.via)r.via=c.via;
+        new RequestedReviews(this.sql);
         this.sql.exec("INSERT INTO review_reviews (pull, data) VALUES (?, ?)", p.number, JSON.stringify(r));
-        const id=this.sql.exec<{id:number}>('SELECT last_insert_rowid() AS id').toArray()[0].id;
-        new RequestedReviews(this.sql).answer({...r,id});
       }
       if (c.op === "dismiss") {
         if (!c.human) throw Error("Review dismissal requires a signed-in repository writer");

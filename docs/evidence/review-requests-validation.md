@@ -63,7 +63,9 @@ a select label that included option text, and a layout inspection bounds long
 request lists and prevents the merge card stretching to the sidebar's height.
 
 Reader reviews, teams, automatic CODEOWNERS requests, notifications/inboxes,
-old-version answer reconciliation and broader GitHub compatibility remain open.
+hosted mixed-version acceptance and broader GitHub compatibility remain open.
+[Later storage validation](review-request-storage-validation.md) covers persisted
+legacy-write answer handling and conservative ordering migration.
 The pending secret-service rollout, original staging/cutover, hosted dispatcher
 activation and production recovery/load/operations requirements remain separate
 launch gates in [production readiness](../production-readiness.md).
