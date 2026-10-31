@@ -56,7 +56,8 @@
     "test:review-requests": "node --test scripts/review-requests.test.mjs scripts/review-request-route.test.mjs && node scripts/smoke-review-requests.ts && node scripts/smoke-review-requests.ts --bundle && node scripts/smoke-review-request-storage.ts",
     "test:cli-reviewer-distribution": "node scripts/smoke-review-requests.ts --distribution",
     "test:branch-rename": "node --test scripts/branch-rename.test.mjs && node scripts/smoke-branch-rename.ts && node scripts/smoke-branch-rename.ts --bundle",
-    "test:reader-feedback": "node --test scripts/reader-feedback.test.mjs scripts/pending-reviews.test.mjs scripts/review-request-route.test.mjs && node scripts/smoke-reader-feedback.ts && node scripts/smoke-reader-feedback.ts --bundle"
+    "test:reader-feedback": "node --test scripts/reader-feedback.test.mjs scripts/pending-reviews.test.mjs scripts/review-request-route.test.mjs && node scripts/smoke-reader-feedback.ts && node scripts/smoke-reader-feedback.ts --bundle",
+    "test:cli-reader-distribution": "node scripts/smoke-reader-feedback.ts --distribution"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.7.6",

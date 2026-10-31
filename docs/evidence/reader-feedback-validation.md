@@ -103,3 +103,20 @@ account's existing sandbox-scope blocker, real application CI/staging/cutover,
 full production recovery, sustained-load/SLO and operations gates are not closed.
 Closed-PR feedback, reviewer teams, notifications and full GitHub API/Actions
 compatibility also remain separate work.
+
+
+## Exact release-artifact gate
+
+The reader Worker/Git fixture now accepts `--distribution` and checks the source
+package version, canonical manifest path, module size/SHA-256, checksum file and
+actual `nh --version` before issuing fixture credentials. An optional absolute
+directory supports a private candidate without changing public build output.
+The private 0.4.21 artifact passes; the current 0.4.20 public build directory is
+rejected before any fixture credential is issued. These local observations are
+retained separately from the earlier source-candidate receipt.
+
+The build portion of the nine-gate acceptance chain now also runs
+`bun run --filter @swarm/api test:cli-reader-distribution` against its actual
+newly built CLI, alongside deployment, secret and reviewer-request distribution
+checks. Gate composition tests pass. This addition prepares Linux acceptance;
+it does not itself claim that the new frozen run or deployment has completed.

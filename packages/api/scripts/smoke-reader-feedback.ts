@@ -1,15 +1,24 @@
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {mkdir,writeFile} from 'node:fs/promises';
-import {join,resolve} from 'node:path';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {join,resolve,isAbsolute} from 'node:path';
+import {createHash} from 'node:crypto';
 import {teamFixture} from './team/fixture.ts';
 const f=await teamFixture(),exec=promisify(execFile),trunk='reader-feedback',base='/api/trunks/'+trunk,gateway='/api/cli/trunks/'+trunk;
 const environment={...process.env,NANOHUB_API_TOKEN:'',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0'},auth=(c:any)=>({Authorization:'Bearer '+c.token});
 const credentials:{id:string;cookie:any}[]=[];
 let owner:any,key:any,bin=resolve(import.meta.dirname,'../../cli/bin/nh.mjs');
 try{
- if(process.argv.includes('--bundle')){const directory=join(f.dir,"Reader CLI's portable distribution"),built=await exec('bun',[resolve(import.meta.dirname,'../../cli/scripts/build.mjs'),directory],{env:environment});bin=join(directory,JSON.parse(built.stdout).path.replace(/^\/nh\//,''));}
+ if(process.argv.includes('--distribution')){
+  assert.ok(!process.argv.includes('--bundle'),'Choose one distribution mode');
+  const supplied=process.argv[process.argv.indexOf('--distribution')+1],directory=supplied??resolve(import.meta.dirname,'../../../apps/web/public/nh');assert.ok(isAbsolute(directory),'Use an absolute distribution directory');
+  const manifest=JSON.parse(await readFile(join(directory,'latest.json'),'utf8')),sourceVersion=JSON.parse(await readFile(resolve(import.meta.dirname,'../../cli/package.json'),'utf8')).version;
+  assert.equal(manifest.format,1);assert.equal(manifest.version,sourceVersion,'Distribution must match the current source candidate');assert.equal(manifest.path,`/nh/releases/${sourceVersion}/nh.mjs`);
+  bin=join(directory,'releases',sourceVersion,'nh.mjs');const bytes=await readFile(bin);assert.equal(bytes.length,manifest.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.sha256);
+  assert.equal(await readFile(join(directory,'releases',sourceVersion,'SHA256SUMS'),'utf8'),manifest.sha256+'  nh.mjs\n');assert.equal((await exec('bun',[bin,'--version'],{env:environment})).stdout.trim(),'nh '+sourceVersion);
+  console.log('Verified reader CLI artifact:',JSON.stringify(manifest));
+ }else if(process.argv.includes('--bundle')){const directory=join(f.dir,"Reader CLI's portable distribution"),built=await exec('bun',[resolve(import.meta.dirname,'../../cli/scripts/build.mjs'),directory],{env:environment});bin=join(directory,JSON.parse(built.stdout).path.replace(/^\/nh\//,''));}
  owner=await f.login('owner','101');const writer=await f.login('writer','202'),reader=await f.login('reader','303'),other=await f.login('other','404');
  await f.json('POST',base,{mode:'git'},owner);
  for(const[id,cookie,role]of [['writer',writer,'writer'],['reader',reader,'reader'],['other',other,'reader']]as const){const invite=await f.json('POST',base+'/collaborators',{userId:'codegraff:'+id,role},owner);await f.json('POST','/api/invitations/accept',{trunk,token:invite.token},cookie);}
@@ -60,5 +69,5 @@ try{
  await role(null);assert.equal((await direct()).status,400);assert.equal((await f.request('GET',base+'/pulls/1',undefined,reader)).status,404);
  await f.restart();assert.equal((await view()).reviewGate.ready,true);assert.ok((await view()).reviews.some((r:any)=>r.id===receipt.reviewId&&r.feedback.role==='reader'));
  await f.json('POST',base+'/pulls/1/merge',observed,owner);const clone=join(f.dir,'clone');await git('clone',remote,clone);await exec('git',['-C',clone,'fsck','--strict']);assert.equal((await exec('git',['-C',clone,'rev-parse','HEAD'])).stdout.trim(),commit);
- console.log('PASS: '+(process.argv.includes('--bundle')?'portable distribution':'source')+' reader feedback over real Worker/Git; immutable non-authoritative opinions, promotion/demotion, retained writer decisions, shared-head isolation, reader requests/answers, CLI/browser privacy, own-thread resolution, protected writes, atomic rollback, final current role/grant/expiry/archive checks, restart and protected merge/clone/fsck');
+ console.log('PASS: '+(process.argv.includes('--distribution')?'exact release artifact':process.argv.includes('--bundle')?'portable distribution':'source')+' reader feedback over real Worker/Git; immutable non-authoritative opinions, promotion/demotion, retained writer decisions, shared-head isolation, reader requests/answers, CLI/browser privacy, own-thread resolution, protected writes, atomic rollback, final current role/grant/expiry/archive checks, restart and protected merge/clone/fsck');
 }finally{for(const c of credentials)await f.request('DELETE','/api/cli/credentials/'+c.id,undefined,c.cookie).catch(()=>{});if(key&&owner)await f.request('DELETE','/api/tokens/'+key.id,undefined,owner).catch(()=>{});await f.close();}
