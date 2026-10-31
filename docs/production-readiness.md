@@ -26,7 +26,9 @@ routing and the 50000-subrequest limit remain. The
 also corrects the earlier missing `branches:write` general-help explanation.
 An unknown release URL returned Nanohub's HTML not-found page with HTTP 200
 before promotion; its original failed status-only guard and body classification
-are retained. Correct HTTP status for unknown CLI assets remains open hardening.
+are retained. A [source correction](evidence/cli-download-routing-validation.md)
+passes actual-handler and real Miniflare checks; production rollout and hosted
+acceptance of correct missing-download status remain open.
 
 Earlier [0.4.19 release acceptance](evidence/review-requests-release-validation.md)
 adds requested reviewers and secret administration, including the compatible

@@ -89,5 +89,44 @@ test("the actual web router holds before Next, assets, legacy and API delegation
   assert.equal(await (await web.fetch(new Request("https://host.invalid/git/private.git/HEAD"), env, {})).text(), "api");
   assert.equal((await web.fetch(new Request("https://host.invalid/asset-error"), env, {})).status, 503);
   assert.deepEqual(globalThis.__recoveryRoutingCalls, ["api", "assets:/legacy", "legacy", "assets:/missing", "next", "legacy", "assets:/nh/latest.json", "assets:/_next/static/app.css", "api", "assets:/asset-error"]);
+  // Next deliberately answers unknown paths with 200. Neither that renderer
+  // nor a legacy Worker may manufacture a successful CLI download.
+  globalThis.__recoveryRoutingCalls = [];
+  env.LEGACY_PATHS = "/";
+  const missingDownloads = ["/nh/releases/999.0.0/nh.mjs", "/nh/releases/999.0.0/SHA256SUMS", "/nh/install.mjs", "/nh/releases/999.0.0/nh.mjs/", "/nh/releases/999.0.0/nh.mjs?download=1"];
+  for (const path of missingDownloads) {
+    for (const method of ["GET", "HEAD"]) {
+      const response = await web.fetch(new Request("https://host.invalid" + path, { method }), env, {});
+      assert.equal(response.status, 404, method + " " + path);
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+      assert.match(response.headers.get("cache-control"), /private, no-store/);
+      if (method === "HEAD") assert.equal(await response.text(), "");
+    }
+  }
+  assert.deepEqual(globalThis.__recoveryRoutingCalls, missingDownloads.flatMap(path => ["assets:" + new URL(path,"https://host.invalid").pathname, "assets:" + new URL(path,"https://host.invalid").pathname]));
+  globalThis.__recoveryRoutingCalls = [];
+  for (const method of ["POST", "PUT", "DELETE", "OPTIONS"]) {
+    const response = await web.fetch(new Request("https://host.invalid/nh/releases/999.0.0/nh.mjs", { method }), env, {});
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get("allow"), "GET, HEAD");
+  }
+  const unavailable = await web.fetch(new Request("https://host.invalid/nh/latest.json", { method: "HEAD" }), { NANOHUB_RECOVERY_HOLD: "0", LEGACY: env.LEGACY, LEGACY_PATHS: "/" }, {});
+  assert.equal(unavailable.status, 503);
+  assert.equal(unavailable.headers.get("retry-after"), "60");
+  assert.match(unavailable.headers.get("cache-control"), /private, no-store/);
+  assert.equal(await unavailable.text(), "");
+  assert.deepEqual(globalThis.__recoveryRoutingCalls, []);
+  const upstreamError = await web.fetch(new Request("https://host.invalid/nh/releases/999.0.0/SHA256SUMS?service-error=1"), { ...env, ASSETS: { fetch() { return new Response("Asset service unavailable", { status: 503 }); } } }, {});
+  assert.equal(upstreamError.status, 503);
+  assert.equal(await upstreamError.text(), "Asset service unavailable");
+  assert.match(upstreamError.headers.get("cache-control"), /private, no-store/);
+  assert.deepEqual(globalThis.__recoveryRoutingCalls, []);
+  env.LEGACY_PATHS = "";
+  for (const path of ["/nh/project", "/nh/releases", "/nh/project/tree/main", "/cli/authorize"]) {
+    const response = await web.fetch(new Request("https://host.invalid" + path), env, {});
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), "next", path + " must remain an application route");
+  }
+  assert.deepEqual(globalThis.__recoveryRoutingCalls, ["/nh/project", "/nh/releases", "/nh/project/tree/main", "/cli/authorize"].flatMap(path => ["assets:" + path, "next"]));
   delete globalThis.__recoveryRoutingCalls;
 });

@@ -23,11 +23,11 @@ interface Legacy {
   LEGACY_ORIGIN?: string;
 }
 
-function cliDistributionResponse(res: Response) {
+function cliDistributionResponse(request: Request, res: Response) {
   const headers = new Headers(res.headers);
-  headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  headers.set("Cache-Control", res.status >= 400 ? "private, no-store" : "public, max-age=0, must-revalidate");
   headers.set("X-Content-Type-Options", "nosniff");
-  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  return new Response(request.method === "HEAD" ? null : res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
 // Server components call the API in-process through this (src/server/api.ts):
@@ -41,14 +41,24 @@ export default {
     if (hold) return hold;
     const { pathname } = new URL(request.url);
     const cliAuthorization=pathname==="/cli/authorize"||pathname==="/cli/authorize/";
-    const cliDistribution=pathname==="/nh/install.mjs"||pathname==="/nh/latest.json"||/^\/nh\/releases\/\d+\.\d+\.\d+\/(nh\.mjs|SHA256SUMS)$/.test(pathname);
+    const cliDistribution=pathname==="/nh/install.mjs"||pathname==="/nh/latest.json"||/^\/nh\/releases\/\d+\.\d+\.\d+\/(nh\.mjs|SHA256SUMS)\/?$/.test(pathname);
     if (pathname.startsWith("/api/") || pathname.startsWith("/git/")) return api.fetch(request, env, ctx);
     // Worker-first routing reaches us even for static files. OpenNext handles
     // application routes; matching assets must go to the assets binding first.
     const assets = (env as Env & { ASSETS?: Fetcher }).ASSETS;
+    // Download routes belong to static assets. A missing module must never
+    // become successful HTML from Next or legacy. Other /nh/:repo URLs remain
+    // application routes because "nh" is a valid repository owner handle.
+    if (cliDistribution) {
+      if (request.method !== "GET" && request.method !== "HEAD")
+        return cliDistributionResponse(request, new Response("CLI downloads support GET and HEAD only", { status: 405, headers: { Allow: "GET, HEAD" } }));
+      if (!assets)
+        return cliDistributionResponse(request, new Response("CLI downloads are unavailable", { status: 503, headers: { "Retry-After": "60" } }));
+      return cliDistributionResponse(request, await assets.fetch(request));
+    }
     if (assets && (request.method === "GET" || request.method === "HEAD")) {
       const asset = await assets.fetch(request);
-      if (asset.status !== 404) return cliDistribution ? cliDistributionResponse(asset) : asset;
+      if (asset.status !== 404) return asset;
     }
     const { LEGACY: legacy, LEGACY_PATHS: paths = "", LEGACY_ORIGIN: origin } = env as Env & Legacy;
     const toLegacy = () => {
@@ -56,12 +66,11 @@ export default {
       const url = new URL(request.url);
       return legacy!.fetch(new Request(`${origin}${url.pathname}${url.search}`, request));
     };
-    if (!cliAuthorization && !cliDistribution && legacy && paths.split(",").some((p) => p && (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(`${p}/`)))) {
+    if (!cliAuthorization && legacy && paths.split(",").some((p) => p && (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(`${p}/`)))) {
       return toLegacy();
     }
     const res = await (next as NextHandler).fetch(request, env, ctx);
-    if (!cliAuthorization && !cliDistribution && legacy && res.status === 404 && (request.method === "GET" || request.method === "HEAD")) return toLegacy();
-    if(cliDistribution) return cliDistributionResponse(res);
+    if (!cliAuthorization && legacy && res.status === 404 && (request.method === "GET" || request.method === "HEAD")) return toLegacy();
     if (/^\/[^/]+\/[^/]+(?:\/|$)/.test(pathname) || pathname.startsWith("/t/") || pathname === "/dashboard" || pathname === "/") {
       const headers = new Headers(res.headers);
       headers.set("Cache-Control", "private, no-store");
