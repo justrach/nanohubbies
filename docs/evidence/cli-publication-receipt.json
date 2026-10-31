@@ -1,0 +1,141 @@
+{
+  "format": 1,
+  "kind": "immutable-cli-publication-and-workspace-cache",
+  "checkedAt": "2026-10-31T04:22:34.981Z",
+  "implementationCommit": "1fc68c5e9ba70837baecc47b2cd4f717e9ebddf4",
+  "cacheFollowupCommit": "41ffee68f0b2af28f5c4ff11b4fa800b0db3f5b0",
+  "sourceHashes": {
+    "packages/cli/scripts/build.mjs": "8294f2580a27d8e2a119c6dd2bfee8a9e79609f07c86395f68b24d9032189de6",
+    "packages/cli/scripts/publish.mjs": "9fed2cf200782d6fccee92d4987a796d89561e92f4dbbbc6c97ba615dbf4bf1b",
+    "packages/cli/release-lock.json": "e6d03c00d54e849d32769ad9413c1c394b8f397db93551dc8a0d0833e522486c",
+    "packages/cli/test/publish.test.mjs": "761ba8a3a410bc7dc0c0021ab6296459566f8b5b01ca9a0332b27d5260b25065",
+    "packages/cli/test/build-cache.test.mjs": "ab5aadf80876903c8bb50a07404025b165ed2ddc2b27107bd7daa0b9eee04a27",
+    "turbo.json": "c9cb2aab4fd451c36b52131cd40672cedc837d4b90595ca3906c491b683816de"
+  },
+  "publishedBaseline": {
+    "checkedAt": "2026-10-31T04:04:33.495Z",
+    "origin": "https://nanohub.sh",
+    "modules": 19,
+    "checksums": 19,
+    "allMatchedLocal": true,
+    "catalogSha256": "e6d03c00d54e849d32769ad9413c1c394b8f397db93551dc8a0d0833e522486c"
+  },
+  "local": {
+    "cliCases": 95,
+    "cliFiles": 19,
+    "publicationCases": 14,
+    "cacheIntegrationCases": 2,
+    "uncachedWorkspaceBuild": true,
+    "warmWebCachedWithCliPublicationExecuted": true,
+    "pinnedTsrsCheckPassed": true,
+    "pinnedTypedWorkspaceTasksCached": 3,
+    "operatorBindingsChecked": 10,
+    "operatorFullJsTypeCheck": false
+  },
+  "linux": {
+    "source": "1fc68c5e9ba70837baecc47b2cd4f717e9ebddf4",
+    "sandboxId": "cnd_97601f05087fdc40996218f9cebc544dde15e227",
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/nanohub-ci@sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "cliCases": 93,
+    "apiUnitCases": 424,
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "independentCleanup": {
+      "checkedAt": "2026-10-31T04:22:30.448Z",
+      "sandboxId": "cnd_97601f05087fdc40996218f9cebc544dde15e227",
+      "providerState": "destroyed",
+      "deletionConfirmed": true,
+      "independentRead": true
+    }
+  },
+  "linuxCacheAddendum": {
+    "base": "1fc68c5e9ba70837baecc47b2cd4f717e9ebddf4",
+    "source": "41ffee68f0b2af28f5c4ff11b4fa800b0db3f5b0",
+    "sandboxId": "cnd_97601f05087fdc40996218f9cebc544dde15e227",
+    "overlayHashes": {
+      "turbo.json": "c9cb2aab4fd451c36b52131cd40672cedc837d4b90595ca3906c491b683816de",
+      "packages/cli/test/build-cache.test.mjs": "ab5aadf80876903c8bb50a07404025b165ed2ddc2b27107bd7daa0b9eee04a27"
+    },
+    "cliCases": 95,
+    "cliFiles": 19,
+    "network": "none",
+    "sourceReadOnly": true,
+    "containerRemoved": true,
+    "additionalVmAllocated": false,
+    "allNineGatesRerunAtFollowup": false
+  },
+  "publicDistribution": {
+    "origin": "https://nanohub.sh",
+    "manifest": {
+      "format": 1,
+      "version": "0.4.19",
+      "path": "/nh/releases/0.4.19/nh.mjs",
+      "bytes": 97845,
+      "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e"
+    },
+    "files": [
+      {
+        "path": "/nh/releases/0.4.19/nh.mjs",
+        "bytes": 97845,
+        "sha256": "e86b40b33b6b2a4483073083054bd7d4605e835672c0e8bc32c90ddba2f0195e",
+        "matchesLocal": true
+      },
+      {
+        "path": "/nh/releases/0.4.19/SHA256SUMS",
+        "bytes": 73,
+        "sha256": "96cb9ba6723ef9fbb0e82965cf17e6991dbc2464cdfedf7a36e8195543a44747",
+        "matchesLocal": true
+      },
+      {
+        "path": "/nh/install.mjs",
+        "bytes": 4680,
+        "sha256": "838ce409d0ece1c1bef6244ca707401abb7b15c711a44bdf644172963254576c",
+        "matchesLocal": true
+      }
+    ],
+    "installerChanged": false,
+    "moduleChanged": false,
+    "productionDeploymentPerformed": false,
+    "productionRepositoryCredentialsCreated": 0
+  },
+  "sourcePublication": {
+    "head": "41ffee68f0b2af28f5c4ff11b4fa800b0db3f5b0",
+    "featureBranch": "codex/standalone-git-host",
+    "remoteReadMatched": true,
+    "main": "3c7675e52ca1be5521a2a51da0d6b1857340340c",
+    "mainChanged": false,
+    "implementationGitleaksFindings": 0
+  },
+  "privateEvidenceHashes": {
+    "published-baseline.json": "5da401c37debd526e319f5d4ed8f73dabdeb4b4529d184753fba86d2d273c161",
+    "local-cache-validation.json": "474ca64ace0004f7219bb569b0d49de9b7653960f13c6c6b8a3d838f065aa9f3",
+    "linux/toolchain-full.log": "b49496233bd15d1a00e9db9ed37bce981468de548216678b06c64dc1a09a0e6d",
+    "linux/receipt.json": "9266baf97d9527f3ad64cb02c24a60baeddd25537b1dae782dd71134985cc40b",
+    "linux-cache-addendum.log": "74c7f0443c31995279cd241d12812a32fb09f96704db9d1e8ed0b11eddbd1e10",
+    "linux-cache-addendum-operation.json": "2f0ea1b9d109b69397416ad28909784bcc9e4772e10b97e699696f395e3069ee",
+    "independent-linux-cleanup.json": "82337a70917a472552d0d969169205876bf24db2d393c5051dc269c07494e577",
+    "gitleaks-source-final.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "gitleaks-source-final.log": "c1736b04846ecd09c5cb508bc55d662a4589475ba5d4d6e4929415d2166224c9"
+  },
+  "limits": {
+    "catalogIsSignature": false,
+    "catalogIsProviderIamBoundary": false,
+    "installerAndLatestFormMultiFileTransaction": false,
+    "oldVersionsReconstructedByFreshBuild": false,
+    "automaticStaleLockRemoval": false,
+    "hostedNanohubActionsActivated": false,
+    "applicationStagingOrCutoverProven": false,
+    "productionTrafficReadinessProven": false
+  }
+}

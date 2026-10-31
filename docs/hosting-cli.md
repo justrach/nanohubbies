@@ -32,7 +32,8 @@ The new `/nh/` distribution does not replace the older `/install.sh`, `/cli` or
 
 [Release builds](cli-release-builds.md) enforce the committed public hash catalog,
 immutable version files and serialized publication. Different bytes require a
-new version; interrupted locks require explicit reconciliation.
+new version; interrupted locks require explicit reconciliation. The root build
+also runs publication before cached web output; see [macOS/Linux acceptance](evidence/cli-publication-validation.md).
 
 Contributors can also run the CLI from this checkout:
 

@@ -6,6 +6,12 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
+The [CLI publication guard](evidence/cli-publication-validation.md) now enforces
+recorded release bytes in clean builds and executes before cached web output is
+reused. It passes nine frozen Linux gates plus 95 CLI cases on macOS and in a
+targeted Linux cache-graph follow-up. Published 0.4.19 and installer bytes remain
+unchanged; this is source/build acceptance with no new application deployment.
+
 Published CLI **0.4.19** adds [requested reviewers](review-requests.md) and
 [secret administration](cli-secrets.md). The [release acceptance](evidence/review-requests-release-validation.md)
 passes all nine frozen Linux gates, disposable normal/held delivery, compatible

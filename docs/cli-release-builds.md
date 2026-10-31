@@ -67,3 +67,4 @@ Run `bun test packages/cli/test/build.test.mjs packages/cli/test/build-cache.tes
 packages/cli/test/publish.test.mjs packages/cli/test/install.test.mjs` for focused publication and installation
 checks, or `bun run test:cli` for the complete CLI suite. The full frozen Linux
 gate additionally exercises this builder in a fresh credential-free checkout.
+See the [macOS/Linux acceptance and unchanged public distribution](evidence/cli-publication-validation.md).
