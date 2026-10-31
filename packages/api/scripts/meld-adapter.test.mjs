@@ -14,7 +14,7 @@ function job({at=timestamp,deploy=false,ref=deploy?'staging':'nanohub-ci/event-1
 async function fixture(work){
  const dir=await mkdtemp(join(tmpdir(),'nh-meld-attempt-'));await mkdir(join(dir,'source'));await mkdir(join(dir,'artifacts'));
  const acceptance=join(dir,'acceptance.mjs');await writeFile(acceptance,"export const accept=async()=>[{url:'https://evidence.invalid/unit-fixture',realService:true}];");
- const context={source:join(dir,'source'),artifacts:join(dir,'artifacts'),run:{id:'event-1',attempt:1,head,base,deploymentApprovedBy:null},stagingOrigin:'https://staging.meld.space',versionPrefixLength:7};
+ const context={source:join(dir,'source'),artifacts:join(dir,'artifacts'),run:{id:'event-1',attempt:1,head,base:head,deploymentApprovedBy:null},stagingOrigin:'https://staging.meld.space',versionPrefixLength:7};
  const state={calls:[],posts:0,pushes:0,jobs:[],active:null,queued:[],tick:timestamp,clock:0,mirror:null};
  const git=async(_,command,...args)=>{state.calls.push([command,...args]);if(command==='rev-parse')return head;if(command==='ls-remote')return state.mirror?`${state.mirror}\trefs/heads/nanohub-ci/event-1/1`:'';if(command==='push'){state.pushes++;state.mirror=args.at(-1).startsWith(':')?null:head;}return '';};
  const view=()=>({active:state.active,queued:state.queued,runs:state.jobs});
@@ -35,7 +35,7 @@ test('fresh attempt dispatch preserves staging history, pins the SHA and records
  const path=join(f.context.artifacts,'meld-dispatch.json'),receipt=JSON.parse(await readFile(path,'utf8'));assert.equal(receipt.state,'acknowledged');assert.equal(receipt.binding.attempt,1);assert.equal((await stat(path)).mode&0o777,0o600);assert.ok(!(await readFile(path,'utf8')).includes(env.PIPELINE_ADMIN_SECRET));
  assert.equal((await adapter.wait(result.runId,head,true)).steps.length,7);
 }));
-test('unapproved branch work is checks-only and uses a ref unique to the Nanohub attempt',async()=>fixture(async f=>{
+test('unapproved accepted-base work is checks-only and uses a ref unique to the Nanohub attempt',async()=>fixture(async f=>{
  const result=await f.make().dispatch(f.context);assert.ok(f.state.calls.some(c=>c[0]==='push'&&c[2]===`${head}:refs/heads/nanohub-ci/event-1/1`));assert.equal(f.state.jobs[0].deploy,false);assert.equal(result.runId,f.state.jobs[0].id);
 }));
 test('an older pass is never reused for a new attempt; acknowledged same-attempt restart is idempotent',async()=>fixture(async f=>{
@@ -60,7 +60,7 @@ test('lost push or POST acknowledgement leaves intent closed, without automatic 
 });
 test('receipt binding rejects changed base, attempt or authorization without another write',async()=>fixture(async f=>{
  await f.make().dispatch(f.context);
- for(const update of [{base:'c'.repeat(40)},{attempt:2},{id:'other-event'}])await assert.rejects(f.make().dispatch({...f.context,run:{...f.context.run,...update}}),/another attempt/);
+ for(const update of [{base:'c'.repeat(40)},{attempt:2},{id:'other-event'}])await assert.rejects(f.make().dispatch({...f.context,run:{...f.context.run,...update}}),/another attempt|accepted workflow base/);
  await assert.rejects(f.make().dispatch({...f.context,deploymentAuthorization:{id:'new-approval'}}),/another attempt/);assert.equal(f.state.posts,1);assert.equal(f.state.pushes,1);
 }));
 test('malformed receipts and candidate-local artifact paths fail before provider dispatch',async()=>fixture(async f=>{
@@ -169,6 +169,7 @@ test('acceptance cannot switch to a different trusted module after staging dispa
 test('checks execute retires its mirror before returning success and can reopen the same receipt',async()=>fixture(async f=>{
  const result=await execute(f.context,f.options);assert.equal(result.results[0].state,'success');assert.equal(f.state.posts,1);assert.equal(f.state.pushes,2);assert.equal(f.state.mirror,null);
  const saved=JSON.parse(await readFile(join(f.context.artifacts,'meld-pipeline.json'),'utf8'));assert.equal(saved.mirrorCleanup.removed,true);assert.equal(saved.pipelineEvidence.steps.length,7);
+ assert.equal(saved.executionTrust,'accepted-base-only');
  assert.ok(f.state.calls.some(row=>row[0]==='push'&&row.includes('--force-with-lease=refs/heads/nanohub-ci/event-1/1:'+head)&&row.at(-1)===':refs/heads/nanohub-ci/event-1/1'));
  assert.equal((await execute(f.context,f.options)).results[0].state,'success');assert.equal(f.state.posts,1);assert.equal(f.state.pushes,2);
 }));
@@ -181,3 +182,26 @@ test('retirement rejects changed context and never deletes shared staging',async
  await fixture(async f=>{const adapter=f.make(),{runId}=await adapter.dispatch(f.context);await assert.rejects(adapter.retire(runId,{...f.context,run:{...f.context.run,base:'c'.repeat(40)}}),/context changed/);assert.equal(f.state.pushes,1);});
  await fixture(async f=>{f.context.run.deploymentApprovedBy='owner';const adapter=f.make(),{runId}=await adapter.dispatch(f.context);await assert.rejects(adapter.retire(runId,f.context),/attempt-owned checks mirror/);assert.equal(f.state.pushes,1);assert.equal(f.state.calls.some(row=>row.at(-1)?.startsWith(':')),false);});
 });
+test('feature candidates cannot use the legacy bridge even with deployment approval or a passing provider job',async()=>{
+ for(const approved of [false,true])await fixture(async f=>{
+  f.context.run.base=base;f.context.run.deploymentApprovedBy=approved?'owner':null;
+  if(approved)f.context.deploymentAuthorization={id:'authorization-1'};
+  f.state.jobs=[job({deploy:approved})];
+  // No acceptance import, trusted Git command, provider request or intent is
+  // allowed. Failing these dependencies would expose an incorrect ordering.
+  const fail=()=>{assert.fail('Rejected feature candidate reached an external dependency');};
+  await writeFile(f.acceptance,"throw Error('Rejected feature candidate imported acceptance');");
+  await assert.rejects(execute(f.context,{...f.options,git:fail,fetcher:fail}),/accepted workflow base.*native isolated Codegraff/);
+  assert.equal(f.state.posts,0);assert.equal(f.state.pushes,0);
+  await assert.rejects(stat(join(f.context.artifacts,'meld-dispatch.json')),{code:'ENOENT'});
+  await assert.rejects(stat(join(f.context.artifacts,'meld-pipeline.json')),{code:'ENOENT'});
+ });
+});
+test('an acknowledged older feature dispatch cannot bypass accepted-base enforcement on restart',async()=>fixture(async f=>{
+ const adapter=f.make(),{runId}=await adapter.dispatch(f.context);
+ const path=join(f.context.artifacts,'meld-dispatch.json'),receipt=JSON.parse(await readFile(path,'utf8'));
+ receipt.binding.base=base;await writeFile(path,JSON.stringify(receipt));f.context.run.base=base;
+ const fail=()=>{assert.fail('Unsafe restart reached an external dependency');};
+ await assert.rejects(f.make({git:fail,fetcher:fail}).dispatch(f.context),/accepted workflow base/);
+ assert.equal(f.state.posts,1);assert.equal(f.state.pushes,1);assert.equal(receipt.jobId,runId);
+}));

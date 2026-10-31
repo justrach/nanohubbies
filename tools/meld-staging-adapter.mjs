@@ -50,6 +50,12 @@ export function createMeldAdapter({env=process.env,fetcher=fetch,git:gitOverride
     async dispatch(context) {
       const sha=context.run.head;
       if(!/^[a-f0-9]{40}$/.test(sha)||!/^[a-f0-9]{40}$/.test(context.run.base??'')||!/^[a-z0-9][a-z0-9-]{0,79}$/.test(context.run.id??'')||!Number.isSafeInteger(context.run.attempt)||context.run.attempt<1||!isAbsolute(context.source??'')||!isAbsolute(context.artifacts??''))throw Error('Invalid Nanohub attempt or private dispatch artifacts');
+      // This legacy controller executes candidate commands alongside its result
+      // writer. A matching entrypoint file cannot establish result isolation.
+      // Only the server-selected accepted base is trusted on this transport;
+      // unaccepted candidates must use the native isolated Codegraff backend.
+      // Check before Git, acceptance imports, controller reads or receipt replay.
+      if(sha!==context.run.base)throw Error('The legacy Meld bridge only runs the accepted workflow base; use the native isolated Codegraff backend for feature-branch candidates');
       if(await git(context.source,'rev-parse','HEAD')!==sha)throw Error('Nanohub checkout changed before staging');
       const deploy=!!context.run.deploymentApprovedBy;
       if(deploy)await prepareAcceptance(context);
@@ -137,7 +143,7 @@ export async function execute(context,options) {
     // Cleanup is asynchronous; observe again before publishing native success.
     pipelineEvidence=await adapter.wait(jobId,context.run.head,false);
   }
-  const receipt={candidate:context.run.head,base:context.run.base,nanohubRun:context.run.id,nanohubAttempt:context.run.attempt,source:'Nanohub authenticated private clone',transportMirror:'yourmeld/meld2',runId:jobId,pipelineEvidence,mirrorCleanup,staging:staged,limits:['GitHub remains the current CI transport mirror','Staging requires explicit owner approval of this head and base','Real-service acceptance is supplied by the trusted acceptance module','Independent external reruns after the final observation require callback integration; this adapter is not an unattended controller']};
+  const receipt={candidate:context.run.head,base:context.run.base,nanohubRun:context.run.id,nanohubAttempt:context.run.attempt,source:'Nanohub authenticated private clone',transportMirror:'yourmeld/meld2',executionTrust:'accepted-base-only',runId:jobId,pipelineEvidence,mirrorCleanup,staging:staged,limits:['GitHub remains the current CI transport mirror','Legacy execution requires candidate equal to the accepted workflow base; use native isolated Codegraff for feature branches','Staging requires explicit owner approval of this head and base','Real-service acceptance is supplied by the trusted acceptance module','Independent external reruns after the final observation require callback integration; this adapter is not an unattended controller']};
   await writeFile(join(context.artifacts,'meld-pipeline.json'),JSON.stringify(receipt,null,2));
   const buildLog=`https://meld-staging-ci.phedayatnia.workers.dev/runs/${jobId}/logs/build`;
   const results=[{name:'codegraff-ci',state:'success',command:'Meld Codegraff pipeline: '+pipelineEvidence.steps.map(step=>step.name).join('; '),log:buildLog,artifacts:[buildLog]}];

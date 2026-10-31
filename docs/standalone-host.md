@@ -147,9 +147,11 @@ bun --env-file=/absolute/private/staging-pipeline.env tools/ci-runner.mjs /etc/n
 
 Keep the existing `MELD_STAGING_CI_URL` / `PIPELINE_ADMIN_SECRET`, GitHub authentication and the new workspace-scoped `NANOHUB_CI_TOKEN` in the trusted control process/secret store. The adapter never reads secrets out of GitHub or copies deployment/runtime credentials into Nanohub. Its controller origin is pinned to `meld-staging-ci.phedayatnia.workers.dev`.
 
-The control process clones **Nanohub** with the expiring read-only run credential, verifies the candidate and base ancestry, and pins its full SHA. The current Codegraff controller only accepts GitHub source, so the bridge publishes this identical commit to the existing private `yourmeld/meld2` repository as a CI transport mirror. GitHub does not choose the authoritative candidate; every returned controller SHA must match the pinned Nanohub SHA. This is a compatibility bridge and still depends on GitHub for CI transport. It does not remove the original repository or claim a GitHub-free CI execution path.
+The control process clones **Nanohub** with the expiring read-only run credential, verifies the candidate and base ancestry, and pins its full SHA. The legacy Meld bridge only permits `run.head == run.base`, the accepted workflow base. Its existing controller runs candidate commands alongside the result writer, so unaccepted feature candidates must use the native isolated Codegraff backend. Deployment approval and an older acknowledged receipt do not bypass this restriction. See the [execution-boundary evidence](evidence/meld-bridge-lifecycle-validation.md#execution-trust-boundary).
 
-Ordinary branch events push a `nanohub-ci/<run-id>/<attempt>` mirror and request **checks only** through `/check`. An ordinary contributor or agent cannot turn that event into a staging deployment. The existing staging controller releases deployment authority for trusted staging work, so a human owner must approve the exact Nanohub head/base before that path can be used:
+The current Meld controller only accepts GitHub source, so the bridge publishes this identical accepted commit to the existing private `yourmeld/meld2` repository as a CI transport mirror. GitHub does not choose the authoritative candidate; every returned controller SHA must match the pinned Nanohub SHA. This is a compatibility bridge and still depends on GitHub for CI transport. It does not remove the original repository or claim a GitHub-free CI execution path.
+
+Accepted-base events without deployment approval push a `nanohub-ci/<run-id>/<attempt>` mirror and request **checks only** through `/check`. An ordinary contributor or agent cannot turn that event into a staging deployment. The existing staging controller releases deployment authority for trusted staging work, so a human owner must approve the exact Nanohub head/base before that path can be used. Approval does not permit an unaccepted candidate on the legacy bridge:
 
 - Review the candidate on the workspace's **Actions** list and choose **Approve staging**, or use `POST /api/trunks/:trunk/ci/approve` with `{ "runId": "..." }` and a same-origin owner session.
 - Approval requeues that candidate, invalidates prior leases/results, and is audited. A changed head/base requires a fresh approval. Agents and ordinary team members cannot approve it.
@@ -174,7 +176,7 @@ the final observation still require callback integration, and an external
 deployment controller must revalidate current Nanohub authorization at its
 deployment boundary before unattended staging activation.
 
-This supports the existing pre-PR deployment gate: branch checks and owner-approved staging can complete before a PR is created. `beforeOpen` still requires both `codegraff-ci` and `staging`. When staging diverges, integrate it into a new reviewed candidate first, push that candidate to Nanohub and rerun its checks/approval. The supported merge strategy deploys the **same full SHA as the eventual PR head**. A separate staging integration SHA is not silently substituted for a PR head; callers must use the reviewed integration candidate as the PR head in this mode. Record any earlier feature SHA and its additional staging changes in the handoff.
+The original pre-PR deployment requirement remains: `beforeOpen` requires both `codegraff-ci` and `staging`, using the **same full SHA as the eventual PR head**. A separate staging integration SHA is not silently substituted for a PR head. The legacy bridge cannot satisfy this gate for unaccepted feature candidates until the execution/result boundary is isolated. Keep the requirement in place and implement the isolated staging path before application cutover; accepted-main checks do not replace pre-PR application acceptance. When staging diverges, a reviewed integration candidate must retain its history, with any earlier feature SHA and additional staging changes recorded in the handoff.
 
 The wrapper waits for the actual exact-candidate deployment job, then checks staging `/api/version`. Meld currently exposes a seven-character `buildId`; compare that exact configured prefix, record `observedBuildId`, and keep the full tested candidate SHA separately. It checks the version again after collecting evidence to detect shared staging movement. Other adapters default to full 40-character version IDs.
 
@@ -184,10 +186,11 @@ For other runners, the optional Docker path in `tools/ci-runner.mjs` runs config
 
 Leases last two hours without heartbeat; longer runs expire and must be reclaimed.
 Existing Meld controller credentials are configured and authenticated access is
-verified. The [live bridge validation](evidence/meld-bridge-freshness-validation.md)
-separates an externally passing job from its failed native callback and a fresh
-checks-only attempt. Hosted runner/service registration, callback integration and
-the real staging acceptance module remain required. The changes here do not
+verified. The [earlier live bridge validation](evidence/meld-bridge-freshness-validation.md)
+retains failed callback/harness outcomes; the [fresh lifecycle run](evidence/meld-bridge-lifecycle-validation.md)
+passes accepted-main checks, callback, retry invalidation and cleanup. Hosted
+runner/service registration, callback integration, isolated feature-candidate
+execution and the real staging acceptance module remain required. The changes here do not
 replace runtime secrets/bindings, apply database migrations, deploy production or
 change Meld's primary remote.
 

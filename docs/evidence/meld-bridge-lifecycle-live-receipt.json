@@ -1,0 +1,127 @@
+{
+  "format": 1,
+  "scope": "local Nanohub fixture with real existing Meld checks-only pipeline; accepted main equals workflow base",
+  "startedAt": "2026-10-31T08:32:49.395Z",
+  "finishedAt": "2026-10-31T08:51:42.289Z",
+  "checksOnly": true,
+  "hostedNanohub": false,
+  "productionCredentialsIssued": 0,
+  "stagingDeployed": false,
+  "nanohubSource": "f839cc8ca4ea9a3eb072d21ede5618f46c1843ed",
+  "candidate": "a5a6e2b3da5d7917a4d197bbb72dc3807d5d7fed",
+  "sourceObjects": 16055,
+  "sourceRefs": [
+    "refs/heads/main"
+  ],
+  "cli": {
+    "format": 1,
+    "version": "0.4.21",
+    "path": "/nh/releases/0.4.21/nh.mjs",
+    "bytes": 101486,
+    "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+  },
+  "import": {
+    "verified": true,
+    "objects": 16055,
+    "uploadedObjects": 16055,
+    "refs": 1,
+    "fsck": "strict",
+    "resumed": false,
+    "scope": "committed branches and tags only; external LFS and submodules rejected"
+  },
+  "importCredentialRevokedBeforeCi": true,
+  "nativeRunId": "24e547ac-ea73-48b0-9d65-4c519e504abc",
+  "externalRunId": "1793435792633-9ec0c387-5ba4-4de0-8b0e-ff5a40b5d7ff",
+  "suite": [
+    {
+      "name": "locked install",
+      "exitCode": 0,
+      "milliseconds": 5066
+    },
+    {
+      "name": "pipeline regression checks",
+      "exitCode": 0,
+      "milliseconds": 382
+    },
+    {
+      "name": "typechecks",
+      "exitCode": 0,
+      "milliseconds": 1068
+    },
+    {
+      "name": "unit and package checks",
+      "exitCode": 0,
+      "milliseconds": 125602
+    },
+    {
+      "name": "browser installation",
+      "exitCode": 0,
+      "milliseconds": 35169
+    },
+    {
+      "name": "browser checks",
+      "exitCode": 0,
+      "milliseconds": 607660
+    },
+    {
+      "name": "production bundle",
+      "exitCode": 0,
+      "milliseconds": 39732
+    }
+  ],
+  "mirrorCleanup": {
+    "ref": "nanohub-ci/24e547ac-ea73-48b0-9d65-4c519e504abc/1",
+    "removed": true,
+    "reconciled": false
+  },
+  "buildLog": {
+    "bytes": 207340,
+    "sha256": "0467d6491ec4a81759a094a8a56d5686bfe6d8671f4b8db3d5a2fa6f4850ba68"
+  },
+  "newerNativeRetryClearsOlderPass": true,
+  "corePassed": true,
+  "ownedMirrorRefRemoved": true,
+  "providerCleanup": {
+    "sandboxId": "cnd_8011bffd069320ebeeed2cf2769b31b044930a01",
+    "state": "destroyed",
+    "independentRead": true,
+    "existingMeldAccount": true
+  },
+  "nativeRunnerRevoked": true,
+  "revokedRunnerStatus": 403,
+  "revokedRunnerRejected": true,
+  "localFixtureDestroyed": true,
+  "mainStagingRefsUnchanged": true,
+  "stagingVersionUnchanged": true,
+  "acceptancePassed": true,
+  "cleanupErrors": [],
+  "workflowBase": "a5a6e2b3da5d7917a4d197bbb72dc3807d5d7fed",
+  "testSummaries": {
+    "unitAndPackageGroups": [
+      {
+        "filesPassed": 25,
+        "testsPassed": 407
+      },
+      {
+        "filesPassed": 182,
+        "filesSkipped": 9,
+        "testsPassed": 1793,
+        "testsSkipped": 201
+      },
+      {
+        "filesPassed": 148,
+        "testsPassed": 1344
+      }
+    ],
+    "browser": {
+      "passed": 444,
+      "skipped": 68
+    }
+  },
+  "limits": [
+    "Current-main candidate-only import; does not replace prior full-graph migration acceptance",
+    "Legacy controller does not isolate candidate commands from its result writer; unaccepted feature-branch trust is not established",
+    "No hosted Nanohub callbacks, staging deployment, production deployment, application cutover or arbitrary workload isolation established",
+    "Existing Meld account used for this isolated run; intended hosted Nanohub key remains missing sandbox scope"
+  ]
+}

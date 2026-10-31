@@ -174,6 +174,18 @@ removed, fixture unavailable and shared refs/version unchanged. The full
 harness is not marked passed. This does not close hosted callbacks, staging or
 cutover.
 
+A fresh [bridge lifecycle run](evidence/meld-bridge-lifecycle-validation.md)
+subsequently passes all seven real Meld stages from its current accepted main,
+native callback and retry invalidation, credential revocation, mirror deletion,
+independent VM destruction and unchanged shared refs/staging version. It uses
+an isolated local Nanohub fixture and the existing Meld account; hosted Nanohub
+activation remains open. Inspection also finds candidate commands sharing the
+legacy controller's result environment. The bridge now refuses unaccepted
+feature candidates (`head != base`), including approved deployments and receipt
+replay. Native isolated Codegraff execution remains the path for feature-branch
+CI; intended-application isolated execution, staging and cutover acceptance are
+still required. The prior failed harness records remain unchanged.
+
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)
