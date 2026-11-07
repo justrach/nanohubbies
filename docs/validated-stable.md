@@ -95,14 +95,62 @@ What it is not:
 
 ## Limits of this first slice
 
-- Team workspaces answer 409 to claims: the runner has no member credential to
+- Team (private) workspaces answer 409 to claims. Several people and their
+  agents on a public workspace work as above: the runner has no member credential to
   clone them.
 - One check command per workspace; no matrix, no per-path checks, no
   dependency cache.
 - Results are kept for the newest 200 claims. Nothing in the dashboard shows
   them yet; read `GET …/validation`.
-- Claim expiry is enforced in code but not exercised by the smoke test (it
-  waits 15 minutes).
+- `VALIDATION_CLAIM_MS` (Worker var, at least 1000) shortens claim expiry; the
+  simulation sets it to 1.5 s.
+
+## Several people and agents at once
+
+A failure belongs to a **range**, not an author: every claim and result
+carries `from` (the version after stable) and `version`. With many people
+landing, the version that fails usually holds several people's changes, and
+the last author is often not the one who broke it.
+
+`npm run sim:validation -- <agentsPerPerson> <rounds>` simulates three
+signed-in people, each with registered agents and scoped credentials (HTTP
+clients, not LLMs), on one public workspace, with three runners checking
+concurrently in bubblewrap. Agents read a shared function, half of them
+rewrite it, and every submit is sent twice to exercise receipts. Then two
+people land individually harmless, non-overlapping changes that break the
+check together; others keep landing; a third person repairs it. It asserts:
+every landed change is on `main` with its `Agent:` and `On-behalf-of:`
+trailers; stable never moves backwards and is an exact tree with an advancing
+pass; stable does not move while every newer version fails; the failure range
+covers both authors; a repair moves stable again; an abandoned claim expires
+and its late report is refused; `git push` to `stable` and `stable/x` is
+refused with a real agent credential.
+
+Measured on one machine (local Miniflare, `node test.js` as the check):
+
+| agents | rounds | landed | conflicts re-planned | most attempts for one change | runner verdicts | versions skipped | failure range | failure seen after landing | repair to stable |
+|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| 6 | 3 | 25 | 31 | 4 | 13 | 13 | v15..v21 | 202 ms | 227 ms |
+| 24 | 3 | 79 | 427 | 20 | 36 | 44 | v70..v75 | 305 ms | 141 ms |
+| 48 | 2 | 103 | 1042 | 41 | 48 | 56 | v95..v99 | 202 ms | 225 ms |
+
+With 48 agents the default cap of 30 attempts was too low: an agent rewriting
+the shared function needed up to 41 (`SIM_MAX_ATTEMPTS=300`). That is landing
+contention on one hot function, which validation does not change; every change
+did land.
+
+What this says about policy:
+
+- **Check the newest version, coalesced, not every change.** Runners skipped
+  about half the versions and stable still followed `main` within a check's
+  time. Checking every change would multiply runner work by the landing rate.
+- **Report failures as a range.** Two authors' compatible-looking changes broke
+  together in every run; neither was last alone in every run. Bisecting the
+  range is the natural next step when a range is long, run on demand.
+- **Do not serialize landing on checks.** `main` kept landing while stable held
+  at the last good version, and the repair needed no special path.
+- **Several runners are safe.** No version was checked twice and stable never
+  moved backwards, with three runners racing.
 
 ## Tests
 

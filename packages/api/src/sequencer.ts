@@ -109,7 +109,7 @@ export class Sequencer extends DurableObject<Env> {
 
   /** Validated stable (./sequencer/validation): status, the owner's check
    *  command, and the isolated runner's claims and reports. */
-  private validation() { return new Validation(this.sql); }
+  private validation() { return new Validation(this.sql, Number((this.env as Env & { VALIDATION_CLAIM_MS?: string }).VALIDATION_CLAIM_MS) || undefined); }
   validationStatus() { return this.validation().status(); }
   validationConfigure(command: string | null) {
     if (!this.meta<Head>("published")) throw new Error("no such trunk");

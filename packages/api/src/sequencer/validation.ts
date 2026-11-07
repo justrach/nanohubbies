@@ -15,8 +15,8 @@ const MAX_COMMAND = 2000;
 const MAX_LOG = 8000;
 
 export interface ValidationConfig { command: string; updatedAt: number }
-export interface Claim { id: string; version: number; commit: string; tree: string; command: string; runner: string; issuedAt: number; expiresAt: number }
-export interface ValidationResult { claim: string; version: number; commit: string; passed: boolean; exitCode: number | null; log: string; runner: string; command: string; at: number; advanced: boolean }
+export interface Claim { id: string; version: number; from: number; commit: string; tree: string; command: string; runner: string; issuedAt: number; expiresAt: number }
+export interface ValidationResult { claim: string; version: number; from: number; commit: string; passed: boolean; exitCode: number | null; log: string; runner: string; command: string; at: number; advanced: boolean }
 export interface ValidationStatus { config: ValidationConfig | null; stable: Head | null; claims: Claim[]; results: ValidationResult[] }
 export interface Report { claim: string; version: number; commit: string; tree: string; passed: boolean; exitCode?: number | null; log?: string }
 
@@ -32,7 +32,8 @@ export function validationCommand(value: unknown): string {
 }
 
 export class Validation {
-  constructor(private sql: SqlStorage) {
+  constructor(private sql: SqlStorage, private claimMs = CLAIM_MS) {
+    this.claimMs = Math.max(1000, claimMs);
     sql.exec(`CREATE TABLE IF NOT EXISTS validation_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS validation_claims (id TEXT PRIMARY KEY, version INTEGER NOT NULL, data TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS validation_results (claim TEXT PRIMARY KEY, version INTEGER NOT NULL, data TEXT NOT NULL);`);
@@ -79,7 +80,9 @@ export class Validation {
       .map((r) => JSON.parse(r.data) as Claim)
       .filter((c) => c.expiresAt > now && c.command === config.command && !this.resultFor(c.id));
     if (open.length) return null;
-    const claim: Claim = { id: crypto.randomUUID(), version: published.version, commit: published.commit, tree: published.tree, command: config.command, runner: runner.slice(0, 80), issuedAt: now, expiresAt: now + CLAIM_MS };
+    // The candidate is everything landed since stable: a failure belongs to
+    // that range, not to the last change's author.
+    const claim: Claim = { id: crypto.randomUUID(), version: published.version, from: (stable?.version ?? 0) + 1, commit: published.commit, tree: published.tree, command: config.command, runner: runner.slice(0, 80), issuedAt: now, expiresAt: now + this.claimMs };
     this.sql.exec("INSERT INTO validation_claims VALUES (?, ?, ?)", claim.id, claim.version, JSON.stringify(claim));
     // Keep the table bounded: settled or expired claims older than the newest 200.
     this.sql.exec("DELETE FROM validation_claims WHERE id NOT IN (SELECT id FROM validation_claims ORDER BY version DESC LIMIT 200)");
@@ -117,7 +120,7 @@ export class Validation {
     const current = !!config && config.command === claim.command;
     const stable = this.stable();
     const advanced = r.passed && current && (!stable || claim.version > stable.version);
-    const result: ValidationResult = { claim: claim.id, version: claim.version, commit: claim.commit, passed: r.passed, exitCode, log: String(r.log ?? "").slice(-MAX_LOG), runner: claim.runner, command: claim.command, at: now, advanced };
+    const result: ValidationResult = { claim: claim.id, version: claim.version, from: claim.from ?? 1, commit: claim.commit, passed: r.passed, exitCode, log: String(r.log ?? "").slice(-MAX_LOG), runner: claim.runner, command: claim.command, at: now, advanced };
     this.sql.exec("INSERT INTO validation_results VALUES (?, ?, ?)", claim.id, claim.version, JSON.stringify(result));
     this.sql.exec("DELETE FROM validation_results WHERE claim NOT IN (SELECT claim FROM validation_results ORDER BY version DESC LIMIT 200)");
     if (advanced) this.set("stable", head);
