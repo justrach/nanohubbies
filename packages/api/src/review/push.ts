@@ -9,6 +9,7 @@ import { commitAt, mergeBase, publishObjects } from "./graph";
 export async function pushBranch(env: Env, trunk: string, command: Command, pack: Map<string, Unpacked>) {
   if (!command.ref.startsWith("refs/heads/")) throw new Error("Push a branch under refs/heads/");
   const name = branchName(command.ref.slice(11));
+  if (name === "stable" || name.startsWith("stable/")) throw new Error("stable is protected: it moves only when an isolated check passes on a published version");
   const seq = env.SEQUENCER.get(env.SEQUENCER.idFromName(trunk));
   const snapshot = await seq.review({ op: "snapshot" });
   const current = snapshot.branches.find((b) => b.name === name);

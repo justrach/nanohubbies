@@ -43,6 +43,7 @@ export class ReviewStore {
       const c = command;
       branchName(c.name);
       if (c.name === "main") throw new Error("Use the main landing path to update main");
+      if (c.name === "stable" || c.name.startsWith("stable/")) throw new Error("stable is protected: it moves only when an isolated check passes on a published version");
       const old = s.branches.find((b) => b.name === c.name);
       if ((old?.commit ?? null) !== c.old) throw new Error("Branch changed; fetch and try again");
       if (c.source) matches(c.source);

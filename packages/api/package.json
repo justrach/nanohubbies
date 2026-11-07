@@ -21,7 +21,10 @@
     "test:abuse": "node scripts/smoke-abuse.ts",
     "test:releases": "node scripts/smoke-releases.ts",
     "test:cli": "node scripts/smoke-cli.ts",
-    "test:browse": "node scripts/smoke-browse.ts"
+    "test:browse": "node scripts/smoke-browse.ts",
+    "test:validation": "node scripts/smoke-validation.ts",
+    "sim:validation": "node scripts/sim-validation.ts",
+    "validate": "node scripts/validation/runner.ts"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.7.6",
