@@ -17,6 +17,7 @@ import { Backlog, backlogLimits } from "./sequencer/backlog";
 import { Feed } from "./sequencer/feed";
 import { decideOnce } from "./sequencer/receipts";
 import { changeById, forget, getMeta, lastWrites, LAST_WRITE, migrate, OUTBOX, PENDING, PUSHED, putFile, rebuildTrees, recentChanges, record, setMeta, tipText, unseen, versionAt, versionsFrom, VERSIONS } from "./sequencer/store";
+import { STABLE, Validation, ValidationError, type Report } from "./sequencer/validation";
 import type { ChangeRecord, ChangeRequest, Head, Made, Overlap, SubmitResult, Submitted } from "./types";
 
 /** The trunk's only writer. It does the cheap part of landing a change:
@@ -99,7 +100,33 @@ export class Sequencer extends DurableObject<Env> {
 
   /** The ref list for git's dumb HTTP protocol. */
   refs(): string {
-    return new ReviewStore(this.sql, () => this.head()).branches().map((b) => `${b.commit}\trefs/heads/${b.name}\n`).join("");
+    const branches = new ReviewStore(this.sql, () => this.head()).branches();
+    const stable = this.validation().stable();
+    if (stable) branches.push({ name: STABLE, commit: stable.commit, tree: stable.tree, updatedAt: 0 });
+    branches.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    return branches.map((b) => `${b.commit}\trefs/heads/${b.name}\n`).join("");
+  }
+
+  /** Validated stable (./sequencer/validation): status, the owner's check
+   *  command, and the isolated runner's claims and reports. */
+  private validation() { return new Validation(this.sql); }
+  validationStatus() { return this.validation().status(); }
+  validationConfigure(command: string | null) {
+    if (!this.meta<Head>("published")) throw new Error("no such trunk");
+    return this.ctx.storage.transactionSync(() => this.validation().configure(command));
+  }
+  validationClaim(runner: string) {
+    const published = this.head();
+    return this.ctx.storage.transactionSync(() => this.validation().claim(published, runner));
+  }
+  validationReport(report: Report): { result: unknown; stable: Head | null; replayed: boolean } | { error: string; status: number } {
+    const published = this.head();
+    try {
+      return this.ctx.storage.transactionSync(() => this.validation().report(report, published));
+    } catch (e) {
+      if (e instanceof ValidationError) return { error: e.message, status: e.status };
+      throw e;
+    }
   }
 
   review(command: ReviewCommand) {
@@ -210,6 +237,7 @@ export class Sequencer extends DurableObject<Env> {
     this.pusher.forget();
     this.publisher.forget();
     migrate(this.sql);
+    this.validation().forget();
     this.backlog.recount();
     return { deleted: trunk };
   }

@@ -182,6 +182,9 @@ other files are compared whole, which is coarser but never wrong.
   sending work back to GitHub.
 - [Development](docs/development.md): layout, scripts, benchmarks, sign-in,
   Cloudflare Artifacts, imports, the design system, and public limits.
+- [Validated stable](docs/validated-stable.md): a protected `stable` ref
+  that moves only after the workspace's check passes, in a sandboxed runner,
+  on the exact published commit.
 - [Submission receipts](docs/submission-receipts.md),
   [the agent room](docs/agent-room.md),
   [public admission controls](docs/public-abuse-controls.md), and

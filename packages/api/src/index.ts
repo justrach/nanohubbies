@@ -17,6 +17,7 @@ import { advertise } from "./receive";
 import { reviewRoute } from "./review/routes";
 import { commentRoute } from "./review/comment-route";
 import { releaseRoute, publicReleases } from "./releases/routes";
+import { validationRoute, validationRunnerRoute } from "./validation/route";
 import { coordination } from "./room/routes";
 import { requireTeam, privateResponse, visibleTrunks } from "./team/access";
 import { TeamError } from "./team/provider";
@@ -94,6 +95,7 @@ export default {
 //   POST   /api/trunks/:t/channel                {from, body}
 //   GET    /api/trunks/:t/releases               releases; the owner drafts, attaches, publishes, deletes (./releases/routes)
 //   GET    /api/public-releases/:t[/:r/:file]    published releases and their files, for anyone
+//   GET    /api/trunks/:t/validation             validated stable; POST {command} by the owner; /claim and /report for the runner (./validation/route)
 //   POST   /api/trunks/:t/swarm                  {agents, seconds, shared, skew, think}: start your scripted agents
 //   DELETE /api/trunks/:t/swarm?all=             stop yours, or everyone's
 //   GET    /api/agent-help                       the agent routes below, as JSON, from the table that serves them
@@ -204,7 +206,9 @@ async function api(request: Request, env: Env, url: URL, ctx?: ExecutionContext)
   if (!rawTrunk) return json(await visibleTrunks(env, request, await hub.list(), user));
 
   const trunk = checked(rawTrunk, TRUNK, "trunk");
+  if (action === "validation" && (rawAgent === "claim" || rawAgent === "report")) return validationRunnerRoute(env, request, trunk, rawAgent);
   const teamAccess = await requireTeam(env, request, trunk, user);
+  if (action === "validation" && !rawAgent) return validationRoute(env, request, trunk, user, teamAccess);
   if (action === "releases") return releaseRoute(env, request, trunk, rawAgent, agentAction, user, teamAccess);
   if (action === "team") return teamRoute(env, request, trunk, user, teamAccess);
   if (teamAccess && action?.startsWith("benchmark")) return json({ error: "Benchmarks cannot impersonate agents in a team workspace" }, 403);
