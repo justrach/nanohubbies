@@ -24,7 +24,7 @@ async function fixture(entries=normal,{fault}={}) {
   const tar=join(dir,'candidate.tar');
   execFileSync('python3',['-c',`import tarfile,io,json,sys,base64
 with tarfile.open(sys.argv[1],"w",format=tarfile.PAX_FORMAT) as tar:
- for value in json.loads(sys.argv[2]):
+ for value in json.load(sys.stdin):
   item=tarfile.TarInfo(value["name"]);item.mode=0o644
   kind=value.get("type","file")
   if kind=="dir":item.type=tarfile.DIRTYPE;tar.addfile(item)
@@ -32,7 +32,7 @@ with tarfile.open(sys.argv[1],"w",format=tarfile.PAX_FORMAT) as tar:
    item.type={"symlink":tarfile.SYMTYPE,"hardlink":tarfile.LNKTYPE,"fifo":tarfile.FIFOTYPE}[kind];item.linkname=value.get("target","/etc/passwd");tar.addfile(item)
   else:
    data=base64.b64decode(value.get("data",""));item.size=len(data);tar.addfile(item,io.BytesIO(data))
-`,tar,JSON.stringify(entries.map(e=>({...e,name:e.name==='out'?'selected':e.name.startsWith('out/')?'selected'+e.name.slice(3):e.name,data:e.data?.toString('base64')})))]);
+`,tar],{input:JSON.stringify(entries.map(e=>({...e,name:e.name==='out'?'selected':e.name.startsWith('out/')?'selected'+e.name.slice(3):e.name,data:e.data?.toString('base64')})))});
   await writeFile(join(bin,'tar'),'#!/bin/sh\ncat '+quote(tar)+'\n',{mode:0o700});
   const calls=[];let injected=false,live=true;
   const client={calls,sleep:async()=>{},api:async()=>({id:'box-1'}),ready:async()=>{},destroy:async()=>{calls.push('destroy');},

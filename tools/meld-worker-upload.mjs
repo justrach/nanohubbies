@@ -22,6 +22,14 @@ const plans=new WeakMap();
 const uploads=new WeakMap();
 const text=(bytes,max)=>{if(bytes.length>max||Buffer.from(bytes.toString('utf8')).compare(bytes)!==0||bytes.includes(0))throw Error('Invalid asset control file');return bytes.toString('utf8');};
 
+/** /settings follows the latest upload. Our new version changes its annotations,
+ * but must preserve the actual resource configuration. Uploaded/deployed version
+ * IDs are fenced separately, so excluding annotations cannot admit another head. */
+export function meldSettingsFingerprint(settings) {
+ if(!settings||typeof settings!=='object'||Array.isArray(settings)||!Array.isArray(settings.bindings))throw Error('Invalid Cloudflare Worker settings');
+ const {annotations,...resources}=settings;return sha(canonical(resources));
+}
+
 /** The metadata is an operator-reviewed deployment profile, never a candidate
  * config. The baseline digest must come from a separately inspected live target. */
 function metadataProfile(metadata) {
@@ -135,7 +143,7 @@ export async function uploadMeldStageVersion(context,plan,profile,{credential,au
  const baseline=async(latestVersion=base.versionId)=>{
   const settings=await request(root+'/settings'),deployments=await request(root+'/deployments'),versions=await request(root+'/versions');
   const current=deployments.deployments?.[0];
-  if(sha(canonical(settings))!==base.settingsSha256||current?.id!==base.deploymentId||current.versions?.length!==1||current.versions[0].version_id!==base.versionId||current.versions[0].percentage!==100||versions.items?.[0]?.id!==latestVersion)throw Error('Staging changed since its operator-reviewed baseline');
+  if(meldSettingsFingerprint(settings)!==base.settingsSha256||current?.id!==base.deploymentId||current.versions?.length!==1||current.versions[0].version_id!==base.versionId||current.versions[0].percentage!==100||versions.items?.[0]?.id!==latestVersion)throw Error('Staging changed since its operator-reviewed baseline');
   // Never replace a live non-secret binding with a reviewed-but-different
   // profile. Provider schema differences fail closed until explicitly handled.
   if(!Array.isArray(settings.bindings)||resources(settings.bindings.filter(b=>!['secret_text','secret_key'].includes(b.type)))!==resources(plan.metadata.bindings))throw Error('Upload metadata would change existing staging bindings');

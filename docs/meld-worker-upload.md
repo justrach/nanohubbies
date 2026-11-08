@@ -11,6 +11,10 @@ must continue to refuse unaccepted feature candidates.
 The transport is implemented and locally tested. It has **not** passed a live
 Cloudflare upload against Meld. The current operator login was denied access to
 the staging account during a read-only check. No upload or deployment was made.
+The [first frozen Linux run](evidence/meld-worker-upload-linux-attempt-1.json)
+failed in the existing tar fixture's oversized command argument. That fixture
+now sends the same JSON/binary data over stdin; the failed run remains a failure
+until a new frozen run independently passes.
 
 ## Trust and package handling
 
@@ -41,8 +45,12 @@ MIME database. Files sharing a content hash must also share bytes and MIME type.
 
 The profile supplies the fixed account/script, the Nanohub staging environment
 ID, an inspected baseline deployment ID, its single 100% version ID and the
-SHA-256 of the canonical `/settings` response. Canonical JSON recursively sorts
-object keys and preserves array order. Do not use candidate configuration or
+SHA-256 from `meldSettingsFingerprint()` on the `/settings` response. The
+fingerprint excludes version annotations because `/settings` follows the latest
+upload and our new version changes its message. It retains all resource fields,
+including bindings, tags, limits and observability; uploaded/deployed version IDs
+are checked separately. Canonical JSON recursively sorts object keys and preserves
+array order. Do not use candidate configuration or
 invent a baseline to get past an inspection failure.
 
 The reviewed version metadata permits only bindings, compatibility date/flags,

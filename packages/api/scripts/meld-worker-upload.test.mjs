@@ -8,7 +8,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import blake3 from 'blake3-wasm';
-import {prepareMeldWorkerUpload,uploadMeldStageVersion,promoteMeldStageVersion,observeMeldStageDeployment,meldUploadTarget} from '../../../tools/meld-worker-upload.mjs';
+import {prepareMeldWorkerUpload,uploadMeldStageVersion,promoteMeldStageVersion,observeMeldStageDeployment,meldSettingsFingerprint,meldUploadTarget} from '../../../tools/meld-worker-upload.mjs';
 import {meldPackageProfile} from '../../../tools/meld-stage-package.mjs';
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const canonical=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
@@ -22,8 +22,8 @@ async function fixture(work) {
   {type:'assets',name:'ASSETS'},{type:'service',name:'WORKER_SELF_REFERENCE',service:meldUploadTarget.script},{type:'hyperdrive',name:'HYPERDRIVE',id:'98c214c675a34f49a2f31975b182a544'},
   {type:'plain_text',name:'MELD_ENV',text:'staging'},...['BETTER_AUTH_URL','NEXT_PUBLIC_APP_URL'].map(name=>({type:'plain_text',name,text:meldUploadTarget.origin})),
  ]};
- const settings={...structuredClone(metadata),observability:{enabled:true},bindings:[...structuredClone(metadata.bindings),{type:'secret_text',name:'SERVER_SECRET'},{type:'secret_key',name:'CRYPTO_KEY'}]};delete settings.keep_bindings;
- const profile={...meldUploadTarget,environmentId:'env-staging',metadata,baseline:{deploymentId:randomUUID(),versionId:randomUUID(),settingsSha256:sha(canonical(settings))}};
+ const settings={...structuredClone(metadata),observability:{enabled:true},annotations:{'workers/message':'baseline'},bindings:[...structuredClone(metadata.bindings),{type:'secret_text',name:'SERVER_SECRET'},{type:'secret_key',name:'CRYPTO_KEY'}]};delete settings.keep_bindings;
+ const profile={...meldUploadTarget,environmentId:'env-staging',metadata,baseline:{deploymentId:randomUUID(),versionId:randomUUID(),settingsSha256:meldSettingsFingerprint(settings)}};
  const bytes=new Map([
   ['modules/worker.js',Buffer.from('export default {fetch(){return new Response("fixture")}}')],['modules/worker.wasm',Buffer.from([0,97,115,109,1,0,0,0])],
   ['assets/index.html',Buffer.from('<h1>fixture</h1>')],['assets/file.bin',Buffer.from([0,255,1,128])],['assets/same.bin',Buffer.from([0,255,1,128])],
@@ -39,7 +39,7 @@ async function fixture(work) {
   const success=result=>Response.json({success:true,result});
   if(options.method==='GET') {
    assert.equal(options.headers.Authorization,'Bearer '+accountToken);
-   if(path.endsWith('/settings')){settingsReads++;return success(mode==='drift'&&settingsReads===2?{...settings,limits:{cpu_ms:60000}}:settings);}
+   if(path.endsWith('/settings')){settingsReads++;return success(mode==='drift'&&settingsReads===2?{...settings,limits:{cpu_ms:60000}}:{...settings,annotations:{'workers/message':uploaded?'new uploaded version':'baseline','workers/triggered_by':'fixture'}});}
    if(path.endsWith('/deployments'))return success({deployments:[{id:mode==='foreign-deployment'?randomUUID():promoted?deploymentId:profile.baseline.deploymentId,versions:[{version_id:promoted?versionId:profile.baseline.versionId,percentage:100}]}]});
    if(path.endsWith('/versions'))return success({items:[{id:mode==='unpublished-version'||uploaded?versionId:profile.baseline.versionId}]});
    if(path.endsWith('/versions/'+versionId))return success({id:versionId,resources:{bindings:mode==='lost-secret'?metadata.bindings:settings.bindings,script_runtime:mode==='uploaded-runtime-drift'?{compatibility_date:'2020-01-01'}:{compatibility_date:metadata.compatibility_date,compatibility_flags:metadata.compatibility_flags,limits:metadata.limits}}});
@@ -86,6 +86,12 @@ test('opaque Worker/assets upload preserves binary bytes, module names, controls
 test('cached assets use their completion JWT without uploading bytes',async()=>fixture(async f=>{
  f.mode('cached');await uploadMeldStageVersion(f.context,await f.prepare(),f.profile,f.deps);
  assert.equal(f.requests.filter(r=>r.method==='POST').length,2);assert.equal(f.grants.length,2);
+}));
+
+test('version annotations do not invalidate the resource baseline, while bindings, limits and tags remain protected',async()=>fixture(async f=>{
+ const digest=meldSettingsFingerprint(f.settings);assert.equal(meldSettingsFingerprint({...f.settings,annotations:{'workers/message':'new version'}}),digest);
+ for(const patch of [{limits:{cpu_ms:60000}},{tags:['changed']},{bindings:f.settings.bindings.slice(1)}])assert.notEqual(meldSettingsFingerprint({...f.settings,...patch}),digest);
+ assert.throws(()=>meldSettingsFingerprint({annotations:{}}),/Invalid Cloudflare/);
 }));
 
 test('stale, cross-attempt, changed-environment and revoked authorization stop writes',async()=>{

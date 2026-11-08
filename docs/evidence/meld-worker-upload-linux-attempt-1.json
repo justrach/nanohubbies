@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "status": "failed",
+  "source": "7efa6a1aeebe6c89880cdf239251557b3440214d",
+  "startedAt": "2026-11-08T23:33:04.329Z",
+  "finishedAt": "2026-11-08T23:36:49.019Z",
+  "gate": "unit",
+  "failure": {
+    "code": "E2BIG",
+    "file": "packages/api/scripts/build-artifacts.test.mjs",
+    "reason": "The tar fixture passed a JSON/base64 payload larger than Linux permits in one argv argument; unchanged binary fixture data will move to stdin"
+  },
+  "remainingGatesVerified": false,
+  "cleanup": {
+    "at": "2026-11-08T23:37:33.138Z",
+    "sandboxId": "cnd_1bd4c7da39f6cfee97daf0b8ba396f061a8df4db",
+    "receiptCleanupNeeded": false,
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "log": {
+    "private": true,
+    "bytes": 16384,
+    "sha256": "af284633c8e84fd6cb747c8953cb81764c92bb709f6fba6d9133c7006091c26d"
+  },
+  "productionDeployed": false,
+  "hostedDispatcherActivated": false
+}

@@ -1,0 +1,46 @@
+{
+  "format": 1,
+  "observedAt": "2026-11-08T23:38:36.168Z",
+  "sourceBase": "7efa6a1aeebe6c89880cdf239251557b3440214d",
+  "changes": [
+    "Preserve resource fingerprint across version annotation changes while keeping separate uploaded/deployed version fences",
+    "Send unchanged binary tar fixture JSON through stdin instead of oversized argv"
+  ],
+  "checks": {
+    "apiUnit": {
+      "passed": 521,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focusedUpload": {
+      "nodePassed": 12,
+      "bunPassed": 12
+    },
+    "artifactFixture": {
+      "nodePassed": 7,
+      "bunPassed": 7
+    },
+    "operatorPreflight": {
+      "files": 19,
+      "bindingsChecked": true,
+      "fullTypeCheck": false
+    }
+  },
+  "unitLog": {
+    "private": true,
+    "bytes": 81373,
+    "sha256": "e333b4c7e1d732a662438af6a29367d96782fd0cf472af8839da7ca8feb4cd45"
+  },
+  "providerObservation": {
+    "readOnly": true,
+    "observedAccount": "Nanohub, not Meld",
+    "settingsDescribesLatestUpload": true,
+    "annotationsPresent": true,
+    "deployedAndLatestSettingsDiffer": true,
+    "productionWorkerUnchanged": true,
+    "vaultUnchanged": true,
+    "mutations": 0
+  },
+  "frozenLinuxFollowup": "pending",
+  "liveMeldUploadOrPromotionValidated": false
+}
