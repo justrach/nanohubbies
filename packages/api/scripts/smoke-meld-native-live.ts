@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify,parseEnv} from 'node:util';
-import {readFile,writeFile,mkdir,realpath,rename} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,realpath,rename,statfs} from 'node:fs/promises';
 import {join,isAbsolute,resolve} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {teamFixture} from './team/fixture.ts';
@@ -33,6 +33,7 @@ const trunk='meld-native-live',base='/api/trunks/'+trunk,oldKey=process.env.CODE
 const cleanup=async(step:string,work:()=>Promise<void>)=>{try{await work();}catch(error){operation.cleanupErrors.push({step,error:safe(error)});}await save('operation.json',operation);};
 try{
  assert.equal(await git(root,'status','--porcelain','--untracked-files=all'),'','Commit trusted tools before live acceptance');operation.nanohubSource=await git(root,'rev-parse','HEAD');
+ const disk=await statfs(destination),minimumFreeBytes=3*1024**3;operation.hostPreflight={freeBytes:disk.bavail*disk.bsize,minimumFreeBytes};assert.ok(operation.hostPreflight.freeBytes>=minimumFreeBytes,'The complete import fixture needs at least 3 GiB free before launch');
  assert.equal(await git(source,'rev-parse','--is-bare-repository'),'true');const original=await git(source,'rev-parse','HEAD');assert.match(original,/^[a-f0-9]{40}$/);operation.originalApplicationCommit=original;
  beforeRefs=await git(source,'for-each-ref','--format=%(refname) %(objectname)');await git(source,'fsck','--strict');
  const plan=await prepareMeldNativePlan({source,base:original,output:join(destination,'plan')});operation.plan={source:plan.sourceCommit,pipelineBlob:plan.pipelineBlob,workflowSha256:plan.workflowSha256,inputs:plan.inputs.length};
@@ -46,7 +47,10 @@ try{
  f=await teamFixture();owner=await f.login('owner','101');await f.json('POST',base,{mode:'git'},owner);runner=await f.json('POST',base+'/ci/runners',{name:'meld-native-isolation'},owner);secrets.push(runner.token);
  grant=await f.json('POST',base+'/cli-credentials',{label:'Isolated native Meld import',days:1,scopes:['read','contents:read','contents:write']},owner);secrets.push(grant.token);
  await stage('import-actual-meld-with-bootstrap');
- const imported=await exec('bun',[join(destination,'cli',cli.path.slice('/nh/'.length)),'repo','import',initial,'--host',f.origin,'--trunk',trunk,'--json'],{cwd:destination,env:{...clean,NANOHUB_API_TOKEN:grant.token},timeout:15*60000,maxBuffer:8<<20});operation.import=JSON.parse(imported.stdout);assert.equal(operation.import.verified,true);
+ const importStartedAt=Date.now(),importTimeoutMs=45*60000;let imported;
+ try{imported=await exec('bun',[join(destination,'cli',cli.path.slice('/nh/'.length)),'repo','import',initial,'--host',f.origin,'--trunk',trunk,'--json'],{cwd:destination,env:{...clean,NANOHUB_API_TOKEN:grant.token},timeout:importTimeoutMs,maxBuffer:8<<20});}
+ catch(error:any){operation.importFailure={elapsedMs:Date.now()-importStartedAt,timeoutMs:importTimeoutMs,killed:error.killed===true,signal:typeof error.signal==='string'&&/^SIG[A-Z]+$/.test(error.signal)?error.signal:null,code:typeof error.code==='number'?error.code:typeof error.code==='string'&&/^[A-Z_0-9]+$/.test(error.code)?error.code:null,lastProgress:[...String(error.stderr??'').matchAll(/Imported (\d+)\/(\d+) objects/g)].slice(-5).map(match=>({imported:Number(match[1]),total:Number(match[2])}))};await save('operation.json',operation);throw error;}
+ operation.import=JSON.parse(imported.stdout);operation.importTiming={elapsedMs:Date.now()-importStartedAt,timeoutMs:importTimeoutMs};assert.equal(operation.import.verified,true);
  await f.json('DELETE','/api/cli/credentials/'+grant.id,undefined,owner);assert.equal((await f.request('GET','/api/cli/trunks/'+trunk+'/branches',undefined,{authorization:'Bearer '+grant.token})).status,401);operation.importCredentialRevoked=true;operation.revokedImportRejected=true;
  const auth={authorization:'Bearer '+runner.token},seed=await f.json('POST',base+'/ci/claim',{},auth);assert.equal(seed.run.head,anchor);
  await f.json('POST',base+'/ci/runs/'+seed.run.id,{attempt:seed.run.attempt,results:[],staging:null},auth);operation.fixtureBootstrapRunHasNoSuccess=true;

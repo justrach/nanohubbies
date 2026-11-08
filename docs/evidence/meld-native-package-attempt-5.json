@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "status": "failed-before-provider-allocation",
+  "nanohubSource": "f3f8fa5c641875416a3bd22a218ec2e782bb54cd",
+  "applicationSource": "e2388418cc72caf71eab6d284ec2f29b37945697",
+  "startedAt": "2026-11-08T22:05:01.513Z",
+  "finishedAt": "2026-11-08T22:27:35.113Z",
+  "stage": "local Git import",
+  "importVerified": false,
+  "diagnosticLimit": "The saved exception was truncated before its termination details; timeout cause is unconfirmed",
+  "cleanup": {
+    "providerAllocated": false,
+    "runnerRevoked": true,
+    "revokedRunnerRejected": true,
+    "importCredentialRevoked": true,
+    "fixtureClosed": true,
+    "errors": [],
+    "originalSourceRefsUnchanged": true
+  },
+  "stagingDeployed": false,
+  "productionDeployed": false
+}
