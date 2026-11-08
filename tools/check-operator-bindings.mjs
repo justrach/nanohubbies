@@ -10,6 +10,8 @@ const operators = [
   "tools/ci-runner.mjs",
   "tools/sandbox-access.mjs",
   "tools/sandbox-observation.mjs",
+  "tools/build-artifacts.mjs",
+  "tools/verify-build-artifacts.mjs",
   "tools/verify-hosted-git-import.mjs",
   "tools/hosted-recovery-fixture/repository-probe.mjs",
   "tools/hosted-recovery-fixture/phase.mjs",
@@ -23,7 +25,7 @@ const operators = [
 // --noResolve does not follow @types/node's reference graph. Supply the Node
 // declarations used by these operators explicitly, without traversing app code.
 const nodeDeclarations = ["globals", "process", "buffer", "assert/strict", "child_process",
-  "crypto", "fs/promises", "os", "path", "url", "util"];
+  "crypto", "fs", "fs/promises", "os", "path", "url", "util"];
 
 /** Binding/syntax preflight for Node operator JavaScript. --noResolve keeps
  * application dependency type errors out of this deliberately scope-only check.

@@ -244,6 +244,13 @@ Logs are uploaded through a valid current runner lease into Nanohub R2, then rea
 
 Deployment remains a separate owner-approved exact-candidate path. A trusted staging adapter may follow successful Codegraff checks; ordinary workflow jobs receive no deployment secrets. The older Meld adapter remains available for its existing GitHub-backed transport, but the new `backend: "codegraff"` path bypasses it. An explicit `backend: "docker"` retains the earlier local execution option for compatibility.
 
+Trusted native controllers can explicitly configure a [private build artifact
+handoff](build-artifacts.md). Selected outputs survive container stop on the
+job's VM, then cross as bounded checksum-verified blobs into private controller
+storage. Deployment credentials stay outside candidate execution. This does not
+add marketplace artifact actions, shared hosted artifact storage or a staging
+deployer; consumers still need fresh exact-candidate deployment authority.
+
 ## Verification receipt and activation limits
 
 `bun run check` uses pinned **tsrs** across API, web and vault. `bun run --filter @swarm/api test:hosting` tests namespaces and the direct dispatcher; the existing Git, access, unit and team suites remain applicable.

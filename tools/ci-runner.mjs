@@ -16,6 +16,7 @@ import { verifySandboxAccess,validateSandboxAccessProbeId } from './sandbox-acce
 import {sandboxCapacity} from './sandbox-capacity.mjs';
 import {sourceTransferPolicy} from './source-transfer.mjs';
 import {observeSandbox, readCiLease} from './sandbox-observation.mjs';
+import {buildArtifactPolicies} from './build-artifacts.mjs';
 
 export function runProcess(command, args, options={}) {
   return new Promise((resolve,reject)=>{
@@ -69,6 +70,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   if(config.backend && !['codegraff','docker'].includes(config.backend))throw Error('Unknown CI backend');
   validateSandboxAccessProbeId(config.sandboxAccessProbeId);
   if(config.sandboxAccessProbeId!==undefined&&config.backend!=='codegraff')throw Error('Owned-sandbox access probes require the Codegraff backend');
+  buildArtifactPolicies(config.buildArtifacts);
+  if(config.buildArtifacts!==undefined&&config.backend!=='codegraff')throw Error('Build artifact handoff requires the Codegraff backend');
   if(config.backend==='codegraff')sourceTransferPolicy(config);
   else if(config.maxSourceBundleBytes!==undefined||config.sourceTransferConcurrency!==undefined)throw Error('Source transfer settings require the Codegraff backend');
   if(config.imageSnapshot!==undefined&&config.backend!=='codegraff')throw Error('Toolchain snapshots require the Codegraff backend');
@@ -147,7 +150,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
       const adapter=await import(pathToFileURL(config.stagingAdapter).href);
       const gate=await authorize();if(gate.waiting)return gate;authorization=gate.authorization;
       try {
-        staging=await stagingGate(adapter,{run,source,deploymentAuthorization:authorization,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl});
+        staging=await stagingGate(adapter,{run,source,results,buildArtifacts:config.buildArtifacts??[],toolchainImage:config.image,deploymentAuthorization:authorization,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl});
         await writeFile(join(artifacts,'staging.log'),JSON.stringify(staging,null,2));
         results.push({name:'staging',state:'success',command:'approved staging pipeline; exact deployment job, version, real-service acceptance, version recheck',log:new URL('staging.log',publicUrl).href,artifacts:staging.acceptance.map(e=>e.url)});
       } catch(error) {
