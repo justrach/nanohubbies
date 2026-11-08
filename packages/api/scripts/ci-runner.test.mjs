@@ -9,6 +9,12 @@ test('invalid private toolchain configuration is rejected before claiming a host
  await assert.rejects(runOnce({...config,backend:'codegraff',imageRegistry:{...config.imageRegistry,config:'relative.json'}},'synthetic-unused-token'),/absolute trusted/);
  await assert.rejects(runOnce({...config,backend:'codegraff',imageSnapshot:'snp_fixture'},'synthetic-unused-token'),/cannot be combined/);
 });
+test('invalid source limits or upload concurrency fail before provider access or a candidate claim',async()=>{
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',backend:'codegraff',image:'registry.invalid/toolchain@sha256:'+'c'.repeat(64),artifacts:'/var/lib/nanohub'};
+ for(const value of [0,-1,1.5,1024*1024*1024+1,'536870912',null])await assert.rejects(runOnce({...config,maxSourceBundleBytes:value},'synthetic-unused-token'),/maxSourceBundleBytes/);
+ for(const value of [0,-1,1.5,9,'4',null])await assert.rejects(runOnce({...config,sourceTransferConcurrency:value},'synthetic-unused-token'),/sourceTransferConcurrency/);
+ await assert.rejects(runOnce({...config,backend:'docker',sourceTransferConcurrency:4},'synthetic-unused-token'),/require the Codegraff backend/);
+});
 function adapter(){return {dispatch:async c=>{assert.equal(c.idempotencyKey,'event');return {runId:'deploy-1'};},wait:async()=>({state:'success',candidate:head,kind:'deployment'}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};}
 test('unverified sandbox credentials stop before claiming a candidate or reporting a failed check',async()=>{
  const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY;

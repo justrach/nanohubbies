@@ -299,11 +299,13 @@ test("dispatcher uses accepted base workflow, transfers a real credential-free b
         artifacts,
         artifactOrigin: "https://logs.invalid/",
       },
-      { image, repository: "alice/repo" },
+      { image, repository: "alice/repo",sourceTransferConcurrency:4,maxSourceBundleBytes:1024*1024 },
       { client },
     );
     assert.equal(result.results.length, 2);
     assert.ok(result.results.every((r) => r.state === "success"));
+    const sourceReceipt=JSON.parse(await readFile(join(artifacts,'check-test.sandbox.json'),'utf8'));assert.equal(sourceReceipt.sourceBundle.transferConcurrency,4);
+    const capped=mockClient();await assert.rejects(executeActions({run:{...run,head,base},source:dir,artifacts,artifactOrigin:'https://logs.invalid/'},{image,repository:'alice/repo',maxSourceBundleBytes:1},{client:capped}),/configured runner source limit/);assert.equal(capped.calls.length,0);
     assert.equal(client.calls.filter((c) => c.path === "/sandboxes").length, 2);
     const chunks = client.uploads.filter(
       (u) => u.id === "box-1" && u.path.includes("bundle-"),
@@ -501,6 +503,44 @@ test('large Git bundles cross the preview upload limit as bounded base64-safe ch
   assert.equal(result.state,'success');const chunks=client.uploads.filter(u=>/\/bundle-\d{5}$/.test(u.path));assert.ok(chunks.length>3);assert.ok(chunks.every(u=>u.bytes.length<=65536&&JSON.stringify({path:u.path,contentBase64:u.bytes.toString('base64')}).length<100000));assert.deepEqual(Buffer.concat(chunks.map(u=>u.bytes)),bundle);const assemble=client.calls.find(c=>c.command?.includes('git clone --no-checkout')).command;assert.ok(assemble.length<2048);assert.match(assemble,/sha256sum -c -/);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+test('parallel source uploads preserve manifest byte order despite out-of-order completions and retain exact provenance',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-parallel-source-'));
+ try{
+  const client=mockClient(),bundle=randomBytes(340003),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],finished=[],parts=new Map();let active=0,peak=0;
+  client.stageUpload=async(id,path,bytes)=>{
+   const index=Number(path.match(/bundle-(\d+)$/)[1]);active++;peak=Math.max(peak,active);
+   try{await new Promise(resolve=>setTimeout(resolve,index===0?30:2));const selected=path+'.nh-upload-11111111-1111-4111-8111-111111111111';parts.set(selected.split('/').at(-1),Buffer.from(bytes));finished.push(index);return selected;}finally{active--;}
+  };
+  const upload=client.upload;client.upload=async(id,path,bytes)=>{
+   if(path.endsWith('/selected-paths')){const names=bytes.toString().trim().split('\n');assert.deepEqual(Buffer.concat(names.map(name=>parts.get(name))),bundle);assert.deepEqual(names.map(name=>Number(name.match(/bundle-(\d+)/)[1])),[0,1,2,3,4,5]);assert.equal(active,0);}
+   return upload(id,path,bytes);
+  };
+  const result=await sandboxJob({client,job,run,bundle,image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',maxSourceBundleBytes:512*1024*1024,sourceTransferConcurrency:4});
+  assert.equal(result.state,'success');assert.equal(peak,4);assert.notEqual(finished[0],0);
+  const receipt=JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8'));assert.deepEqual(receipt.sourceBundle,{bytes:bundle.length,sha256:createHash('sha256').update(bundle).digest('hex'),transferConcurrency:4});
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('parallel upload failure drains issued parts before VM destruction and never publishes a partial manifest or executes candidate code',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-parallel-failed-source-'));
+ try{
+  const client=mockClient(),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],issued=[];let pending=0,settled=0;
+  client.stageUpload=async(_id,path)=>{
+   const index=Number(path.match(/bundle-(\d+)$/)[1]);issued.push(index);pending++;
+   try{await new Promise(resolve=>setTimeout(resolve,index===0?1:25));if(index===0)throw Error('synthetic source failure');return path;}finally{pending--;settled++;}
+  };
+  const destroy=client.destroy;client.destroy=async id=>{assert.equal(pending,0);assert.equal(settled,4);return destroy(id);};
+  const result=await sandboxJob({client,job,run,bundle:Buffer.alloc(1000000),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',sourceTransferConcurrency:4});
+  assert.equal(result.state,'failure');assert.deepEqual(issued,[0,1,2,3]);assert.ok(!client.uploads.some(part=>part.path.endsWith('selected-paths')));assert.ok(!client.calls.some(call=>call.command?.includes('git clone --no-checkout')||call.command?.startsWith('docker run')));assert.equal(client.calls.filter(call=>call.destroy).length,1);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('source size limits are enforced before VM allocation even for direct job execution',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nanohub-source-limit-'));
+ try{
+  const client=mockClient(),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+  await assert.rejects(sandboxJob({client,job,run,bundle:Buffer.alloc(101),maxSourceBundleBytes:100,image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'}),/configured runner source limit/);
+  assert.equal(client.calls.length,0);assert.equal(client.uploads.length,0);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
 test('large file uploads use bounded API payloads and checksum-verified atomic assembly, with no retry after unknown writes',async()=>{
  for(const mode of ['success','corrupt','unknown']){
   const dir=await mkdtemp(join(tmpdir(),'nanohub-file-transfer-')),temporary=new Set(),calls=[];
@@ -539,7 +579,7 @@ test('credential-free upload reconciliation uses isolated paths and one publicat
   }finally{await rm(dir,{recursive:true,force:true});}
  }
 });
-test('the selected source manifest excludes abandoned uploads and reconstructs an exact real Git bundle before execution',async()=>{
+test('parallel selected source manifests exclude abandoned uploads and reconstruct an exact real Git bundle before execution',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'nanohub-selected-source-'));
  try {
   const source=join(dir,'source');await mkdir(source);const binary=randomBytes(180003);await writeFile(join(source,'asset.bin'),binary);
@@ -548,7 +588,7 @@ test('the selected source manifest excludes abandoned uploads and reconstructs a
   const remote=join(dir,'remote'),map=path=>path.replaceAll('/workspace/nanohub',remote),client=new Codegraff('synthetic-unused-key',{sleep:async()=>{}});let abandoned,lateWritten=false,destroyed=false;
   client.ready=async()=>{};client.destroy=async()=>{destroyed=true;};client.api=async(path,body)=>{if(path==='/sandboxes')return{id:'owned-source-fixture'};assert.ok(path.endsWith('/upload'));if(body.path.includes('/bundle-')&&!abandoned){abandoned=body;throw TypeError('upload delivery unknown');}if(body.path.includes('/selected-paths.nh-upload-')&&!lateWritten){await writeFile(map(abandoned.path),'wrong delayed abandoned content');lateWritten=true;}await writeFile(map(body.path),Buffer.from(body.contentBase64,'base64'));return{ok:true};};
   client.exec=async(_id,command)=>{if(command.startsWith('docker run'))return'container';if(command.startsWith('docker inspect'))return JSON.stringify({Running:false,ExitCode:0});if(command.startsWith('docker logs'))return'synthetic container result';const result=await runProcess('sh',['-c',map(command)],{cwd:dir,timeoutMs:5000,env:{...process.env,GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1'}});if(result.code)throw Error(result.output);return result.output;};
-  const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run:{...run,head,base:head},bundle:await readFile(bundlePath),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo'});assert.equal(result.state,'success');assert.equal(lateWritten,true);assert.equal(destroyed,true);assert.deepEqual(await readFile(join(remote,'source','asset.bin')),binary);const verified=await runProcess('git',['-C',join(remote,'source'),'fsck','--strict']);assert.equal(verified.code,0,verified.output);
+  const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],result=await sandboxJob({client,job,run:{...run,head,base:head},bundle:await readFile(bundlePath),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',sourceTransferConcurrency:4});assert.equal(result.state,'success');assert.equal(lateWritten,true);assert.equal(destroyed,true);assert.deepEqual(await readFile(join(remote,'source','asset.bin')),binary);const verified=await runProcess('git',['-C',join(remote,'source'),'fsck','--strict']);assert.equal(verified.code,0,verified.output);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
 

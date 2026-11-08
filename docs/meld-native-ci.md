@@ -49,15 +49,75 @@ in the trusted controller.
 
 Current acceptance is preparation only: the actual frozen Meld main
 `a5a6e2b3da5d7917a4d197bbb72dc3807d5d7fed` produces six allowlisted inputs and
-the generated workflow compiles through Nanohub's real parser. Four Node/Bun
+the generated workflow compiles through Nanohub's real parser. Five Node/Bun
 cases cover workflow semantics, input isolation, drift/path/credential refusal
 and preservation of existing output. The first generated workflow used YAML
 aliases, which the bounded runner correctly rejected; generation now disables
 aliases and validates the compiled workflow before writing output.
 
-A successful image build, private publication, separate fresh-VM offline full
-suite, exact-head native callback, malicious workflow replacement rejection and
-independent cleanup still need live acceptance. No hosted runner, shared staging
+A real image build and private publication are now independently
+[reconciled after interruption](evidence/meld-native-image-reconciliation.json).
+Its retained manifest/config digests match and the builder VM is observed
+destroyed; the exact destruction time is not established. The original
+interrupted controller is not relabeled as a completed harness pass.
+
+A fresh 2026-11-09 source read observes Meld main at
+`8554f69acf4a0936ccacb3b4b9b3e0f8147796d8`. Its lockfile, dependency declarations
+and dependency patch match the built image's inputs. The web manifest only adds
+live-test commands; the pipeline revision prepares signed Debian HTTPS/IPv4
+downloads before Chrome installation. Required commands and test/build modes
+are unchanged. That exact reviewed pipeline blob is now accepted and recorded
+by the generator, which still refuses unknown revisions. Native acceptance
+targets this freshly frozen application source, with separate synthetic
+bootstrap/candidate commits, rather than describing the earlier source as
+current.
+
+Separate fresh-VM offline full-suite, exact-head native callback, malicious
+workflow replacement rejection and job cleanup still need live acceptance.
+No hosted runner, shared staging
 or production activation is established by this preparation. Real-service
 staging acceptance and the original application policy/merge/cutover gates stay
 required.
+
+## Opt-in native acceptance
+
+`packages/api/scripts/smoke-meld-native-live.ts` is the real-cloud acceptance
+harness. From clean committed trusted tools, provide a private bare source, the
+verified private toolchain configuration, an existing sandbox-scoped account's
+environment file and a new private artifact directory outside both repositories:
+
+```sh
+NANOHUB_LIVE_MELD_NATIVE=1 bun packages/api/scripts/smoke-meld-native-live.ts \
+  /absolute/private/meld.git /absolute/private/native-image-config.json \
+  /absolute/private/codegraff-staging.env /absolute/private/new-acceptance
+```
+
+It imports an isolated copy using the exact built CLI. Its accepted bootstrap
+commit adds only the generated workflow to the frozen application source; a
+separate synthetic candidate changes only that workflow and a harmless probe
+file. These fixture commits are distinct from the original application SHA and
+are never pushed to Meld's GitHub repository. The seed queue item is completed
+with no successful check, rather than fabricated CI evidence.
+
+The harness requires the real suite on the candidate through the accepted
+workflow, checks that normal/forced/deletion writes to protected main fail,
+and keeps pre-PR staging mandatory after CI passes. It verifies private log
+delivery, anonymous denial, retry invalidation and stale callback rejection,
+runner/import/Git credential revocation, independent VM destruction, fixture
+closure and unchanged original refs. Its final acceptance flag depends on
+these postconditions, not only the container's exit code. The provider key stays
+in the trusted process. Without explicit opt-in it exits before dispatch.
+
+An uncertain live operation must be observed through its retained run, capacity
+and sandbox receipts; do not replay the launch. Native logs retain a bounded
+tail, so a successful suite does not provide individual test counts beyond the
+retained output. Fixture checks and inert build settings do not establish real
+staging auth, storage, persistence, search or AI acceptance.
+
+The refreshed source's complete bundle measures 372,270,805 bytes (355 MiB).
+The harness therefore selects a trusted 512 MiB source limit and four parallel
+64 KiB uploads. The default runner limits stay 64 MiB and one upload; operators
+can select bounded larger transfers without dropping history or binaries.
+Concurrent source transfer has fixture coverage for out-of-order completion,
+exact byte reconstruction, failure drain before destruction and pre-allocation
+limit enforcement. Actual large-bundle native acceptance is still required.

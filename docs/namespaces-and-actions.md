@@ -77,7 +77,21 @@ Supported: `on: push` (string/list/mapping), push `branches`/`branches-ignore` w
 - `ubuntu-latest` selects the configured Codegraff toolchain image; it does not claim to be GitHub's hosted image.
 - Check names are stable `workflow-file/job-id`, e.g. `check/test`; configure required checks using these names.
 
-Unsupported expressions, arbitrary marketplace actions, matrices, services, reusable workflows, schedule/dispatch events, automatic secrets interpolation, artifacts/cache actions, job outputs and other unsupported fields fail with an explicit error. Nothing silently grants write permissions or skips unsupported requirements. Runs support at most 29 jobs, 16 workflows, 100 steps/job, a 64 KiB workflow, and a 64 MiB compressed candidate bundle. Independent jobs execute concurrently; `needs` waits for prerequisites and cancels dependent jobs when a prerequisite fails. Each actual job gets a separate VM.
+Unsupported expressions, arbitrary marketplace actions, matrices, services, reusable workflows, schedule/dispatch events, automatic secrets interpolation, artifacts/cache actions, job outputs and other unsupported fields fail with an explicit error. Nothing silently grants write permissions or skips unsupported requirements. Runs support at most 29 jobs, 16 workflows, 100 steps/job and a 64 KiB workflow. Independent jobs execute concurrently; `needs` waits for prerequisites and cancels dependent jobs when a prerequisite fails. Each actual job gets a separate VM.
+
+The trusted host defaults to a 64 MiB compressed candidate bundle and one
+source upload at a time. For a larger repository, set `maxSourceBundleBytes`
+(positive integer, at most 1 GiB) and `sourceTransferConcurrency` (1–8) in its
+runner configuration. Candidate workflows cannot change these settings. Full
+Git history and binary assets stay in the bundle; this is not a shallow-checkout
+option. The actual source size is checked before VM allocation, and invalid
+settings fail before claiming work. All transport parts remain at most 64 KiB.
+Parallel transfers preserve manifest order, reconcile only verified immutable
+paths and drain issued requests before assembly or VM destruction. Receipts
+retain source byte length, SHA-256 and transfer concurrency. The
+[native Meld harness](meld-native-ci.md) selects 512 MiB and four uploads for
+its measured 355 MiB application bundle; live large-bundle acceptance remains
+pending. See [local transfer validation](evidence/large-source-transfer-validation.md).
 
 The dispatcher loads workflow definitions from `run.base`, the accepted default-branch commit observed when the event was queued. A candidate cannot replace a required job with a passing placeholder before review. For a default-branch push, the just-accepted default commit supplies the workflow. Bootstrap the first workflow in the selected default, then push a feature branch. Changes to workflow definitions take effect after they are accepted into the default. An existing PR may target another branch; its final merge must contain that target’s current head, while workflow trust and CI evidence still bind to the current default commit. Selecting a different default supersedes older-base work and queues current heads against the new workflow base.
 

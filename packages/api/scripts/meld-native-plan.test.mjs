@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {createHash} from 'node:crypto';
 import {parseDocument} from 'yaml';
 import {parseWorkflow} from '../../../tools/actions-workflow.mjs';
-import {prepareMeldNativePlan,meldNativeWorkflow,meldNativeToolchains,meldPipelineBlob} from '../../../tools/meld-native-plan.mjs';
+import {prepareMeldNativePlan,meldNativeWorkflow,meldNativeToolchains,meldPipelineBlob,meldReviewedPipelineBlobs} from '../../../tools/meld-native-plan.mjs';
 const base='a'.repeat(40),hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 async function fixture(work){
  const dir=await mkdtemp(join(tmpdir(),'nh-meld-native-')),source=join(dir,'source'),output=join(dir,'plan');await mkdir(source);
@@ -75,4 +75,10 @@ test('existing output and paths resolving inside candidate source are preserved 
  await symlink(f.source,join(f.dir,'indirect'));
  for(const output of [join(f.source,'context'),join(f.dir,'indirect/context')])await assert.rejects(prepareMeldNativePlan({...f.options,output},{readGit:f.readGit}),/outside the source/);
  assert.deepEqual(await readdir(f.source),[]);
+}));
+test('reviewed browser-preparation revision records its actual pipeline identity without importing candidate code',async()=>fixture(async f=>{
+ const latest=meldReviewedPipelineBlobs[1];assert.notEqual(latest,meldPipelineBlob);f.pipeline(latest);
+ const plan=await prepareMeldNativePlan(f.options,{readGit:f.readGit});assert.equal(plan.pipelineBlob,latest);
+ assert.equal(plan.workflowSha256,hash(Buffer.from(meldNativeWorkflow())));
+ await assert.rejects(stat(join(f.output,'context/tools/staging/run.mjs')),{code:'ENOENT'});
 }));

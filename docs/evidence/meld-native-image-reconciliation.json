@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "kind": "interrupted-native-meld-image-reconciliation",
+  "checkedAt": "2026-11-08T17:08:11.734Z",
+  "trustedToolsSource": "f80f7fd5adc0f7e5dc6a7367558e7305ddf764fa",
+  "applicationSource": "a5a6e2b3da5d7917a4d197bbb72dc3807d5d7fed",
+  "contextSha256": "51e78339812807cc0014de08cf52091f265b8fdce16ca545dda36a37318887ee",
+  "dockerConfigId": "sha256:09f05021759fc5059dbc23e95d8f6fb03928b6e5d802001d20da8679634e48b2",
+  "toolchainProbe": "Google Chrome 156.0.8078.79 \nMELD_NATIVE_IMAGE_PROBE_PASS",
+  "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/meld-ci@sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+  "anonymousManifestStatus": 401,
+  "authenticatedManifestStatus": 200,
+  "manifestDigestVerified": true,
+  "imageConfigDigestVerified": true,
+  "builder": {
+    "sandboxId": "cnd_66be60d41ecbf034c781cdff60f585dc11adeb09",
+    "observedState": "destroyed",
+    "checkedAt": "2026-11-08T17:07:52.870Z",
+    "independentRead": true
+  },
+  "originalController": {
+    "sessionMissingOnResume": true,
+    "lastRecordedPhase": "publishing",
+    "originalReceiptRetained": true
+  },
+  "buildControllerSha256": "a396f81124b179698bfd6bb00cf16eadb877897bbad12a80fac66c31757e011f",
+  "limits": [
+    "Builder destruction time before this read is not established",
+    "Original interrupted controller is not relabeled as a completed harness pass",
+    "Fresh VM offline suite and native callback remain required",
+    "This image targets the recorded frozen application source; current application acceptance must identify its actual revision",
+    "No hosted Nanohub runner, shared staging or production deployment activated"
+  ]
+}

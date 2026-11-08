@@ -11,6 +11,7 @@ import { semaphore, positiveInteger } from "./runner-pool.mjs";
 import {sourceRef} from './ci-ref.mjs';
 import {toolchain,archiveDownload} from './toolchain.mjs';
 import {cloudflarePullCredentials} from './cloudflare-registry.mjs';
+import {sourceTransferPolicy} from './source-transfer.mjs';
 const id = (value) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -284,9 +285,14 @@ export async function sandboxJob({
   capacity,
   active = async () => true,
   now = Date.now,
+  maxSourceBundleBytes,
+  sourceTransferConcurrency,
 }) {
+  const transferPolicy=sourceTransferPolicy({maxSourceBundleBytes,sourceTransferConcurrency});
+  if(!bundle?.length||bundle.length>transferPolicy.maxSourceBundleBytes)throw Error('Candidate bundle exceeds the configured runner source limit or is empty');
+  const sourceBundle={bytes:bundle.length,sha256:createHash('sha256').update(bundle).digest('hex'),transferConcurrency:transferPolicy.sourceTransferConcurrency};
   const selected=toolchain(image,imageSnapshot,imageArchive,imageDownload,imageRegistry);
-  const provenance=selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{};
+  const provenance={...(selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),sourceBundle};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
   const ensureTransferActive=async()=>{
@@ -368,23 +374,33 @@ export async function sandboxJob({
     await client.exec(sandbox, `mkdir -p /workspace/nanohub && mkdir -m 700 ${quote(transfer)}`);
     const chunks = [];
     const chunkBytes=uploadChunkBytes;
-    for (let offset = 0; offset < bundle.length; offset += chunkBytes) {
-      await ensureTransferActive();
-      const part =
-        transfer+"/bundle-" + String(chunks.length).padStart(5, "0");
-      const bytes=bundle.subarray(offset, offset + chunkBytes);
-      let selected=part;
-      if(typeof client.stageUpload==='function')selected=await client.stageUpload(sandbox,part,bytes);
-      else await client.upload(sandbox,part,bytes);
-      if(typeof selected!=='string'||!selected.startsWith(transfer+'/')||!/^bundle-\d{5}(?:\.nh-upload-[a-f0-9-]{36})?$/.test(selected.slice(transfer.length+1)))throw Error('Invalid staged source path');
-      chunks.push(selected.slice(transfer.length+1));
-    }
+    const chunkCount=Math.ceil(bundle.length/chunkBytes);
+    let cursor=0,transferError;
+    const upload=async()=>{
+      while(cursor<chunkCount&&!transferError){
+        const index=cursor++;
+        try{
+          await ensureTransferActive();
+          const part=transfer+'/bundle-'+String(index).padStart(5,'0'),offset=index*chunkBytes;
+          const bytes=bundle.subarray(offset,offset+chunkBytes);
+          let selected=part;
+          if(typeof client.stageUpload==='function')selected=await client.stageUpload(sandbox,part,bytes);
+          else await client.upload(sandbox,part,bytes);
+          if(typeof selected!=='string'||!selected.startsWith(transfer+'/')||!/^bundle-\d{5}(?:\.nh-upload-[a-f0-9-]{36})?$/.test(selected.slice(transfer.length+1)))throw Error('Invalid staged source path');
+          chunks[index]=selected.slice(transfer.length+1);
+        }catch(error){transferError??=error instanceof Error?error:Error('Source upload failed');}
+      }
+    };
+    // Drain every issued upload before assembly, cancellation or VM cleanup.
+    // Completion order never chooses manifest order or an abandoned path.
+    await Promise.all(Array.from({length:Math.min(transferPolicy.sourceTransferConcurrency,chunkCount)},upload));
+    if(transferError)throw transferError;
     await ensureTransferActive();
     const manifest=transfer+'/selected-paths';
     await client.upload(sandbox,manifest,Buffer.from(chunks.join('\n')+'\n'),{recover:true});
     await client.exec(
       sandbox,
-      `(cd ${quote(transfer)} && while IFS= read -r part; do cat "$part" || exit 1; done < selected-paths) > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(createHash('sha256').update(bundle).digest('hex'))} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
+      `(cd ${quote(transfer)} && while IFS= read -r part; do cat "$part" || exit 1; done < selected-paths) > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(sourceBundle.sha256)} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
     );
     const script = `set -e\ncp -R /source /tmp/work\ncd /tmp/work\n${prepare}\n${job.script}`;
     await client.upload(
@@ -508,6 +524,7 @@ export async function executeActions(
   } = {},
 ) {
   const { run, source, artifacts, artifactOrigin } = context;
+  const transferPolicy=sourceTransferPolicy(config);
   const git = async (...args) => {
     const result = await processRunner("git", ["-C", source, ...args], {
       env: {
@@ -558,8 +575,8 @@ export async function executeActions(
     bundlePath = join(temporary, "candidate.bundle");
   try {
     await git("bundle", "create", bundlePath, "HEAD");
-    if ((await stat(bundlePath)).size > 64 * 1024 * 1024)
-      throw Error("Candidate bundle exceeds 64 MiB runner transfer limit");
+    if ((await stat(bundlePath)).size > transferPolicy.maxSourceBundleBytes)
+      throw Error('Candidate bundle exceeds the configured runner source limit');
     const bundle = await readFile(bundlePath), pending = new Map();
     const jobLimit=semaphore(positiveInteger(config.jobConcurrency??4,'Job concurrency'));
     const stopped=async(job,state,command)=>{
@@ -575,7 +592,7 @@ export async function executeActions(
         return jobLimit(()=>sandboxLimit(async()=>{
           if(context.active && !await context.active())return stopped(job,'cancelled','Cancelled before allocation: candidate lease is no longer active');
           try {
-            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active,capacity});
+            return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active,capacity,...transferPolicy});
           }catch(error){return stopped(job,'failure','Sandbox allocation or dispatch failed: '+String(error));}
         }));
       })();

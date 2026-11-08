@@ -14,6 +14,7 @@ import {toolchain} from './toolchain.mjs';
 import { runFleet } from './runner-pool.mjs';
 import { verifySandboxAccess } from './sandbox-access.mjs';
 import {sandboxCapacity} from './sandbox-capacity.mjs';
+import {sourceTransferPolicy} from './source-transfer.mjs';
 
 export function runProcess(command, args, options={}) {
   return new Promise((resolve,reject)=>{
@@ -65,6 +66,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   if(origin.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(origin.hostname))throw Error('HTTPS required');
   if((config.repository ? !/^[a-z0-9][a-z0-9-]{0,38}\/[a-z0-9][a-z0-9._-]{0,99}$/.test(config.repository) : !/^[a-z0-9][a-z0-9-]{0,62}$/.test(config.trunk)))throw Error('Use a valid workspace and a trusted toolchain image pinned by SHA-256 digest');
   if(config.backend && !['codegraff','docker'].includes(config.backend))throw Error('Unknown CI backend');
+  if(config.backend==='codegraff')sourceTransferPolicy(config);
+  else if(config.maxSourceBundleBytes!==undefined||config.sourceTransferConcurrency!==undefined)throw Error('Source transfer settings require the Codegraff backend');
   if(config.imageSnapshot!==undefined&&config.backend!=='codegraff')throw Error('Toolchain snapshots require the Codegraff backend');
   if(config.imageArchive!==undefined&&config.backend!=='codegraff')throw Error('Toolchain image archives require the Codegraff backend');
   if(config.imageDownload!==undefined&&config.backend!=='codegraff')throw Error('Toolchain archive downloads require the Codegraff backend');

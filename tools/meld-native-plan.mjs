@@ -14,6 +14,10 @@ export const meldNativeToolchains={
  node:'node:24.14.1-bookworm@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec',
 };
 export const meldPipelineBlob='a9f33cd3fe3f59b5db62702668e12274dfe24e8c';
+// The second revision only prepares signed Debian HTTPS/IPv4 downloads before
+// Chrome installation. Native jobs use the already-prepared browser image;
+// required commands and build/test environments are unchanged.
+export const meldReviewedPipelineBlobs=[meldPipelineBlob,'669bc8351be8c657a17b39a427284a616633cbd9'];
 const manifests=['package.json','apps/api/package.json','apps/web/package.json','packages/db/package.json'];
 const inertEnvironment={
  DATABASE_URL:'postgresql://build_only:build_only@127.0.0.1:5434/build_only',
@@ -65,7 +69,8 @@ export async function prepareMeldNativePlan({source,base,output},{readGit}={}){
   const entry=entries.get(path);if(entry?.type!=='blob'||entry.mode!=='100644')throw Error('Toolchain inputs must be regular committed files: '+path);
   return {path,...entry,bytes:await git('cat-file','blob',entry.blob)};
  };
- if(entries.get('tools/staging/run.mjs')?.blob!==meldPipelineBlob)throw Error('Meld pipeline changed; review its commands before updating the native plan');
+ const pipelineBlob=entries.get('tools/staging/run.mjs')?.blob;
+ if(!meldReviewedPipelineBlobs.includes(pipelineBlob))throw Error('Meld pipeline changed; review its commands before updating the native plan');
  const files=[];
  for(const path of manifests)files.push(await get(path));
  const root=JSON.parse(files[0].bytes.toString());
@@ -100,7 +105,7 @@ RUN node apps/web/node_modules/@playwright/test/cli.js install --with-deps chrom
 USER node
 WORKDIR /tmp
 `;
- const metadata={format:1,sourceCommit:base,pipelineBlob:meldPipelineBlob,toolchains:meldNativeToolchains,inputs:files.map(({path,blob,bytes})=>({path,blob,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')})),workflowPath:'.github/workflows/meld.yml',workflowSha256:createHash('sha256').update(workflow).digest('hex'),limits:['Operator must establish accepted source authority; this generator verifies immutable inputs, not human approval','Image context contains private dependency metadata and patch content; publish only to approved private storage','No application source, Git history, runtime credentials or source CI entrypoint copied into image context','Browser and dependency downloads occur only during trusted image preparation; candidate jobs use network none','Generated workflow requires separate accepted-default bootstrap in an isolated Nanohub copy before feature checks']};
+ const metadata={format:1,sourceCommit:base,pipelineBlob,toolchains:meldNativeToolchains,inputs:files.map(({path,blob,bytes})=>({path,blob,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')})),workflowPath:'.github/workflows/meld.yml',workflowSha256:createHash('sha256').update(workflow).digest('hex'),limits:['Operator must establish accepted source authority; this generator verifies immutable inputs, not human approval','Image context contains private dependency metadata and patch content; publish only to approved private storage','No application source, Git history, runtime credentials or source CI entrypoint copied into image context','Browser and dependency downloads occur only during trusted image preparation; candidate jobs use network none','Generated workflow requires separate accepted-default bootstrap in an isolated Nanohub copy before feature checks']};
  await mkdir(destination,{mode:0o700});
  try{
   const context=join(destination,'context');await mkdir(context,{mode:0o700});
