@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stagingGate, verifyVersion, runOnce } from '../../../tools/ci-runner.mjs';
+import { stagingGate, verifyVersion, runOnce, revalidateEnvironment } from '../../../tools/ci-runner.mjs';
 const head='a'.repeat(40),base='b'.repeat(40),context={run:{id:'event',head,base},stagingOrigin:'https://staging.example.invalid'};
 const version=sha=>async()=>Response.json({buildId:sha});
 test('invalid private toolchain configuration is rejected before claiming a hosted job',async()=>{
@@ -106,4 +106,13 @@ test('approval racing deferral immediately rechecks authorization; rejected and 
  const calls=[],receipt={id:'receipt-1',issuedAt:Date.now()};const api=async path=>{calls.push(path);return path.endsWith('/request')?{id:'request-1',state:'waiting'}:path.endsWith('/defer')?{ready:true}:receipt;};
  const result=await authorizeEnvironment(api,{id:'event',attempt:2},'staging',[]);assert.deepEqual(result.authorization,receipt);assert.deepEqual(calls,['/deployments/request','/deployments/defer','/deployments/authorize']);
  for(const state of ['rejected','stale'])await assert.rejects(authorizeEnvironment(async path=>{assert.ok(path.endsWith('/request'));return{state,reason:'Changed candidate'};},{id:'event',attempt:1},'staging',[]),/Changed candidate/);
+});
+
+test('deployment revalidation requires a fresh server observation of the original exact authorization',async()=>{
+ const now=1900000000000,run={id:'run-1',attempt:2,generation:3},authorization={id:'authorization-1',request:'request-1',run:run.id,attempt:run.attempt,generation:run.generation,environmentId:'staging',issuedAt:now-60000,expiresAt:now+60000};
+ const api=async(path,body)=>{assert.equal(path,'/deployments/revalidate');assert.deepEqual(body,{requestId:authorization.request,authorizationId:authorization.id,attempt:run.attempt});return {authorization,checkedAt:now};};
+ assert.deepEqual(await revalidateEnvironment(api,run,authorization,{now:()=>now}),{...authorization,checkedAt:now});
+ for(const result of [{authorization},{authorization,checkedAt:now-30001},{authorization,checkedAt:now+1001},{authorization:{...authorization,attempt:3},checkedAt:now}])await assert.rejects(revalidateEnvironment(async()=>result,run,authorization,{now:()=>now}),/stale or changed/);
+ await assert.rejects(revalidateEnvironment(async()=>{throw Error('revoked');},run,authorization,{now:()=>now}),/revoked/);
+ await assert.rejects(revalidateEnvironment(api,{...run,attempt:3},authorization,{now:()=>now}),/exact deployment authorization/);
 });

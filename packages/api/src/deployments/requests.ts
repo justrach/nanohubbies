@@ -1,6 +1,6 @@
 import {assertRepositoryWritable} from "../repository/archive";
 import {Environments} from './store';
-import {approvedReviewers,freshMembership} from './authorization';
+import {approvedReviewers,freshMembership,verifyDeploymentAuthorization} from './authorization';
 import {deploymentRefError,requireDeploymentRef} from './ref-policy';
 import {runRef,runRefTarget} from '../ci/ref';
 import {defaultRef} from '../repository/default-branch';
@@ -54,6 +54,15 @@ export class DeploymentRequests {
   const status=this.status(request,run,proof,actor,now);
   if(!status.canReview||decision==='approve'&&!status.canApprove)throw Error('Account cannot review this deployment or self-review is prevented');
   request.reviews.push({actor,decision,comment,at:now});request.revision++;this.save(request);return request;
+ }
+ revalidate(id:string,authorizationId:string,run:Run,runner:string,proof:DeploymentMembership|undefined,now=Date.now()) {
+  assertRepositoryWritable(this.sql);
+  const request=this.get(id),env=this.current(request,run),status=this.status(request,run,proof,'',now);
+  if(!env||!['ready','running'].includes(status.state)||run.state!=='running'||run.runner!==runner||run.leaseUntil<=now||env.runner&&env.runner!==runner)throw Error(status.reason??'Deployment authorization is unavailable');
+  const authorization=verifyDeploymentAuthorization(this.sql,env,{authorizationId,verifiedAt:now},run,runner,proof,now);
+  if(!authorization||authorization.request!==id)throw Error('Deployment authorization does not match the requested deployment');
+  // This is a fresh observation, not another issuance or an extended lease.
+  return {authorization,checkedAt:now};
  }
  authorize(id:string,run:Run,runner:string,proof:DeploymentMembership|undefined,now=Date.now(),issued?:(authorization:DeploymentAuthorization)=>void):DeploymentAuthorization {
   assertRepositoryWritable(this.sql);

@@ -21,6 +21,9 @@
     "test:hosted-recovery": "bun run check:operators && bun run --filter @swarm/web types && tsrs --noEmit -p tools/hosted-recovery-fixture/tsconfig.json && bun test tools/hosted-recovery-fixture/fixture.test.ts tools/hosted-git-fixture/fixture.test.ts tools/hosted-recovery-fixture/phase-deploy.test.mjs tools/hosted-recovery-fixture/client-wire.test.mjs tools/operator-bindings.test.mjs && node --test tools/hosted-recovery-fixture/client-wire.test.mjs tools/hosted-recovery-fixture/phase-deploy.test.mjs"
   },
   "devDependencies": {
+    "blake3-wasm": "2.1.5",
+    "ignore": "5.3.2",
+    "mime-types": "3.0.2",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "turbo": "^2.11.6",
     "yaml": "2.9.1"

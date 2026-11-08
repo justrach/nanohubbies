@@ -152,6 +152,13 @@ VM destruction, verifies the compiled module/assets profile and compares the
 wrapper hash with the committed candidate. This still performs no application
 deployment and cannot satisfy the real-service staging gate by itself.
 
+The [trusted Worker uploader and native staging adapter](meld-worker-upload.md)
+now have local contract, resource-preservation and fresh-authorization acceptance.
+Their [local receipt](evidence/meld-worker-upload-local-receipt.json) does not claim
+a live upload or deployment. Activation requires an inspected staging baseline,
+authorized provider access, the new server revalidation endpoint and a trusted
+real-service acceptance module. The old accepted-base bridge guard remains.
+
 An uncertain live operation must be observed through its retained run, capacity
 and sandbox receipts; do not replay the launch. Native logs retain a bounded
 tail, so a successful suite does not provide individual test counts beyond the

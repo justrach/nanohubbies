@@ -253,6 +253,11 @@ export async function runnerRoute(env: Env, request: Request, trunk: string, id:
       return Response.json({run,cloneUrl:`${new URL(request.url).origin}/git/${address?`${address.namespace}/${address.name}`:trunk}.git`});
     }
     if(id==="deployments") {
+      if(operation==="revalidate") {
+        const body=await creationBody<{requestId:string;authorizationId:string;attempt:number}>(request,2048);
+        if(Object.keys(body).some(key=>!["requestId","authorizationId","attempt"].includes(key))||typeof body.requestId!=="string"||typeof body.authorizationId!=="string"||!Number.isSafeInteger(body.attempt))throw Error("Invalid deployment revalidation");
+        return Response.json(await seq.revalidateDeployment(token,body.requestId,body.authorizationId,body.attempt,new URL(request.url).origin),{headers:{"Cache-Control":"private, no-store"}});
+      }
       if(operation==="request") {
         const body=await creationBody<{runId:string;attempt:number;environment:string;optional?:boolean}>(request,2048);if(Object.keys(body).some(key=>!["runId","attempt","environment","optional"].includes(key))||typeof body.runId!=="string"||!Number.isSafeInteger(body.attempt)||typeof body.environment!=="string"||body.optional!==undefined&&typeof body.optional!=="boolean")throw Error("Invalid deployment request");
         return Response.json(await seq.runnerDeployment(token,body.runId,body.attempt,body.environment,new URL(request.url).origin,body.optional));

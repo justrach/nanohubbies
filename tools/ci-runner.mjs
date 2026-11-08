@@ -43,12 +43,13 @@ export async function stagingGate(adapter, context, fetcher=fetch) {
   if(!dispatch?.runId)throw Error('Staging adapter did not return a deployment run ID');
   const deployed=await adapter.wait(dispatch.runId,context.run.head);
   if(deployed?.state!=='success'||deployed?.candidate!==context.run.head||deployed?.kind!=='deployment')throw Error('Exact candidate deployment job did not succeed');
-  await verifyVersion(context.stagingOrigin,context.run.head,fetcher,context.versionPrefixLength??40);
+  const prefixLength=context.versionPrefixLength??adapter.versionPrefixLength??40;
+  await verifyVersion(context.stagingOrigin,context.run.head,fetcher,prefixLength);
   const acceptance=await adapter.accept({...context,deployRunId:dispatch.runId});
   if(!Array.isArray(acceptance)||!acceptance.length||acceptance.some(e=>e.realService!==true||!e.url))throw Error('Real-service acceptance evidence is required');
   // Shared staging can move during acceptance. Check again when collecting it.
-  const version=await verifyVersion(context.stagingOrigin,context.run.head,fetcher,context.versionPrefixLength??40);
-  return {runId:dispatch.runId,head:context.run.head,candidate:context.run.head,base:context.run.base,version,observedBuildId:context.run.head.slice(0,context.versionPrefixLength??40),verifiedAt:Date.now(),acceptance};
+  const version=await verifyVersion(context.stagingOrigin,context.run.head,fetcher,prefixLength);
+  return {runId:dispatch.runId,head:context.run.head,candidate:context.run.head,base:context.run.base,version,observedBuildId:context.run.head.slice(0,prefixLength),verifiedAt:Date.now(),acceptance};
 }
 /** Ask the server before invoking any trusted deployment adapter. Waiting
  * persists successful checks and relinquishes both the CI and Git read lease. */
@@ -61,6 +62,14 @@ export async function authorizeEnvironment(api, run, environment, results, {opti
     if(!deferred.ready)return {waiting:true,request:request.id};
   } else if(!['ready','running'].includes(request.state))throw Error(request.reason||'Deployment request is unavailable');
   return {waiting:false,authorization:await api('/deployments/authorize',{requestId:request.id,attempt:run.attempt})};
+}
+/** Recheck current authority immediately before a provider mutation. An old
+ * issuance timestamp is not proof that approval or membership is still valid. */
+export async function revalidateEnvironment(api,run,authorization,{now=Date.now}={}) {
+  if(!authorization?.id||!authorization.request||authorization.run!==run.id||authorization.attempt!==run.attempt||authorization.generation!==(run.generation??1))throw Error('An exact deployment authorization is required for revalidation');
+  const result=await api('/deployments/revalidate',{requestId:authorization.request,authorizationId:authorization.id,attempt:run.attempt});
+  if(!result||!Number.isFinite(result.checkedAt)||result.checkedAt>now()+1000||now()-result.checkedAt>30000||JSON.stringify(result.authorization)!==JSON.stringify(authorization)||authorization.expiresAt<=now())throw Error('Deployment authorization revalidation is stale or changed');
+  return {...authorization,checkedAt:result.checkedAt};
 }
 export async function runOnce(config, token, {sandboxLimit}={}) {
   if(!config.backend && !config.pipelineAdapter)config={...config,backend:'codegraff'};
@@ -107,6 +116,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
     }
   }
   const authorize=()=>authorizeEnvironment(api,run,config.stagingEnvironment??'staging',results,{optional:!config.stagingEnvironment,beforeDefer:uploadLogs});
+  const authorizeDeployment=()=>revalidateEnvironment(api,run,authorization);
   try {
     // Combined adapters may deploy during execute(), so authorize before they
     // run. A deferred combined pipeline has no checks to reuse on resumption.
@@ -131,7 +141,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
     if(config.pipelineAdapter && config.backend!=='codegraff') {
       if(!isAbsolute(config.pipelineAdapter))throw Error('Pipeline adapter must be a trusted absolute path');
       const adapter=await import(pathToFileURL(config.pipelineAdapter).href);
-      const result=await adapter.execute({run,source,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl,deploymentAuthorization:authorization});
+      const result=await adapter.execute({run,source,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl,deploymentAuthorization:authorization,authorizeDeployment});
       results.push(...result.results);staging=result.staging;deployments=result.deployments??[];if(!Array.isArray(deployments)||deployments.length>30)throw Error("Trusted adapter returned invalid deployment reports");
     }
     for(const check of resumedChecks||config.pipelineAdapter||config.backend==='codegraff'?[]:config.checks) {
@@ -150,7 +160,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
       const adapter=await import(pathToFileURL(config.stagingAdapter).href);
       const gate=await authorize();if(gate.waiting)return gate;authorization=gate.authorization;
       try {
-        staging=await stagingGate(adapter,{run,source,results,buildArtifacts:config.buildArtifacts??[],toolchainImage:config.image,deploymentAuthorization:authorization,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl});
+        staging=await stagingGate(adapter,{run,source,results,buildArtifacts:config.buildArtifacts??[],toolchainImage:config.image,deploymentAuthorization:authorization,authorizeDeployment,stagingOrigin:config.stagingOrigin,artifacts,artifactOrigin:publicUrl});
         await writeFile(join(artifacts,'staging.log'),JSON.stringify(staging,null,2));
         results.push({name:'staging',state:'success',command:'approved staging pipeline; exact deployment job, version, real-service acceptance, version recheck',log:new URL('staging.log',publicUrl).href,artifacts:staging.acceptance.map(e=>e.url)});
       } catch(error) {

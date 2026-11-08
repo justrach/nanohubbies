@@ -402,6 +402,10 @@ export class Sequencer extends DurableObject<Env> {
     const ci=new CIStore(this.sql),requests=new DeploymentRequests(this.sql),request=requests.get(id);ci.logAccess(token,request.run,attempt);const proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
     return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql);current.logAccess(token,request.run,attempt);const authorization=new DeploymentRequests(this.sql).authorize(id,current.get(request.run),current.authenticate(token),proof,Date.now(),authorization=>new Repository(this.sql).audit({actor:authorization.runner,deploymentAuthorization:{id:authorization.id,request:id,environment:request.environment}}));return authorization;});
   }
+  async revalidateDeployment(token:string,id:string,authorizationId:string,attempt:number,origin:string) {
+    const ci=new CIStore(this.sql),request=new DeploymentRequests(this.sql).get(id);ci.logAccess(token,request.run,attempt);const proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
+    return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql);current.logAccess(token,request.run,attempt);return new DeploymentRequests(this.sql).revalidate(id,authorizationId,current.get(request.run),current.authenticate(token),proof);});
+  }
   async deferDeployment(token:string,id:string,attempt:number,results:CheckResult[],origin:string) {
     const ci=new CIStore(this.sql),requests=new DeploymentRequests(this.sql),request=requests.get(id);ci.logAccess(token,request.run,attempt);const proof=await this.deploymentMembers(request.reviews.map(review=>review.actor),origin);
     return this.ctx.storage.transactionSync(()=>{const current=new CIStore(this.sql),run=current.get(request.run),status=new DeploymentRequests(this.sql).status(new DeploymentRequests(this.sql).get(id),run,proof);if(status.state==="ready")return {ready:true as const};if(status.state!=="waiting")throw Error(status.reason??"Deployment is not waiting");return current.defer(token,run.id,attempt,id,results);});

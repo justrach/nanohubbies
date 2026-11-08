@@ -9,7 +9,7 @@ export function approvedReviewers(request:DeploymentRequest,env:DeploymentEnviro
 }
 /** The ID is a receipt, not a bearer credential. The authenticated CI lease,
  * current environment, exact run generation and current approvers must agree. */
-export function verifyDeploymentAuthorization(sql:SqlStorage,env:DeploymentEnvironment,report:DeploymentReport,run:{id:string;head:string;base:string;generation?:number;attempt:number;branch:string;ref?:string;refTarget?:string},runner:string,proof:DeploymentMembership|undefined,now:number):DeploymentAuthorization|undefined {
+export function verifyDeploymentAuthorization(sql:SqlStorage,env:DeploymentEnvironment,report:Pick<DeploymentReport,'authorizationId'|'verifiedAt'>,run:{id:string;head:string;base:string;generation?:number;attempt:number;branch:string;ref?:string;refTarget?:string},runner:string,proof:DeploymentMembership|undefined,now:number):DeploymentAuthorization|undefined {
  if(!protectedEnvironment(env)&&!report.authorizationId)return;
  if(typeof report.authorizationId!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(report.authorizationId))throw Error(`Deployment environment ${env.name} requires authorization before deployment`);
  if(!sql.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name='deployment_authorizations'").toArray().length)throw Error('Deployment authorization unavailable');

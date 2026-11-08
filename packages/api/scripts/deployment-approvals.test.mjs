@@ -77,3 +77,16 @@ test('reintroduced candidate generations attribute self-review to the new trigge
   const request=f.requests.request(next,'production','writer');const status=f.requests.status(request,next,proof({writer:'member'}),'writer');assert.equal(status.canApprove,false);assert.equal(status.canReview,true);assert.equal(f.requests.status(f.request,next,proof()).state,'stale');
  }finally{f.db.close();}
 });
+
+test('fresh deployment revalidation retains original issuance and expiry while rejecting changed current authority',()=>{
+ const f=fixture();try{
+  f.requests.review(f.request.id,f.run,'reader','approve','',0,proof());const auth=f.requests.authorize(f.request.id,f.run,f.runner.id,proof()),now=auth.issuedAt+60000;
+  const result=f.requests.revalidate(f.request.id,auth.id,f.run,f.runner.id,proof(undefined,now),now);assert.deepEqual(result,{authorization:auth,checkedAt:now});
+  assert.equal(f.sql.exec('SELECT count(*) AS n FROM deployment_authorizations').toArray()[0].n,1);
+  for(const access of ['absent','unavailable'])assert.throws(()=>f.requests.revalidate(f.request.id,auth.id,f.run,f.runner.id,proof({reader:access},now),now),/eligible|Waiting/);
+  assert.throws(()=>f.requests.revalidate(f.request.id,auth.id,f.run,f.other.id,proof(undefined,now),now),/unavailable/);
+  assert.throws(()=>f.requests.revalidate(f.request.id,crypto.randomUUID(),f.run,f.runner.id,proof(undefined,now),now),/expired|changed/);
+  const after=auth.expiresAt+1;assert.throws(()=>f.requests.revalidate(f.request.id,auth.id,{...f.run,leaseUntil:after+600000},f.runner.id,proof(undefined,after),after),/expired|changed/);
+  f.envs.set({name:f.env.name,reviewers:['reader'],waitTimerMinutes:1},f.env.id);assert.throws(()=>f.requests.revalidate(f.request.id,auth.id,f.run,f.runner.id,proof(undefined,now),now),/changed/);
+ }finally{f.db.close();}
+});

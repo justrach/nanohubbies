@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "kind": "meld-native-upload-local-validation",
+  "observedAt": "2026-11-08T23:29:08.063Z",
+  "sourceBase": "03808a669d9d2983529c87834226dc475fbbf20c",
+  "scope": "Local transport and authorization checks; not live Cloudflare or Meld staging acceptance",
+  "checks": {
+    "apiUnit": {
+      "passed": 520,
+      "failed": 0,
+      "skipped": 0
+    },
+    "hostingUnit": {
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0
+    },
+    "hostingWorkerFixtures": [
+      "shared capacity",
+      "Git namespace/ACL/secrets continuity"
+    ],
+    "deploymentWorkerFixture": "passed, including fresh current-authority revalidation and membership-removal denial",
+    "focusedBun": {
+      "passed": 14,
+      "failed": 0
+    },
+    "apiPinnedTsrs": "passed",
+    "operatorPreflight": {
+      "files": 19,
+      "bindingsChecked": true,
+      "fullTypeCheck": false
+    }
+  },
+  "logs": {
+    "apiUnit": {
+      "bytes": 81247,
+      "sha256": "8458620cea3ff56b3c106cf1cb0eb8fed427e38fdc821d3e80c22587a4789d36",
+      "private": true
+    },
+    "hosting": {
+      "bytes": 11700,
+      "sha256": "39cc80c940d7621be7b51e323e57d99a966eff825fb776e7552771461e821271",
+      "private": true
+    },
+    "deploymentApprovals": {
+      "bytes": 263,
+      "sha256": "f7ad012ced559d54d678f1e23431657ad0246524070ff3fd1ec74506415279aa",
+      "private": true
+    },
+    "apiTypes": {
+      "bytes": 3775,
+      "sha256": "cfcc849ae589f17fb800ce69dfd81fc26f730d9364e956341a5f448c1402188d",
+      "private": true
+    }
+  },
+  "provider": {
+    "meldStagingReadOnlyStatus": 403,
+    "mutations": 0,
+    "liveUploadValidated": false,
+    "livePromotionValidated": false
+  },
+  "remaining": [
+    "Deploy and verify the new revalidation API",
+    "Inspect actual staging target baseline using authorized account access",
+    "Validate upload metadata and resource readback against the live provider",
+    "Serialize with the existing Meld staging pipeline",
+    "Configure trusted real-service acceptance",
+    "Complete actual staging/version/acceptance and protected merge/cutover gates"
+  ]
+}
