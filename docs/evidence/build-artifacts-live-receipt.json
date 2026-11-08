@@ -1,0 +1,103 @@
+{
+  "format": 1,
+  "kind": "real-cloud-private-build-artifact-component-acceptance",
+  "startedAt": "2026-11-08T19:43:39.032Z",
+  "finishedAt": "2026-11-08T19:46:55.485Z",
+  "nanohubSource": "e206a92cdf949bf27e87462ef43143cce90d6c5f",
+  "fixtureCommit": "f4953f72e4a1bc501af7fc4e9d9e1b6e9aa2e25a",
+  "acceptedWorkflowBase": "f4953f72e4a1bc501af7fc4e9d9e1b6e9aa2e25a",
+  "acceptancePassed": true,
+  "validArtifact": {
+    "manifestSha256": "41968d3d738a204db3855612c9eeedcf8010be4db6bba7a564886bf56673143a",
+    "fileCount": 4,
+    "totalBytes": 400072,
+    "files": [
+      {
+        "bytes": 200003,
+        "path": "assets/data.bin",
+        "sha256": "cb37f15d5a9ff48ddb260c369de099a24f998aecb9d7878c0068a6a77190a757"
+      },
+      {
+        "bytes": 200003,
+        "path": "duplicate.bin",
+        "sha256": "cb37f15d5a9ff48ddb260c369de099a24f998aecb9d7878c0068a6a77190a757"
+      },
+      {
+        "bytes": 0,
+        "path": "empty",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 66,
+        "path": "worker.mjs",
+        "sha256": "c1d5fceebb37b3124bfaf3a92f85fcacef7b35ddc33a7fd3ae490e5c4a60e68d"
+      }
+    ],
+    "loadedAfterContainerStopAndVmDestruction": true
+  },
+  "unsafeArtifact": {
+    "state": "failed",
+    "failure": "build_artifact_rejected",
+    "expectedRejection": true
+  },
+  "jobResults": [
+    {
+      "name": "artifact/valid",
+      "state": "success",
+      "execution": {
+        "provider": "codegraff",
+        "sandboxId": "cnd_9c8ef82026da26b24b4d8d68b4c87f5c95fd6433",
+        "workflow": ".github/workflows/artifact.yml",
+        "job": "valid"
+      }
+    },
+    {
+      "name": "artifact/unsafe",
+      "state": "failure",
+      "execution": {
+        "provider": "codegraff",
+        "sandboxId": "cnd_94d5389abd145a131fa3aa80d37c84c732cda065",
+        "workflow": ".github/workflows/artifact.yml",
+        "job": "unsafe"
+      }
+    }
+  ],
+  "toolchainManifestDigest": "sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+  "cleanup": [
+    {
+      "sandboxId": "cnd_9c8ef82026da26b24b4d8d68b4c87f5c95fd6433",
+      "state": "destroyed",
+      "independentRead": true,
+      "originalCleanupNeeded": false
+    },
+    {
+      "sandboxId": "cnd_94d5389abd145a131fa3aa80d37c84c732cda065",
+      "state": "destroyed",
+      "independentRead": true,
+      "originalCleanupNeeded": false
+    }
+  ],
+  "cleanupErrors": [],
+  "hostedNanohub": false,
+  "sharedCapacityIncluded": false,
+  "hostedCallbackIncluded": false,
+  "applicationDeployed": false,
+  "productionDeployed": false,
+  "localValidation": {
+    "apiUnitTests": 499,
+    "hostingTests": 77,
+    "focusedBunTests": 61,
+    "workerCapacityAndNamespaceGitIntegrations": true,
+    "pinnedTsrs": true,
+    "operatorBindingPreflight": true,
+    "fullOperatorJavascriptTyping": false
+  },
+  "credentialPatternScan": {
+    "tool": "Gitleaks",
+    "version": "8.30.1",
+    "inlineAllowancesIgnored": true,
+    "rangeBaseExclusive": "75dc1de2210d1992aa9d58c46bee8c3fc3f09dbb",
+    "rangeHeadInclusive": "e206a92cdf949bf27e87462ef43143cce90d6c5f",
+    "findings": 0
+  }
+}

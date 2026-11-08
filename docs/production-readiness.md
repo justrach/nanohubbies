@@ -15,6 +15,13 @@ uses a local Nanohub fixture and real Codegraff execution. Hosted activation,
 safe feature-candidate staging, real-service acceptance and cutover remain open;
 the earlier production deployment observations below retain their receipt dates.
 
+The [private artifact handoff](evidence/build-artifacts-validation.md) separately
+passes a real two-VM component probe on `e206a92`: selected binary/empty outputs
+survive container stop, hashes and run bindings verify after destruction, and an
+unsafe output is refused. This is synthetic build-output acceptance; the complete
+Meld staging package, trusted uploader and shared hosted artifact storage remain
+open. No application deployment or runtime version changes in this verification.
+
 Published CLI **0.4.21** and the deployed review UI add
 [reader feedback](reader-feedback.md), isolated private drafts, reader reviewer
 requests and author Comment-only decisions. Required approvals remain tied to

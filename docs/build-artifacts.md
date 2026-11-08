@@ -104,6 +104,8 @@ replay its launch.
 Local validation includes real Python archive reading through a bounded gateway
 fixture, actual socket/root-link refusal, corruption, revocation, lost launch
 acknowledgement, stale bindings, host-link refusal and native job cleanup.
-Actual provider acceptance is separate from those fixtures. Meld's existing
+The [real provider probe](evidence/build-artifacts-validation.md) now passes at
+`e206a92`, including stopped-container persistence, verified file reads, expected
+unsafe-output rejection and independent destruction of both VMs. Meld's existing
 Worker wrapper imports source modules in addition to OpenNext output: a complete
 prebundled staging package and trusted Cloudflare uploader are still required.
