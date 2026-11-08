@@ -47,7 +47,7 @@ container exit and retains the result outside candidate execution. Keep
 Cloudflare control, registry issuance, Nanohub runner and deployment authority
 in the trusted controller.
 
-Current acceptance is preparation only: the actual frozen Meld main
+Initial preparation acceptance used the actual frozen Meld main
 `a5a6e2b3da5d7917a4d197bbb72dc3807d5d7fed` produces six allowlisted inputs and
 the generated workflow compiles through Nanohub's real parser. Five Node/Bun
 cases cover workflow semantics, input isolation, drift/path/credential refusal
@@ -72,10 +72,13 @@ targets this freshly frozen application source, with separate synthetic
 bootstrap/candidate commits, rather than describing the earlier source as
 current.
 
-Separate fresh-VM offline full-suite, exact-head native callback, malicious
-workflow replacement rejection and job cleanup still need live acceptance.
-No hosted runner, shared staging
-or production activation is established by this preparation. Real-service
+The [fresh native acceptance](evidence/meld-native-ci-live-validation.md) now
+passes on trusted Nanohub source `f01806c`: the actual frozen application runs
+the full offline suite in a fresh VM, ignores the candidate workflow replacement,
+reports an exact-head/base native Success, rejects stale retry delivery and
+verifies revocation plus independent VM destruction. This uses an isolated
+local Nanohub fixture with real cloud execution. No hosted runner, shared staging
+or production activation is established. Real-service
 staging acceptance and the original application policy/merge/cutover gates stay
 required.
 
@@ -128,8 +131,10 @@ The [first fresh native attempt](evidence/meld-native-preflight-failure.json)
 stops at Codegraff's read-only sandbox-list preflight with HTTP 503 before any
 fixture, credential, run or VM is created. Existing-VM lookup still works, while
 normal and bounded-list reads fail. Cloud large-bundle execution, the full
-application suite and native callback acceptance remain open; a passing local
-transport does not replace them.
+application suite and native callback acceptance were not established by that
+attempt; a passing local transport does not replace them. The later
+[fresh native acceptance](evidence/meld-native-ci-live-validation.md) separately
+passes those execution gates without relabeling the earlier failures.
 
 The gateway's exact owned-sandbox read still returns 200 with the expected
 destroyed ID for Meld's key, and the key missing sandbox scope returns 403 /

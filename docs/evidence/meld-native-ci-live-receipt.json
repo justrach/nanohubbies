@@ -1,0 +1,131 @@
+{
+  "format": 1,
+  "startedAt": "2026-11-08T18:46:52.849Z",
+  "finishedAt": "2026-11-08T19:16:36.634Z",
+  "nanohubSource": "f01806c20796a476e26c6eb523a81659a4243e93",
+  "originalApplicationCommit": "8554f69acf4a0936ccacb3b4b9b3e0f8147796d8",
+  "acceptedWorkflowCommit": "8cc81833d840b4498d5d77f48d05fe1f330cc3a8",
+  "candidate": "483fcc9c9aeb40f91a5ad6c55f1c3935b2a0aa01",
+  "nativeRunId": "60eb5105-2834-4edf-a55e-f63fcae5714e",
+  "sandboxId": "cnd_01de3d8f8660e3df31acbf7f85a21f93e84b6e19",
+  "providerCleanup": {
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "cleanupErrors": [],
+  "import": {
+    "verified": true,
+    "objects": 18107,
+    "uploadedObjects": 18107,
+    "refs": 1,
+    "fsck": "strict",
+    "resumed": false,
+    "scope": "committed branches and tags only; external LFS and submodules rejected"
+  },
+  "hostedNanohub": false,
+  "originalMeldRefsWritten": false,
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "importCredentialRevoked": true,
+  "revokedImportRejected": true,
+  "fixtureBootstrapRunHasNoSuccess": true,
+  "protectedMainWritesRejected": true,
+  "gitCredentialRevokedBeforeCi": true,
+  "revokedGitRejected": true,
+  "prBlockedBeforeCi": true,
+  "privateLogDelivered": true,
+  "anonymousLogDenied": true,
+  "prStillRequiresStaging": true,
+  "retryInvalidatesOlderPass": true,
+  "corePassed": true,
+  "runnerRevoked": true,
+  "revokedRunnerRejected": true,
+  "fixtureClosed": true,
+  "originalSourceRefsUnchanged": true,
+  "acceptancePassed": true,
+  "sourceBundle": {
+    "bytes": 376502159,
+    "sha256": "9f70c23ddf3aff4880c899ef7e2b2890744286e59bb8d5fb7af15a27b1ded4d3",
+    "transferConcurrency": 4
+  },
+  "candidateExecution": {
+    "provider": "codegraff",
+    "sandboxId": "cnd_01de3d8f8660e3df31acbf7f85a21f93e84b6e19",
+    "workflow": ".github/workflows/meld.yml",
+    "job": "check"
+  },
+  "callback": {
+    "state": "complete",
+    "head": "483fcc9c9aeb40f91a5ad6c55f1c3935b2a0aa01",
+    "base": "8cc81833d840b4498d5d77f48d05fe1f330cc3a8",
+    "attempt": 1,
+    "check": "meld/check",
+    "conclusion": "success"
+  },
+  "independentFinalProviderRead": {
+    "checkedAt": "2026-11-08T19:16:54.386Z",
+    "phase": "finished",
+    "sandboxId": "cnd_01de3d8f8660e3df31acbf7f85a21f93e84b6e19",
+    "state": "destroyed"
+  },
+  "tests": {
+    "unitAndPackagePassed": 4231,
+    "unitAndPackageSkipped": 205,
+    "browserPassed": 468,
+    "browserSkipped": 70,
+    "browserReportedDurationMinutes": 10.7,
+    "productionBundle": "OpenNext build complete."
+  },
+  "liveSnapshot": {
+    "checkedAt": "2026-11-08T19:16:27.369Z",
+    "source": "483fcc9c9aeb40f91a5ad6c55f1c3935b2a0aa01",
+    "sandboxId": "cnd_01de3d8f8660e3df31acbf7f85a21f93e84b6e19",
+    "bytes": 330679,
+    "sha256": "f676c05dbc112965e39a317c087f227c2dfdba37413d204ae8f757fcb136d402",
+    "lastStep": "Step 8: Production bundle",
+    "summaries": [
+      "Test Files  25 passed (25)",
+      "Tests  411 passed (411)",
+      "Test Files  207 passed | 9 skipped (216)",
+      "Tests  2311 passed | 205 skipped (2516)",
+      "Test Files  168 passed (168)",
+      "Tests  1509 passed (1509)"
+    ],
+    "browserProgress": {
+      "declaredTests": 538,
+      "workers": 2,
+      "lastProgress": null,
+      "totalProgress": null
+    },
+    "snapshotOnly": true,
+    "notFinalCompletion": true
+  },
+  "finalLog": {
+    "bytes": 16384,
+    "sha256": "8b0d4f225ac7de083034e4a282a8442cd07c787a8ae5f77ec23c94fda56248da"
+  },
+  "runtimeIsolation": {
+    "observedAt": "2026-11-08T19:11:56.034Z",
+    "memoryMaxBytes": 8589934592,
+    "cpuQuotaMicros": 400000,
+    "cpuPeriodMicros": 100000,
+    "pidsMax": 512,
+    "uid": 1000,
+    "capEff": "0000000000000000",
+    "noNewPrivileges": "1",
+    "interfaces": [
+      "lo",
+      "sit0"
+    ],
+    "mountReadOnly": {
+      "/source": true,
+      "/job.sh": true
+    },
+    "dockerSocketPresent": false,
+    "controlCredentialPresent": false,
+    "swapLimitSupport": false,
+    "dockerUsageTelemetry": "unavailable; zero summary is not resource usage evidence"
+  },
+  "toolchainManifestDigest": "sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+  "registryProvider": "cloudflare"
+}

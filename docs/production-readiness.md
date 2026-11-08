@@ -6,6 +6,15 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
+2026-11-09 update: [native isolated Meld acceptance](evidence/meld-native-ci-live-validation.md)
+now passes on Nanohub `f01806c`: full-history source transport, offline checks,
+4,231 unit/package tests, 468 browser tests, production build, authenticated
+callback, retry invalidation, revocation and independent VM destruction. There
+are 205 unit/package and 70 browser skips; they are not verified behavior. This
+uses a local Nanohub fixture and real Codegraff execution. Hosted activation,
+safe feature-candidate staging, real-service acceptance and cutover remain open;
+the earlier production deployment observations below retain their receipt dates.
+
 Published CLI **0.4.21** and the deployed review UI add
 [reader feedback](reader-feedback.md), isolated private drafts, reader reviewer
 requests and author Comment-only decisions. Required approvals remain tied to

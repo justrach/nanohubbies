@@ -34,3 +34,21 @@ Local and real cloud acceptance retain their exact source/scope in the
 [Meld bridge evidence](meld-bridge-freshness-validation.md). Source review,
 automated runner/release setup, actual staging/cutover and production operations
 acceptance remain open.
+
+## Subsequent source at f01806c — 2026-11-09 (SGT)
+
+The feature branch is pushed at `f01806c20796a476e26c6eb523a81659a4243e93`.
+The [31-commit follow-up scan](source-publication-f01806c.json) covers all Git
+patch history since the prior published head, including removed lines, with
+Gitleaks 8.30.1 built-in rules and inline allowances ignored. Its ten generic
+matches are individually verified SHA-256 values: seven match historical Git
+source blobs and three match retained private evidence files. No rules or
+allowlists are changed. Eight configured credential values and full-length
+credentials matching the recorded Nanohub/Codegraff prefix pattern are absent
+from that patch range. This is not a complete repository security assessment.
+
+The exact-head [GitHub push workflow](https://github.com/justrach/nanohubbies/actions/runs/42511696371)
+is observed queued, not completed. The [real native Meld pass](meld-native-ci-live-validation.md)
+is separate evidence for the application migration backend, not a successful
+Nanohub GitHub workflow. No source PR, merge or runtime deployment is performed
+by this follow-up verification.

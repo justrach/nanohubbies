@@ -44,5 +44,8 @@ Validation on the corrected source:
 - Pinned tsrs passes API/web/vault: two fresh tasks, one cached. Operator binding
   preflight includes the new module; it does not claim full JavaScript typing.
 
-A fresh native cloud acceptance is still required for the corrected source.
-This change neither rewrites the failed receipt nor activates the hosted fleet.
+A [fresh native cloud acceptance](meld-native-ci-live-validation.md) now passes
+on the corrected source, including the full offline suite, authenticated native
+callback, stale retry rejection, revocation and independent VM destruction.
+It does not establish that a transport fault occurred during that run. The
+earlier failure remains failed, and the hosted fleet is not activated.

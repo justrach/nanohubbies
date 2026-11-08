@@ -1,0 +1,171 @@
+{
+  "format": 1,
+  "sourceBaseExclusive": "dbfaef167fecfa249d3652afe9ff5a6fa5ccaeed",
+  "sourceHeadInclusive": "f01806c20796a476e26c6eb523a81659a4243e93",
+  "newCommits": 31,
+  "scanner": {
+    "name": "Gitleaks",
+    "version": "8.30.1",
+    "builtInRules": true,
+    "inlineAllowancesIgnored": true,
+    "findings": 10,
+    "confirmedCredentialFindings": 0,
+    "triage": [
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/review-requests-receipt.json",
+        "StartLine": 21,
+        "Commit": "460a2b3400b436d3ee0f6a6028abba2ae563db6b",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/cli/src/api.mjs",
+            "matchingGitCommits": [
+              "460a2b3400b436d3ee0f6a6028abba2ae563db6b"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/cli-secrets-receipt.json",
+        "StartLine": 26,
+        "Commit": "01193f1792ad1e416f7f4aa4f07620a2c03fcec1",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/api/scripts/smoke-cli-secrets.ts",
+            "matchingGitCommits": [
+              "01193f1792ad1e416f7f4aa4f07620a2c03fcec1"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/cli-secrets-receipt.json",
+        "StartLine": 27,
+        "Commit": "01193f1792ad1e416f7f4aa4f07620a2c03fcec1",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/api/scripts/smoke-cli-api.ts",
+            "matchingGitCommits": [
+              "01193f1792ad1e416f7f4aa4f07620a2c03fcec1"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/cli-secrets-receipt.json",
+        "StartLine": 19,
+        "Commit": "730d3d03218c136580dc4b8bf36fd81a96c4c72f",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/api/src/cli/credentials.ts",
+            "matchingGitCommits": [
+              "730d3d03218c136580dc4b8bf36fd81a96c4c72f"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/cli-secrets-receipt.json",
+        "StartLine": 21,
+        "Commit": "730d3d03218c136580dc4b8bf36fd81a96c4c72f",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/cli/src/secrets.mjs",
+            "matchingGitCommits": [
+              "730d3d03218c136580dc4b8bf36fd81a96c4c72f"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/cli-secrets-receipt.json",
+        "StartLine": 24,
+        "Commit": "730d3d03218c136580dc4b8bf36fd81a96c4c72f",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/cli/src/api.mjs",
+            "matchingGitCommits": [
+              "730d3d03218c136580dc4b8bf36fd81a96c4c72f"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/review-requests-release-receipt.json",
+        "StartLine": 23,
+        "Commit": "85214628ec3b8d463476da4e8fec2e847999ea91",
+        "classification": "source SHA-256",
+        "evidence": [
+          {
+            "path": "packages/cli/src/secrets.mjs",
+            "matchingGitCommits": [
+              "85214628ec3b8d463476da4e8fec2e847999ea91",
+              "233bd3f9847f2c2e07871625d9efb0ea4346620c"
+            ]
+          }
+        ]
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/review-requests-release-receipt.json",
+        "StartLine": 364,
+        "Commit": "85214628ec3b8d463476da4e8fec2e847999ea91",
+        "classification": "private evidence SHA-256",
+        "evidenceNames": [
+          "after-cli-access.json"
+        ],
+        "retainedArtifactDigestVerified": true
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/review-requests-release-receipt.json",
+        "StartLine": 366,
+        "Commit": "85214628ec3b8d463476da4e8fec2e847999ea91",
+        "classification": "private evidence SHA-256",
+        "evidenceNames": [
+          "new-cli-auth-boundaries.json"
+        ],
+        "retainedArtifactDigestVerified": true
+      },
+      {
+        "RuleID": "generic-api-key",
+        "File": "docs/evidence/review-requests-release-receipt.json",
+        "StartLine": 368,
+        "Commit": "85214628ec3b8d463476da4e8fec2e847999ea91",
+        "classification": "private evidence SHA-256",
+        "evidenceNames": [
+          "auth-renewal.json"
+        ],
+        "retainedArtifactDigestVerified": true
+      }
+    ]
+  },
+  "exactValueScan": {
+    "configuredValuesChecked": 8,
+    "configuredValueMatches": 0,
+    "fullLengthCredentialPrefixMatches": 0,
+    "patchBytes": 1347660,
+    "patchSha256": "d0fffeeb2945c305f075081d8740b3eed4e155792fa1a7a05a712fe2bd890b9d",
+    "scope": "new Git patch history including removed lines",
+    "prefixPattern": "\\b(?:cg_sk_|nh[agvwcr]_)[a-f0-9]{32,}\\b"
+  },
+  "githubSourceWorkflow": {
+    "runId": 42511696371,
+    "head": "f01806c20796a476e26c6eb523a81659a4243e93",
+    "observedStatus": "queued",
+    "completed": false
+  },
+  "scopeLimit": "Credential-pattern and configured-value matching in the specified Git patch range; not a complete security assessment"
+}
