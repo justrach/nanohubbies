@@ -120,4 +120,14 @@ The harness therefore selects a trusted 512 MiB source limit and four parallel
 can select bounded larger transfers without dropping history or binaries.
 Concurrent source transfer has fixture coverage for out-of-order completion,
 exact byte reconstruction, failure drain before destruction and pre-allocation
-limit enforcement. Actual large-bundle native acceptance is still required.
+limit enforcement. The [full-size local HTTP transfer](evidence/large-source-transfer-full-receipt.json)
+also preserves all 18,102 reachable objects and passes strict clone/fsck after
+5,688 uploads. It refuses candidate execution and publishes no successful CI.
+
+The [first fresh native attempt](evidence/meld-native-preflight-failure.json)
+stops at Codegraff's read-only sandbox-list preflight with HTTP 503 before any
+fixture, credential, run or VM is created. Existing-VM lookup still works, while
+normal and bounded-list reads fail. Cloud large-bundle execution, the full
+application suite and native callback acceptance remain open; a passing local
+transport does not replace them. Reconcile the provider read before allocating
+another job and use a new artifact directory for a new launch.

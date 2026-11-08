@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-08T17:20:19.000Z",
+  "source": "8554f69acf4a0936ccacb3b4b9b3e0f8147796d8",
+  "bytes": 372270805,
+  "sha256": "6494255b80346acad86ff3142c1f0a11f2f9f1ac1481304735d9a34d59464000",
+  "transport": "loopback HTTP fixture",
+  "maxSourceBundleBytes": 536870912,
+  "sourceTransferConcurrency": 4,
+  "cloudAllocations": 0,
+  "applicationSuiteExecuted": false,
+  "ciSuccessPublished": false,
+  "checkoutTree": "094105647e3267cb0c120f2ddf639f4f1c94af07",
+  "reachableObjects": 18102,
+  "uploadRequests": 5688,
+  "peakConcurrentUploads": 4,
+  "maxJsonPayloadBytes": 87538,
+  "hashAndExactCheckoutVerified": true,
+  "strictFsckPassed": true,
+  "candidateExecutionRefused": true,
+  "transportVerified": true,
+  "localTransferFilesRemoved": true,
+  "finishedAt": "2026-11-08T17:20:36.120Z",
+  "trustedToolsSource": "6639b2e959373b79b5e085ebe0194dd0318a3aae",
+  "controllerSha256": "3ba1eee7c1b874c08771101328bac7b02eb01f722cb2cfc99fa746f38eb5ae22",
+  "executedTools": [
+    {
+      "path": "tools/codegraff-actions.mjs",
+      "sha256": "fc7f33235e78c5d96e0efd0589c56d5139eabbd2df1abce25f5e642757594ee3"
+    },
+    {
+      "path": "tools/source-transfer.mjs",
+      "sha256": "c95dfa5ec8c61a4a5cd4e6114c36487213fdc69e43633b91ca03c10fa22a3654"
+    },
+    {
+      "path": "tools/ci-runner.mjs",
+      "sha256": "c2079025d8d783aca784bd0ad15190ddb7403a45d00fb467a667a36a8bd9fa55"
+    }
+  ],
+  "limits": [
+    "Loopback HTTP upload fixture; no real cloud VM or application suite executed",
+    "No successful CI check or deployment was published",
+    "The complete source bundle was reassembled, cloned and strictly fscked; local transfer copies were removed"
+  ]
+}

@@ -192,6 +192,16 @@ generates a workflow that compiles through the native parser. This prepares the
 isolated path; image publication, fresh-VM full-suite/native-callback acceptance
 and real-service staging remain open.
 
+On 2026-11-09, the [private Meld image publication](evidence/meld-native-image-reconciliation.json)
+is reconciled by exact registry manifest/config reads and an independently
+destroyed builder. Fresh Meld main is `8554f69acf4a0936ccacb3b4b9b3e0f8147796d8`.
+Its 355 MiB full-history bundle now passes [bounded parallel local transport](evidence/large-source-transfer-validation.md),
+exact clone and strict fsck across 18,102 reachable objects. The actual native
+cloud attempt stops before allocation because sandbox-list preflight returns
+503; known-VM reads still work. No successful application check or hosted
+activation is inferred from the local fixture. Actual cloud execution, native
+callback and real-service staging/cutover acceptance remain required.
+
 The next release work should close unattended CI activation and hosted callbacks, actual
 application staging acceptance, complete restore verification and traffic/security
 operational validation. The [original issues](https://github.com/justrach/nanohubbies/issues/3)

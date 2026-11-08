@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "kind": "native-Meld-live-preflight-failure",
+  "checkedAt": "2026-11-08T17:16:46.035Z",
+  "trustedToolsSource": "6639b2e959373b79b5e085ebe0194dd0318a3aae",
+  "applicationSource": "8554f69acf4a0936ccacb3b4b9b3e0f8147796d8",
+  "plan": {
+    "source": "8554f69acf4a0936ccacb3b4b9b3e0f8147796d8",
+    "pipelineBlob": "669bc8351be8c657a17b39a427284a616633cbd9",
+    "workflowSha256": "3af78cd0db5159dd496a34617bfe97b4dad27076e1c031a59a2b6c076aaae802",
+    "inputs": 6
+  },
+  "toolchain": {
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/meld-ci@sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+    "registryProvider": "cloudflare",
+    "network": "none",
+    "maxSourceBundleBytes": 536870912,
+    "sourceTransferConcurrency": 4
+  },
+  "failure": "Codegraff sandbox access could not be verified; no CI job was claimed",
+  "providerDiagnosis": {
+    "checkedAt": "2026-11-08T17:19:35.477Z",
+    "status": 503,
+    "errorType": "service_unavailable",
+    "retryAfter": "2",
+    "bodyShape": "object"
+  },
+  "routeObservations": [
+    {
+      "path": "/sandboxes/cnd_66be60d41ecbf034c781cdff60f585dc11adeb09",
+      "ok": true,
+      "state": "destroyed",
+      "array": false,
+      "checkedAt": "2026-11-08T17:17:41.411Z"
+    },
+    {
+      "path": "/sandboxes",
+      "ok": false,
+      "status": 503,
+      "name": "Error",
+      "checkedAt": "2026-11-08T17:17:42.308Z"
+    }
+  ],
+  "nativeRunCreated": false,
+  "repositoryFixtureCreated": false,
+  "cloudVmAllocated": false,
+  "productionCredentialsIssued": 0,
+  "originalSourceRefsUnchanged": true,
+  "cleanupErrors": [],
+  "applicationSuitePassed": false,
+  "hostedNanohubActivated": false,
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "acceptancePassed": false
+}

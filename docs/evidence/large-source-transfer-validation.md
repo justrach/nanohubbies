@@ -35,7 +35,22 @@ Local evidence:
   Chrome download preparation; lockfile/dependency declarations remain compatible
   with the [reconciled private image](meld-native-image-reconciliation.json).
 
-Live 355 MiB transfer, offline application suite, native callback, feature
+The subsequent [full-size loopback HTTP transfer](large-source-transfer-full-receipt.json)
+passes on the complete 372,270,805-byte bundle: 5,688 uploads, four concurrent
+requests, maximum JSON payload 87,538 bytes, matching assembled SHA-256, exact
+HEAD/tree and strict fsck across all 18,102 reachable objects. Abandoned/local
+transfer copies are removed. Candidate execution is deliberately refused and
+the runner reports Failure; no successful CI result or cloud allocation is
+fabricated. This closes full-size local transport acceptance only.
+
+The [real native attempt](meld-native-preflight-failure.json) fails at the
+read-only account preflight with sandbox-list HTTP 503 (`service_unavailable`,
+Retry-After 2). A fresh known-VM read still confirms the old builder destroyed;
+normal and bounded-list probes return 503. No repository fixture, native run,
+credential or VM is created by that attempt, and original source refs remain
+unchanged.
+
+Actual cloud 355 MiB transfer, offline application suite, native callback, feature
 workflow replacement refusal and independent job cleanup remain required.
 No hosted dispatcher activation, staging deployment, production deployment or
 application cutover is established by this local evidence.
