@@ -149,11 +149,18 @@ remain open. This does not activate an unattended dispatcher.
 The `--watch` process polls idle queues every five seconds. It does not install a system service or schedule a Codex automation. Run it under your existing service manager. CI leases last two hours; job deadlines are also capped by the remaining lease. The sandbox lease bounds abandoned allocations. Each job receipt records the sandbox ID and `cleanupNeeded`; an operator can retry `DELETE /v1/sandboxes/:id` with the trusted gateway key after a controller crash or failed cleanup. Explicit capacity/preparation responses (429/503) retry within the allocation deadline; ambiguous timeouts do not retry creation automatically. SIGINT/SIGTERM stops claiming and drains in-flight jobs through cleanup.
 
 Before claiming a candidate, Codegraff dispatchers verify the account key through
-the read-only sandbox-list endpoint. Missing scope, rejected authentication,
+the read-only sandbox-list endpoint by default. An operator may explicitly set
+`sandboxAccessProbeId` to a previously allocated sandbox owned by that account
+and verify its exact ID/state through `GET /v1/sandboxes/:id` instead. This also
+works with an owned destroyed tombstone while the provider retains it; a missing
+record, wrong owner/ID, malformed response or denied scope stops the claim.
+There is no automatic fallback from a failed listing and no arbitrary probe URL.
+See [owned-probe validation](evidence/owned-sandbox-probe-validation.md).
+Missing scope, rejected authentication,
 malformed responses or unavailable connectivity leave the candidate queued;
 they do not publish a failed candidate check. Concurrent repository workers
 share this check in the dispatcher process. Success is cached for five minutes,
-failure for five seconds, with separate entries when the key changes. The cache
+failure for five seconds, with separate entries for every key/probe target. The cache
 retains only key fingerprints and safe results; account inventory is discarded.
 Explicit Docker and trusted pipeline backends keep their existing behavior.
 

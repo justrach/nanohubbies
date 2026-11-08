@@ -129,5 +129,14 @@ stops at Codegraff's read-only sandbox-list preflight with HTTP 503 before any
 fixture, credential, run or VM is created. Existing-VM lookup still works, while
 normal and bounded-list reads fail. Cloud large-bundle execution, the full
 application suite and native callback acceptance remain open; a passing local
-transport does not replace them. Reconcile the provider read before allocating
-another job and use a new artifact directory for a new launch.
+transport does not replace them.
+
+The gateway's exact owned-sandbox read still returns 200 with the expected
+destroyed ID for Meld's key, and the key missing sandbox scope returns 403 /
+`insufficient_scope` on that same route. The trusted image configuration may
+explicitly set `sandboxAccessProbeId` to that known owned ID. This uses a bounded,
+scope-enforced ownership read instead of listing account inventory; there is no
+automatic fallback or authorization bypass. Missing/foreign/malformed/denied
+records fail before claim, and cache entries are specific to both key and probe.
+This proves access only; actual allocation, image preparation and execution must
+still pass independently. Use a new artifact directory for a new launch.

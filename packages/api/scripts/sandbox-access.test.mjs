@@ -90,3 +90,40 @@ test("cache retention and configuration bounds are explicit", async () => {
   for (const options of [{ ttlMs: 0 }, { ttlMs: 300001 }, { failureTtlMs: 5001 }, { maxEntries: 0 }, { maxEntries: 17 }])
     assert.throws(() => createSandboxAccessPreflight(options), /cache bounds/);
 });
+test('list failures and explicit owned-resource probes have separate cache identities without fallback',async()=>{
+ const calls=[],verify=createSandboxAccessPreflight({probe:async(key,{sandboxId})=>{calls.push([key,sandboxId??null]);if(!sandboxId)throw Object.assign(Error('private list failure'),{status:503});}});
+ await assert.rejects(verify('one-key'),/could not be verified/);
+ await verify('one-key',{sandboxId:'owned-one'});await verify('one-key',{sandboxId:'owned-one'});
+ await assert.rejects(verify('one-key'),/could not be verified/);
+ await verify('one-key',{sandboxId:'owned-two'});await verify('other-key',{sandboxId:'owned-one'});
+ assert.deepEqual(calls,[['one-key',null],['one-key','owned-one'],['one-key','owned-two'],['other-key','owned-one']]);
+});
+test('invalid owned-resource paths never reach the provider',async()=>{
+ let calls=0;const verify=createSandboxAccessPreflight({probe:async()=>calls++});
+ for(const sandboxId of ['',null,1,'https://private.invalid/','../other','owned?all=1','owned/other','owned%2fother','x'.repeat(161)])await assert.rejects(verify('synthetic-key',{sandboxId}),/trusted sandbox ID/);
+ assert.equal(calls,0);
+});
+test('owned-resource access uses a single scope-enforced read and discards provider metadata',async()=>{
+ const original=globalThis.fetch,calls=[],sandboxId='cnd_'+'a'.repeat(40);
+ try{
+  globalThis.fetch=async(url,options)=>{calls.push([String(url),options.method]);assert.equal(options.headers.Authorization,'Bearer synthetic-owned-key');return Response.json({id:sandboxId,state:'destroyed',privateInventory:'must-not-retain'});};
+  const result=await createSandboxAccessPreflight()('synthetic-owned-key',{sandboxId});assert.equal(result.sandboxAccessVerified,true);assert.ok(!JSON.stringify(result).includes('must-not-retain'));assert.ok(!JSON.stringify(result).includes('synthetic-owned-key'));
+  assert.deepEqual(calls,[['https://gateway.codegraff.com/v1/sandboxes/'+sandboxId,'GET']]);
+ }finally{globalThis.fetch=original;}
+});
+test('foreign, malformed, missing and denied owned-resource reads cannot verify access or fall back to listing',async()=>{
+ const original=globalThis.fetch,sandboxId='cnd_'+'b'.repeat(40);
+ try{
+  for(const [status,body] of [[200,{id:'foreign',state:'destroyed'}],[200,{id:sandboxId}],[200,{id:sandboxId,state:'x'.repeat(33)}],[401,{error:'private-detail'}],[403,{error:{type:'insufficient_scope',message:'private-detail'}}],[404,{error:'private-detail'}],[503,{error:'private-detail'}]]){
+   let calls=0;globalThis.fetch=async(url)=>{calls++;assert.equal(String(url),'https://gateway.codegraff.com/v1/sandboxes/'+sandboxId);return Response.json(body,{status});};
+   await assert.rejects(createSandboxAccessPreflight()('synthetic-owned-key',{sandboxId}),error=>{assert.ok(!String(error).includes('private-detail'));assert.match(error.message,/no CI job was claimed/);if(status===403)assert.equal(error.code,'sandbox_scope_required');return true;});assert.equal(calls,1);
+  }
+ }finally{globalThis.fetch=original;}
+});
+test('default sandbox listing verifies documented array shapes and rejects other successful JSON bodies',async()=>{
+ const original=globalThis.fetch;
+ try{
+  for(const body of [[],{sandboxes:[]}]){globalThis.fetch=async()=>Response.json(body);assert.equal((await createSandboxAccessPreflight()('synthetic-list-key')).sandboxAccessVerified,true);}
+  for(const body of [{error:'private-error'},'private-error',null]){globalThis.fetch=async()=>Response.json(body);await assert.rejects(createSandboxAccessPreflight()('synthetic-list-key'),/could not be verified/);}
+ }finally{globalThis.fetch=original;}
+});

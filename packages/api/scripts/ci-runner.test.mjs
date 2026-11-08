@@ -15,6 +15,18 @@ test('invalid source limits or upload concurrency fail before provider access or
  for(const value of [0,-1,1.5,9,'4',null])await assert.rejects(runOnce({...config,sourceTransferConcurrency:value},'synthetic-unused-token'),/sourceTransferConcurrency/);
  await assert.rejects(runOnce({...config,backend:'docker',sourceTransferConcurrency:4},'synthetic-unused-token'),/require the Codegraff backend/);
 });
+test('explicit owned-sandbox preflight permits claims only after that authenticated resource read',async()=>{
+ const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY,sandboxId='cnd_'+'c'.repeat(40),calls=[];
+ const config={origin:'https://never-contact.invalid',repository:'alice/repo',backend:'codegraff',image:'registry.invalid/toolchain@sha256:'+'d'.repeat(64),artifacts:'/var/lib/nanohub',sandboxAccessProbeId:sandboxId};
+ try{
+  process.env.CODEGRAFF_API_KEY='synthetic-owned-runner-key';
+  globalThis.fetch=async(url,options)=>{calls.push([String(url),options.method]);if(String(url)==='https://gateway.codegraff.com/v1/sandboxes/'+sandboxId)return Response.json({id:sandboxId,state:'destroyed'});if(String(url).endsWith('/capacity/status'))return Response.json({sharedReservations:'v1'});assert.ok(String(url).endsWith('/ci/claim'));return Response.json({run:null});};
+  assert.deepEqual(await runOnce(config,'unused-repository-token'),{idle:true});assert.deepEqual(calls.map(call=>call[0]),['https://gateway.codegraff.com/v1/sandboxes/'+sandboxId,'https://never-contact.invalid/api/repos/alice/repo/ci/capacity/status','https://never-contact.invalid/api/repos/alice/repo/ci/claim']);
+  calls.length=0;process.env.CODEGRAFF_API_KEY='synthetic-owned-missing-scope';globalThis.fetch=async(url)=>{calls.push([String(url)]);return Response.json({error:{type:'insufficient_scope'}},{status:403});};
+  await assert.rejects(runOnce(config,'unused-repository-token'),/requires the sandbox scope.*no CI job was claimed/);assert.equal(calls.length,1);
+  for(const sandboxAccessProbeId of ['../bad','id?limit=1','',null])await assert.rejects(runOnce({...config,sandboxAccessProbeId},'unused-repository-token'),/trusted sandbox ID/);
+ }finally{globalThis.fetch=originalFetch;if(originalKey===undefined)delete process.env.CODEGRAFF_API_KEY;else process.env.CODEGRAFF_API_KEY=originalKey;}
+});
 function adapter(){return {dispatch:async c=>{assert.equal(c.idempotencyKey,'event');return {runId:'deploy-1'};},wait:async()=>({state:'success',candidate:head,kind:'deployment'}),accept:async()=>[{url:'https://evidence.invalid/real',realService:true}]};}
 test('unverified sandbox credentials stop before claiming a candidate or reporting a failed check',async()=>{
  const originalFetch=globalThis.fetch,originalKey=process.env.CODEGRAFF_API_KEY;

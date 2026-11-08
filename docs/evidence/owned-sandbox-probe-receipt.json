@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-11-08T17:28:17.410Z",
+  "sandboxId": "cnd_66be60d41ecbf034c781cdff60f585dc11adeb09",
+  "results": [
+    {
+      "account": "Meld",
+      "success": true,
+      "sandboxAccessVerified": true,
+      "checkedAt": 1794158897358,
+      "expiresAt": 1794159197358
+    },
+    {
+      "account": "Nanohub intended",
+      "success": false,
+      "status": 403,
+      "code": "sandbox_scope_required"
+    }
+  ],
+  "kind": "explicit-owned-sandbox-access-probe",
+  "scopeEnforcementObservation": [
+    {
+      "account": "Meld",
+      "status": 200,
+      "sandboxIdMatches": true,
+      "state": "destroyed",
+      "errorType": null,
+      "checkedAt": "2026-11-08T17:25:07.294Z"
+    },
+    {
+      "account": "Nanohub intended",
+      "status": 403,
+      "sandboxIdMatches": false,
+      "errorType": "insufficient_scope",
+      "checkedAt": "2026-11-08T17:25:07.510Z"
+    }
+  ],
+  "limits": [
+    "Read-only authentication/ownership observation, not allocation or execution acceptance",
+    "Default list behavior remains; operator configuration explicitly selects a known owned resource",
+    "No automatic fallback, arbitrary probe URL, key replacement or hosted dispatcher activation",
+    "Missing or retired probe IDs fail closed and require operator configuration updates"
+  ],
+  "sourceFiles": [
+    {
+      "path": "tools/sandbox-access.mjs",
+      "sha256": "52d834332a020699e99cc384a32e703840372cb4de78e4029f7011e411d7d4ea"
+    },
+    {
+      "path": "tools/ci-runner.mjs",
+      "sha256": "0f38e5fd4efd7edc5362a8e94430c5060ae56fa5cbcc6eec5562b54c4223d73e"
+    },
+    {
+      "path": "packages/api/scripts/smoke-meld-native-live.ts",
+      "sha256": "5aee454aa9d5a3b069464b8e2f4a214a826f3a22b609b70a8ecd35a00878ed00"
+    }
+  ]
+}

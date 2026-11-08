@@ -12,7 +12,7 @@ import { join, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {toolchain} from './toolchain.mjs';
 import { runFleet } from './runner-pool.mjs';
-import { verifySandboxAccess } from './sandbox-access.mjs';
+import { verifySandboxAccess,validateSandboxAccessProbeId } from './sandbox-access.mjs';
 import {sandboxCapacity} from './sandbox-capacity.mjs';
 import {sourceTransferPolicy} from './source-transfer.mjs';
 
@@ -66,6 +66,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   if(origin.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(origin.hostname))throw Error('HTTPS required');
   if((config.repository ? !/^[a-z0-9][a-z0-9-]{0,38}\/[a-z0-9][a-z0-9._-]{0,99}$/.test(config.repository) : !/^[a-z0-9][a-z0-9-]{0,62}$/.test(config.trunk)))throw Error('Use a valid workspace and a trusted toolchain image pinned by SHA-256 digest');
   if(config.backend && !['codegraff','docker'].includes(config.backend))throw Error('Unknown CI backend');
+  validateSandboxAccessProbeId(config.sandboxAccessProbeId);
+  if(config.sandboxAccessProbeId!==undefined&&config.backend!=='codegraff')throw Error('Owned-sandbox access probes require the Codegraff backend');
   if(config.backend==='codegraff')sourceTransferPolicy(config);
   else if(config.maxSourceBundleBytes!==undefined||config.sourceTransferConcurrency!==undefined)throw Error('Source transfer settings require the Codegraff backend');
   if(config.imageSnapshot!==undefined&&config.backend!=='codegraff')throw Error('Toolchain snapshots require the Codegraff backend');
@@ -83,7 +85,7 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
   }
   if(config.stagingEnvironment!==undefined&&(typeof config.stagingEnvironment!=="string"||!config.stagingEnvironment||config.stagingEnvironment.length>255||config.stagingEnvironment!==config.stagingEnvironment.trim()||/[\x00-\x1f\x7f]/.test(config.stagingEnvironment)))throw Error("Use a configured staging environment name");
   if(config.backend==='codegraff') {
-    await verifySandboxAccess(process.env.CODEGRAFF_API_KEY);
+    await verifySandboxAccess(process.env.CODEGRAFF_API_KEY,{sandboxId:config.sandboxAccessProbeId});
     const capacity=await api('/capacity/status',{});
     if(capacity.sharedReservations!=='v1')throw Error('Shared sandbox capacity is unavailable; no CI job was claimed');
   }

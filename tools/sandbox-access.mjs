@@ -3,6 +3,10 @@
 import { createHash } from "node:crypto";
 
 const httpStatus = status => Number.isInteger(status) && status >= 100 && status <= 599 ? status : undefined;
+export function validateSandboxAccessProbeId(value){
+  if(value!==undefined&&(typeof value!=='string'||!/^[A-Za-z0-9_-]{1,160}$/.test(value)))throw Error('Use a trusted sandbox ID for sandboxAccessProbeId');
+  return value;
+}
 function accessError(error) {
   const status = httpStatus(error?.status);
   const insufficientScope = status === 403 && error?.message === "Codegraff API key requires the sandbox scope for Actions";
@@ -23,9 +27,12 @@ function accessError(error) {
  * the configured key always selects a new entry. Revocation can occur between
  * any two requests, so normal per-request provider authorization still applies. */
 export function createSandboxAccessPreflight({
-  probe = async key => {
+  probe = async (key,{sandboxId}={}) => {
     const { Codegraff } = await import("./codegraff-actions.mjs");
-    await new Codegraff(key).api("/sandboxes", undefined, "GET", 20000);
+    const response=await new Codegraff(key).api(sandboxId?'/sandboxes/'+sandboxId:'/sandboxes', undefined, "GET", 20000);
+    if(sandboxId){
+      if(response?.id!==sandboxId||typeof response.state!=='string'||!/^[a-z][a-z_-]{0,31}$/.test(response.state))throw Error('Unverifiable sandbox access probe');
+    }else if(!Array.isArray(response)&&!Array.isArray(response?.sandboxes))throw Error('Unverifiable sandbox-list response');
   },
   now = Date.now,
   ttlMs = 300000,
@@ -38,10 +45,13 @@ export function createSandboxAccessPreflight({
       !Number.isSafeInteger(maxEntries) || maxEntries < 1 || maxEntries > 16)
     throw Error("Invalid sandbox preflight cache bounds");
   const cache = new Map();
-  return async function verify(key) {
+  return async function verify(key,{sandboxId}={}) {
     if (typeof key !== "string" || !key || key.length > 4096 || /[^\x21-\x7e]/.test(key))
       throw Error("Configure a valid single-line CODEGRAFF_API_KEY before claiming cloud jobs");
-    const fingerprint = createHash("sha256").update(key).digest("hex");
+    validateSandboxAccessProbeId(sandboxId);
+    // An explicit owned-resource probe neither falls back from list failure
+    // nor shares authorization with another key/probe target.
+    const fingerprint = createHash("sha256").update(key+'\0'+(sandboxId??'')).digest("hex");
     const timestamp = now();
     const existing = cache.get(fingerprint);
     if (existing?.pending) return existing.pending;
@@ -57,7 +67,7 @@ export function createSandboxAccessPreflight({
     cache.set(fingerprint, entry);
     entry.pending = (async () => {
       try {
-        await Promise.resolve().then(() => probe(key));
+        await Promise.resolve().then(() => probe(key,{sandboxId}));
         entry.checkedAt = now();
         entry.expiresAt = entry.checkedAt + ttlMs;
         entry.receipt = { sandboxAccessVerified: true, checkedAt: entry.checkedAt, expiresAt: entry.expiresAt };
