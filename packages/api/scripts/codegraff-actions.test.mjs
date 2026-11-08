@@ -93,6 +93,56 @@ function mockClient({
     },
   };
 }
+test('lost status, log and lease observations recover on the same job without relaunching it',async()=>{
+ for(const phase of ['status','logs','lease']) {
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-cg-observe-'));
+  try {
+   const client=mockClient(),exec=client.exec;let injected=0,launched=false;
+   client.exec=async(...args)=>{
+    if(args[1].startsWith('docker run'))launched=true;
+    if((phase==='status'&&args[1].startsWith('docker inspect')||phase==='logs'&&args[1].startsWith('docker logs'))&&!injected++)
+      throw Object.assign(TypeError('ECONNRESET: socket closed; private diagnostic'),{code:'ECONNRESET'});
+    return exec(...args);
+   };
+   const active=async()=>{
+    if(phase==='lease'&&launched&&!injected++)throw Object.assign(Error('temporary'),{status:503});
+    return true;
+   };
+   const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+   const result=await sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active});
+   assert.equal(result.state,'success');assert.ok(injected>0);
+   assert.equal(client.calls.filter(c=>c.path==='/sandboxes').length,1);
+   assert.equal(client.calls.filter(c=>c.command?.startsWith('docker run')).length,1);
+   assert.equal(client.calls.filter(c=>c.destroy).length,1);
+   assert.equal(await readFile(join(dir,'check-test.log'),'utf8'),'test output');
+  }finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
+
+test('observation exhaustion, revocation and invalid status cannot produce a passing job',async()=>{
+ for(const mode of ['exhausted','revoked','auth','schema','launch']) {
+  const dir=await mkdtemp(join(tmpdir(),'nanohub-cg-observe-deny-'));
+  try {
+   const client=mockClient(),exec=client.exec;let reads=0,launches=0,lease=true;
+   client.exec=async(...args)=>{
+    if(args[1].startsWith('docker run')){launches++;if(mode==='launch')throw Object.assign(Error('private reset'),{code:'ECONNRESET'});}
+    if(args[1].startsWith('docker inspect')) {
+     reads++;
+     if(mode==='schema')return JSON.stringify({Running:false});
+     if(mode==='revoked')lease=false;
+     throw Object.assign(Error('private reset'),mode==='auth'?{status:403}:{code:'ECONNRESET'});
+    }
+    return exec(...args);
+   };
+   const job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+   const result=await sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',active:async()=>lease});
+   assert.equal(result.state,mode==='revoked'?'cancelled':'failure');
+   assert.equal(launches,1);assert.equal(reads,mode==='exhausted'?8:mode==='launch'?0:1);
+   assert.equal(client.calls.filter(c=>c.destroy).length,1);
+   if(mode==='exhausted')assert.doesNotMatch(await readFile(join(dir,'check-test.log'),'utf8'),/private reset/);
+  }finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
 test('shared capacity is reserved before provider allocation and released only after confirmed VM destruction',async()=>{
  for(const mode of ['success','destroy-failed','create-unknown','attach-lost','release-lost']) {
   const dir=await mkdtemp(join(tmpdir(),'nanohub-capacity-job-'));

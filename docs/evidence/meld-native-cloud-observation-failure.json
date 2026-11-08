@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "startedAt": "2026-11-08T17:29:13.068Z",
+  "finishedAt": "2026-11-08T18:11:22.203Z",
+  "nanohubSource": "f2bfdafd2beb5d671dfe2d0838702b089755682b",
+  "originalApplicationCommit": "8554f69acf4a0936ccacb3b4b9b3e0f8147796d8",
+  "acceptedWorkflowCommit": "70b244c6fcb2b6b2d11430a449de1bad6537e319",
+  "candidate": "d98a965b1449efaa87379b3ca4b6a7582747b8bb",
+  "nativeRunId": "56298f2d-93dd-4164-8f1b-f29967f395a6",
+  "sandboxId": "cnd_7a46d49147f73c7d418115d5d4c4680a6eeadb87",
+  "sourceBundle": {
+    "bytes": 376364094,
+    "sha256": "40dad571f018eaf886bdbd3970f436732d75b1283b79c983f7c83ac80616978b",
+    "parts": 5743,
+    "concurrency": 4
+  },
+  "liveSnapshot": {
+    "checkedAt": "2026-11-08T17:51:16.280Z",
+    "bytes": 323955,
+    "sha256": "7077c211a0ad2a757a54c88c2dcfd75b092e7f8d3f8daf92784ae459e9122157",
+    "lastStep": "Step 7: Browser checks",
+    "unitTestsPassed": 4231,
+    "unitTestsSkipped": 205,
+    "notFinalCompletion": true
+  },
+  "result": {"name": "meld/check", "state": "failure"},
+  "failure": "Fetch ECONNRESET while collecting execution observations; exact observation phase unproven",
+  "browserCompletionEstablished": false,
+  "productionBuildEstablished": false,
+  "providerCleanup": {"state": "destroyed", "independentRead": true},
+  "runnerRevoked": true,
+  "revokedRunnerRejected": true,
+  "importCredentialRevoked": true,
+  "gitCredentialRevokedBeforeCi": true,
+  "fixtureClosed": true,
+  "originalSourceRefsUnchanged": true,
+  "cleanupErrors": [],
+  "acceptancePassed": false,
+  "hostedNanohub": false,
+  "stagingDeployed": false,
+  "productionDeployed": false
+}

@@ -15,6 +15,7 @@ import { runFleet } from './runner-pool.mjs';
 import { verifySandboxAccess,validateSandboxAccessProbeId } from './sandbox-access.mjs';
 import {sandboxCapacity} from './sandbox-capacity.mjs';
 import {sourceTransferPolicy} from './source-transfer.mjs';
+import {observeSandbox, readCiLease} from './sandbox-observation.mjs';
 
 export function runProcess(command, args, options={}) {
   return new Promise((resolve,reject)=>{
@@ -119,11 +120,8 @@ export async function runOnce(config, token, {sandboxLimit}={}) {
     if(await git('rev-parse','HEAD')!==run.head)throw Error('Wrong checkout SHA');
     if(config.backend==='codegraff'&&!resumedChecks) {
       const {executeActions}=await import('./codegraff-actions.mjs');
-      const active=async()=>{
-        const response=await fetch(claimed.cloneUrl+'/HEAD',{headers:{Authorization:`Bearer ${run.readToken}`},signal:AbortSignal.timeout(20000),redirect:'error'});
-        return response.ok;
-      };
-      const capacity=sandboxCapacity(api,run,artifacts,{active});
+      const active=options=>readCiLease(claimed.cloneUrl,run.readToken,options);
+      const capacity=sandboxCapacity(api,run,artifacts,{active:()=>observeSandbox(active,{deadline:run.leaseUntil-30000,label:'capacity candidate lease'})});
       const result=await executeActions({run,source,artifacts,artifactOrigin:publicUrl,active},config,{sandboxLimit,capacity});
       results.push(...result.results);
     }

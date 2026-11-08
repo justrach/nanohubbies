@@ -148,6 +148,13 @@ remain open. This does not activate an unattended dispatcher.
 
 The `--watch` process polls idle queues every five seconds. It does not install a system service or schedule a Codex automation. Run it under your existing service manager. CI leases last two hours; job deadlines are also capped by the remaining lease. The sandbox lease bounds abandoned allocations. Each job receipt records the sandbox ID and `cleanupNeeded`; an operator can retry `DELETE /v1/sandboxes/:id` with the trusted gateway key after a controller crash or failed cleanup. Explicit capacity/preparation responses (429/503) retry within the allocation deadline; ambiguous timeouts do not retry creation automatically. SIGINT/SIGTERM stops claiming and drains in-flight jobs through cleanup.
 
+Transient startup, lease, container-status and final-log observations recover on
+the same job with bounded retries; they never relaunch execution. Recovery stops
+at the original deadline, and authorization is rechecked during status/log
+recovery and before reporting completion. Auth failures and malformed status
+remain failures. See [observation recovery acceptance](evidence/sandbox-observation-recovery-validation.md)
+for the reproduced failure, local fault coverage and outstanding cloud gate.
+
 Before claiming a candidate, Codegraff dispatchers verify the account key through
 the read-only sandbox-list endpoint by default. An operator may explicitly set
 `sandboxAccessProbeId` to a previously allocated sandbox owned by that account

@@ -12,6 +12,7 @@ import {sourceRef} from './ci-ref.mjs';
 import {toolchain,archiveDownload} from './toolchain.mjs';
 import {cloudflarePullCredentials} from './cloudflare-registry.mjs';
 import {sourceTransferPolicy} from './source-transfer.mjs';
+import {observeSandbox} from './sandbox-observation.mjs';
 const id = (value) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,18 +64,19 @@ export class Codegraff {
     }
     return response.status === 204 ? {} : response.json();
   }
-  async exec(sandbox, command) {
+  async exec(sandbox, command, {timeoutMs = 60000} = {}) {
     const r = await this.api(`/sandboxes/${sandbox}/exec`, {
       command,
       timeoutSeconds: 30,
-    });
+    }, 'POST', timeoutMs);
     if (r.exitCode !== 0)
-      throw Error("Codegraff sandbox control command failed");
+      throw Object.assign(Error("Codegraff sandbox control command failed"), {code:'sandbox_command_failed'});
     return String(r.result ?? "");
   }
   async ready(sandbox, deadline) {
     while (Date.now() < deadline) {
-      const r = await this.api(`/sandboxes/${sandbox}`);
+      const r = await observeSandbox(({timeoutMs}) => this.api(`/sandboxes/${sandbox}`, undefined, 'GET', timeoutMs),
+        {deadline, label:'sandbox startup', sleep:this.sleep});
       if (r.state === "started") return;
       if (["failed", "stopped", "deleted", "expired"].includes(r.state))
         throw Error("Codegraff sandbox did not start");
@@ -283,7 +285,7 @@ export async function sandboxJob({
   repository,
   receipt = writeFile,
   capacity,
-  active = async () => true,
+  active: leaseActive = async () => true,
   now = Date.now,
   maxSourceBundleBytes,
   sourceTransferConcurrency,
@@ -295,6 +297,12 @@ export async function sandboxJob({
   const provenance={...(selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),sourceBundle};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
+  const observation = (read, label, beforeRetry, recoveryDeadline) => observeSandbox(read,
+    {deadline, label, now, sleep:ms=>client.sleep(ms), beforeRetry, recoveryDeadline});
+  const active = ({recoveryDeadline}={}) => observation(options=>leaseActive(options), 'candidate lease', undefined, recoveryDeadline);
+  const requireActive = async options => {
+    if (!await active(options)) throw Object.assign(Error('Candidate lease is no longer active'), {code:'ci_cancelled'});
+  };
   const ensureTransferActive=async()=>{
     if(now()>=deadline)throw Object.assign(Error('Job timed out during source transfer'),{code:'job_deadline'});
     if(!await active())throw Object.assign(Error('Candidate lease is no longer active during source transfer'),{code:'ci_cancelled'});
@@ -441,12 +449,16 @@ export async function sandboxJob({
       }
       const current = JSON.parse(
         (
-          await client.exec(
+          await observation(options=>client.exec(
             sandbox,
             `docker inspect --format '{{json .State}}' ${name}`,
-          )
+            options,
+          ), 'job status', requireActive)
         ).trim(),
       );
+      if (typeof current?.Running !== 'boolean' ||
+          (!current.Running && (!Number.isInteger(current.ExitCode) || current.ExitCode < 0)))
+        throw Error('Invalid sandbox job status');
       if (current.Running === false) {
         state = current.ExitCode === 0 ? "success" : "failure";
         completed = true;
@@ -456,7 +468,10 @@ export async function sandboxJob({
     }
     // The gateway bounds exec output. Bound the tail remotely so a long suite
     // retains its terminal failure/pass context instead of losing the ending.
-    output = await client.exec(sandbox, `docker logs --tail 3000 ${name} > /tmp/nanohub-job-tail.log 2>&1 && tail -c 16384 /tmp/nanohub-job-tail.log`);
+    if (completed) {
+      output = await observation(options=>client.exec(sandbox, `docker logs --tail 3000 ${name} > /tmp/nanohub-job-tail.log 2>&1 && tail -c 16384 /tmp/nanohub-job-tail.log`, options), 'job logs', requireActive);
+      await requireActive();
+    }
     if (!completed && !cancelled) {
       state = "timed_out";
       output += "\nJob or CI lease timed out";
@@ -590,7 +605,6 @@ export async function executeActions(
         const required=await Promise.all(dependencies);
         if(required.some(r=>r.state!=='success'))return stopped(job,'skipped','Skipped because a prerequisite job did not succeed');
         return jobLimit(()=>sandboxLimit(async()=>{
-          if(context.active && !await context.active())return stopped(job,'cancelled','Cancelled before allocation: candidate lease is no longer active');
           try {
             return await sandboxJob({client,job,run,bundle,image:config.image,imageSnapshot:config.imageSnapshot,imageArchive:config.imageArchive,imageDownload:config.imageDownload,imageRegistry:config.imageRegistry,registryCredentials,prepare:config.prepare,network:config.network??'none',artifacts,artifactOrigin,repository:config.repository??config.trunk,active:context.active,capacity,...transferPolicy});
           }catch(error){return stopped(job,'failure','Sandbox allocation or dispatch failed: '+String(error));}

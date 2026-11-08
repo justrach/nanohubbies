@@ -9,6 +9,7 @@ const operators = [
   "tools/check-operator-bindings.mjs",
   "tools/ci-runner.mjs",
   "tools/sandbox-access.mjs",
+  "tools/sandbox-observation.mjs",
   "tools/verify-hosted-git-import.mjs",
   "tools/hosted-recovery-fixture/repository-probe.mjs",
   "tools/hosted-recovery-fixture/phase.mjs",
