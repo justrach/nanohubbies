@@ -28,7 +28,7 @@ async function fixture(work){
 test('native workflow preserves all Meld checks with inert build configuration and explicit offline installation',()=>{
  const text=meldNativeWorkflow(),workflow=parseDocument(text).toJS(),[job]=parseWorkflow(text,'.github/workflows/meld.yml','feature');
  assert.equal(job.name,'meld/check');assert.deepEqual(workflow.permissions,{contents:'read'});
- assert.equal(job.timeoutMs,45*60000);assert.equal(workflow.jobs.check.steps.length,8);
+ assert.equal(job.timeoutMs,45*60000);assert.equal(workflow.jobs.check.steps.length,9);
  for(const command of ['bun install --frozen-lockfile --offline','node --test tools/staging/policy.test.mjs tools/staging/controller.test.mjs tools/git-safety.test.mjs','bun run check','bun run test','google-chrome --version','bun run --cwd apps/web e2e --workers=2','bun run build'])assert.ok(job.script.includes(command));
  const steps=workflow.jobs.check.steps;
  assert.equal(steps[1].env.NODE_ENV,'development');assert.equal(steps[3].env.NODE_ENV,'production');
@@ -36,6 +36,7 @@ test('native workflow preserves all Meld checks with inert build configuration a
  assert.equal(steps[4].env,undefined);assert.ok(!job.script.includes('node tools/staging/run.mjs'));
  assert.ok(!job.script.includes('deploy.mjs'));assert.ok(!job.script.includes('curl '));
  assert.ok(job.script.includes('test ! -w /job.sh'));assert.ok(job.script.includes('test ! -w /source'));
+ assert.ok(job.script.includes('await packageMeldStaging()'));assert.ok(job.script.includes("'--dry-run'"));
  assert.equal(parseWorkflow(text,'.github/workflows/meld.yml','v1','refs/tags/v1').length,0);
 });
 test('context contains only committed dependency inputs; source files, Git config and local secrets stay excluded',async()=>fixture(async f=>{

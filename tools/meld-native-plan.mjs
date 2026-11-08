@@ -3,6 +3,7 @@
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {mkdir,writeFile,realpath,rm} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {isAbsolute,join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
@@ -30,6 +31,7 @@ const buildEnvironment={NODE_ENV:'production',MELD_ENV:'staging',BETTER_AUTH_URL
 const buildId='export BUILD_ID="$(printf %.7s "$GITHUB_SHA")"\n';
 export function meldNativeWorkflow(){
  const step=(name,run,env={})=>({name,run:buildId+run,...(Object.keys(env).length?{env}:{})});
+ const packager=readFileSync(new URL('./meld-stage-package.mjs',import.meta.url),'utf8');
  return stringify({name:'Meld isolated checks',on:{push:{branches:['**']}},permissions:{contents:'read'},env:inertEnvironment,jobs:{check:{'runs-on':'codegraff','timeout-minutes':45,steps:[
   step('Verify isolated toolchain',`test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 test "$(id -u)" = 1000
@@ -48,6 +50,7 @@ for name in CODEGRAFF_API_KEY NANOHUB_CI_TOKEN NANOHUB_TOKEN GITHUB_TOKEN CLOUDF
   step('Preinstalled browser availability','test -x /opt/google/chrome/chrome && google-chrome --version',buildEnvironment),
   step('Browser checks','bun run --cwd apps/web e2e --workers=2',buildEnvironment),
   step('Production bundle','bun run build',buildEnvironment),
+  step('Staging package',`node --input-type=module <<'NANOHUB_MELD_PACKAGE'\n${packager}\nconsole.log(JSON.stringify(await packageMeldStaging()));\nNANOHUB_MELD_PACKAGE`,buildEnvironment),
  ]}}},{lineWidth:0,aliasDuplicateObjects:false});
 }
 

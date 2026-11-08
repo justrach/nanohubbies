@@ -35,7 +35,43 @@ absence of control credentials/Docker socket, then runs frozen offline install,
 pipeline regression tests, pinned-tsrs checks, the full unit/package suite,
 Chrome availability, browser tests and the production bundle. Build-only inert
 configuration preserves the existing pipeline's test/build mode distinction.
-It does not run the candidate's result-writing CI script or any deploy command.
+It does not run the candidate's result-writing CI script or release deployment
+credentials.
+
+The next accepted workflow adds a ninth **Staging package** step after the full
+production build. It embeds the reviewed `tools/meld-stage-package.mjs` utility
+in the read-only job script. Inside the unprivileged container it uses locked
+Wrangler 4.136.1 with `deploy --dry-run`, an isolated temporary home and a generated
+build-only configuration. The configuration names no account, routes, services,
+secrets, migrations or source build hooks. No npm/npx install is used. See
+[Cloudflare's bundling contract](https://developers.cloudflare.com/workers/wrangler/bundling/).
+
+The package includes the complete bundled module Worker, required named exports,
+opaque binary/text dependencies and static assets, including asset-control
+files for the future uploader. Source maps/tooling README files stay outside the
+deployable package. Unsupported or unresolved emitted modules fail packaging.
+The versioned `staging-package.json` identifies the head and compatibility
+profile without selecting a deployment target. Private capture selects
+`/tmp/work/.nanohub-staging` with the existing 128 MiB/10,000-file bounds.
+
+`tools/meld-stage-artifact.mjs` validates the captured package before an uploader
+can consume it: exact successful run/attempt/head/base/image/VM, confirmed
+cleanup, closed metadata, module MIME types, complete asset roles and the
+committed Worker wrapper hash. The wrapper is read through Git object plumbing;
+a candidate-controlled working-tree symlink is never followed on the controller.
+No artifact code or package hooks are executed there. This validates the package,
+not permission to deploy it; fresh environment authority and trusted target
+settings remain required.
+
+Local preparation passes ten Node/Bun plan/package cases, 504 API unit cases,
+77 hosting cases plus actual Worker capacity/namespace/Git integration, pinned
+tsrs and operator binding preflight. The bundler is simulated in local packaging
+fixtures; full current-application packaging still needs a real cloud run. A
+fresh source read observes main at `e2388418cc72caf71eab6d284ec2f29b37945697`.
+Compared with the prior native pass, dependency inputs, pipeline and staging
+settings are unchanged; the new source's UI/icon changes and tests must be run
+as committed. The previous eight-step acceptance is not relabeled as testing
+this new packaging step or newer application head.
 
 Bootstrap this workflow as the accepted default in a separate isolated Nanohub
 copy. Preserve the original application commit and record the added workflow
@@ -110,6 +146,11 @@ runner/import/Git credential revocation, independent VM destruction, fixture
 closure and unchanged original refs. Its final acceptance flag depends on
 these postconditions, not only the container's exit code. The provider key stays
 in the trusted process. Without explicit opt-in it exits before dispatch.
+
+The updated harness additionally captures and loads the staging package after
+VM destruction, verifies the compiled module/assets profile and compares the
+wrapper hash with the committed candidate. This still performs no application
+deployment and cannot satisfy the real-service staging gate by itself.
 
 An uncertain live operation must be observed through its retained run, capacity
 and sandbox receipts; do not replay the launch. Native logs retain a bounded

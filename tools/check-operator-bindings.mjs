@@ -20,12 +20,14 @@ const operators = [
   "tools/meld-staging-adapter.mjs",
   "tools/meld-pipeline-state.mjs",
   "tools/meld-native-plan.mjs",
+  "tools/meld-stage-package.mjs",
+  "tools/meld-stage-artifact.mjs",
   "tools/source-transfer.mjs",
 ];
 // --noResolve does not follow @types/node's reference graph. Supply the Node
 // declarations used by these operators explicitly, without traversing app code.
 const nodeDeclarations = ["globals", "process", "buffer", "assert/strict", "child_process",
-  "crypto", "fs", "fs/promises", "os", "path", "url", "util"];
+  "crypto", "fs", "fs/promises", "module", "os", "path", "url", "util"];
 
 /** Binding/syntax preflight for Node operator JavaScript. --noResolve keeps
  * application dependency type errors out of this deliberately scope-only check.
