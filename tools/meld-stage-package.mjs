@@ -2,7 +2,7 @@
 import {readFile,writeFile,mkdir,mkdtemp,rm,readdir,lstat,realpath} from 'node:fs/promises';
 import {join,resolve,dirname,posix} from 'node:path';
 import {tmpdir} from 'node:os';
-import {createRequire} from 'node:module';
+import {createRequire,builtinModules} from 'node:module';
 import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
@@ -14,6 +14,7 @@ const moduleType=path=>/\.(?:js|mjs)$/.test(path)?'application/javascript+module
 const ignoredModule=path=>path==='README.md'||path.endsWith('.map');
 const credentials=['CODEGRAFF_API_KEY','NANOHUB_CI_TOKEN','NANOHUB_TOKEN','GITHUB_TOKEN','CLOUDFLARE_API_TOKEN','CLOUDFLARE_API_KEY','PIPELINE_ADMIN_SECRET','DOCKER_AUTH_CONFIG'];
 const requiredExports=['default','DOQueueHandler','DOShardedTagCache','BucketCachePurge'];
+const runtimeModules=new Set(builtinModules);
 
 function assertGuest(source,head) {
   if(resolve(source)!=='/tmp/work'||process.env.NANOHUB!=='true'||process.getuid?.()!==1000||process.env.GITHUB_SHA!==head||credentials.some(name=>process.env[name]))throw Error('Meld packaging requires the credential-free Nanohub build container');
@@ -84,7 +85,11 @@ export async function packageMeldStaging({source='/tmp/work',head=process.env.GI
       if(matches.length!==1||!Array.isArray(value.imports))throw Error('Invalid Wrangler module dependency metadata');
       for(const imported of value.imports) {
         if(typeof imported?.path!=='string')throw Error('Invalid emitted module import');
-        if(/^(?:node|cloudflare):/.test(imported.path))continue;
+        // Wrangler 4.136 preserves bare Node builtins in esbuild metadata under
+        // nodejs_compat (for example stream, async_hooks and buffer). They are
+        // runtime imports, not missing emitted files. Arbitrary bare packages
+        // still have to be present in the bundle inventory.
+        if(/^(?:node|cloudflare):/.test(imported.path)||runtimeModules.has(imported.path))continue;
         const target=posix.normalize(posix.join(posix.dirname(matches[0].path),imported.path));
         if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target))throw Error('Packaged Worker has an unresolved external module');
       }

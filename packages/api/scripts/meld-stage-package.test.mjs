@@ -27,7 +27,7 @@ async function fixture(work) {
   await writeFile(join(out,'worker.js.map'),'source-map-stays-in-private-temporary-directory');await writeFile(join(out,'README.md'),'Wrangler tooling note');
   if(mode==='link')await symlink('/etc/passwd',join(out,'linked.js'));
   if(mode==='unknown-module')await writeFile(join(out,'unexpected.native'),'unsupported');
-  const outputs={'bundle/worker.js':{entryPoint:'worker.mjs',exports:['default','DOQueueHandler','DOShardedTagCache','BucketCachePurge'],imports:[{path:mode==='missing'?'./missing.wasm':'./worker.wasm',external:true},{path:'node:async_hooks',external:true},{path:'cloudflare:workers',external:true}]}};
+  const outputs={'bundle/worker.js':{entryPoint:'worker.mjs',exports:['default','DOQueueHandler','DOShardedTagCache','BucketCachePurge'],imports:[{path:mode==='missing'?'./missing.wasm':mode==='missing-package'?'unbundled-npm-package':'./worker.wasm',external:true},{path:'node:async_hooks',external:true},{path:'cloudflare:workers',external:true},...['stream','async_hooks','buffer'].map(path=>({path,external:true}))]}};
   if(mode==='multiple')outputs['bundle/other.js']={entryPoint:'other.js',exports:['default'],imports:[]};
   if(mode==='no-default')outputs['bundle/worker.js'].exports=[];
   await writeFile(meta,JSON.stringify({outputs}));if(mode==='cli-failure')throw Error('fixture CLI failure');
@@ -47,8 +47,8 @@ test('Meld package uses locked dry-run bundling and retains complete module/asse
 }));
 
 test('missing modules, wrong exports, multiple entries, unsafe files and failed bundling remove only their new package',async()=>{
- for(const mode of ['missing','no-default','multiple','link','unknown-module','cli-failure'])await fixture(async f=>{
-  const errors={missing:/unresolved external/, 'no-default':/preserve.*exports/,multiple:/preserve.*exports/,link:/linked or special/, 'unknown-module':/Unsupported emitted/, 'cli-failure':/fixture CLI failure/};
+ for(const mode of ['missing','missing-package','no-default','multiple','link','unknown-module','cli-failure'])await fixture(async f=>{
+  const errors={missing:/unresolved external/,'missing-package':/unresolved external/, 'no-default':/preserve.*exports/,multiple:/preserve.*exports/,link:/linked or special/, 'unknown-module':/Unsupported emitted/, 'cli-failure':/fixture CLI failure/};
   f.mode(mode);await assert.rejects(packageMeldStaging(f.options,f.deps),errors[mode]);assert.equal(f.calls(),1);await assert.rejects(stat(f.output),{code:'ENOENT'});
  });
 });

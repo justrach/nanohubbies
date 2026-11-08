@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "kind": "meld-native-package-attempt",
+  "status": "failed",
+  "nanohubSource": "3b2bec588573d858ecf5718c7cffc2b5a7e7642f",
+  "applicationSource": "e2388418cc72caf71eab6d284ec2f29b37945697",
+  "candidate": "b58d0fc63eee0c86e3bd53126700b3b4f815d4b1",
+  "runId": "df11f5f5-331d-467b-ab65-2b517493d4ab",
+  "startedAt": "2026-11-08T20:12:48.581Z",
+  "finishedAt": "2026-11-08T20:45:37.699Z",
+  "checks": {
+    "unitAndPackage": {
+      "passed": 4254,
+      "skipped": 205
+    },
+    "browser": {
+      "passed": 471,
+      "skipped": 73
+    },
+    "productionBuild": "passed",
+    "wranglerDryRun": "passed",
+    "stagingPackage": "failed"
+  },
+  "failure": "Packaged Worker has an unresolved external module",
+  "failureAnalysis": {
+    "pinnedWrangler": "4.136.1",
+    "credentialFreeLocalReproduction": true,
+    "reproducedValidatorDefect": "Bare Node runtime imports are incorrectly treated as missing emitted files; cloud metadata was not retained, so the full rerun must confirm this repair",
+    "observedBareRuntimeImports": [
+      "stream",
+      "async_hooks",
+      "buffer"
+    ],
+    "fullFrozenCloudRerunRequired": true
+  },
+  "cleanup": {
+    "sandboxId": "cnd_7249e86c21beec362bb0cdf9c4bb23a9e3351625",
+    "providerState": "destroyed",
+    "independentRead": true,
+    "errors": [],
+    "runnerRevoked": true,
+    "revokedRunnerRejected": true,
+    "fixtureClosed": true,
+    "originalSourceRefsUnchanged": true
+  },
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "log": {
+    "private": true,
+    "bytes": 16384,
+    "sha256": "17c2be63e45e7e2ce18ba1ff61a75f1ec7f6049ee191690e8b5fde780d67bdbd"
+  }
+}
