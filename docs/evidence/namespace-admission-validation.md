@@ -32,8 +32,10 @@ receiver mismatch, forged tickets, namespace ownership and lost admission,
 initialization and completed HTTP acknowledgements. Existing namespaces, Git
 push/clone, role isolation, secrets continuity and restart checks also pass.
 
-This is source/local validation. Frozen Linux acceptance, production packaging
-and delivery checks are still required before rollout. It does not increase
-production quotas or automatically remove old orphaned/uncertain reservations.
+This receipt records source/local validation. The subsequent
+[frozen release and production rollout](namespace-admission-release-validation.md)
+pass all nine Linux gates, the Mac build, disposable delivery and production
+preservation checks. The release does not increase production quotas or
+automatically remove old orphaned/uncertain reservations.
 The failed synthetic production name may retain an old reservation; no cleanup
 or direct production Hub mutation was attempted.

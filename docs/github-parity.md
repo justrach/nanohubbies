@@ -13,7 +13,9 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 A [repository-creation correction](evidence/namespace-admission-validation.md)
 now atomically reserves the owner/repo address with capacity, allowing same-name
 retry after definitive quota refusal while retaining uncertain initialization.
-It passes local Worker/Git and pinned-tsrs checks; production rollout remains open.
+Its [production release](evidence/namespace-admission-release-validation.md)
+passes frozen Linux/Mac, disposable delivery and production preservation checks.
+Pre-existing orphaned or uncertain reservations remain retained.
 
 | Capability | Implemented behavior | Remaining differences |
 | --- | --- | --- |

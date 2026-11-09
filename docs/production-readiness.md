@@ -1,4 +1,4 @@
-# Production readiness — 2026-10-31 (SGT)
+# Production readiness — 2026-11-09 (SGT)
 
 **Current recommendation: a controlled private beta with backup mirrors.**
 The engineering estimate is roughly **70% toward the first production release**.
@@ -9,8 +9,11 @@ pending the original migration and CI/staging acceptance.
 A [named-repository admission fix](evidence/namespace-admission-validation.md)
 addresses a failure found while preparing hosted authorization acceptance:
 definitive quota refusals no longer consume the requested address. It preserves
-quota limits and uncertain reservations, passes 554 API cases plus real hosting
-and abuse checks, and still requires frozen release/production rollout. The
+quota limits and uncertain reservations, and is now
+[deployed after frozen release acceptance](evidence/namespace-admission-release-validation.md):
+all nine Linux gates, 554 API cases, 103 CLI cases, the frozen Mac build,
+normal/held disposable delivery, 58 public asset checks and fourteen unchanged
+canary resources. It does not remove pre-existing orphaned reservations. The
 hosted authorization procedure is locally validated; its scoped browser-issued
 credential is prepared but has not been issued.
 
@@ -103,7 +106,7 @@ preserves all 21 CLI modules and changes missing versioned downloads from HTML
 gates, 58 public asset comparisons and 16 routing checks; all fourteen canary
 resources remain exactly unchanged. The first unit-gate failure is retained.
 
-Main Worker is `c4ba93ca-50ed-4505-94b3-e6486a313ba1` at 100%; Vault remains
+Main Worker is `64bda897-a8ba-4834-a98c-7b68c380a33f` at 100%; Vault remains
 `0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`. All 27 normal bindings, Worker-first
 routing and the 50000-subrequest limit remain. The
 [CLI publication guard](evidence/cli-publication-validation.md) now records

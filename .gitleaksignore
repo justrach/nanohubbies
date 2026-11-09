@@ -1,3 +1,21 @@
 # Exact historical false positive: an owned Codegraff sandbox resource ID.
 # The unnecessary probe identifier is removed from the current receipt.
 88ed60c53adf1516d0eefb01f2025c039ff9b94b:docs/evidence/meld-native-package-attempt-7.json:generic-api-key:28
+
+# Exact historical false positives: source/evidence SHA-256 checksums (verified
+# against their original bytes), a published Worker UUID, and a fixture expression.
+# These exceptions are commit/file/rule/line bound; no path or pattern is ignored.
+01193f1792ad1e416f7f4aa4f07620a2c03fcec1:docs/evidence/cli-secrets-receipt.json:generic-api-key:26
+01193f1792ad1e416f7f4aa4f07620a2c03fcec1:docs/evidence/cli-secrets-receipt.json:generic-api-key:27
+730d3d03218c136580dc4b8bf36fd81a96c4c72f:docs/evidence/cli-secrets-receipt.json:generic-api-key:19
+730d3d03218c136580dc4b8bf36fd81a96c4c72f:docs/evidence/cli-secrets-receipt.json:generic-api-key:21
+730d3d03218c136580dc4b8bf36fd81a96c4c72f:docs/evidence/cli-secrets-receipt.json:generic-api-key:24
+40f79a1eca3e75da1851de37deb81b7d0f75f9a3:docs/evidence/production-validation-2026-10-26.md:generic-api-key:37
+460a2b3400b436d3ee0f6a6028abba2ae563db6b:docs/evidence/review-requests-receipt.json:generic-api-key:21
+85214628ec3b8d463476da4e8fec2e847999ea91:docs/evidence/review-requests-release-receipt.json:generic-api-key:23
+85214628ec3b8d463476da4e8fec2e847999ea91:docs/evidence/review-requests-release-receipt.json:generic-api-key:364
+85214628ec3b8d463476da4e8fec2e847999ea91:docs/evidence/review-requests-release-receipt.json:generic-api-key:366
+85214628ec3b8d463476da4e8fec2e847999ea91:docs/evidence/review-requests-release-receipt.json:generic-api-key:368
+4ee6539b8644792defabf054ab87d1725a939554:docs/evidence/runner-preflight-receipt.json:generic-api-key:7
+4ee6539b8644792defabf054ab87d1725a939554:docs/evidence/runner-preflight-receipt.json:generic-api-key:10
+40f79a1eca3e75da1851de37deb81b7d0f75f9a3:packages/api/scripts/signing.test.mjs:generic-api-key:61

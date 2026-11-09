@@ -1,0 +1,176 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T03:29:27.177188+00:00",
+  "scope": "Nanohub atomic named-repository admission release; frozen Linux/Mac, disposable and production delivery, authenticated state preservation. No production repository-creation mutation or positive hosted deployment-authorization probe.",
+  "source": "4e781528f6b99d2ff3b17300a66b8d1913ac1be4",
+  "sourcePublished": true,
+  "linux": {
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "apiUnitPassed": 554,
+    "apiUnitFailed": 0,
+    "apiUnitSkipped": 0,
+    "cliPassed": 103,
+    "fixtureCasesPassed": 27,
+    "pinnedTsrsWorkspaceTasks": 3,
+    "cachedTasks": 0,
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/nanohub-ci@sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "sandboxId": "cnd_b57c31952be022b40bb21cdd35969ad767675139",
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "independentDestruction": true,
+    "startedAt": "2026-11-09T03:14:21.479Z",
+    "finishedAt": "2026-11-09T03:24:57.108Z"
+  },
+  "mac": {
+    "frozenFiles": 1271,
+    "builtFiles": 1480,
+    "buildPassed": true,
+    "productionWranglerDryRunPassed": true,
+    "retainedCliReleases": 21,
+    "sourceManifestSha256": "a915c0ab821e982833bfb7928b88ceaa7c66197df575d6a6060030fd2cdb0baa",
+    "builtManifestSha256": "d95810e51e06c40f285b98107988d62c0b10e2497a3c6b9245f6c8a68e48daca"
+  },
+  "disposable": {
+    "worker": "nh-admission-mw8p7lrs-7706485b",
+    "productionDataBindings": false,
+    "customDomains": false,
+    "normalAssetChecks": 50,
+    "heldResponseChecks": 60,
+    "heldHeadBodyless": true,
+    "normalRoutingChecks": 16,
+    "heldRoutingChecks": 16,
+    "normalVersion": "11968a81-26fd-4f43-a9ab-43a304b06457",
+    "heldVersion": "74a5c427-a56c-4cdc-9b3c-4f753e91638b",
+    "independentlyAbsentAfterDeletion": true
+  },
+  "production": {
+    "previousWorkerVersion": "c4ba93ca-50ed-4505-94b3-e6486a313ba1",
+    "workerVersion": "64bda897-a8ba-4834-a98c-7b68c380a33f",
+    "heldWorkerVersion": "45ca7bc6-6ca4-4e26-b714-0f641c680dbb",
+    "heldTrafficPercent": 0,
+    "deploymentId": "a438a5f6-81b0-4f53-8e8f-43bbeaf0fdf5",
+    "observedVersions": [
+      {
+        "version_id": "64bda897-a8ba-4834-a98c-7b68c380a33f",
+        "percentage": 100
+      }
+    ],
+    "liveVersionObserved": true,
+    "normalBindingsUnchanged": true,
+    "normalBindingCount": 27,
+    "heldAddsOnlyRecoveryHold": true,
+    "workerFirst": true,
+    "subrequests": 50000,
+    "publicAssetChecks": 58,
+    "publicRoutingChecks": 16,
+    "cli": {
+      "format": 1,
+      "version": "0.4.21",
+      "path": "/nh/releases/0.4.21/nh.mjs",
+      "bytes": 101486,
+      "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    "immutableReleasesRetained": 21,
+    "installerAliases": [
+      "nh",
+      "nanohub"
+    ],
+    "temporaryInstallationRemoved": true,
+    "globalInstallationChanged": false,
+    "canaryResources": [
+      {
+        "resource": "branches",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "protection",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "rulesets",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "default-branch",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "archive",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "environments",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "collaborators",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "secrets",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "runners",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "pull",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "comments",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "requests",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "cliCredentials",
+        "exactlyUnchanged": true
+      },
+      {
+        "resource": "gitTokens",
+        "exactlyUnchanged": true
+      }
+    ],
+    "vaultVersion": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+    "vaultUnchanged": true
+  },
+  "logs": {
+    "linux/toolchain-full.log": {
+      "bytes": 8003,
+      "sha256": "d8f61c35da2edc578067b270dc96831ee334e89e42eec41f856fbe13d93fdc4b"
+    },
+    "mac/opennext-build.log": {
+      "bytes": 3175,
+      "sha256": "c73e7334234ace5e08c1807a785a7df689092e92d74f55f10b58fe18fde8c7bc"
+    },
+    "mac/dry-run.log": {
+      "bytes": 2983,
+      "sha256": "3b715acfe4144ff8c89690bb8ee42236a5d81ce436738191a5662b55002b0c05"
+    }
+  },
+  "quotaPolicyChanged": false,
+  "legacyOrphanCleanupPerformed": false,
+  "credentialsIssued": false,
+  "hostedActionsActivated": false,
+  "meldDeployed": false,
+  "remaining": [
+    "Production repository-creation mutation acceptance remains distinct from local real Worker refusal/retry proof",
+    "Positive hosted deployment revalidation procedure is prepared and locally validated; browser action-time credential confirmation remains pending",
+    "Pre-existing orphaned or uncertain namespace reservations are retained",
+    "Intended Nanohub Actions activation, Meld schema reconciliation/live-service staging/cutover, production recovery and load/operations gates remain open"
+  ]
+}
