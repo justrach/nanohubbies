@@ -60,7 +60,8 @@ is presented as a passing transition.
 
 ![Narrow draft controls in a 390 by 640 frame](pull-draft-narrow-controls.png)
 
-Frozen Linux/Mac release acceptance, production asset/CLI retention and binding
-preservation, hosted draft mutations and broader production operations remain
-required. This feature does not activate the hosted Actions dispatcher, complete
+Later [frozen Linux/Mac and disposable delivery checks](pull-drafts-release-progress.md)
+passed with independently verified cleanup. Production asset/CLI retention and
+binding preservation, hosted draft mutations and broader production operations
+remain required. This feature does not activate the hosted Actions dispatcher, complete
 Meld staging/cutover, or add automatic CODEOWNERS requests/notifications.

@@ -1,5 +1,7 @@
 # Production readiness — 2026-11-09 (SGT)
 
+Draft PRs now pass [frozen Linux/Mac and disposable normal/held delivery checks](evidence/pull-drafts-release-progress.md), with independently confirmed cleanup. CLI 0.4.22 remains a candidate; production is still on 0.4.21. Authenticated preservation and hosted lifecycle acceptance await a manual Mac unlock.
+
 **Current recommendation: a controlled private beta with backup mirrors.**
 The engineering estimate is roughly **70% toward the first production release**.
 The acceptance evidence below determines release readiness; the percentage is
@@ -9,7 +11,7 @@ pending the original migration and CI/staging acceptance.
 A [draft PR candidate](evidence/pull-drafts-validation.md) now passes local
 source/bundled/exact-artifact acceptance, including persisted merge blocking,
 conditional ready/undo, current credentials, pre-PR staging checks and cold
-storage restore. CLI 0.4.22 is pinned but not published to production. Frozen
+storage restore. CLI 0.4.22 is pinned but not published to production. Production
 release and hosted acceptance remain open; this adds no production-readiness
 percentage claim.
 

@@ -13,27 +13,46 @@ retains all 21 published CLI releases and includes candidate **0.4.22**. Exact
 configured Codegraff control-key absence was checked across 2,768 source/build
 files; this is separate from the general secret scans.
 
-The frozen Linux run is still in progress. Its fresh provider observation
-confirms the same VM is started, without a completed test gate at this
-observation. It has not been restarted, and neither Linux success nor cleanup
-is claimed. The private operation record retains the controller/session/VM
-handles for continuation.
+The frozen Linux run passed all nine gates: offline installation, API unit,
+repository integration, CLI, access/Vault, hosting, hosted fixtures, production
+build/artifact checks and pinned tsrs. The exact 0.4.22 artifact also passed its
+draft lifecycle check inside this credential-free, network-disabled job. The
+controller completed with exit zero, and a separate provider read confirms the
+owned VM is destroyed. No successful hosted Actions dispatch is inferred from
+this dedicated toolchain-validation run.
 
-Fresh read-only production checks confirm Worker
+The first disposable Worker deployment succeeded, but a network timeout stopped
+its delivery probe before complete acceptance. Its deletion is independently
+confirmed, and the failure remains in the receipt. A second candidate passed
+52 normal asset byte/MIME checks, 62 recovery-hold checks, a bodyless held HEAD
+and 16 download-routing checks in each mode. Its deletion is independently
+confirmed. Per-request receipts recorded 141 completed GET/HEAD reads with zero
+network errors or retries. Bounded read retries are available in the private
+probe; provider mutations are not automatically replayed. Both normal and held
+upload commands completed with exit zero. Neither candidate binds production
+resources or a custom domain. An extra endpoint probe ran after cleanup, returned
+HTML and is excluded from acceptance.
+
+Fresh read-only production checks after both probes confirm Worker
 `64bda897-a8ba-4834-a98c-7b68c380a33f`, Vault
 `0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`, CLI **0.4.21**, all 27 bindings,
-Worker-first routing and the existing 50,000-subrequest limit. No candidate
-Worker upload, production traffic change or draft mutation was performed.
+Worker-first routing and the existing 50,000-subrequest limit. No production
+Worker version was uploaded, no production traffic changed and no hosted draft
+mutation was performed.
 
-The browser transport is unavailable. Authenticated repository preservation
-baselines and hosted draft interaction therefore remain pending. The prepared
+Browser diagnostics report that the Mac is locked, and browser transport is
+unavailable even after a session reset. A manual unlock request is pending.
+The native CLI has no saved API credential for the production test repository;
+none was issued. Authenticated repository preservation baselines and hosted
+draft interaction therefore remain pending. The prepared
 preservation verifier allows only the explicitly added ready/default metadata
 for existing PRs; synthetic self-checks reject changed draft status/revision,
 Git refs and review records. It has not been run against a fresh authenticated
 production baseline.
 
 The [machine-readable progress receipt](pull-drafts-release-progress.json)
-keeps pending release checks separate from completed local/Mac work. Disposable
-normal/held delivery, independent cleanup, production preservation/rollout and
-hosted lifecycle acceptance are still required. This does not close Actions
+keeps pending release checks separate from completed local/Linux/Mac and
+disposable delivery work. Authenticated production preservation, normal/held
+production staging and rollout, public CLI retention and hosted lifecycle
+acceptance are still required. This does not close Actions
 activation, actual Meld staging/cutover or production operational readiness.

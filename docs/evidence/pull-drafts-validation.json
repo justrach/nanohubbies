@@ -304,11 +304,11 @@
     }
   ],
   "remaining": [
-    "Frozen Linux and Mac production release acceptance",
     "Production asset, CLI retention and binding preservation",
     "Hosted draft create/ready/undo/close acceptance",
     "Narrow interactive and physical touch-device acceptance",
     "Automatic CODEOWNERS requests/notifications and other documented GitHub differences",
     "Existing Actions activation, Meld schema/live staging/cutover and production operational gates remain open"
-  ]
+  ],
+  "laterReleasePreparation": "pull-drafts-release-progress.json"
 }

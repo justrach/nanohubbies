@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "checkedAt": "2026-11-09T04:17:21.153098+00:00",
-  "scope": "Frozen draft PR release preparation; Linux pending and production unchanged",
+  "checkedAt": "2026-11-09T04:47:57.724839+00:00",
+  "scope": "Frozen draft PR Linux/Mac and disposable normal/held delivery acceptance; no production rollout",
   "sourceCommit": "44613fb04f78b20393a33f37eaedcc8c48ed41b1",
   "sourcePushedAndRemoteMatched": true,
   "sourceSecretScans": {
@@ -28,13 +28,24 @@
     "checkedFilesForConfiguredKeys": 2768
   },
   "linux": {
-    "outcome": "in progress",
+    "outcome": "passed",
     "sourceCommit": "44613fb04f78b20393a33f37eaedcc8c48ed41b1",
-    "lastProviderObservation": "2026-11-09T04:16:42.087Z",
-    "providerState": "started",
-    "completedGates": [],
-    "restarted": false,
-    "cleanupConfirmed": false
+    "completedGates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "network": "none",
+    "credentialFreeCandidate": true,
+    "cleanupConfirmed": true,
+    "independentCleanupRead": true,
+    "providerCleanupState": "destroyed"
   },
   "productionBefore": {
     "checkedAt": "2026-11-09T04:14:17.714Z",
@@ -52,14 +63,178 @@
     "subrequests": 50000
   },
   "productionTrafficChanged": false,
-  "candidateWorkerUploaded": false,
   "cliCandidatePublished": false,
   "remaining": [
-    "Full frozen Linux acceptance and independent sandbox cleanup",
-    "Disposable normal/held Worker delivery and cleanup",
     "Fresh authenticated repository preservation baseline; browser transport is unavailable",
     "Production binding/Vault preservation, staged normal/held versions and rollout",
     "Hosted draft create/ready/undo/close acceptance",
     "Existing Actions activation, Meld live staging/cutover and operational readiness gates"
-  ]
+  ],
+  "disposableDelivery": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "outcome": "failed",
+        "normalWorkerDeployed": true,
+        "completeDeliveryAcceptance": false,
+        "failure": "network timeout",
+        "deletionIndependentlyConfirmed": true
+      },
+      {
+        "attempt": 2,
+        "outcome": "passed",
+        "normalAssetChecks": 52,
+        "normalRoutingChecks": 16,
+        "heldChecks": 62,
+        "perRequestDiagnostics": true,
+        "boundedGetHeadNetworkRetries": true,
+        "mutationRetries": false,
+        "heldHeadBodyless": true,
+        "heldRoutingChecks": 16,
+        "normalWorkerVersion": "b7bd6119-64e5-4cae-bcbd-3a56e6e6f5b6",
+        "heldWorkerVersion": "13bdc883-e52c-4651-874f-82671a9d1e7e",
+        "deletionIndependentlyConfirmed": true,
+        "completedGetHeadReads": 141,
+        "getHeadNetworkErrors": 0,
+        "getHeadRetries": 0,
+        "normalUploadExitCode": 0,
+        "heldUploadExitCode": 0
+      }
+    ],
+    "productionResourcesBound": false,
+    "customDomains": false,
+    "uncountedLateProbe": "Extra endpoint probe after candidate cleanup returned HTML and is excluded from acceptance"
+  },
+  "productionAfterIsolatedProbe": {
+    "checkedAt": "2026-11-09T04:47:20.112Z",
+    "main": "64bda897-a8ba-4834-a98c-7b68c380a33f",
+    "vault": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+    "cli": {
+      "format": 1,
+      "version": "0.4.21",
+      "path": "/nh/releases/0.4.21/nh.mjs",
+      "bytes": 101486,
+      "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    "normalBindings": 27,
+    "workerFirst": true,
+    "subrequests": 50000
+  },
+  "productionInfrastructurePreservation": {
+    "checkedAt": "2026-11-09T04:48:18.201Z",
+    "workerUnchanged": true,
+    "vaultUnchanged": true,
+    "cliUnchanged": true,
+    "bindingsUnchanged": true,
+    "bindingCount": 27,
+    "limitsUnchanged": true,
+    "authenticatedRepositoryStateVerified": false
+  },
+  "authenticatedProductionChecks": {
+    "outcome": "pending",
+    "macLocked": true,
+    "browserTransportUnavailable": true,
+    "existingCliApiCredentialAvailable": false,
+    "newCredentialIssued": false,
+    "manualUnlockRequested": true
+  },
+  "privateEvidenceHashes": [
+    {
+      "name": "linux/receipt.json",
+      "bytes": 638,
+      "sha256": "e0e30488cbbf36a5562098cb6323cea8b6fa4c821b6fc387431c4619d4e371f9"
+    },
+    {
+      "name": "linux/toolchain-full.log",
+      "bytes": 8141,
+      "sha256": "b02fadd252c4a01e967666f7975ceb584781d5377d90bde114c21662b227fee7"
+    },
+    {
+      "name": "independent-linux-cleanup.json",
+      "bytes": 242,
+      "sha256": "731b53262ac82eb2e762f37b2c4697f70968a9ba6491e76d89358122a95ff6e5"
+    },
+    {
+      "name": "mac/mac-build-operation.json",
+      "bytes": 567,
+      "sha256": "215e3d6d63b27e54a4b719dcffb650bab3c78eb5059e30ad1fae94ace649bd46"
+    },
+    {
+      "name": "mac/built-manifest.json",
+      "bytes": 348029,
+      "sha256": "bbfca419ff7f3fce9517427b7c5422d1de8e42d38be74e20dfaff3be029fda56"
+    },
+    {
+      "name": "mac/source-manifest.json",
+      "bytes": 225342,
+      "sha256": "1a2ec399a4ca31ca388e77e3d6ab5fe601b6991e61929b7c81c4373f603115a0"
+    },
+    {
+      "name": "mac/isolated-production-preservation.json",
+      "bytes": 250,
+      "sha256": "1c88e48dc9034d63c764bc26e1639ae49f9df70a76196b4b2ec45683d5fade21"
+    },
+    {
+      "name": "mac/candidate/operation.json",
+      "bytes": 763,
+      "sha256": "4526cdb979612d74aa332cd51c74ced9247afa425ea59c61296b6b5370659ef4"
+    },
+    {
+      "name": "mac/candidate/independent-cleanup.json",
+      "bytes": 123,
+      "sha256": "48575b020e1bfbce61713c30163285d17a209290fa8173d004536aa1084f1300"
+    },
+    {
+      "name": "mac/candidate-2/operation.json",
+      "bytes": 841,
+      "sha256": "2e42b30c2dc9ccab860508b20c73bf2a062d6e6bcdb9a8f4e6694d3ef821663f"
+    },
+    {
+      "name": "mac/candidate-2/normal-assets.json",
+      "bytes": 10400,
+      "sha256": "1ad8943b53eacb33abe3407a90868e41e1d651a6f4b38d4dc380fe77a6142c60"
+    },
+    {
+      "name": "mac/candidate-2/held-assets.json",
+      "bytes": 5047,
+      "sha256": "6a168061f3f565cc35245d3781836fc6ad0949960838e8ce3489ee42ef639035"
+    },
+    {
+      "name": "mac/candidate-2/normal-routing.json",
+      "bytes": 3348,
+      "sha256": "e5baafcb802f5ff4019ffb7ec8a179b714721d9a2e920dec497fbfcc6ab3b3ff"
+    },
+    {
+      "name": "mac/candidate-2/held-routing.json",
+      "bytes": 3803,
+      "sha256": "946a7a0a9a088db54080962d7396b9894a8d0b3b545da04b37c33109b214fb5b"
+    },
+    {
+      "name": "mac/candidate-2/read-observations.json",
+      "bytes": 30935,
+      "sha256": "880977bcc563ba17c1c8e008fbbdd608df91a2e614aedd92d57d3be6a48e9072"
+    },
+    {
+      "name": "mac/candidate-2/independent-cleanup.json",
+      "bytes": 217,
+      "sha256": "e2e8142fe835fccc2f11cfd959d1ef2003cf1ae54b9c878e0da0d2636002310c"
+    },
+    {
+      "name": "mac/after-probes-public.json",
+      "bytes": 420,
+      "sha256": "b83f011e7fc28ac6280cfc8870811c09882bd2d52929b4a35e5fb88f30ea2f2c"
+    },
+    {
+      "name": "mac/after-probes-version.json",
+      "bytes": 5870,
+      "sha256": "395f24af4e2d906449adf074aa2151a7e972ba5c7f358a28d3b69e89beacbed8"
+    },
+    {
+      "name": "mac/final-production-infrastructure-preservation.json",
+      "bytes": 250,
+      "sha256": "f0bb365c2930f7af3cbc82607b5405e53fde45be63c01a88edcdd8c3162d0782"
+    }
+  ],
+  "productionCandidateVersionUploaded": false,
+  "disposableCandidateWorkerUploads": true
 }
