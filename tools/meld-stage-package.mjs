@@ -91,7 +91,7 @@ export async function packageMeldStaging({source='/tmp/work',head=process.env.GI
         // still have to be present in the bundle inventory.
         if(/^(?:node|cloudflare):/.test(imported.path)||runtimeModules.has(imported.path))continue;
         const target=posix.normalize(posix.join(posix.dirname(matches[0].path),imported.path));
-        if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target))throw Error('Packaged Worker has an unresolved external module');
+        if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target))throw Error('Packaged Worker has an unresolved external module: '+JSON.stringify({path:imported.path.slice(0,512),kind:imported.kind??null,external:imported.external===true}));
       }
     }
     let bytes=0,files=0;

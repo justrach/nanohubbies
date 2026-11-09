@@ -1,0 +1,43 @@
+{
+  "format": 1,
+  "status": "failed",
+  "nanohubSource": "03808a669d9d2983529c87834226dc475fbbf20c",
+  "applicationSource": "e2388418cc72caf71eab6d284ec2f29b37945697",
+  "candidate": "d5d879bd2c67e6582c7ac6f042e62910f3c11626",
+  "runId": "781bac21-3684-48c4-997a-b541a86e693b",
+  "startedAt": "2026-11-08T23:25:48.389Z",
+  "finishedAt": "2026-11-09T00:06:10.214Z",
+  "checks": {
+    "unitAndPackage": {
+      "passed": 4254,
+      "skipped": 205
+    },
+    "browser": {
+      "passed": 471,
+      "skipped": 73
+    },
+    "productionBuild": "passed",
+    "wranglerDryRun": "passed",
+    "stagingPackage": "failed"
+  },
+  "failure": "Packaged Worker has an unresolved external module; bare Node builtin support alone did not resolve the actual cloud package",
+  "cleanup": {
+    "sandboxId": "cnd_e6e5dbc1abe8305d591ef01d78066d82cdeec317",
+    "provider": {
+      "state": "destroyed",
+      "independentRead": true
+    },
+    "errors": [],
+    "runnerRevoked": true,
+    "revokedRunnerRejected": true,
+    "fixtureClosed": true,
+    "originalSourceRefsUnchanged": true
+  },
+  "fullSnapshot": {
+    "private": true,
+    "bytes": 328701,
+    "sha256": "ce40b09435d6f8d5c2a515c1a5d8979ccb5dfe61cd2083198911fa0acdd0ca82"
+  },
+  "stagingDeployed": false,
+  "productionDeployed": false
+}
