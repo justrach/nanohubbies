@@ -21,15 +21,19 @@ on `ff8383f`: 521 API unit cases, 103 CLI cases, 27 fixture cases and three
 uncached pinned-tsrs tasks. The normal Worker dry-run passed, all 21 published
 CLI releases were retained, and 2,720 source/build files were rechecked against
 their saved hashes. This is release preparation; no Worker upload, production
-traffic change or live Meld deployment is claimed by that receipt. The endpoint
-must still be deployed and verified before the native staging adapter is enabled.
+traffic change or live Meld deployment is claimed by that receipt. The subsequent
+[production release](evidence/deployment-authority-release-validation.md) deploys
+the endpoint, preserves fourteen canary resources and all 27 normal bindings,
+and passes public asset/CLI delivery checks. The native staging adapter remains
+unconfigured; a valid hosted revalidation flow and live Meld acceptance are open.
 
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs
 survive container stop, hashes and run bindings verify after destruction, and an
 unsafe output is refused. This is synthetic build-output acceptance; the complete
-Meld staging package, trusted uploader and shared hosted artifact storage remain
-open. No application deployment or runtime version changes in this verification.
+Meld staging package acceptance, live uploader activation and shared hosted
+artifact storage remain open. No application deployment or runtime version
+changes occurred in that component verification.
 
 Published CLI **0.4.21** and the deployed review UI add
 [reader feedback](reader-feedback.md), isolated private drafts, reader reviewer
@@ -43,13 +47,13 @@ is broader work. A live author COMMENT/private-hunk/resolution smoke preserves
 all existing refs, reviews, comments and settings, with zero new credentials.
 Production multi-account reader mutations were not performed.
 
-The latest [server-only routing release](evidence/cli-download-release-validation.md)
+The earlier [server-only routing release](evidence/cli-download-release-validation.md)
 preserves all 21 CLI modules and changes missing versioned downloads from HTML
 200 to private/no-store 404. Its corrected second frozen run passes all nine
 gates, 58 public asset comparisons and 16 routing checks; all fourteen canary
 resources remain exactly unchanged. The first unit-gate failure is retained.
 
-Main Worker is `0b68079f-c6cf-4c0d-bf5d-92082fd354b5` at 100%; Vault remains
+Main Worker is `c4ba93ca-50ed-4505-94b3-e6486a313ba1` at 100%; Vault remains
 `0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48`. All 27 normal bindings, Worker-first
 routing and the 50000-subrequest limit remain. The
 [CLI publication guard](evidence/cli-publication-validation.md) now records

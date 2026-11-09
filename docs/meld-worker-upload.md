@@ -138,8 +138,10 @@ An operator module outside the candidate may construct the adapter and export
 its `dispatch`, `wait`, `accept` and `versionPrefixLength` fields for `runOnce`.
 The operator must supply the actual real-service acceptance implementation,
 profile and credential resolver; none are read from candidate configuration.
-This implementation is not activated or live-validated. The new server
-revalidation endpoint must be deployed before enabling the adapter.
+This implementation is not activated or live-validated. The server revalidation
+endpoint is [deployed on Nanohub](evidence/deployment-authority-release-validation.md);
+a valid hosted authorization flow still requires verification before enabling
+the adapter.
 
 Deployment serialization with Meld's existing pipeline, live provider contract
 validation, real-service acceptance and protected merge/cutover acceptance remain

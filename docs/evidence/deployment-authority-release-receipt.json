@@ -1,0 +1,107 @@
+{
+  "format": 1,
+  "observedAt": "2026-11-09T00:53:52.496Z",
+  "scope": "Fresh deployment-authority API release on Nanohub; not live Meld staging acceptance",
+  "source": "ff8383f8b50300598a9983225ab16ae5bd7da45e",
+  "publication": {
+    "observedAt": "2026-11-09T00:48:03.969Z",
+    "source": "ff8383f8b50300598a9983225ab16ae5bd7da45e",
+    "remoteBranch": "codex/standalone-git-host",
+    "remoteHead": "3db60ba69490cf776de19d3352af5ce632253467",
+    "localHead": "3db60ba69490cf776de19d3352af5ce632253467",
+    "remoteHeadMatchesLocal": true,
+    "sourceIsAncestor": true
+  },
+  "production": {
+    "worker": "c4ba93ca-50ed-4505-94b3-e6486a313ba1",
+    "heldFallback": "08be8d4a-c569-44e8-9e13-f75c17a4127b",
+    "previousWorker": "0b68079f-c6cf-4c0d-bf5d-92082fd354b5",
+    "deploymentId": "df81eb25-2c58-47b1-ada5-d09e19c2ec12",
+    "traffic": [
+      {
+        "version_id": "c4ba93ca-50ed-4505-94b3-e6486a313ba1",
+        "percentage": 100
+      }
+    ],
+    "liveVersionObserved": true,
+    "bindingCount": 27,
+    "bindingsUnchanged": true,
+    "workerFirst": true,
+    "subrequestLimit": 50000,
+    "vaultVersion": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+    "vaultUnchanged": true,
+    "automaticMutationRetries": false
+  },
+  "checks": {
+    "frozenLinux": "docs/evidence/meld-worker-upload-frozen-validation.json",
+    "disposable": {
+      "name": "nh-revalidation-mw8jgrws-9eff29d5",
+      "normalAssets": 50,
+      "heldResponses": 60,
+      "normalRouting": 16,
+      "heldRouting": 16,
+      "absenceConfirmed": true,
+      "productionResourcesBound": false
+    },
+    "publicAssets": 58,
+    "publicRouting": 16,
+    "cliVersion": "nh 0.4.21",
+    "cliAliases": [
+      "nh",
+      "nanohub"
+    ],
+    "temporaryInstallRemoved": true,
+    "preservedResources": [
+      {
+        "kind": "canary",
+        "resources": 9,
+        "unchanged": true
+      },
+      {
+        "kind": "feedback",
+        "resources": 5,
+        "unchanged": true
+      }
+    ],
+    "exactConfiguredKeysAbsent": {
+      "checkedAt": "2026-11-09T00:47:49.925Z",
+      "configuredKeysChecked": [
+        "intended-actions",
+        "independent-ci"
+      ],
+      "filesChecked": 2720,
+      "exactConfiguredKeysAbsent": true,
+      "scope": "exact configured Codegraff keys only; not a general secret audit"
+    },
+    "negativeRevalidation": {
+      "observedAt": "2026-11-09T00:53:04.588Z",
+      "scope": "Missing/invalid runner denial only; no valid deployment authorization was exercised",
+      "initialProbe": {
+        "passed": false,
+        "expectedStatus": 401,
+        "observedStatus": 404,
+        "correction": "The trunk endpoint conceals private repositories from anonymous callers; its existing contract is 404."
+      },
+      "checks": [
+        {
+          "credential": "missing",
+          "status": 404
+        },
+        {
+          "credential": "invalid",
+          "status": 403
+        }
+      ]
+    }
+  },
+  "evidenceDigests": {
+    "public": "c352ec4a0a90fdfd02842d08027f8575dfdff35681941b448ce365c7417d7364",
+    "installer": "498300688d9163bdd15bb1e5831a86c028ef9aa8309d6aa44438c800e170c543",
+    "preservation": "0e4c9b4dd5817cc45f094a6e45704dc7745fd34fe238f107cce0383cec292113",
+    "postVersion": "d3135c6ffc7be99c48c3757c0414ce0d90a0875b80ba226e37d5b6745bbac0b9"
+  },
+  "validHostedRevalidationFlowTested": false,
+  "liveMeldUploadValidated": false,
+  "liveMeldPromotionValidated": false,
+  "hostedDispatcherActivated": false
+}
