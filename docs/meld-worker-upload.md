@@ -33,6 +33,15 @@ summary cannot authorize an upload. Module names and MIME types are checked;
 binary modules and assets retain their exact bytes. The combined package is
 bounded to 128 MiB, module bytes to 64 MiB and each asset to 25 MiB.
 
+Preparation also requires the inspected full staging commit in
+`profile.baseline.sourceCommit`. It reads real Git commit parents and requires
+that commit to be an ancestor of the candidate. A divergent candidate must first
+be integrated and independently checked; the uploader never synthesizes a merge
+or treats a PR-head pass as an integration pass. Replacement objects are disabled
+and graft files are refused. The immutable plan records this staging base, and
+changing it after preparation cannot reuse the proof. No candidate code or hooks
+run during this check.
+
 Asset hashes match Wrangler's BLAKE3 hash of base64 content plus extension.
 Pinned `ignore` interprets `.assetsignore`; control files are not served as public
 assets. `_headers` and `_redirects` are UTF-8 text in `assets.config`, as in
@@ -44,7 +53,8 @@ MIME database. Files sharing a content hash must also share bytes and MIME type.
 ## Operator profile and baseline
 
 The profile supplies the fixed account/script, the Nanohub staging environment
-ID, an inspected baseline deployment ID, its single 100% version ID and the
+ID, an inspected baseline deployment ID, its single 100% version ID, the full
+source commit mapped to that deployed version, and the
 SHA-256 from `meldSettingsFingerprint()` on the `/settings` response. The
 fingerprint excludes version annotations because `/settings` follows the latest
 upload and our new version changes its message. It retains all resource fields,
@@ -52,6 +62,13 @@ including bindings, tags, limits and observability; uploaded/deployed version ID
 are checked separately. Canonical JSON recursively sorts object keys and preserves
 array order. Do not use candidate configuration or
 invent a baseline to get past an inspection failure.
+
+The full source mapping is an operator-reviewed input, not inferred from a short
+`/api/version` prefix. Establish it from the existing deployment's source/run
+records and verify the live version before preparing the profile. Subsequent
+provider checks fence the exact version and deployment IDs. Ancestry does not
+authorize deployment, update any staging ref, serialize with another controller,
+or replace the existing required approval and acceptance gates.
 
 The reviewed version metadata permits only bindings, compatibility date/flags,
 limits, `cache_options` and `keep_bindings`. It must use the pinned Meld profile,

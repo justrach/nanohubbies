@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "observedAt": "2026-11-09T01:10:20.700Z",
+  "scope": "Read-only Meld staging inspection and local uploader ancestry checks; no staging deployment or database migration",
+  "readOnlyAccess": {
+    "credentialSource": "Existing Meld staging pipeline configuration; previous 403 was from a different Mac login",
+    "endpoints": {
+      "deployments": {
+        "status": 200,
+        "success": true
+      },
+      "settings": {
+        "status": 200,
+        "success": true
+      },
+      "versions": {
+        "status": 200,
+        "success": true
+      },
+      "version": {
+        "status": 200,
+        "success": true
+      }
+    },
+    "deployedVersion": "f031321f-7869-45d0-9345-245972b9f9c2",
+    "bindingCount": 34,
+    "nonsecretBindings": 14,
+    "retainedSecretBindings": 20,
+    "secretValuesRead": false,
+    "metadataKeptPrivate": true
+  },
+  "fullSourceMapping": {
+    "observedAt": "2026-11-09T01:08:36.925Z",
+    "runId": "1794120777291-f8a55127-3412-4265-94dc-a9abce2d5680",
+    "sourceCommit": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "phase": "passed",
+    "providerVersion": "f031321f-7869-45d0-9345-245972b9f9c2",
+    "versionIdsInDeployLog": [
+      "f031321f-7869-45d0-9345-245972b9f9c2"
+    ],
+    "fullSourceMappedToProviderVersion": true,
+    "deployLogPrivate": true,
+    "mutations": 0
+  },
+  "history": {
+    "main": "e2388418cc72caf71eab6d284ec2f29b37945697",
+    "staging": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "mergeBase": "6b580e676f3a466d487e8d08e007c38699764899",
+    "stagingIsAncestorOfMain": false,
+    "mainOnlyCommits": 12,
+    "stagingOnlyCommits": 155,
+    "integrationPreview": {
+      "clean": false,
+      "conflicts": [
+        "packages/db/migrations/meta/_journal.json"
+      ],
+      "reviewRequired": true
+    }
+  },
+  "controllerObservation": {
+    "observedAt": "2026-11-09T01:02:35.635Z",
+    "status": 200,
+    "running": 0,
+    "queued": 0,
+    "exclusiveLockEstablished": false
+  },
+  "localChecks": {
+    "apiUnit": {
+      "passed": 527,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focusedTests": 18,
+    "operatorPreflight": {
+      "files": 20,
+      "bindingsChecked": true,
+      "fullTypeCheck": false
+    },
+    "unitLog": {
+      "private": true,
+      "bytes": 82186,
+      "sha256": "4f7211da9d22d930c1db8787043389a8c2904564eb8e3c6c03b7f1ab084f4cd2"
+    }
+  },
+  "liveAcceptanceCredentialLocated": false,
+  "liveAcceptanceExecuted": false,
+  "providerMutations": 0,
+  "originalMeldRefsWritten": false,
+  "sharedDatabaseMigrated": false,
+  "stagingDeployed": false
+}

@@ -22,6 +22,7 @@ const operators = [
   "tools/meld-native-plan.mjs",
   "tools/meld-stage-package.mjs",
   "tools/meld-stage-artifact.mjs",
+  "tools/meld-stage-ancestry.mjs",
   "tools/meld-worker-upload.mjs",
   "tools/meld-native-staging-adapter.mjs",
   "tools/source-transfer.mjs",

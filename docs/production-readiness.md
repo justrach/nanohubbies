@@ -27,6 +27,15 @@ the endpoint, preserves fourteen canary resources and all 27 normal bindings,
 and passes public asset/CLI delivery checks. The native staging adapter remains
 unconfigured; a valid hosted revalidation flow and live Meld acceptance are open.
 
+[Live staging inspection](evidence/meld-staging-ancestry-validation.md) found the
+existing Meld deployment credential and verified the currently deployed full
+source from its passed run and exact provider version. Main and staging diverge;
+a merge preview conflicts in the migration journal. The uploader now refuses a
+candidate that omits current staging history, including Git replacement/graft
+attempts. Local checks pass 527 API cases. No Meld ref, deployment, secret binding
+or shared database was changed. Reviewed integration and real-service acceptance
+remain required; a PR-head CI pass cannot replace them.
+
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs
 survive container stop, hashes and run bindings verify after destruction, and an

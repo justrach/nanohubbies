@@ -17,13 +17,15 @@ const now=()=>1900000000000;
 async function fixture(work) {
  const directory=await mkdtemp(join(tmpdir(),'nh-worker-upload-')),source=join(directory,'source'),artifacts=join(directory,'artifacts');
  await mkdir(source);await mkdir(artifacts);
- const run={id:randomUUID(),attempt:1,generation:1,head:'a'.repeat(40),base:'b'.repeat(40),deploymentApprovedBy:'owner'},context={run,source,artifacts};
+ const git=async(...args)=>(await promisify(execFile)('git',['-C',source,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',...args],{env:{PATH:process.env.PATH,GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1'},timeout:10000})).stdout.trim();
+ await git('init','-q','-b','main');await writeFile(join(source,'fixture'),'baseline');await git('add','fixture');await git('commit','-qm','Baseline');const base=await git('rev-parse','HEAD');await writeFile(join(source,'fixture'),'candidate');await git('commit','-qam','Candidate');const head=await git('rev-parse','HEAD');
+ const run={id:randomUUID(),attempt:1,generation:1,head,base,deploymentApprovedBy:'owner'},context={run,source,artifacts};
  const metadata={compatibility_date:meldPackageProfile.compatibilityDate,compatibility_flags:meldPackageProfile.compatibilityFlags,keep_bindings:['secret_text','secret_key'],limits:{cpu_ms:30000},cache_options:{enabled:false},bindings:[
   {type:'assets',name:'ASSETS'},{type:'service',name:'WORKER_SELF_REFERENCE',service:meldUploadTarget.script},{type:'hyperdrive',name:'HYPERDRIVE',id:'98c214c675a34f49a2f31975b182a544'},
   {type:'plain_text',name:'MELD_ENV',text:'staging'},...['BETTER_AUTH_URL','NEXT_PUBLIC_APP_URL'].map(name=>({type:'plain_text',name,text:meldUploadTarget.origin})),
  ]};
  const settings={...structuredClone(metadata),observability:{enabled:true},annotations:{'workers/message':'baseline'},bindings:[...structuredClone(metadata.bindings),{type:'secret_text',name:'SERVER_SECRET'},{type:'secret_key',name:'CRYPTO_KEY'}]};delete settings.keep_bindings;
- const profile={...meldUploadTarget,environmentId:'env-staging',metadata,baseline:{deploymentId:randomUUID(),versionId:randomUUID(),settingsSha256:meldSettingsFingerprint(settings)}};
+ const profile={...meldUploadTarget,environmentId:'env-staging',metadata,baseline:{deploymentId:randomUUID(),versionId:randomUUID(),settingsSha256:meldSettingsFingerprint(settings),sourceCommit:base}};
  const bytes=new Map([
   ['modules/worker.js',Buffer.from('export default {fetch(){return new Response("fixture")}}')],['modules/worker.wasm',Buffer.from([0,97,115,109,1,0,0,0])],
   ['assets/index.html',Buffer.from('<h1>fixture</h1>')],['assets/file.bin',Buffer.from([0,255,1,128])],['assets/same.bin',Buffer.from([0,255,1,128])],
@@ -62,7 +64,7 @@ async function fixture(work) {
  };
  const authorize=async()=>{const grant={id:randomUUID(),run:run.id,attempt:run.attempt,generation:run.generation,environmentId:profile.environmentId,issuedAt:now()-60000,checkedAt:now(),expiresAt:now()+120000};grants.push(grant);return grant;};
  const deps={credential:async()=>accountToken,authorize,fetcher,now};
- try{await work({directory,context,profile,settings,artifact,bytes,requests,grants,deps,mode:value=>{mode=value;},prepare:()=>prepareMeldWorkerUpload(context,profile,{load:async()=>artifact}),receipt:async()=>JSON.parse(await readFile(join(artifacts,'meld-worker-upload.json'),'utf8'))});}
+ try{await work({directory,context,profile,settings,artifact,bytes,requests,grants,deps,git,mode:value=>{mode=value;},prepare:()=>prepareMeldWorkerUpload(context,profile,{load:async()=>artifact}),receipt:async()=>JSON.parse(await readFile(join(artifacts,'meld-worker-upload.json'),'utf8'))});}
  finally{await rm(directory,{recursive:true,force:true});}
 }
 
@@ -86,6 +88,18 @@ test('opaque Worker/assets upload preserves binary bytes, module names, controls
 test('cached assets use their completion JWT without uploading bytes',async()=>fixture(async f=>{
  f.mode('cached');await uploadMeldStageVersion(f.context,await f.prepare(),f.profile,f.deps);
  assert.equal(f.requests.filter(r=>r.method==='POST').length,2);assert.equal(f.grants.length,2);
+}));
+
+test('a candidate cannot erase shared staging commits; an integration candidate must include them',async()=>fixture(async f=>{
+ await f.git('checkout','-qb','staging',f.context.run.base);await writeFile(join(f.context.source,'stage-only'),'staging');await f.git('add','.');await f.git('commit','-qm','Shared staging');const staging=await f.git('rev-parse','HEAD');f.profile.baseline.sourceCommit=staging;
+ await assert.rejects(f.prepare(),/omits current staging history/);assert.equal(f.requests.length,0);assert.equal(f.grants.length,0);
+ await f.git('checkout','-q','main');await f.git('merge','--no-ff','--no-edit','staging');const head=await f.git('rev-parse','HEAD');f.context.run.head=head;f.artifact.binding.head=head;f.artifact.descriptor.head=head;
+ const plan=await f.prepare();assert.equal(plan.stagingBase,staging);assert.equal(plan.binding.head,head);assert.equal(f.requests.length,0);
+}));
+
+test('changing the staging source after preparation cannot reuse its ancestry proof',async()=>fixture(async f=>{
+ const plan=await f.prepare();f.profile.baseline.sourceCommit=f.context.run.head;
+ await assert.rejects(uploadMeldStageVersion(f.context,plan,f.profile,f.deps),/ancestry changed after package preparation/);assert.equal(f.requests.length,0);assert.equal(f.grants.length,0);
 }));
 
 test('version annotations do not invalidate the resource baseline, while bindings, limits and tags remain protected',async()=>fixture(async f=>{

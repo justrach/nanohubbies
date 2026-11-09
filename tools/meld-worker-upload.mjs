@@ -9,6 +9,7 @@ import ignore from 'ignore';
 import mime from 'mime-types';
 import {loadMeldStagePackage} from './meld-stage-artifact.mjs';
 import {meldPackageProfile} from './meld-stage-package.mjs';
+import {verifyMeldStagingAncestry} from './meld-stage-ancestry.mjs';
 
 export const meldUploadTarget=Object.freeze({account:'f2f0af76a1c41021ea3c7f4cc9a78a4b',script:'meld-api-staging',origin:'https://staging.meld.space'});
 const apiOrigin='https://api.cloudflare.com/client/v4';
@@ -50,6 +51,7 @@ export async function prepareMeldWorkerUpload(context,profile,{load=loadMeldStag
  if(profile?.account!==meldUploadTarget.account||profile?.script!==meldUploadTarget.script)throw Error('Only the fixed Meld staging target is supported');
  const metadata=metadataProfile(profile.metadata),artifact=await load(context),modules=[];
  if(artifact.descriptor?.profile!==meldPackageProfile.id||artifact.descriptor.head!==context.run.head||!/^[a-f0-9]{64}$/.test(artifact.manifestSha256??''))throw Error('Unverified Meld staging artifact');
+ const ancestry=await verifyMeldStagingAncestry(context.source,profile.baseline?.sourceCommit,context.run.head);
  let total=0;const names=new Set();
  for(const item of artifact.modules) {
   const name=item.path?.slice('modules/'.length);
@@ -84,7 +86,7 @@ export async function prepareMeldWorkerUpload(context,profile,{load=loadMeldStag
  if(!Object.keys(manifest).length)throw Error('The deployable asset manifest is empty');
  const assetConfig={run_worker_first:true};
  for(const name of ['_headers','_redirects'])if(assets.has(name))assetConfig[name]=text(assets.get(name),2*1024*1024);
- const summary=Object.freeze({binding:Object.freeze({...artifact.binding}),manifestSha256:artifact.manifestSha256,metadataSha256:sha(canonical(metadata)),assetManifestSha256:sha(canonical(manifest)),assetCount:Object.keys(manifest).length,moduleCount:modules.length,bytes:total});
+ const summary=Object.freeze({binding:Object.freeze({...artifact.binding}),stagingBase:ancestry.stagingCommit,manifestSha256:artifact.manifestSha256,metadataSha256:sha(canonical(metadata)),assetManifestSha256:sha(canonical(manifest)),assetCount:Object.keys(manifest).length,moduleCount:modules.length,bytes:total});
  plans.set(summary,{...summary,metadata,main,modules,assetConfig,byHash,assetManifest:manifest});return summary;
 }
 
@@ -106,6 +108,7 @@ export async function uploadMeldStageVersion(context,plan,profile,{credential,au
  plan=plans.get(plan);
  const base=JSON.parse(JSON.stringify(profile.baseline??{}));
  if(!uuid(base?.deploymentId)||!uuid(base?.versionId)||!/^[a-f0-9]{64}$/.test(base?.settingsSha256??''))throw Error('An inspected staging deployment baseline is required');
+ if(base.sourceCommit!==plan.stagingBase)throw Error('The inspected staging ancestry changed after package preparation');
  const binding={runId:context.run.id,attempt:context.run.attempt,head:context.run.head,base:context.run.base,artifactSha256:plan.manifestSha256,metadataSha256:plan.metadataSha256,target:meldUploadTarget,baseline:base};
  if(!uuid(binding.runId)||!Number.isSafeInteger(binding.attempt)||binding.attempt<1||!/^[a-f0-9]{40}$/.test(binding.head??'')||!/^[a-f0-9]{40}$/.test(binding.base??''))throw Error('Invalid upload attempt identity');
  if(plan.binding.runId!==binding.runId||plan.binding.attempt!==binding.attempt||plan.binding.head!==binding.head||plan.binding.base!==binding.base)throw Error('Upload artifact belongs to another attempt');
