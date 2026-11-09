@@ -73,6 +73,14 @@ No artifact code or package hooks are executed there. This validates the package
 not permission to deploy it; fresh environment authority and trusted target
 settings remain required.
 
+The [packaging diagnostics](evidence/meld-package-diagnostics.json) retain two
+failed native-import checks and the subsequent successful cloud build/package
+export: four modules, 306 assets and 41,683,071 bytes. All exported hashes and
+the committed wrapper match. That standalone probe used a diagnostic workflow
+label, so the canonical package consumer correctly refused its run identity.
+Its failure is retained; it is not relabeled as full CI or staging acceptance.
+The complete native workflow must establish canonical run provenance separately.
+
 Local preparation passes ten Node/Bun plan/package cases, 504 API unit cases,
 77 hosting cases plus actual Worker capacity/namespace/Git integration, pinned
 tsrs and operator binding preflight. The bundler is simulated in local packaging

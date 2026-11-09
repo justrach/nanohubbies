@@ -7,7 +7,7 @@
       "purpose": "build-only packaging diagnostic; not full CI or staging acceptance",
       "startedAt": "2026-11-09T00:28:57.914Z",
       "finishedAt": "2026-11-09T00:32:37.943Z",
-      "nanohubSource": "0bc7188",
+      "nanohubSource": "0bc71882227461b2b4e1812cf5394d52098fe0c7",
       "applicationOrigin": "e2388418cc72caf71eab6d284ec2f29b37945697",
       "runtimeSnapshot": "de23c3c4d7dff5f2fcf9cc019d488072270c10ab",
       "excludedTopLevelEvidence": [
@@ -77,6 +77,66 @@
       "stagingDeployed": false,
       "productionDeployed": false,
       "fullCiAcceptance": false
+    },
+    {
+      "attempt": 3,
+      "purpose": "build-only packaging and private artifact diagnostic; not full CI or staging acceptance",
+      "startedAt": "2026-11-09T00:47:06.423Z",
+      "finishedAt": "2026-11-09T00:52:45.592Z",
+      "nanohubSource": "3db60ba69490cf776de19d3352af5ce632253467",
+      "packagerSha256": "15a6d1b3f9c5e887aa6d60fa046b8f7696bc71fa07e561376edbbf5176243827",
+      "applicationOrigin": "e2388418cc72caf71eab6d284ec2f29b37945697",
+      "runtimeSnapshot": "de23c3c4d7dff5f2fcf9cc019d488072270c10ab",
+      "excludedTopLevelEvidence": [
+        "review",
+        "review-evidence"
+      ],
+      "steps": [
+        "Verify isolated toolchain",
+        "Locked offline install",
+        "Production bundle",
+        "Staging package"
+      ],
+      "operationPhase": "failed",
+      "packagingState": "success",
+      "packageVerification": {
+        "observedAt": "2026-11-09T00:54:59.827Z",
+        "scope": "Standalone diagnostic package byte verification; not canonical CI acceptance",
+        "packageCreated": true,
+        "artifactCaptureComplete": true,
+        "manifestSha256": "12aa5fe6d9ec914f8eedda49d49f789f8d1e3b82dbdaa3f2b7bbc524f89bb79b",
+        "totalBytes": 41683071,
+        "fileCount": 311,
+        "moduleCount": 4,
+        "assetFiles": 306,
+        "mainModule": "modules/worker.js",
+        "committedWrapperVerified": true,
+        "canonicalConsumerAccepted": false,
+        "canonicalConsumerRefusal": "Standalone diagnostic workflow label differs from .github/workflows/meld.yml; original result and refusal retained",
+        "nextAcceptance": "Full native Nanohub run using accepted default-branch workflow",
+        "cleanup": {
+          "state": "destroyed",
+          "independentRead": true
+        }
+      },
+      "sandboxId": "cnd_1f480d33042c018725e110258033fbdd49253878",
+      "cleanup": {
+        "state": "destroyed",
+        "independentRead": true
+      },
+      "log": {
+        "private": true,
+        "bytes": 10986,
+        "sha256": "0cbdd167ad46757d3659787d1c7659e8426fa9ad56e6ef70010d7fc88f63fd7c"
+      },
+      "stagingDeployed": false,
+      "productionDeployed": false,
+      "fullCiAcceptance": false
     }
-  ]
+  ],
+  "latestLocalApiUnit": {
+    "passed": 524,
+    "failed": 0,
+    "skipped": 0
+  }
 }
