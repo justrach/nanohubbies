@@ -23,11 +23,12 @@ async function fixture(work) {
   for(const field of ['account_id','routes','build','services','hyperdrive','migrations','vars'])assert.equal(config[field],undefined);
   assert.equal(config.assets.binding,'ASSETS');assert.deepEqual(config.compatibility_flags,meldPackageProfile.compatibilityFlags);
   assert.ok(!options.cwd.startsWith(source+'/'));for(const key of ['CODEGRAFF_API_KEY','CLOUDFLARE_API_TOKEN','GITHUB_TOKEN'])assert.equal(options.env[key],undefined);
-  await writeFile(join(out,'worker.js'),'import wasm from "./worker.wasm";export default {fetch(){return new Response("fixture")}}');await writeFile(join(out,'worker.wasm'),Buffer.from([0,97,115,109,1,0,0,0]));
+  await writeFile(join(out,'worker.js'),'import wasm from "./worker.wasm";export default {fetch(){return new Response("fixture")}}'+(mode==='optional-sharp'?'\nexport async function optional(){return import("sharp")}':''));await writeFile(join(out,'worker.wasm'),Buffer.from([0,97,115,109,1,0,0,0]));
   await writeFile(join(out,'worker.js.map'),'source-map-stays-in-private-temporary-directory');await writeFile(join(out,'README.md'),'Wrangler tooling note');
   if(mode==='link')await symlink('/etc/passwd',join(out,'linked.js'));
   if(mode==='unknown-module')await writeFile(join(out,'unexpected.native'),'unsupported');
   const outputs={'bundle/worker.js':{entryPoint:'worker.mjs',exports:['default','DOQueueHandler','DOShardedTagCache','BucketCachePurge'],imports:[{path:mode==='missing'?'./missing.wasm':mode==='missing-package'?'unbundled-npm-package':'./worker.wasm',external:true},{path:'node:async_hooks',external:true},{path:'cloudflare:workers',external:true},...['stream','async_hooks','buffer'].map(path=>({path,external:true}))]}};
+  if(['optional-sharp','static-sharp','nonexternal-sharp','optional-unknown'].includes(mode))outputs['bundle/worker.js'].imports.push({path:mode==='optional-unknown'?'unknown-package':'sharp',kind:mode==='static-sharp'?'import-statement':'dynamic-import',external:mode!=='nonexternal-sharp'});
   if(mode==='multiple')outputs['bundle/other.js']={entryPoint:'other.js',exports:['default'],imports:[]};
   if(mode==='no-default')outputs['bundle/worker.js'].exports=[];
   await writeFile(meta,JSON.stringify({outputs}));if(mode==='cli-failure')throw Error('fixture CLI failure');
@@ -45,6 +46,26 @@ test('Meld package uses locked dry-run bundling and retains complete module/asse
  assert.equal(await readFile(join(f.output,'assets/index.html'),'utf8'),'<h1>fixture</h1>');assert.deepEqual(await readdir(join(f.output,'modules')),['worker.js','worker.wasm']);
  assert.equal((await stat(f.output)).mode&0o777,0o700);assert.equal((await stat(join(f.output,'staging-package.json'))).mode&0o777,0o600);
 }));
+
+test('only the external dynamic sharp import is retained byte-for-byte; other unresolved imports fail',async()=>{
+ await fixture(async f=>{
+  f.mode('optional-sharp');await packageMeldStaging(f.options,f.deps);
+  assert.equal(await readFile(join(f.output,'modules/worker.js'),'utf8'),'import wasm from "./worker.wasm";export default {fetch(){return new Response("fixture")}}\nexport async function optional(){return import("sharp")}');
+  assert.deepEqual(await readdir(join(f.output,'modules')),['worker.js','worker.wasm']);
+ });
+ for(const mode of ['static-sharp','nonexternal-sharp','optional-unknown'])await fixture(async f=>{
+  f.mode(mode);await assert.rejects(packageMeldStaging(f.options,f.deps),/unresolved external module/);await assert.rejects(stat(f.output),{code:'ENOENT'});
+ });
+});
+
+test('workerd starts with an absent dynamic sharp import and preserves its rejection at the call site',{timeout:20000},async()=>{
+ const {Miniflare,convertV4MiniflareOptions}=await import('miniflare');
+ const mf=new Miniflare(convertV4MiniflareOptions({name:'meld-optional-import-test',host:'127.0.0.1',port:0,modules:true,compatibilityDate:meldPackageProfile.compatibilityDate,compatibilityFlags:meldPackageProfile.compatibilityFlags,script:'export default {async fetch(request){if(new URL(request.url).pathname!=="/optional")return new Response("started");try{await import("sharp");return new Response("unexpected")}catch(error){return Response.json({caught:true,message:error.message})}}}'}));
+ try{
+  assert.equal(await (await mf.dispatchFetch('http://fixture.invalid/')).text(),'started');
+  const response=await mf.dispatchFetch('http://fixture.invalid/optional');assert.equal(response.status,200);const result=await response.json();assert.equal(result.caught,true);assert.match(result.message,/No such module.*sharp/);
+ }finally{await mf.dispose();}
+});
 
 test('missing modules, wrong exports, multiple entries, unsafe files and failed bundling remove only their new package',async()=>{
  for(const mode of ['missing','missing-package','no-default','multiple','link','unknown-module','cli-failure'])await fixture(async f=>{

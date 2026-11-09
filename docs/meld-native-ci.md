@@ -49,7 +49,13 @@ secrets, migrations or source build hooks. No npm/npx install is used. See
 The package includes the complete bundled module Worker, required named exports,
 opaque binary/text dependencies and static assets, including asset-control
 files for the future uploader. Source maps/tooling README files stay outside the
-deployable package. Unsupported or unresolved emitted modules fail packaging.
+deployable package. Unsupported or unresolved emitted modules fail packaging,
+except the exact external dynamic `sharp` import emitted by Meld's reviewed
+Cloudflare build. Meld explicitly keeps that native package external; OpenNext
+uses the Cloudflare `IMAGES` binding for image optimization. The packager leaves
+the import bytes untouched: workerd can start the module, and attempting the
+absent import still rejects at its call site. A real workerd regression test
+covers that behavior; static `sharp` imports and other absent packages fail.
 The versioned `staging-package.json` identifies the head and compatibility
 profile without selecting a deployment target. Private capture selects
 `/tmp/work/.nanohub-staging` with the existing 128 MiB/10,000-file bounds.

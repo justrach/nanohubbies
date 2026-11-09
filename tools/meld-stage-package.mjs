@@ -90,6 +90,12 @@ export async function packageMeldStaging({source='/tmp/work',head=process.env.GI
         // runtime imports, not missing emitted files. Arbitrary bare packages
         // still have to be present in the bundle inventory.
         if(/^(?:node|cloudflare):/.test(imported.path)||runtimeModules.has(imported.path))continue;
+        // Meld keeps native sharp external to its Cloudflare build. OpenNext's
+        // image handler uses IMAGES; the emitted optional dynamic import stays
+        // untouched and rejects if called in workerd. A dynamic import need
+        // not resolve during module startup. Do not generalize this exception
+        // to static imports or other missing packages.
+        if(imported.path==='sharp'&&imported.kind==='dynamic-import'&&imported.external===true)continue;
         const target=posix.normalize(posix.join(posix.dirname(matches[0].path),imported.path));
         if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target))throw Error('Packaged Worker has an unresolved external module: '+JSON.stringify({path:imported.path.slice(0,512),kind:imported.kind??null,external:imported.external===true}));
       }
