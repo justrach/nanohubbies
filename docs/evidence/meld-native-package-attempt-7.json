@@ -1,0 +1,110 @@
+{
+  "format": 1,
+  "scope": "Full isolated PR-head CI and canonical package handoff through a local Nanohub fixture; real Codegraff execution, not hosted activation or live staging",
+  "startedAt": "2026-11-09T00:55:32.871Z",
+  "finishedAt": "2026-11-09T01:26:20.127Z",
+  "nanohubSource": "572f840f1ada912013f6a55e70e3585c814a045b",
+  "originalApplicationCommit": "e2388418cc72caf71eab6d284ec2f29b37945697",
+  "acceptedWorkflowCommit": "87c2bfc0f79191ea7345e81bbfb8fd04e48380da",
+  "candidate": "26d6aaee55bf1b17889a5602e27e63723ea81a62",
+  "nativeRunId": "89b78c66-c9bd-4830-a527-fce441587b6c",
+  "sandboxId": "cnd_9e1bc48b5eccc4ba67138da678889ae1aa0fc585",
+  "acceptancePassed": true,
+  "import": {
+    "verified": true,
+    "objects": 18248,
+    "uploadedObjects": 18248,
+    "refs": 1,
+    "fsck": "strict",
+    "resumed": false,
+    "scope": "committed branches and tags only; external LFS and submodules rejected"
+  },
+  "toolchain": {
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/meld-ci@sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+    "registryProvider": "cloudflare",
+    "network": "none",
+    "maxSourceBundleBytes": 536870912,
+    "sourceTransferConcurrency": 4,
+    "sandboxAccessProbeId": "cnd_66be60d41ecbf034c781cdff60f585dc11adeb09"
+  },
+  "tests": {
+    "policyAndGuard": {
+      "passed": 40,
+      "failed": 0
+    },
+    "unitAndPackage": {
+      "apiPassed": 411,
+      "webPassed": 2311,
+      "extensionPassed": 1532,
+      "passed": 4254,
+      "skipped": 205
+    },
+    "browser": {
+      "passed": 471,
+      "skipped": 73,
+      "elapsed": "10.6m"
+    },
+    "pinnedTsrs": "passed",
+    "productionBundle": "passed",
+    "wranglerDryRun": "passed"
+  },
+  "package": {
+    "manifestSha256": "7a18fcfd19b25a23b5336bd9bc0150c5791fa88c0042da8e1d75cff859942702",
+    "profile": "meld-staging-v1",
+    "head": "26d6aaee55bf1b17889a5602e27e63723ea81a62",
+    "mainModule": "modules/worker.js",
+    "moduleCount": 4,
+    "assetFiles": 306,
+    "bytes": 41681918,
+    "wrapperVerifiedAgainstCommit": true,
+    "totalBytes": 41683071,
+    "fileCount": 311,
+    "canonicalConsumerAccepted": true
+  },
+  "checks": {
+    "importCredentialRevoked": true,
+    "revokedImportRejected": true,
+    "fixtureBootstrapRunHasNoSuccess": true,
+    "protectedMainWritesRejected": true,
+    "gitCredentialRevokedBeforeCi": true,
+    "revokedGitRejected": true,
+    "prBlockedBeforeCi": true,
+    "privateLogDelivered": true,
+    "anonymousLogDenied": true,
+    "prStillRequiresStaging": true,
+    "retryInvalidatesOlderPass": true,
+    "runnerRevoked": true,
+    "revokedRunnerRejected": true,
+    "fixtureClosed": true,
+    "originalSourceRefsUnchanged": true
+  },
+  "log": {
+    "private": true,
+    "bytes": 335442,
+    "sha256": "b392e0e6e6ced44634e9c5c23558d17f13074a7158ade7ba569e95e8374350e5"
+  },
+  "finalTail": {
+    "bytes": 16482,
+    "sha256": "fcb1c82d1e6446f9145d30bd375c3a31a4346449aca45b3c02785a5e96529f15"
+  },
+  "providerCleanup": {
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "cleanupErrors": [],
+  "actualStagingAncestryRefusal": {
+    "observedAt": "2026-11-09T01:28:30.073Z",
+    "scope": "Read-only preparation of the real canonical package; no deployment authority or provider writes",
+    "candidate": "26d6aaee55bf1b17889a5602e27e63723ea81a62",
+    "stagingCommit": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "refused": true,
+    "reason": "The candidate omits current staging history; prepare a reviewed integration candidate and refresh its checks",
+    "providerMutations": 0,
+    "latestFixtureAttemptWasIntentionallyRetried": true
+  },
+  "hostedNanohub": false,
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "originalMeldRefsWritten": false,
+  "latestFixtureAttempt": "Intentionally queued a newer attempt after success to prove older results are invalidated; fixture then revoked and closed"
+}

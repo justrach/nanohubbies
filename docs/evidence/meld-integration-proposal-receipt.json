@@ -1,0 +1,124 @@
+{
+  "format": 1,
+  "scope": "Private integration proposal and source/schema validation; no original Meld ref, provider or database mutation",
+  "proposal": {
+    "format": 1,
+    "startedAt": "2026-11-09T01:16:58.826Z",
+    "purpose": "Private integration proposal; no database connection, provider mutation, PR or original ref update",
+    "prHead": "26d6aaee55bf1b17889a5602e27e63723ea81a62",
+    "main": "e2388418cc72caf71eab6d284ec2f29b37945697",
+    "staging": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "reviewRequired": true,
+    "dbCompatibilityVerified": false,
+    "integrationCiPassed": false,
+    "stagingDeployed": false,
+    "originalMeldRefsWritten": false,
+    "initialPreparationFailure": "Bare-repository force-remove requires a worktree; resumed the same private index with index-info. No provider or database writes.",
+    "commit": "b66b12d23b6c20154d2b952e7ddfc3ca308a460d",
+    "tree": "2f407990166f6186596357a671b3b510e1a894a9",
+    "privateRef": "refs/heads/codex/meld-staging-integration-20261109",
+    "resolvedConflicts": [
+      "packages/db/migrations/meta/_journal.json"
+    ],
+    "resolution": {
+      "stagingEntryUnchanged": true,
+      "mainEntry": {
+        "oldTag": "0048_black_stone_men",
+        "newTag": "0049_black_stone_men",
+        "oldIndex": 48,
+        "newIndex": 49,
+        "timestampUnchanged": true,
+        "sqlBytesUnchanged": true
+      },
+      "snapshot": {
+        "path": "packages/db/migrations/meta/0049_snapshot.json",
+        "addedColumn": "users.telegram_ai_replies",
+        "matchesCommittedStagingSchema": true
+      },
+      "migrationReader": {
+        "package": "drizzle-orm",
+        "version": "0.44.7",
+        "files": 50,
+        "queryExecuted": false,
+        "existingStagingSqlAndTimestampPreserved": true,
+        "mainSqlAndTimestampPreserved": true
+      }
+    },
+    "finishedAt": "2026-11-09T01:17:35.466Z"
+  },
+  "snapshotValidation": {
+    "observedAt": "2026-11-09T01:18:53.152Z",
+    "passed": true,
+    "drizzleKit": "0.31.10",
+    "drizzleOrm": "0.44.7",
+    "schemaTables": 44,
+    "proposedSql": [],
+    "dbQueriesExecuted": false,
+    "credentialEnvironmentAbsent": true
+  },
+  "stagingSchemaPreflight": {
+    "startedAt": "2026-11-09T01:20:54.797Z",
+    "scope": "Read-only schema metadata for the existing staging Hyperdrive target; no application rows or migration execution",
+    "providerMutations": 0,
+    "databaseMutations": 0,
+    "passed": false,
+    "targetMatchedExistingStagingHyperdrive": true,
+    "readOnlyTransaction": true,
+    "columns": [
+      {
+        "table_name": "users",
+        "column_name": "telegram_ai_replies",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "true"
+      }
+    ],
+    "finishedAt": "2026-11-09T01:20:55.873Z",
+    "applicationRowsRead": false
+  },
+  "toolchainComparison": {
+    "observedAt": "2026-11-09T01:22:01.152Z",
+    "source": "b66b12d23b6c20154d2b952e7ddfc3ca308a460d",
+    "pipelineBlob": "669bc8351be8c657a17b39a427284a616633cbd9",
+    "previousPipelineBlob": "669bc8351be8c657a17b39a427284a616633cbd9",
+    "inputs": [
+      {
+        "path": "package.json",
+        "sha256": "c0401444861c760358fed2a4b65c49bb3e6bcdfb7a3001d989d7b94dca0149c4",
+        "matchesVerifiedImage": true
+      },
+      {
+        "path": "apps/api/package.json",
+        "sha256": "3b73ec2a36820eab383d8509f88e6be15ad31736f09c1999c11fe0d2cd7ec860",
+        "matchesVerifiedImage": true
+      },
+      {
+        "path": "apps/web/package.json",
+        "sha256": "46edf711c7a2f70c421f26edb5a908ff4345a993dbb4090b32474a2c7868015c",
+        "matchesVerifiedImage": true
+      },
+      {
+        "path": "packages/db/package.json",
+        "sha256": "7f72d9fb145e73755d25aaf749ca84ee7288236a2c54ddd31ecae5587f4dccb8",
+        "matchesVerifiedImage": true
+      },
+      {
+        "path": "bun.lock",
+        "sha256": "d64c55335486ab707e47f6e1ebef66a4d6ce359ed638a9e768b7550f4fcb5143",
+        "matchesVerifiedImage": true
+      },
+      {
+        "path": "patches/react-server-dom-webpack@19.3.0.patch",
+        "sha256": "e18de0d40ca3b02eef49d60e62d797427d1e30a4101563194e49b0865cd362b3",
+        "matchesVerifiedImage": true
+      }
+    ],
+    "allInputsMatch": true
+  },
+  "independentIntegrationCi": "pending",
+  "sharedDatabaseMigrationAuthorized": false,
+  "sharedDatabaseMigrated": false,
+  "liveAcceptanceExecuted": false,
+  "sourcePatchPrivate": true,
+  "originalMeldRefsWritten": false
+}

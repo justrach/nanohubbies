@@ -6,7 +6,14 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
-2026-11-09 update: [native isolated Meld acceptance](evidence/meld-native-ci-live-validation.md)
+The latest [complete native package run](evidence/meld-native-package-validation.md)
+passes 40 policy/guard tests, 4,254 unit/package cases, 471 browser cases, the
+production build and canonical 41.7 MB artifact handoff. Its 205 unit/package
+and 73 browser skips are not verified behavior. PR creation still refuses missing
+staging, and a retry invalidates the old success. This remains a local Nanohub
+fixture with real Codegraff execution, not hosted activation or live staging.
+
+Earlier 2026-11-09 [native isolated Meld acceptance](evidence/meld-native-ci-live-validation.md)
 now passes on Nanohub `f01806c`: full-history source transport, offline checks,
 4,231 unit/package tests, 468 browser tests, production build, authenticated
 callback, retry invalidation, revocation and independent VM destruction. There
@@ -36,12 +43,19 @@ attempts. Local checks pass 527 API cases. No Meld ref, deployment, secret bindi
 or shared database was changed. Reviewed integration and real-service acceptance
 remain required; a PR-head CI pass cannot replace them.
 
+A [private integration proposal](evidence/meld-integration-proposal-validation.md)
+now preserves both histories and reconciles the migration journal without changing
+SQL bytes or timestamps. Its source snapshot matches the integrated schema, but
+a read-only diagnostic found staging lacks `assets.color_grid`. No migration was
+applied. Integration CI, schema compatibility, owner review and live acceptance
+remain open.
+
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs
 survive container stop, hashes and run bindings verify after destruction, and an
-unsafe output is refused. This is synthetic build-output acceptance; the complete
-Meld staging package acceptance, live uploader activation and shared hosted
-artifact storage remain open. No application deployment or runtime version
+unsafe output is refused. That synthetic probe is separate from the complete
+Meld package run above; live uploader activation and shared hosted artifact
+storage remain open. No application deployment or runtime version
 changes occurred in that component verification.
 
 Published CLI **0.4.21** and the deployed review UI add

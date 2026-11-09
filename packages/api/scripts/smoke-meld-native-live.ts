@@ -57,7 +57,7 @@ try{
  await f.json('PUT',base+'/protection',{branch:'main',pullRequest:true,approvals:1,checks:['meld/check'],beforeOpen:['meld/check','staging'],successOnlyChecks:true,checkSources:[{name:'meld/check',runner:runner.id}],preventForce:true,preventDelete:true},owner);
  gitKey=await f.json('POST',base+'/git-tokens',{label:'Isolated native candidate push'},owner);secrets.push(gitKey.token);
  const remote=f.origin+'/git/'+trunk+'.git',transport=(...args:string[])=>exec('git',['-C',checkout,...args],{env:{...clean,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraHeader',GIT_CONFIG_VALUE_0:'Authorization: Basic '+btoa('git:'+gitKey.token)},timeout:120000,maxBuffer:2<<20});
- await git(checkout,'checkout','-b','native-candidate');await writeFile(join(checkout,'nanohub-native-probe.txt'),'Synthetic isolation probe; application source is unchanged.\n');
+ await git(checkout,'checkout','-b','native-candidate');await writeFile(join(checkout,'nanohub-native-probe.txt'),`Synthetic isolation probe ${randomUUID()}; application source is unchanged.\n`);
  await writeFile(join(checkout,'.github/workflows/meld.yml'),'name: Untrusted replacement\non: push\njobs:\n  check:\n    runs-on: codegraff\n    steps:\n      - run: echo UNTRUSTED_MELD_WORKFLOW_MUST_NOT_RUN\n');
  await git(checkout,'add','nanohub-native-probe.txt','.github/workflows/meld.yml');await git(checkout,'commit','-m','Isolated fixture: candidate with untrusted workflow replacement');const head=await git(checkout,'rev-parse','HEAD');operation.candidate=head;
  assert.deepEqual((await git(checkout,'diff','--name-only',anchor,head)).split('\n'),['.github/workflows/meld.yml','nanohub-native-probe.txt']);await transport('push',remote,'native-candidate');
