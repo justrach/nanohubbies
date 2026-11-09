@@ -162,6 +162,14 @@ credential-free Wrangler dry-run checks multipart module roles, secret retention
 and the `cache_options` wire field. Wrangler omits asset metadata without an
 upload JWT on that dry-run; it does not prove live asset acceptance.
 
+[Frozen Nanohub validation](evidence/meld-worker-upload-frozen-validation.json)
+on `ff8383f` passes all nine Linux gates, including 521 API cases, 103 CLI cases,
+27 fixture cases and three uncached pinned-tsrs tasks. An independent provider
+read confirms the validation VM was destroyed. The frozen Mac build and normal
+Worker dry-run also pass, with all 21 published CLI releases retained and saved
+source/build hashes rechecked. These checks prepare the Nanohub endpoint release;
+they do not establish live Meld upload, promotion or acceptance.
+
 Provider references:
 [direct asset uploads](https://developers.cloudflare.com/workers/static-assets/direct-upload/),
 [multipart metadata](https://developers.cloudflare.com/workers/configuration/multipart-upload-metadata/),

@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "observedAt": "2026-11-09T00:42:39.799Z",
+  "kind": "meld-uploader-frozen-nanohub-validation",
+  "scope": "Nanohub runtime API and trusted uploader implementation; no Meld deployment or production traffic acceptance",
+  "source": "ff8383f8b50300598a9983225ab16ae5bd7da45e",
+  "linux": {
+    "state": "success",
+    "gates": [
+      "install",
+      "unit",
+      "repository",
+      "cli",
+      "access",
+      "hosting",
+      "fixtures",
+      "build",
+      "check"
+    ],
+    "apiUnitPassed": 521,
+    "cliPassed": 103,
+    "fixturePassed": 27,
+    "pinnedTsrsTasks": 3,
+    "cachedTypeTasks": 0,
+    "credentialFreeCandidate": true,
+    "network": "none",
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/nanohub-ci@sha256:76f35e83a77df1d8eace6e8fc49b7f77d6dcd6d90bbaf40722c5c5f9f8bd6694",
+    "sandboxId": "cnd_2eb99ab35c1c69dcfc37d1f1579fe364777a7414",
+    "cleanup": {
+      "state": "destroyed",
+      "independentRead": true,
+      "cleanupNeeded": false
+    },
+    "log": {
+      "bytes": 7727,
+      "sha256": "a17390c11dac128759c2ddfc294776a166fe2ca143ccaff7fa0c8158e7f9d877",
+      "private": true
+    }
+  },
+  "mac": {
+    "state": "passed",
+    "workspaceAliasesVerified": true,
+    "retainedPublishedReleases": 21,
+    "cliDistribution": {
+      "format": 1,
+      "version": "0.4.21",
+      "path": "/nh/releases/0.4.21/nh.mjs",
+      "bytes": 101486,
+      "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    "manifests": {
+      "source": {
+        "files": 1240,
+        "sha256": "5939fd0350a9898267ff595f28e276753bfeec72a7de6229bbc4c1cc3c7fb34c",
+        "reverifiedAt": "2026-11-09T00:42:39.684Z"
+      },
+      "built": {
+        "files": 1480,
+        "sha256": "ca14d961163f91a9778ad042fb62c54bf53d57a0729576b1a7aaa035d03fe566",
+        "reverifiedAt": "2026-11-09T00:42:39.791Z"
+      }
+    },
+    "dryRun": {
+      "passed": true,
+      "logSha256": "4c40d999d7bc7fa9be9b9a6166a63ef92d8b7d587faa61233de171f2b6578241",
+      "private": true
+    }
+  },
+  "productionWorkerUploaded": false,
+  "productionTrafficChanged": false,
+  "vaultChanged": false,
+  "liveMeldUploadValidated": false,
+  "liveMeldPromotionValidated": false
+}

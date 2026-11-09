@@ -15,6 +15,15 @@ uses a local Nanohub fixture and real Codegraff execution. Hosted activation,
 safe feature-candidate staging, real-service acceptance and cutover remain open;
 the earlier production deployment observations below retain their receipt dates.
 
+The trusted native staging uploader and fresh deployment-authorization endpoint
+have now passed [all nine frozen Nanohub Linux gates and a frozen Mac build](evidence/meld-worker-upload-frozen-validation.json)
+on `ff8383f`: 521 API unit cases, 103 CLI cases, 27 fixture cases and three
+uncached pinned-tsrs tasks. The normal Worker dry-run passed, all 21 published
+CLI releases were retained, and 2,720 source/build files were rechecked against
+their saved hashes. This is release preparation; no Worker upload, production
+traffic change or live Meld deployment is claimed by that receipt. The endpoint
+must still be deployed and verified before the native staging adapter is enabled.
+
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs
 survive container stop, hashes and run bindings verify after destruction, and an
