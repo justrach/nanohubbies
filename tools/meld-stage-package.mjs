@@ -79,6 +79,7 @@ export async function packageMeldStaging({source='/tmp/work',head=process.env.GI
     if(candidates.length!==1||moduleType(candidates[0].path)!=='application/javascript+module')throw Error('Cannot identify the packaged Worker entrypoint');
     const names=new Set(moduleFiles.map(file=>file.path));
     for(const file of moduleFiles)if(!moduleType(file.path))throw Error('Unsupported emitted Worker module type');
+    const unresolved=new Map();
     for(const [path,value] of Object.entries(meta.outputs)) {
       const matches=moduleFiles.filter(file=>path===file.path||path.endsWith('/'+file.path));
       if(!matches.length)continue;
@@ -96,10 +97,17 @@ export async function packageMeldStaging({source='/tmp/work',head=process.env.GI
         // not resolve during module startup. Do not generalize this exception
         // to static imports or other missing packages.
         if(imported.path==='sharp'&&imported.kind==='dynamic-import'&&imported.external===true)continue;
+        // pg exposes its optional native driver through a lazy getter. The
+        // regular JS driver does not load pg-native, which cannot run here.
+        if(imported.path==='pg-native'&&imported.kind==='require-call'&&imported.external===true)continue;
         const target=posix.normalize(posix.join(posix.dirname(matches[0].path),imported.path));
-        if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target))throw Error('Packaged Worker has an unresolved external module: '+JSON.stringify({path:imported.path.slice(0,512),kind:imported.kind??null,external:imported.external===true}));
+        if(posix.isAbsolute(imported.path)||!safePath(target)||!names.has(target)) {
+          const detail={path:imported.path.slice(0,256),kind:String(imported.kind??'').slice(0,64),external:imported.external===true,importer:matches[0].path.slice(0,256)};
+          unresolved.set(JSON.stringify(detail),detail);
+        }
       }
     }
+    if(unresolved.size)throw Error('Packaged Worker has unresolved external modules: '+JSON.stringify({count:unresolved.size,imports:[...unresolved.values()].slice(0,12)}));
     let bytes=0,files=0;
     const copy=async(item,prefix)=>{
       if(++files>9999||(bytes+=item.bytes)>128*1024*1024-65536)throw Error('Meld staging package exceeds export bounds');

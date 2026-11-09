@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "scope": "Build-only diagnosis using an immutable runtime snapshot; not full-graph migration or full CI/staging acceptance",
+  "attempts": [
+    {
+      "attempt": 1,
+      "purpose": "build-only packaging diagnostic; not full CI or staging acceptance",
+      "startedAt": "2026-11-09T00:28:57.914Z",
+      "finishedAt": "2026-11-09T00:32:37.943Z",
+      "nanohubSource": "0bc7188",
+      "applicationOrigin": "e2388418cc72caf71eab6d284ec2f29b37945697",
+      "runtimeSnapshot": "de23c3c4d7dff5f2fcf9cc019d488072270c10ab",
+      "excludedTopLevelEvidence": [
+        "review",
+        "review-evidence"
+      ],
+      "steps": [
+        "Verify isolated toolchain",
+        "Locked offline install",
+        "Production bundle",
+        "Staging package"
+      ],
+      "packagingState": "failure",
+      "unresolvedImport": {
+        "path": "sharp",
+        "kind": "dynamic-import",
+        "external": true
+      },
+      "sandboxId": "cnd_bdfa722528d8cc1726f8ec61d8ad2346178703c7",
+      "cleanup": {
+        "state": "destroyed",
+        "independentRead": true
+      },
+      "log": {
+        "private": true,
+        "bytes": 11244,
+        "sha256": "1e1204e7fc17418543ffa63eff122cb4d5e39332e68c5424ea9cf3bdbe0ea273"
+      },
+      "stagingDeployed": false,
+      "productionDeployed": false,
+      "fullCiAcceptance": false
+    },
+    {
+      "attempt": 2,
+      "purpose": "build-only packaging and private artifact diagnostic; not full CI or staging acceptance",
+      "startedAt": "2026-11-09T00:42:02.742Z",
+      "finishedAt": "2026-11-09T00:45:43.037Z",
+      "nanohubSource": "1ca9ce043306db0a5f9347703167e96ec52fc4cd",
+      "applicationOrigin": "e2388418cc72caf71eab6d284ec2f29b37945697",
+      "runtimeSnapshot": "de23c3c4d7dff5f2fcf9cc019d488072270c10ab",
+      "excludedTopLevelEvidence": [
+        "review",
+        "review-evidence"
+      ],
+      "steps": [
+        "Verify isolated toolchain",
+        "Locked offline install",
+        "Production bundle",
+        "Staging package"
+      ],
+      "packagingState": "failure",
+      "unresolvedImport": {
+        "path": "pg-native",
+        "kind": "require-call",
+        "external": true
+      },
+      "sandboxId": "cnd_dab6339404eefb49fe6f3081233883c4a8fb49e8",
+      "cleanup": {
+        "state": "destroyed",
+        "independentRead": true
+      },
+      "log": {
+        "private": true,
+        "bytes": 11248,
+        "sha256": "12d69e62edeaddfca223b8090d991354f31b11e219912d537becf6c080038f7f"
+      },
+      "stagingDeployed": false,
+      "productionDeployed": false,
+      "fullCiAcceptance": false
+    }
+  ]
+}

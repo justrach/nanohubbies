@@ -29,6 +29,8 @@ async function fixture(work) {
   if(mode==='unknown-module')await writeFile(join(out,'unexpected.native'),'unsupported');
   const outputs={'bundle/worker.js':{entryPoint:'worker.mjs',exports:['default','DOQueueHandler','DOShardedTagCache','BucketCachePurge'],imports:[{path:mode==='missing'?'./missing.wasm':mode==='missing-package'?'unbundled-npm-package':'./worker.wasm',external:true},{path:'node:async_hooks',external:true},{path:'cloudflare:workers',external:true},...['stream','async_hooks','buffer'].map(path=>({path,external:true}))]}};
   if(['optional-sharp','static-sharp','nonexternal-sharp','optional-unknown'].includes(mode))outputs['bundle/worker.js'].imports.push({path:mode==='optional-unknown'?'unknown-package':'sharp',kind:mode==='static-sharp'?'import-statement':'dynamic-import',external:mode!=='nonexternal-sharp'});
+  if(['optional-pg-native','static-pg-native','dynamic-pg-native','nonexternal-pg-native'].includes(mode))outputs['bundle/worker.js'].imports.push({path:'pg-native',kind:mode==='static-pg-native'?'import-statement':mode==='dynamic-pg-native'?'dynamic-import':'require-call',external:mode!=='nonexternal-pg-native'});
+  if(mode==='multiple-missing')outputs['bundle/worker.js'].imports.push(...['first-missing','second-missing'].map(path=>({path,kind:'require-call',external:true})));
   if(mode==='multiple')outputs['bundle/other.js']={entryPoint:'other.js',exports:['default'],imports:[]};
   if(mode==='no-default')outputs['bundle/worker.js'].exports=[];
   await writeFile(meta,JSON.stringify({outputs}));if(mode==='cli-failure')throw Error('fixture CLI failure');
@@ -56,6 +58,17 @@ test('only the external dynamic sharp import is retained byte-for-byte; other un
  for(const mode of ['static-sharp','nonexternal-sharp','optional-unknown'])await fixture(async f=>{
   f.mode(mode);await assert.rejects(packageMeldStaging(f.options,f.deps),/unresolved external module/);await assert.rejects(stat(f.output),{code:'ENOENT'});
  });
+});
+
+test('pg native requires remain lazy and diagnostic failures include every unresolved package',async()=>{
+ await fixture(async f=>{f.mode('optional-pg-native');await packageMeldStaging(f.options,f.deps);assert.deepEqual(await readdir(join(f.output,'modules')),['worker.js','worker.wasm']);});
+ for(const mode of ['static-pg-native','dynamic-pg-native','nonexternal-pg-native'])await fixture(async f=>{f.mode(mode);await assert.rejects(packageMeldStaging(f.options,f.deps),/unresolved external module/);});
+ await fixture(async f=>{f.mode('multiple-missing');await assert.rejects(packageMeldStaging(f.options,f.deps),error=>/first-missing/.test(error.message)&&/second-missing/.test(error.message)&&/"count":2/.test(error.message));});
+ const {build}=await import('esbuild'),{Miniflare,convertV4MiniflareOptions}=await import('miniflare');
+ const bundled=await build({stdin:{contents:'function native(){try{return require("pg-native")}catch(error){return {caught:true,message:error.message}}}export default {fetch(request){return new URL(request.url).pathname==="/native"?Response.json(native()):new Response("regular-driver-route")}}'},bundle:true,write:false,format:'esm',platform:'browser',external:['pg-native'],metafile:true,logLevel:'silent'});
+ assert.ok(Object.values(bundled.metafile.outputs).some(output=>output.imports.some(item=>item.path==='pg-native'&&item.kind==='require-call'&&item.external===true)));
+ const mf=new Miniflare(convertV4MiniflareOptions({name:'meld-optional-native-test',host:'127.0.0.1',port:0,modules:true,compatibilityDate:meldPackageProfile.compatibilityDate,compatibilityFlags:meldPackageProfile.compatibilityFlags,script:bundled.outputFiles[0].text}));
+ try{assert.equal(await(await mf.dispatchFetch('http://fixture.invalid/')).text(),'regular-driver-route');const native=await(await mf.dispatchFetch('http://fixture.invalid/native')).json();assert.equal(native.caught,true);assert.match(native.message,/pg-native/);}finally{await mf.dispose();}
 });
 
 test('workerd starts with an absent dynamic sharp import and preserves its rejection at the call site',{timeout:20000},async()=>{

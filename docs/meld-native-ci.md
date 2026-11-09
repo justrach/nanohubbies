@@ -55,7 +55,11 @@ Cloudflare build. Meld explicitly keeps that native package external; OpenNext
 uses the Cloudflare `IMAGES` binding for image optimization. The packager leaves
 the import bytes untouched: workerd can start the module, and attempting the
 absent import still rejects at its call site. A real workerd regression test
-covers that behavior; static `sharp` imports and other absent packages fail.
+covers that behavior. The same profile permits only the optional `pg-native`
+CommonJS require used by pg's lazy native-driver getter; a bundled workerd test
+checks startup without the package and rejection when that path is invoked.
+Static imports, changed import kinds and other absent packages fail, with a
+bounded inventory of all unresolved imports in the diagnostic.
 The versioned `staging-package.json` identifies the head and compatibility
 profile without selecting a deployment target. Private capture selects
 `/tmp/work/.nanohub-staging` with the existing 128 MiB/10,000-file bounds.
