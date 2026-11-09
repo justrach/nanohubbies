@@ -33,6 +33,8 @@ import { reviewWriter } from "./review/access";
 import { reviewerMembership } from "./review/reviewer-access";
 import {currentReviewAccess,assertReviewAccess,reviewDecisionAllowed,feedbackMembership} from './review/feedback-access';
 import {RequestedReviews,reviewerId} from './review/requests';
+import {PullReadiness,type PullReadinessInput} from './review/readiness';
+import {pullReadinessAccess,assertPullReadinessAccess} from './review/readiness-access';
 import type {ReviewRequestEdit} from './review/request-types';
 import type { ReviewerMembership } from "./review/reviewer-types";
 import { CodeComments, type CommentCommand } from "./review/comments";
@@ -462,6 +464,37 @@ export class Sequencer extends DurableObject<Env> {
     return codeOwnerDecision(evidence,accounts,new Policies(this.sql,membership).eligibleApprovals(current,latest.reviews,currentHead.commit).map(r=>r.author.id),!!new Policies(this.sql).get(current.base)?.requireCodeOwnerReview);
   }
   async review(command: ReviewCommand) {
+    if(command.op==='open'&&command.draft!==undefined)throw Error('Draft creation requires the current pull request writer');
+    return this.reviewCommand(command);
+  }
+  pullReadinessConfiguration(){
+    new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).snapshot();
+    return {pullReadiness:'storage-v1' as const};
+  }
+  async openDraftPull(command:Extract<ReviewCommand,{op:'open'}>,actor:PullReadinessInput['actor']){
+    if(typeof command.draft!=='boolean'||command.author.id!==actor.id)throw Error('Use an authenticated draft pull request');
+    const access=await pullReadinessAccess(this.env,this.meta<string>('trunk')!,actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertPullReadinessAccess(access);
+      const result=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()).run(command,()=>{throw Error('Unexpected draft landing');});
+      const pull=result.pulls[0];
+      new Repository(this.sql).audit({actor:actor.id,...(actor.via?{via:actor.via}:{}),pullReadiness:{pull:pull.number,draft:command.draft===true,revision:0}});
+      return result;
+    });
+  }
+  async editPullReadiness(input:PullReadinessInput){
+    const access=await pullReadinessAccess(this.env,this.meta<string>('trunk')!,input.actor);
+    return this.ctx.storage.transactionSync(()=>{
+      assertPullReadinessAccess(access);
+      const reviews=new ReviewStore(this.sql,()=>this.head(),this.repositoryMode()),snapshot=reviews.snapshot(),pull=snapshot.pulls.find(p=>p.number===input.number);
+      if(!pull)throw Error('No such pull request');
+      const head=snapshot.branches.find(branch=>branch.name===pull.head);
+      if(!head)throw Error('Pull request head branch is unavailable');
+      const result=new PullReadiness(this.sql).edit(input,pull,head.commit);
+      return 'conflict'in result?result:reviews.snapshot();
+    });
+  }
+  private async reviewCommand(command:ReviewCommand){
     if(command.op==='review'&&command.feedback)throw Error('Reader feedback requires the current human review writer');
     const refActor=command.op==='merge'&&command.human?command.request.owner?.id:(command.op==='branch'||command.op==='restack')&&command.human?command.actor:undefined;
     const authority=refActor?await this.currentRulesetActor(refActor,'origin' in command?command.origin??'':''):undefined;

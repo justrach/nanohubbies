@@ -15,6 +15,7 @@ import {requireSharedHeadReviews} from "./shared-head";
 import {reviewedMergeHead} from "./merge-evidence";
 import {RequestedReviews} from './requests';
 import {feedbackStorage} from './feedback-storage';
+import {PullReadiness,pullReadinessStorage} from './readiness';
 import {reviewDecision} from './feedback';
 import type { ReviewerMembership } from "./reviewer-types";
 import type { ChangeRequest, Head, Submitted } from "../types";
@@ -28,10 +29,12 @@ export class ReviewStore {
     sql.exec("CREATE TABLE IF NOT EXISTS review_pulls (number INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS review_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, pull INTEGER NOT NULL, data TEXT NOT NULL)");
     feedbackStorage(sql);
+    pullReadinessStorage(sql);
   }
 
   snapshot(): ReviewSnapshot {
     const repo=this.git?new Repository(this.sql,this.observe,this.authority):null,defaultBranch=repo?.defaultBranch()??"main";
+    const readiness=new PullReadiness(this.sql).all();
     return {archive:new ArchiveStore(this.sql).state(),defaultBranch,ciBase:repo?repo.refs().find(ref=>ref.name===`refs/heads/${defaultBranch}`)?.commit??null:this.main().commit,
       branches: this.branches(),
       repositoryMode:this.git,
@@ -43,7 +46,11 @@ export class ReviewStore {
       effectivePolicies: Object.fromEntries(this.branches().map(b=>[b.name,new Policies(this.sql).get(b.name)]).filter(([,p])=>!!p)),
       runs: new CIStore(this.sql).list(),
       ciSources: new CIStore(this.sql).sources(),
-      pulls: this.sql.exec<{ number: number; data: string }>("SELECT * FROM review_pulls ORDER BY number DESC").toArray().map((r) => ({ ...JSON.parse(r.data), number: r.number })),
+      pullReadiness:'storage-v1',
+      pulls: this.sql.exec<{ number: number; data: string }>("SELECT * FROM review_pulls ORDER BY number DESC").toArray().map((r) => {
+        const state=readiness.get(r.number);if(!state)throw Error('Pull request draft authority is unavailable; keep edits and merging closed');
+        return {...JSON.parse(r.data),number:r.number,...state};
+      }),
       reviews: this.sql.exec<{ id: number; data: string }>("SELECT * FROM review_reviews ORDER BY id").toArray().map((r) => ({ ...JSON.parse(r.data), id: r.id })),
     };
   }
@@ -105,6 +112,7 @@ export class ReviewStore {
       }
     } else if (command.op === "open") {
       const c = command;
+      if(c.draft!==undefined&&typeof c.draft!=='boolean')throw Error('Use a boolean draft status');
       matches(c.head); matches(c.base);
       if(!s.ciBase)throw Error("Push the repository default branch before opening a pull request");
       ci.require(c.head.name, c.head.commit, s.ciBase, policies.get(c.base.name)?.beforeOpen ?? [], policies.get(c.base.name)?.checkSources,policies.get(c.base.name)?.successOnlyChecks);
@@ -123,7 +131,7 @@ export class ReviewStore {
       const now = Date.now();
       const p: Omit<Pull, "number"> = { title: c.title.trim(), body: c.body, head: c.head.name, base: c.base.name, anchor: c.anchor, anchorTree: c.anchorTree,
         parent: s.pulls.find((q) => q.state === "open" && q.head === c.base.name)?.number ?? null,
-        headCommit: c.head.commit, headTree: c.head.tree, openedPushEvent:policies.pushEvent(c.head.name), author: c.author, state: "open", createdAt: now, updatedAt: now, mergedCommit: null, mergedVersion: null };
+        headCommit: c.head.commit, headTree: c.head.tree, openedPushEvent:policies.pushEvent(c.head.name), author: c.author, state: "open",draft:c.draft===true,draftRevision:0, createdAt: now, updatedAt: now, mergedCommit: null, mergedVersion: null };
       this.sql.exec("INSERT INTO review_pulls (data) VALUES (?)", JSON.stringify(p));
     } else {
       const c = command;
@@ -169,6 +177,7 @@ export class ReviewStore {
         dismissChangedApprovals(this.sql,p,{commit:c.head.commit,tree:c.head.tree,anchor:p.anchor,anchorTree:p.anchorTree},event=>new Repository(this.sql,this.observe,this.authority).audit(event));
       }
       if (c.op === "restack" || c.op === "merge") {
+        if(c.op==='merge'&&p.draft)throw Error('Draft pull requests cannot be merged; mark ready for review first');
         if (c.head.name !== p.head || c.anchor !== p.anchor) throw new Error("PR changed; refresh and try again");
         matches(c.head);
         if (c.op === "restack") {

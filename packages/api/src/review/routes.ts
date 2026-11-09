@@ -25,6 +25,7 @@ import {signatureGate} from "../signing/gate";
 import {buildMerge} from "./merge-methods";
 import type {MergeMethod} from "./merge-types";
 import {feedbackError} from './feedback-http';
+import {editReadinessRoute,readinessActor,missingReadiness,readinessUpdating} from './readiness-route';
 
 /** Called only after the workspace's ordinary authorization boundary. */
 export async function reviewRoute(env: Env, request: Request, trunk: string, action: string, id: string | undefined, operation: string | undefined, user: User | null, access:TeamAccess|null = null, tail: string[] = []) {
@@ -42,11 +43,13 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
   const humanReader=accountReader&&!user?.cli;
   const accountReviewer=accountReader&&(!user?.cli||user.cli.scopes.includes('reviews:write'));
   const json = (value: unknown, init?: ResponseInit) => {
+    const headers=new Headers(init?.headers);headers.set('Cache-Control','private, no-store');
+    const options={...init,headers};
     // Apply the same view to GET snapshots and mutation responses. A writer
     // must not learn bypass identities by creating a branch or review.
     if(value && typeof value === "object" && "rulesets" in value && Array.isArray(value.rulesets))
-      return Response.json({...value,canMerge:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:merge")),canReview:writable&&accountReviewer,reviewRole:accountReader?accountWriter?'writer':'reader':null,canApplySuggestions:writable&&humanWriter,canManagePulls:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:write")),archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},init);
-    return Response.json(value,init);
+      return Response.json({...value,canMerge:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:merge")),canReview:writable&&accountReviewer,reviewRole:accountReader?accountWriter?'writer':'reader':null,canApplySuggestions:writable&&humanWriter,canManagePulls:writable&&accountWriter&&(!user?.cli||user.cli.scopes.includes("pulls:write")),archive:s.archive,canProtect:s.canProtect,canConfigure:s.canConfigure,rulesets:value.rulesets.map(r=>visibleRuleset(r,s.canProtect===true))},options);
+    return Response.json(value,options);
   };
   const objects = new TrunkObjects(env, trunk, 16000);
   const branch = (name: string): Branch => {
@@ -106,14 +109,20 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
     const pendingOperation=operation==="pending-review"&&(tail.length===0||tail.length===1&&tail[0]==="submit");
     const suggestionOperation=operation==="suggestions"&&tail.length===1&&tail[0]==="apply";
     if (tail.length && !dismissal && !pendingOperation && !suggestionOperation) return json({error:"Review operation not found"},{status:404});
-    if (!id) {
+    if (!id||id==='drafts'&&!operation) {
+      if(id==='drafts'&&method!=='POST')return json({error:'Use POST to create a draft pull request'},{status:405});
       if (method === "GET") return json(s);
       if (method === "POST") {
-        const body = await request.json<{ title: string; body?: string; head: string; base?: string }>();
+        const body = await creationBody<{title:string;body?:string;head:string;base?:string;draft?:boolean}>(request,64*1024);
+        if(!body||Array.isArray(body)||Object.keys(body).some(key=>!['title','body','head','base','draft'].includes(key))||typeof body.title!=='string'||typeof body.head!=='string'||body.body!==undefined&&typeof body.body!=='string'||body.base!==undefined&&typeof body.base!=='string'||body.draft!==undefined&&typeof body.draft!=='boolean')return json({error:'Use a title, head/base branches, optional body and boolean draft status'},{status:400});
+        if(body.draft!==undefined&&id!=='drafts'||id==='drafts'&&body.draft===false)return json({error:'Create drafts with POST /pulls/drafts; ordinary POST /pulls creates a ready pull request'},{status:400});
+        if(id==='drafts')try{if((await seq.pullReadinessConfiguration()).pullReadiness!=='storage-v1')return readinessUpdating();}catch(error){if(missingReadiness(error))return readinessUpdating();throw error;}
         const head = branch(body.head), base = branch(body.base ?? s.defaultBranch??"main");
         const anchor = await mergeBase(objects, head.commit, base.commit);
         if (head.tree === anchor.tree) throw new Error("This branch has no changes to review");
-        return json(await seq.review({ op: "open", title: body.title, body: body.body ?? "", head, base, anchor: anchor.commit, anchorTree: anchor.tree, author: owner! }));
+        const command={op:'open' as const,title:body.title,body:body.body??'',head,base,anchor:anchor.commit,anchorTree:anchor.tree,author:owner!};
+        if(id==='drafts')try{return json(await seq.openDraftPull({...command,draft:true},readinessActor(request,user,owner!)),{headers:{'Cache-Control':'private, no-store'}});}catch(error){if(missingReadiness(error))return readinessUpdating();throw error;}
+        return json(await seq.review(command));
       }
     } else {
       let p = s.pulls.find((p) => p.number === Number(id));
@@ -135,13 +144,14 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
         }
       }
       const head = p.state === "open" ? branch(p.head) : { name: p.head, commit: p.headCommit, tree: p.headTree, updatedAt: p.updatedAt };
-      if(s.repositoryMode&&p.state==="open"&&(method==="GET"||["POST","PATCH"].includes(method)&&["reviews","restack","merge","comments","pending-review","suggestions"].includes(operation??""))) {
+      if(s.repositoryMode&&p.state==="open"&&(method==="GET"||["POST","PATCH"].includes(method)&&["reviews","restack","merge","comments","pending-review","suggestions","readiness"].includes(operation??""))) {
         const base=branch(p.base),anchor=await mergeBase(objects,head.commit,base.commit);
         if(anchor.commit!==p.anchor||anchor.tree!==p.anchorTree) {
           const next=await seq.review({op:"compare",number:p.number,head,base,previousAnchor:p.anchor,anchor:anchor.commit,anchorTree:anchor.tree});
           s={...next,canProtect:s.canProtect,canConfigure:s.canConfigure};p=s.pulls.find(row=>row.number===Number(id))!;
         }
       }
+      if(operation==='readiness')return editReadinessRoute(env,request,trunk,p,head,user,owner!);
       if (operation === "comments") return pullCommentRoute(env, request, trunk, p, head, objects, user, writable&&accountReviewer,accountWriter||user?.id===p.author.id);
       if (operation === 'requested-reviewers') return reviewRequestRoute(env,request,trunk,p,head,user,accountWriter);
       if (pendingOperation) return pendingReviewRoute(env,request,trunk,p,head,objects,user,accountReviewer,tail[0]==="submit",humanWriter);
@@ -168,6 +178,7 @@ export async function reviewRoute(env: Env, request: Request, trunk: string, act
       if (method === "POST" && ["reviews", "restack", "merge"].includes(operation ?? "")) {
         const body = await creationBody<{ commit: string; anchor: string; body?: string; verdict?: Review["verdict"];method?:MergeMethod;targetBase?:string;message?:string;mergeSettingsRevision?:number }>(request,operation==="merge"?512*1024:64*1024);
         if (operation === "merge" && p.state === "merged") return json(s);
+        if(operation==='merge'&&p.draft)return json({error:'Draft pull requests cannot be merged; mark ready for review first'},{status:409});
         if (body.commit !== head.commit || body.anchor !== p.anchor) return json({ error: "PR changed; refresh and review its latest diff" }, { status: 409 });
         if(operation==='reviews'){
           if(Object.keys(body).some(key=>!['commit','anchor','body','verdict'].includes(key)))return json({error:'Unknown review field'}, {status:400});

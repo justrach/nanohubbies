@@ -18,6 +18,7 @@ import { AgentContributions } from "../contributions/AgentContributions";
 import {RelatedPullReviews} from "./RelatedPullReviews";
 import {MergeAction} from "./MergeAction";
 import {RequestedReviewers} from './RequestedReviewers';
+import readinessStyles from './PullReadiness.module.css';
 
 export type PullView = ReviewSnapshot & { pull: Pull; head: Branch; files: ChangedFile[]; truncated: string[];deployments?:import("@swarm/api/review").DeploymentGate;signatures?:import("@swarm/api/review").SignatureGate;pendingReview?:import("@swarm/api/review").PendingReview|null;discussion?:import("@swarm/api/review").PullDiscussion;codeOwners?:import("@swarm/api/review").CodeOwnerStatus;canDismissReviews?:boolean;reviewGate?:import("@swarm/api/review").ReviewGate };
 
@@ -44,10 +45,13 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
   const checkErrors = policy?.checks.map(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources,policy.successOnlyChecks)).filter((error):error is string=>!!error)??[];
   const missing = policy?.checks.filter(name=>checkFailure(currentRun,name,policy.checkSources,view.ciSources,policy.successOnlyChecks))??[];
   const ownershipBlocked=!!view.codeOwners?.required&&(!!view.codeOwners.error||view.codeOwners.missing>0);
+  const readinessAvailable=view.pullReadiness==='storage-v1'&&typeof p.draft==='boolean'&&Number.isSafeInteger(p.draftRevision);
+  const changeReadiness=()=>action.run(`/pulls/${p.number}/readiness`,{...observed,draft:!p.draft,revision:p.draftRevision},()=>router.refresh(),'POST',{'If-Match':`"pull-readiness-${p.draftRevision}"`});
   return <main className="mx-auto max-w-[1440px] space-y-5 px-5 py-8">
     <div className="flex items-center justify-between"><Link href={`/t/${trunk}/pulls`} className="text-xs text-muted hover:text-ink">← Pull requests</Link><Button size="sm" variant="ghost" onClick={() => router.refresh()}>Refresh</Button></div>
     <header className="space-y-3"><h1 className="text-2xl font-semibold tracking-tight text-ink">{p.title} <span className="font-normal text-muted">#{p.number}</span></h1>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted"><Pill>{p.state}</Pill><span>{p.author.name}</span><code>{p.base} ← {p.head}</code><code>{view.head.commit.slice(0, 7)}</code></div>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted"><Pill>{p.state==='open'&&p.draft?'Draft':p.state}</Pill><span>{p.author.name}</span><code>{p.base} ← {p.head}</code><code>{view.head.commit.slice(0, 7)}</code></div>
+      {p.state==='open'&&p.draft&&<p className="max-w-2xl text-sm leading-6 text-muted">This pull request is a draft. You can leave feedback, but it must be marked ready for review before merging.</p>}
       {p.body && <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-ink-2">{p.body}</p>}
     </header>
     <Notice error={action.error} />
@@ -77,14 +81,15 @@ export function PullDetail({ trunk, view }: { trunk: string; view: PullView }) {
       {view.codeOwners.warnings.length>0 && <details><summary className="cursor-pointer text-xs text-series-1">Ownership notices ({view.codeOwners.warnings.length})</summary><ul className="mt-2 space-y-1 text-xs text-muted">{view.codeOwners.warnings.map((warning,index)=><li key={index}>{warning.line?`Line ${warning.line}: `:""}{warning.message}</li>)}</ul></details>}
     </section>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Card className="space-y-4 p-5"><h2 className="text-sm font-semibold text-ink">{p.state === "merged" ? `Merged into ${p.base}` : p.state === "closed" ? "Closed without merging" : "Ready for review"}</h2>
-        <p className="text-xs leading-5 text-muted">{p.state === "merged" ? `Merged as ${p.mergedCommit?.slice(0,10)}. Dependent PRs now target ${p.base}.` : p.state === "closed" ? "The final diff is retained below." : !view.repositoryMode&&p.base !== "main" ? `Merge the PR for ${p.base} first. This diff includes only this layer’s changes.` : `Merge updates ${p.base} through its current protection and conflict checks.`}</p>
-        {p.state === "open" && <div className="flex flex-wrap gap-2">
-          <MergeAction key={`${trunk}/${p.number}/${view.mergeSettings?.revision??"legacy"}`} defaultMethod={view.mergeSettings?.defaultMethod} readOnly={readOnly||!user||view.canMerge===false} permissionDenied={!readOnly&&!!user&&view.canMerge===false} methods={view.mergeMethods??["fast-forward"]} disabled={readOnly || !user || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || !!policy?.locked || ownershipBlocked || view.deployments?.ready===false || !!view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} busy={action.busy} signedRequired={!!view.signatures?.required} onMerge={(method,message)=>void run("merge",{method,...(view.mergeSettings?{mergeSettingsRevision:view.mergeSettings.revision}:{}),...(method!=="fast-forward"?{targetBase:base?.commit}:{}),...(message!==undefined?{message}:{})})}/>
+      <Card className="space-y-4 p-5"><h2 className="text-sm font-semibold text-ink">{p.state === "merged" ? `Merged into ${p.base}` : p.state === "closed" ? "Closed without merging" : p.draft ? "Draft pull request" : "Ready for review"}</h2>
+        <p className="text-xs leading-5 text-muted">{p.state === "merged" ? `Merged as ${p.mergedCommit?.slice(0,10)}. Dependent PRs now target ${p.base}.` : p.state === "closed" ? "The final diff is retained below." : p.draft ? "Mark this pull request ready when the changes are prepared for review. Branch protections still apply." : !view.repositoryMode&&p.base !== "main" ? `Merge the PR for ${p.base} first. This diff includes only this layer’s changes.` : `Merge updates ${p.base} through its current protection and conflict checks.`}</p>
+        {p.state === "open" && <div className="flex flex-wrap items-end gap-2">
+          {readinessAvailable&&!readOnly&&user&&view.canManagePulls!==false&&<Button className={readinessStyles.action} variant={p.draft?'primary':'ghost'} disabled={action.busy} onClick={()=>void changeReadiness()}>{action.busy?'Saving…':p.draft?'Mark ready for review':'Convert to draft'}</Button>}
+          <MergeAction key={`${trunk}/${p.number}/${view.mergeSettings?.revision??"legacy"}`} defaultMethod={view.mergeSettings?.defaultMethod} readOnly={readOnly||!user||view.canMerge===false} permissionDenied={!readOnly&&!!user&&view.canMerge===false} methods={view.mergeMethods??["fast-forward"]} disabled={!!p.draft || readOnly || !user || !view.repositoryMode&&p.base !== "main" || missing.length > 0 || !!policy?.locked || ownershipBlocked || view.deployments?.ready===false || !!view.signatures?.required&&!view.signatures.verified || view.reviewGate?.ready===false} busy={action.busy} signedRequired={!!view.signatures?.required} onMerge={(method,message)=>void run("merge",{method,...(view.mergeSettings?{mergeSettingsRevision:view.mergeSettings.revision}:{}),...(method!=="fast-forward"?{targetBase:base?.commit}:{}),...(message!==undefined?{message}:{})})}/>
           <Button disabled={readOnly || !user || view.canManagePulls===false || action.busy || base?.commit === p.anchor} onClick={() => void run("restack")}>Restack onto {p.base}</Button>
           <Button variant="ghost" disabled={readOnly || !user || view.canManagePulls===false || action.busy} onClick={() => void run("close")}>Close</Button>
         </div>}
-        {p.state==="open"&&view.reviewGate?.error&&<p className="text-sm text-muted" role="status">{view.reviewGate.error}</p>}
+        {p.state==="open"&&view.reviewGate?.error&&(!p.draft||!view.reviewGate.error.startsWith('Draft pull requests'))&&<p className="text-sm text-muted" role="status">{view.reviewGate.error}</p>}
         {p.state==="open"&&!!view.reviewGate?.sharedHeadBlockers?.length&&<RelatedPullReviews trunk={trunk} blockers={view.reviewGate.sharedHeadBlockers} />}
         {p.state === "open" && base?.commit !== p.anchor && <p className="text-xs text-muted">The base moved. Restack replays this layer on its latest commit; competing edits are left for you to resolve locally. Fetch the updated branch afterward.</p>}
       </Card>

@@ -10,6 +10,11 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 
 ## Current coverage
 
+The [draft PR source candidate](pull-drafts.md) adds draft creation and ready/undo
+with final merge blocking, persisted legacy-writer fences and candidate CLI
+0.4.22. [Local acceptance](evidence/pull-drafts-validation.md) passes; frozen
+release and hosted rollout are still required. Production remains on 0.4.21.
+
 A [repository-creation correction](evidence/namespace-admission-validation.md)
 now atomically reserves the owner/repo address with capacity, allowing same-name
 retry after definitive quota refusal while retaining uncertain initialization.

@@ -96,7 +96,9 @@ export async function cliRoute(env:Env,request:Request,user:User|null,dispatch:(
   if(method==='GET'&&/^pulls\/[1-9]\d{0,8}\/requested-reviewers$/.test(resource))scope='read';
   if(['POST','DELETE'].includes(method)&&/^pulls\/[1-9]\d{0,8}\/requested-reviewers$/.test(resource))scope='pulls:write';
   if(method==="POST"&&resource==="pulls")scope="pulls:write";
+  if(method==='POST'&&resource==='pulls/drafts')scope='pulls:write';
   if(method==="POST"&&/^pulls\/[1-9]\d{0,8}\/close$/.test(resource))scope="pulls:write";
+  if(method==='POST'&&/^pulls\/[1-9]\d{0,8}\/readiness$/.test(resource))scope='pulls:write';
   if(method==="POST"&&/^pulls\/[1-9]\d{0,8}\/merge$/.test(resource))scope="pulls:merge";
   if(method==="POST"&&/^pulls\/[1-9]\d{0,8}\/(reviews|comments)$/.test(resource))scope="reviews:write";
   if(method==="PATCH"&&/^pulls\/[1-9]\d{0,8}\/comments$/.test(resource))scope="reviews:write";

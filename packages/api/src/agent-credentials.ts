@@ -100,7 +100,7 @@ export async function agentCredential(
   const d = await db(env);
   const row = await d
     .prepare(
-      "SELECT id, ownerId, ownerName, agentId, handle, trunk FROM agent_token WHERE hash = ? AND revokedAt IS NULL AND expiresAt > ?",
+      "SELECT id, ownerId, ownerName, agentId, handle, trunk, expiresAt FROM agent_token WHERE hash = ? AND revokedAt IS NULL AND expiresAt > ?",
     )
     .bind(await hash(token), Date.now())
     .first<{
@@ -110,6 +110,7 @@ export async function agentCredential(
       agentId: string;
       handle: string;
       trunk: string;
+      expiresAt:number;
     }>();
   if (!row || row.trunk !== trunk || username !== row.handle) return null;
   const registered = await env.ROOM.get(
@@ -126,6 +127,7 @@ export async function agentCredential(
     .bind(Date.now(), row.id)
     .run();
   return {
+    expiresAt:row.expiresAt,
     owner: { id: row.ownerId, name: row.ownerName },
     agent: row.handle,
     agentId: row.agentId,

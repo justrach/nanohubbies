@@ -234,6 +234,7 @@ export class Policies {
       );
   }
   reviews(branch: string, pull: Pull, reviews: Review[], head: string) {
+    if(pull.draft)throw Error('Draft pull requests cannot be merged; mark ready for review first');
     const p = this.get(branch), { latest, latestPush, approved } = this.reviewState(pull,reviews,head);
     if ([...latest.values()].some((r) => !r.dismissed && r.verdict === "REQUEST_CHANGES"))
       throw Error("Resolve requested changes before merging");

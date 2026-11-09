@@ -1,0 +1,314 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T04:12:12.410691+00:00",
+  "baseSource": "56a48b9de005d37dae365d9924f93507a7c5915f",
+  "scope": "Draft PR source/local acceptance; no production feature deployment or hosted draft mutation claimed",
+  "cliCandidate": {
+    "version": "0.4.22",
+    "bytes": 103226,
+    "sha256": "30d7cb952fba35ced89bfe3fd2c93ec5897a440c6ff1a28fb20dab041b5e1b34",
+    "retainedPublishedReleases": 21,
+    "olderBytesAndChecksumsMatch": true,
+    "productionPublished": false
+  },
+  "checks": {
+    "apiUnit": {
+      "passed": 565,
+      "failed": 0,
+      "skipped": 0
+    },
+    "cli": {
+      "passed": 107,
+      "failed": 0
+    },
+    "workspacePinnedTsrs": {
+      "successfulTasks": 3,
+      "cachedUnchangedTasks": 1
+    },
+    "repositoryRegression": "passed on runtime implementation; later fixture extensions additionally pass final focused/artifact checks",
+    "accessVault": "passed",
+    "hosting": "passed",
+    "focusedDraftCases": 11,
+    "realWorkerModes": [
+      "source CLI",
+      "independently bundled CLI",
+      "exact 0.4.22 release artifact"
+    ],
+    "realWorkerScenarios": [
+      "draft creation and ready/undo",
+      "before-open staging requirements preserved",
+      "foreign-origin and reader/scope denial",
+      "current writer and final demotion checks",
+      "agent-free generic scoped API client",
+      "optional generic registered-agent API client",
+      "legacy-token boundary retained",
+      "missing read/open/edit receiver methods fail closed",
+      "concurrent edits and stale revisions/diffs rejected",
+      "all HTTP merge methods and direct final writer deny drafts",
+      "reviews and refs retained",
+      "archive and restart",
+      "physical DO/D1/R2 loss and checksum-verified restore retain draft/revision",
+      "final CLI/agent revocation checks",
+      "attributed audit without credential values",
+      "compliant protected merge and fresh clone/fsck"
+    ],
+    "storageScenarios": [
+      "persisted authority survives old JSON rewrites",
+      "legacy-shaped serialized merge rolls back ref update",
+      "late audit failure rolls back state/revision/metadata",
+      "first migration preserves old ready PRs",
+      "interrupted installation does not reset established authority",
+      "missing-hook repair",
+      "missing authority fails closed",
+      "recursive triggers off and on",
+      "legacy snapshot draft never enters main landing callback"
+    ]
+  },
+  "browser": {
+    "syntheticLocalFixture": true,
+    "realNextAppAndWorker": true,
+    "desktop": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "themes": [
+        "Paper",
+        "Graphite"
+      ],
+      "draftCreateClick": true,
+      "readyAndUndoClick": true,
+      "readyAndUndoEnter": true,
+      "finalDraft": true,
+      "finalDraftRevision": 4,
+      "mergeGateReady": false
+    },
+    "narrow": {
+      "width": 390,
+      "height": 640,
+      "kind": "actual iframe viewport in desktop browser",
+      "layoutInspected": true,
+      "interactiveAcceptance": false,
+      "physicalMobileDevice": false
+    },
+    "evidence": [
+      {
+        "path": "pull-draft-create-desktop.png",
+        "bytes": 52133,
+        "sha256": "b495d209463c6bac9f2edd1e643f1a488ed8fa166084a39a16a333a6f4f34a87"
+      },
+      {
+        "path": "pull-draft-detail-graphite.png",
+        "bytes": 62904,
+        "sha256": "ba002833f8536089e5dbcf42c631fca8e79a8cd82d958af5def43340b3925117"
+      },
+      {
+        "path": "pull-draft-narrow-controls.png",
+        "bytes": 43717,
+        "sha256": "0b8649138a33b801bff2cbf22d14746780e19becd3b036897309257a5ba9d21d"
+      }
+    ]
+  },
+  "productionObservation": {
+    "checkedAt": "2026-11-09T04:03:29.800Z",
+    "worker": "64bda897-a8ba-4834-a98c-7b68c380a33f",
+    "cliVersion": "0.4.21",
+    "draftFeatureDeployed": false
+  },
+  "sourceFiles": [
+    {
+      "path": "apps/web/src/lib/api.ts",
+      "bytes": 1000,
+      "sha256": "592c1c278b7c8b556af3188f78ceb151ce21871fffd08703e5c63db6dc6f50a3"
+    },
+    {
+      "path": "apps/web/src/trunk/review/PullDetail.tsx",
+      "bytes": 20694,
+      "sha256": "5cea138ad10335b762bc7a4ea8e20e0994406d929d2ef02c9561b428e3e9e64c"
+    },
+    {
+      "path": "apps/web/src/trunk/review/PullReadiness.module.css",
+      "bytes": 316,
+      "sha256": "2d6c193e3b9d4160bf67b5ca74b790db429b1b807a97930c686e04632752bf7f"
+    },
+    {
+      "path": "apps/web/src/trunk/review/Pulls.tsx",
+      "bytes": 10857,
+      "sha256": "be46c2eb9b6df818be8c4d26c86078e1b2b79e23bcfa9218e980a5c3d01b57f2"
+    },
+    {
+      "path": "apps/web/src/trunk/review/shared.tsx",
+      "bytes": 1024,
+      "sha256": "24b9db606078d7c88a7ea73b01878c359d32f2b56c0e6ce44cc42932dc5d0c0e"
+    },
+    {
+      "path": "bun.lock",
+      "bytes": 183243,
+      "sha256": "a167d2d22846fec04a7d6230b42e5a2217f28dbf5f5ad0936b10fe6f5f342091"
+    },
+    {
+      "path": "packages/api/package.json",
+      "bytes": 11606,
+      "sha256": "61f6a07d0191478140e61cfd3ff2b9ff6a5aba1ecddeb49cab3a5b50e8ce5739"
+    },
+    {
+      "path": "packages/api/scripts/pull-readiness.test.mjs",
+      "bytes": 10923,
+      "sha256": "e7a666008fd9912428d5300107fb0cfabb0e672ecf175e9fb6b6493cd9817aff"
+    },
+    {
+      "path": "packages/api/scripts/smoke-pull-readiness.ts",
+      "bytes": 13893,
+      "sha256": "db9358efe363458ae4634621985555886d433da54ac6e7812411b1f1cfbd4f70"
+    },
+    {
+      "path": "packages/api/scripts/team/worker.ts",
+      "bytes": 35009,
+      "sha256": "b2adc753d0ade887a6f43eac52748276c31c190b5d832010d646e9e779ac89c8"
+    },
+    {
+      "path": "packages/api/src/agent-credentials.ts",
+      "bytes": 3909,
+      "sha256": "08937e2fb2bede02ca919e6262d145745dadcf6459b996c141b7b96f7bef07c4"
+    },
+    {
+      "path": "packages/api/src/cli/routes.ts",
+      "bytes": 10456,
+      "sha256": "9fab15209c2923f8b4df95f232bac55f5ca6ac284eb806ab4ced2c57b3af7aa2"
+    },
+    {
+      "path": "packages/api/src/repository/activity-types.ts",
+      "bytes": 2505,
+      "sha256": "ce6f90d7777cf4c1ce5cdaecd8a5317075943ce53f7a81230275634ec570d389"
+    },
+    {
+      "path": "packages/api/src/repository/activity.ts",
+      "bytes": 4638,
+      "sha256": "eed9e48fc7e96dc6ac12f24fbbd6cada073a0b0a2f15c4a56266d8e9ccb6ca18"
+    },
+    {
+      "path": "packages/api/src/repository/policy.ts",
+      "bytes": 18676,
+      "sha256": "31b8e1c103c76c90e3ee616ac014757dafc191fae1c7935fecfb9d5106a2ad41"
+    },
+    {
+      "path": "packages/api/src/review/readiness-access.ts",
+      "bytes": 2059,
+      "sha256": "4a1052fd0cce7b81ee2aa73e5b7879d9068e08e6dc468a3cb7c9b7eae8963838"
+    },
+    {
+      "path": "packages/api/src/review/readiness-route.ts",
+      "bytes": 3305,
+      "sha256": "af86db651de7892b35a48e3cbf186d2dd030f920924aa8b6963f5ab9238fcc3e"
+    },
+    {
+      "path": "packages/api/src/review/readiness.ts",
+      "bytes": 5448,
+      "sha256": "c100911785786fc4d87e854ac9e3cd2f26dc9da92a1deaf71474fca90e639925"
+    },
+    {
+      "path": "packages/api/src/review/routes.ts",
+      "bytes": 24025,
+      "sha256": "eb9a0337a262bb4df798b6eaf67a1cd23e46689cdb2d52c3d363c5755b44e6dc"
+    },
+    {
+      "path": "packages/api/src/review/store.ts",
+      "bytes": 18614,
+      "sha256": "cb3095e990e57031f674c06446af116379325bdb2413be4d67a8ce1eca89649b"
+    },
+    {
+      "path": "packages/api/src/review/types.ts",
+      "bytes": 6733,
+      "sha256": "e3f2549c32b7f2b528ee830a9b93457680ad8545cd2ba2849c5b9476acc86ee2"
+    },
+    {
+      "path": "packages/api/src/sequencer.ts",
+      "bytes": 78472,
+      "sha256": "31dcebbeb25234440cbd44865ba5c3ed482d5749bb3901df7390f117ba86a8ce"
+    },
+    {
+      "path": "packages/api/src/tokens.ts",
+      "bytes": 6239,
+      "sha256": "c96c26c95fff8498fcf2c23cda778f13c2729e07b7adb1a32c15309209f336ff"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "bytes": 281,
+      "sha256": "9d76922718adfdee89f9093ff04e39412fd7e03b535d950051ade55afa6480bd"
+    },
+    {
+      "path": "packages/cli/release-lock.json",
+      "bytes": 2848,
+      "sha256": "8d9a3df58b9e02789ebbb6ad6365da908001bcc6dc035f1e737e60eaabf0b046"
+    },
+    {
+      "path": "packages/cli/src/api.mjs",
+      "bytes": 16326,
+      "sha256": "0a4ee31bd754acd0c941e5b177e7fb1304141bb63237d450affba60a946c4aa9"
+    },
+    {
+      "path": "packages/cli/src/main.mjs",
+      "bytes": 30498,
+      "sha256": "450f8483ef25a24261023946202f65d6496990cf3e5ec618d74ed42db86cedf6"
+    },
+    {
+      "path": "packages/cli/test/pull-readiness.test.mjs",
+      "bytes": 3499,
+      "sha256": "d23efb7334cb97ab6f1b7d327a44b9a45f7062f00973e8bc178b5963f436aa8e"
+    },
+    {
+      "path": "tools/acceptance-gates.mjs",
+      "bytes": 1971,
+      "sha256": "5ea7cb3da949ca891a363336efe8199554107c1165e6bbcb73e3a08f6de62f65"
+    }
+  ],
+  "privateLogHashes": [
+    {
+      "name": "unit",
+      "bytes": 88234,
+      "sha256": "9ff853969dcd19e8dfa99ac7243c19dacb66a8ff5c7db7c172e8df8dbf708746",
+      "file": "nanohub-draft-pr-unit-complete-final.log"
+    },
+    {
+      "name": "cli",
+      "bytes": 15866,
+      "sha256": "7555f7357fb2ad1350dfebf1cac65026c0ba666c6040318c05d6379721a28884"
+    },
+    {
+      "name": "check",
+      "bytes": 10508,
+      "sha256": "9436a7d26982afa3d6c178abbf033a6864dda2ed86e71a9cdbdd01233281a1ec"
+    },
+    {
+      "name": "repository",
+      "bytes": 88060,
+      "sha256": "f08cc6ef214aa4be93c6377d6d6c8060bc9221855dc32180945241d51a200c0e"
+    },
+    {
+      "name": "access",
+      "bytes": 6133,
+      "sha256": "43a5b41e5c9821263956d2edac04721254fc77b1ac61a0701ce9c86fc13072ec"
+    },
+    {
+      "name": "hosting",
+      "bytes": 13242,
+      "sha256": "7d7a0f64965a839f6e6c72697275ab825a4fa39456eac214a1cf540a8845a7ce"
+    },
+    {
+      "name": "focused",
+      "bytes": 2944,
+      "sha256": "b2cd7cb5f0a757e7e0e22f869d763a2a14c7990168da1cc6cc085a5ee1773930"
+    },
+    {
+      "name": "distribution",
+      "bytes": 524,
+      "sha256": "f25b8953649c921d245b1fe3093381ba5cf595a7f01dd907edeff383f215d3bf"
+    }
+  ],
+  "remaining": [
+    "Frozen Linux and Mac production release acceptance",
+    "Production asset, CLI retention and binding preservation",
+    "Hosted draft create/ready/undo/close acceptance",
+    "Narrow interactive and physical touch-device acceptance",
+    "Automatic CODEOWNERS requests/notifications and other documented GitHub differences",
+    "Existing Actions activation, Meld schema/live staging/cutover and production operational gates remain open"
+  ]
+}

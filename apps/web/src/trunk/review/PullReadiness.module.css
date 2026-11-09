@@ -1,0 +1,13 @@
+/* Override the workspace's compact control rule only for lifecycle actions. */
+button.action:global(.nh-button) {
+  min-height: 44px;
+  padding-block: 8px;
+  font-size: 14px;
+}
+@media (min-width: 640px) {
+  button.action:global(.nh-button) {
+    min-height: 32px;
+    padding-block: 6px;
+    font-size: 13px;
+  }
+}

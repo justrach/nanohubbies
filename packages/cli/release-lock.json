@@ -84,6 +84,10 @@
     "0.4.21": {
       "bytes": 101486,
       "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    "0.4.22": {
+      "bytes": 103226,
+      "sha256": "30d7cb952fba35ced89bfe3fd2c93ec5897a440c6ff1a28fb20dab041b5e1b34"
     }
   }
 }

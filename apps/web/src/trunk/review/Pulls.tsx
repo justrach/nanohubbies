@@ -10,6 +10,7 @@ import { Card, Empty, LinkButton, Pill } from "@/components/ui";
 import {useTrunk} from "../context";
 import { useSession } from "@/lib/session";
 import { field, Notice, useReviewAction } from "./shared";
+import readinessStyles from './PullReadiness.module.css';
 
 export function Pulls({
   trunk,
@@ -23,6 +24,7 @@ export function Pulls({
   const { user } = useSession();
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
+  const [draft,setDraft]=useState(false);
   const [state, setState] = useState<Pull["state"]>("open");
   const action = useReviewAction(trunk);
   const [head, setHead] = useState(
@@ -86,7 +88,7 @@ export function Pulls({
           </LinkButton>
           <Button
             variant="primary"
-            disabled={!user||readOnly}
+            disabled={!user||readOnly||initial.canManagePulls===false}
             onClick={() => setCreating(!creating)}
           >
             <Plus size={14} /> New pull request
@@ -102,7 +104,7 @@ export function Pulls({
               event.preventDefault();
               const form = new FormData(event.currentTarget);
               void action.run(
-                "/pulls",
+                draft?"/pulls/drafts":"/pulls",
                 {
                   title: form.get("title"),
                   body: form.get("body"),
@@ -174,12 +176,17 @@ export function Pulls({
                 placeholder="Why this change, and how was it tested?"
               />
             </label>
+            {initial.pullReadiness==='storage-v1'&&<label className="flex max-w-xl items-start gap-3 text-sm text-ink">
+              <input type="checkbox" checked={draft} disabled={action.busy} onChange={event=>setDraft(event.target.checked)} className="mt-1 shrink-0 accent-series-1"/>
+              <span>Create as draft<span className="mt-1 block text-xs leading-5 text-muted">Share work in progress. Drafts can receive feedback, but cannot be merged.</span></span>
+            </label>}
             <Button
               type="submit"
               variant="primary"
+              className={readinessStyles.action}
               disabled={action.busy || !head || head === base}
             >
-              {action.busy ? "Opening…" : "Open pull request"}
+              {action.busy ? "Creating…" : draft?"Create draft pull request":"Open pull request"}
             </Button>
             {!head && (
               <p className="text-xs text-muted">
@@ -236,7 +243,7 @@ export function Pulls({
                   >
                     <GitPullRequest
                       size={18}
-                      className={`mt-1 shrink-0 ${p.state === "open" ? "text-good-text" : "text-muted"}`}
+                      className={`mt-1 shrink-0 ${p.state === "open"&&!p.draft ? "text-good-text" : "text-muted"}`}
                     />
                     <div className="min-w-0 flex-1">
                       <Link
@@ -249,6 +256,7 @@ export function Pulls({
                         </span>
                       </Link>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                        {p.state==='open'&&p.draft&&<span>Draft</span>}
                         <code>
                           {p.base} ← {p.head}
                         </code>

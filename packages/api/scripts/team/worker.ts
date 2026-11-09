@@ -24,6 +24,26 @@ class FixtureVaultAuthority extends RpcTarget {
 
 /** Test-only lost-RPC injection; neither Wrangler entrypoint exports this class. */
 export class Sequencer extends ProductionSequencer {
+  pullReadinessFault(mode:string){
+    this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS fixture_pull_readiness_fault (id INTEGER PRIMARY KEY,mode TEXT)');
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO fixture_pull_readiness_fault VALUES(1,?)',mode);
+  }
+  private missingPullReadiness(mode:string){
+    const sql=this.ctx.storage.sql;
+    return sql.exec("SELECT 1 FROM sqlite_master WHERE name='fixture_pull_readiness_fault'").toArray().length>0&&sql.exec<{mode:string}>('SELECT mode FROM fixture_pull_readiness_fault WHERE id=1').toArray()[0]?.mode===mode;
+  }
+  pullReadinessConfiguration(){
+    if(this.missingPullReadiness('read'))throw Error('The RPC receiver does not implement the method "pullReadinessConfiguration".');
+    return super.pullReadinessConfiguration();
+  }
+  async openDraftPull(...args:Parameters<ProductionSequencer['openDraftPull']>){
+    if(this.missingPullReadiness('open'))throw Error('The RPC receiver does not implement the method "openDraftPull".');
+    return super.openDraftPull(...args);
+  }
+  async editPullReadiness(...args:Parameters<ProductionSequencer['editPullReadiness']>){
+    if(this.missingPullReadiness('edit'))throw Error('The RPC receiver does not implement the method "editPullReadiness".');
+    return super.editPullReadiness(...args);
+  }
   branchRenameFault(input:{missingRead?:boolean;missingWrite?:boolean;late?:boolean;legacy?:{branch:string;commit:string;tree:string}}){
     return this.ctx.storage.transactionSync(()=>{
       const sql=this.ctx.storage.sql;
@@ -245,6 +265,13 @@ export default {
       const body=await request.json<{trunk:string;missing:boolean}>();
       await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {missingSharedHeadReceiver:(missing:boolean)=>Promise<void>}).missingSharedHeadReceiver(body.missing);
       return Response.json({configured:true});
+    }
+    if(url.pathname==='/fixture/pull-readiness'){
+      const body=await request.json<{trunk:string;mode?:string;input?:Parameters<ProductionSequencer['editPullReadiness']>[0]}>(),seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk));
+      try{
+        if(body.mode!==undefined){await (seq as unknown as {pullReadinessFault:(mode:string)=>Promise<void>}).pullReadinessFault(body.mode);return Response.json({configured:true});}
+        return Response.json(await seq.editPullReadiness({...body.input!,actor:{...body.input!.actor,origin:url.origin}}));
+      }catch(error){return Response.json({error:(error as Error).message},{status:400});}
     }
     if(url.pathname==='/fixture/direct-reviewed-merge') {
       const body=await request.json<{trunk:string;number:number;actor:string}>(),seq=env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk));

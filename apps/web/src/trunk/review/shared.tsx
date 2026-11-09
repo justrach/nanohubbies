@@ -9,10 +9,10 @@ export const field = "w-full rounded-md border border-line bg-surface px-3 py-2 
 export function useReviewAction(trunk: string) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function run(path: string, body: unknown, done: (data: ReviewSnapshot) => void, method = "POST") {
+  async function run(path: string, body: unknown, done: (data: ReviewSnapshot) => void, method = "POST",headers?:Record<string,string>) {
     if (busy) return;
     setBusy(true); setError("");
-    try { done(await api<ReviewSnapshot>(`${trunkPath(trunk)}${path}`, { method, body })); }
+    try { done(await api<ReviewSnapshot>(`${trunkPath(trunk)}${path}`, { method, body,headers })); }
     catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }

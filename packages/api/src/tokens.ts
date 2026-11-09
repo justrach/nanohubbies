@@ -87,7 +87,7 @@ export async function revokeToken(env: Env, owner: Owner, id: string): Promise<b
 /** Who a push comes from, by its Basic credentials: the person the token
  *  belongs to, and the agent the username names. Null when the credentials
  *  are missing, wrong, revoked, expired, or for another trunk. */
-export async function pusher(env: Env, request: Request, trunk: string): Promise<{ owner: Owner; agent: string | null; agentId?: string; agentType?:string; credentialId?: string; gitOnly?: boolean; readOnly?:boolean } | null> {
+export async function pusher(env: Env, request: Request, trunk: string): Promise<{ owner: Owner; agent: string | null; agentId?: string; agentType?:string; credentialId?: string; gitOnly?: boolean; readOnly?:boolean;expiresAt?:number } | null> {
   const header = request.headers.get("authorization") ?? "";
   let user = "";
   let token = "";
@@ -112,10 +112,10 @@ export async function pusher(env: Env, request: Request, trunk: string): Promise
   if (!token.startsWith(PREFIX)) return null;
   const d = await ready(env);
   const row = await d
-    .prepare(`select "id", "ownerId", "ownerName", "trunk" from "push_token" where "hash" = ? and "revokedAt" is null and "expiresAt" > ?`)
+    .prepare(`select "id", "ownerId", "ownerName", "trunk", "expiresAt" from "push_token" where "hash" = ? and "revokedAt" is null and "expiresAt" > ?`)
     .bind(await hash(token), Date.now())
-    .first<{ id: string; ownerId: string; ownerName: string; trunk: string | null }>();
+    .first<{ id: string; ownerId: string; ownerName: string; trunk: string | null;expiresAt:number }>();
   if (!row || (row.trunk && row.trunk !== trunk)) return null;
   await d.prepare(`update "push_token" set "usedAt" = ? where "id" = ?`).bind(Date.now(), row.id).run();
-  return { owner: { id: row.ownerId, name: row.ownerName }, agent: AGENT.test(user) ? user : null };
+  return { owner: { id: row.ownerId, name: row.ownerName }, agent: AGENT.test(user) ? user : null,expiresAt:row.expiresAt };
 }

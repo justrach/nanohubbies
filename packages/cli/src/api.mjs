@@ -88,7 +88,7 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
  }
  if(group==='pr'&&action==='list') {
   if(pos.length)throw Error('Unexpected positional argument');const data=await get('/pulls');
-  output({pulls:data.pulls},data.pulls.map(p=>`#${p.number}\t${p.state}\t${p.title}\t${p.head} → ${p.base}`).join('\n')||'No pull requests.');return;
+  output({pulls:data.pulls},data.pulls.map(p=>`#${p.number}\t${p.state==='open'&&p.draft?'draft':p.state}\t${p.title}\t${p.head} → ${p.base}`).join('\n')||'No pull requests.');return;
  }
  if(group==='run') {
   if(pos.length)throw Error('Unexpected positional argument');const data=await get('/branches'),runs=data.runs??[];
@@ -96,14 +96,22 @@ export async function nativeCommand({group,action,pos,opts,target,git,readToken,
  }
  if(action==='create') {
   if(pos.length||!opts.title?.trim()||!opts.head)throw Error('Use pr create --title TITLE --head BRANCH [--base BRANCH] [--body TEXT]');
-  const data=await post('/pulls',{title:opts.title,head:opts.head,...(opts.base!==undefined?{base:opts.base}:{}),body:opts.body??''});
-  const p=data.pulls.reduce((latest,pull)=>!latest||pull.number>latest.number?pull:latest,null);output({pull:p},`Created #${p.number}: ${p.title}`);return;
+  if(opts.draft&&(await get('/pulls')).pullReadiness!=='storage-v1')throw Error('Draft pull requests are unavailable on this server; no pull request was created');
+  const data=await post(opts.draft?'/pulls/drafts':'/pulls',{title:opts.title,head:opts.head,...(opts.base!==undefined?{base:opts.base}:{}),body:opts.body??''});
+  const p=data.pulls.reduce((latest,pull)=>!latest||pull.number>latest.number?pull:latest,null);output({pull:p},`Created ${p.draft?'draft ':''}#${p.number}: ${p.title}`);return;
  }
  const number=pos.shift();if(!/^[1-9]\d{0,8}$/.test(number??'')||pos.length)throw Error('Choose one positive pull request number');
  if(action==='draft'||action==='comment'&&opts.draft||action==='review'&&opts.pending)return pendingCommand({action,number,opts,get,post,output});
  const data=await get(`/pulls/${number}`),p=data.pull;
+ if(action==='ready'){
+  if(data.pullReadiness!=='storage-v1'||typeof p.draft!=='boolean'||!Number.isSafeInteger(p.draftRevision)||p.draftRevision<0)throw Error('Draft status is unavailable; inspect the pull request after the server update');
+  if(p.state!=='open')throw Error('Only open pull requests can change draft status');
+  if(opts.revision!==undefined&&(!/^(0|[1-9]\d{0,15})$/.test(opts.revision)||Number(opts.revision)!==p.draftRevision))throw Error('Draft revision changed; inspect pr view before editing');
+  const result=await request(base+`/pulls/${number}/readiness`,token,{method:'POST',body:{draft:!!opts.undo,revision:p.draftRevision,commit:data.head.commit,anchor:p.anchor},revision:p.draftRevision,revisionType:'pull-readiness'});
+  const pull=result.pulls.find(row=>row.number===Number(number));output({pull},`#${number} is ${pull.draft?'a draft':'ready for review'}.`);return;
+ }
  if(action==='view') {
-  output(data,`#${p.number} ${p.title}\n${p.state} · ${p.head} → ${p.base}\nHead: ${data.head.commit}\n\n${p.body}\n\nReview: ${data.reviewGate?.ready?'ready':data.reviewGate?.error??'not ready'}\n${target.url}/pulls/${number}`);return;
+  output(data,`#${p.number} ${p.title}\n${p.state==='open'&&p.draft?'draft':p.state} · ${p.head} → ${p.base}\nHead: ${data.head.commit}\n\n${p.body}\n\nReview: ${data.reviewGate?.ready?'ready':data.reviewGate?.error??'not ready'}\n${target.url}/pulls/${number}`);return;
  }
  if(action==='diff') {
   const diff=data.files.map(f=>`diff --git a/${f.previous??f.path} b/${f.path}\n${f.patch??'[Binary or omitted diff — open the full file in the browser]'}\n`).join('\n');

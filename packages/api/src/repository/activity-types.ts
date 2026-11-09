@@ -15,6 +15,7 @@ export interface RepositoryEvent {
   actor: string;
   via?:{kind:"cli";credentialId:string};
   reviewRequest?:{pull:number;operation:'request'|'remove'|'answer';reviewers:string[];reviewId?:number;reconciled?:boolean};
+  pullReadiness?:{pull:number;draft:boolean;revision:number};
   runnerRegistration?:{id:string;name:string;revoked:boolean};
   branchRename?:{from:string;to:string;commit:string;defaultBranch:boolean;retargetedPulls:number[];closedPulls:number[];updatedRulesets:number[]};
   forwardedPush?:{sourceEvent:number;sourceRef:string;renamedBy:string};

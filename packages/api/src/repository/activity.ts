@@ -26,7 +26,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
     refs: "json_type(data, '$.ref') IS NOT NULL",
     bypasses: "json_array_length(data, '$.bypassedRulesets') > 0",
     ci: "(json_type(data, '$.stagingApproval') IS NOT NULL OR json_type(data, '$.retry') IS NOT NULL OR json_type(data, '$.runnerRegistration') IS NOT NULL)",
-    reviews: "(json_type(data, '$.dismissal') IS NOT NULL OR json_type(data, '$.reviewRequest') IS NOT NULL)",
+    reviews: "(json_type(data, '$.dismissal') IS NOT NULL OR json_type(data, '$.reviewRequest') IS NOT NULL OR json_type(data, '$.pullReadiness') IS NOT NULL)",
     environments:"(json_type(data, '$.environment') IS NOT NULL OR json_type(data, '$.removedEnvironment') IS NOT NULL OR json_type(data, '$.deploymentRequest') IS NOT NULL OR json_type(data, '$.deploymentReview') IS NOT NULL OR json_type(data, '$.deploymentAuthorization') IS NOT NULL)",
   };
   clauses.push(filters[kind]);
@@ -40,6 +40,7 @@ export function repositoryActivity(sql: SqlStorage, query: ActivityQuery = {}): 
     if(data.defaultBranch)event.defaultBranch=data.defaultBranch;
     if(data.mergeSettings)event.mergeSettings=data.mergeSettings;
     if(data.reviewRequest)event.reviewRequest=data.reviewRequest;
+    if(data.pullReadiness)event.pullReadiness=data.pullReadiness;
     if(data.runnerRegistration&&typeof data.runnerRegistration.id==='string'&&typeof data.runnerRegistration.name==='string'&&typeof data.runnerRegistration.revoked==='boolean')event.runnerRegistration={id:data.runnerRegistration.id,name:data.runnerRegistration.name,revoked:data.runnerRegistration.revoked};
     if(data.branchRename)event.branchRename=data.branchRename;
     if(data.forwardedPush)event.forwardedPush=data.forwardedPush;

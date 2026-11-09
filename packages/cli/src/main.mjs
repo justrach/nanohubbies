@@ -23,7 +23,8 @@ export const help=`Usage: nh <command> [options]                (alias: nanohub)
   pr list [-R OWNER/REPO]                    List pull requests
   pr view NUMBER [-R OWNER/REPO]             Inspect a pull request (--web for hunk UI)
   pr diff NUMBER [-R OWNER/REPO]             Show the bounded changed-file diff
-  pr create --title T --head B [--body T]   Open a pull request (--base uses the repository default)
+  pr create --title T --head B [--body T]   Open a pull request (--draft for work in progress)
+  pr ready NUMBER [--undo]                  Mark ready for review, or return to draft
   pr review NUMBER --verdict DECISION       comment, approve or request-changes; --body TEXT
   pr reviewers NUMBER                      Inspect requested reviewers and revision
   pr request-review NUMBER --reviewer ID --revision N Request review from repository members
@@ -122,6 +123,8 @@ Runner administration requires runners:write and your current owner role.
 Collaborator administration requires collaborators:write and current admin access
 in an independently managed repository. Only the owner can manage admins.
 Issued runner credentials have an independent lifetime and last until revoked.
+Draft pull requests use pr create --draft and pr ready [--undo]. They require
+pulls:write and current writer access. Pre-PR checks still apply; drafts cannot merge.
 Private CLI drafts require reviews:write and current repository read access.
 Reader decisions are feedback only; required approvals need current write access.
 Pull request authors can submit Comment reviews only. Each CLI
@@ -156,7 +159,7 @@ function options(args) {
  for(let i=0;i<args.length;i++){
   if(args[i]==='--'){positionals.push(...args.slice(i+1));break;}
   const arg=args[i],equal=arg.indexOf('='),flag=equal>=0?arg.slice(0,equal):arg;if(names[flag]){if(values[names[flag]]!==undefined||equal<0&&(!args[i+1]||args[i+1].startsWith('-')))throw Error(`Provide one value for ${flag}`);values[names[flag]]=equal>=0?arg.slice(equal+1):args[++i];}
-  else if(['--with-token','--with-api-token','--print','--json','--api','--git','--web','--reopen','--no-browser','--draft','--pending','--discard','--merge','--squash','--rebase'].includes(arg))values[arg.slice(2)]=true;
+  else if(['--with-token','--with-api-token','--print','--json','--api','--git','--web','--reopen','--no-browser','--undo','--draft','--pending','--discard','--merge','--squash','--rebase'].includes(arg))values[arg.slice(2)]=true;
   else if(arg.startsWith('-'))throw Error(`Unknown option: ${arg}`);else positionals.push(arg);
  }
  if(values.repo&&values.trunk)throw Error('Choose --repo or --trunk');return{...values,positionals};
@@ -164,13 +167,14 @@ function options(args) {
 export async function run(args,{execute=processRun,write=console.log,progress=console.error,readProtectionFile=protectionFile,readToken=async()=>{if(process.stdin.isTTY)throw Error('Pipe one credential to the token login option');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>1024)throw Error('Expected one credential on stdin');}return value;},readCredential=async()=>{if(process.stdin.isTTY)throw Error('Git invokes this credential helper through a pipe');let value='';for await(const chunk of process.stdin){value+=chunk;if(value.length>16384)throw Error('Git credential request is too large');}return value;},platform=process.platform,cwd=process.cwd(),fetcher=fetch,environment=process.env,wait,now}={}) {
  if(!args.length||args[0]==='--help'||args[0]==='help'){write(help);return;}
  if(args[0]==='--version'){write('nh '+cliPackage.version);return;}
- const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo merge-settings','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr review','pr reviewers','pr request-review','pr remove-reviewer','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
+ const [group,action,...rest]=args,allowed=new Set(['repo clone','repo import','repo view','repo default-branch','repo merge-settings','repo edit','repo archive-status','repo archive','repo unarchive','pr list','pr view','pr diff','pr create','pr ready','pr review','pr reviewers','pr request-review','pr remove-reviewer','pr draft','pr comment','pr resolve','pr close','pr merge','run list','runner list','runner create','runner recover','runner revoke','env list','env view','env export','env create','env update','env delete','rules view','rules list','rules get','rules set','rules delete','ruleset list','ruleset view','ruleset export','ruleset create','ruleset update','ruleset delete','auth login','auth status','auth logout','auth setup-git','auth git-credential']);
  if(group==='secret')for(const verb of ['list','connect','disconnect','grant','recover','revoke'])allowed.add('secret '+verb);
  if(group==='branch')for(const verb of ['list','rename'])allowed.add('branch '+verb);
  if(group==='deployment')for(const verb of ['list','view','request','approve','reject'])allowed.add('deployment '+verb);
  if(group==='access')for(const verb of ['list','invite','recover','role','remove','cancel'])allowed.add('access '+verb);
  if(!allowed.has(`${group} ${action}`))throw Error('Unknown command. Run nh --help');
  const opts=options(rest),pos=[...opts.positionals];let origin=hostOrigin(opts.host??'https://nanohub.sh'),target;
+ if(group==='pr'&&(action==='ready'||action==='create'&&opts.draft)&&(opts.web||opts.print))throw Error('Draft lifecycle commands use the native API; omit --web and --print');
  const mergeFlags=['merge','squash','rebase'].filter(flag=>opts[flag]);
  if((mergeFlags.length||opts.method!==undefined||opts.message!==undefined)&&!(group==='pr'&&action==='merge'))throw Error('Merge method/message options only apply to pr merge');
  if(mergeFlags.length>1||mergeFlags.length&&opts.method!==undefined)throw Error('Choose one merge method');
@@ -185,9 +189,10 @@ export async function run(args,{execute=processRun,write=console.log,progress=co
  if(opts['with-token']&&opts['with-api-token'])throw Error('Choose one credential type');
  if(opts.api&&group!=='auth')throw Error('--api is only needed for auth commands');
  const pendingMode=group==='pr'&&(action==='draft'||action==='comment'&&opts.draft||action==='review'&&opts.pending);
- if(opts.draft&&!(group==='pr'&&action==='comment')||opts.pending&&!(group==='pr'&&action==='review')||[opts.edit,opts.remove,opts.discard].some(v=>v!==undefined)&&!(group==='pr'&&action==='draft'))throw Error('Draft options only apply to pr draft, pr comment --draft or pr review --pending');
+ if(opts.undo&&!(group==='pr'&&action==='ready'))throw Error('--undo only applies to pr ready');
+ if(opts.draft&&!(group==='pr'&&['comment','create'].includes(action))||opts.pending&&!(group==='pr'&&action==='review')||[opts.edit,opts.remove,opts.discard].some(v=>v!==undefined)&&!(group==='pr'&&action==='draft'))throw Error('Use --draft for pr create or pr comment; private review edits use pr draft or pr review --pending');
  if(pendingMode&&[opts['reply-to'],opts.thread,opts.reopen].some(v=>v!==undefined))throw Error('Pending reviews accept root hunk comments; replies and resolution use published threads');
- if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(group==='pr'&&['request-review','remove-reviewer'].includes(action)&&opts.file===undefined&&opts.confirm===undefined||pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='branch'&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)||group==='runner'&&action==='revoke'||group==='access'&&opts.file===undefined||group==='deployment'&&['approve','reject'].includes(action)&&opts.file===undefined&&opts.confirm===undefined||group==='secret'&&opts.file===undefined))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration, deployment reviews or pending review revisions');
+ if([opts.file,opts.revision,opts.confirm].some(v=>v!==undefined)&&!(group==='pr'&&['request-review','remove-reviewer','ready'].includes(action)&&opts.file===undefined&&opts.confirm===undefined||pendingMode&&opts.file===undefined&&opts.confirm===undefined||group==='branch'&&opts.file===undefined&&opts.confirm===undefined||group==='rules'&&['set','delete'].includes(action)||['ruleset','env'].includes(group)&&['create','update','delete'].includes(action)||group==='repo'&&['archive-status','archive','unarchive','default-branch','merge-settings','edit'].includes(action)||group==='runner'&&action==='revoke'||group==='access'&&opts.file===undefined||group==='deployment'&&['approve','reject'].includes(action)&&opts.file===undefined&&opts.confirm===undefined||group==='secret'&&opts.file===undefined))throw Error('--file, --revision and --confirm only apply to rule edits, repository administration, deployment reviews or pending review revisions');
  if([opts['invite-file'],opts.role].some(value=>value!==undefined)&&group!=='access')throw Error('--invite-file and --role only apply to access commands');
  if(group==='access'&&(opts.web||opts.print||opts.file!==undefined))throw Error('Access administration uses native commands and --invite-file');
  if(opts['token-file']!==undefined&&!(group==='runner'&&['create','recover'].includes(action)||group==='secret'&&['grant','recover'].includes(action)))throw Error('--token-file only applies to runner create/recover or secret grant/recover');

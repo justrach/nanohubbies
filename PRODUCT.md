@@ -20,6 +20,8 @@ The browser repository workspace, ordinary Git transport and hosting CLI share r
 
 ## Capabilities and Constraints
 
+- The source [draft PR candidate](docs/pull-drafts.md) adds draft creation and ready/undo with final merge blocking and candidate CLI 0.4.22. It preserves pre-PR staging gates, reviews and Git refs. Local source/bundled/artifact and browser validation are recorded separately from its still-pending frozen release and production rollout. Production remains on CLI 0.4.21.
+
 - Branch and ref rules, locks, reviews and audit are repository controls. UI hints do not replace final server authorization.
 - Published branch rename lets writers rename unprotected non-default branches; current admins are required for default or protected branches. A revision-checked atomic transaction preserves the commit and coordinates refs, default branch, PR targets, policies, CI invalidation, aliases and audit. PRs using the old name as their head close; open PRs targeting it retarget. The original code pusher stays the original pusher, preserving review independence.
 - Rename must satisfy destination protections and source/destination rules, including exclusions and naming/creation/deletion constraints. Overlapping classic constraints can require a new exact rule; limits can require explicit reconciliation. Rename must not silently weaken protection. Git and raw URLs do not automatically redirect. Branch browsing follows stored aliases; a real branch recreated at the old name takes precedence.

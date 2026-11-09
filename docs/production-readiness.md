@@ -6,6 +6,13 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
+A [draft PR candidate](evidence/pull-drafts-validation.md) now passes local
+source/bundled/exact-artifact acceptance, including persisted merge blocking,
+conditional ready/undo, current credentials, pre-PR staging checks and cold
+storage restore. CLI 0.4.22 is pinned but not published to production. Frozen
+release and hosted acceptance remain open; this adds no production-readiness
+percentage claim.
+
 A [named-repository admission fix](evidence/namespace-admission-validation.md)
 addresses a failure found while preparing hosted authorization acceptance:
 definitive quota refusals no longer consume the requested address. It preserves

@@ -1,0 +1,91 @@
+import assert from 'node:assert/strict';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {join,resolve} from 'node:path';
+import {teamFixture} from './team/fixture.ts';
+import {recoveryFixture} from './team/recovery.ts';
+const f=await teamFixture(),exec=promisify(execFile),trunk='pull-readiness',base='/api/trunks/'+trunk,gateway='/api/cli/trunks/'+trunk;
+const environment={...process.env,NANOHUB_API_TOKEN:'',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1',GIT_TERMINAL_PROMPT:'0'};
+let bin=resolve(import.meta.dirname,'../../cli/bin/nh.mjs');
+try{
+  if(process.argv.includes('--distribution')){
+    assert.ok(!process.argv.includes('--bundle'),'Choose one artifact mode');
+    const dir=resolve(import.meta.dirname,'../../../apps/web/public/nh'),manifest=JSON.parse(await readFile(join(dir,'latest.json'),'utf8')),version=JSON.parse(await readFile(resolve(import.meta.dirname,'../../cli/package.json'),'utf8')).version;
+    assert.equal(manifest.version,version);assert.equal(manifest.path,`/nh/releases/${version}/nh.mjs`);bin=join(dir,'releases',version,'nh.mjs');const bytes=await readFile(bin);
+    assert.equal(bytes.length,manifest.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.sha256);assert.equal(await readFile(join(dir,'releases',version,'SHA256SUMS'),'utf8'),manifest.sha256+'  nh.mjs\n');
+  }else if(process.argv.includes('--bundle')){const dir=join(f.dir,'Draft CLI distribution'),built=await exec('bun',[resolve(import.meta.dirname,'../../cli/scripts/build.mjs'),dir],{env:environment});bin=join(dir,JSON.parse(built.stdout).path.replace(/^\/nh\//,''));}
+  const owner=await f.login('owner','101'),writer=await f.login('writer','202'),reader=await f.login('reader','303');
+  await f.json('POST',base,{mode:'git'},owner);
+  for(const[id,role,cookie]of [['writer','writer',writer],['reader','reader',reader]]as const){const invitation=await f.json('POST',base+'/collaborators',{userId:'codegraff:'+id,role},owner);await f.json('POST','/api/invitations/accept',{trunk,token:invitation.token},cookie);}
+  const key=await f.json('POST',base+'/git-tokens',{label:'Draft fixture'},owner),source=join(f.dir,'source'),remote=f.origin+'/git/'+trunk+'.git';await mkdir(source);
+  const git=async(...args:string[])=>(await exec('git',['-C',source,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',...args],{env:{...environment,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraHeader',GIT_CONFIG_VALUE_0:'Authorization: Basic '+btoa('git:'+key.token)}})).stdout.trim();
+  await git('init','-b','main');await writeFile(join(source,'README.md'),'Base\n');await git('add','.');await git('commit','-m','Base');await git('push',remote,'main');
+  await git('checkout','-b','topic');await writeFile(join(source,'README.md'),'Candidate\n');await git('add','.');await git('commit','-m','Candidate');const head=await git('rev-parse','HEAD');await git('branch','other');await git('push',remote,'topic','other');
+  const grant=await f.json('POST',base+'/cli-credentials',{label:'Draft CLI',scopes:['read','pulls:write'],days:1},owner),read=await f.json('POST',base+'/cli-credentials',{label:'Draft read only',scopes:['read'],days:1},owner);
+  const cli=async(args:string[],token=grant.token)=>{try{return{code:0,...await exec('bun',[bin,'pr',...args,'--trunk',trunk,'--host',f.origin,'--json'],{env:{...environment,NANOHUB_API_TOKEN:token}})};}catch(error:any){return{code:error.code??1,stdout:error.stdout??'',stderr:error.stderr??''};}};
+  const view=()=>f.json('GET',base+'/pulls/1',undefined,owner),fault=(mode:string)=>f.json('POST','/fixture/pull-readiness',{trunk,mode});
+  const policy={branch:'main',pullRequest:true,approvals:1,checks:[],beforeOpen:['staging'],preventForce:true,preventDelete:true,requireConversationResolution:true};
+  await f.json('PUT',base+'/protection',policy,owner);
+  for(const route of ['/pulls','/pulls/drafts']){const response=await f.request('POST',base+route,{title:'Before-open rejection',head:'topic'},owner);assert.notEqual(response.status,200);assert.match(JSON.stringify(await response.json()),/staging/);}
+  assert.equal((await f.json('GET',base+'/pulls',undefined,owner)).pulls.length,0);
+  await f.json('PUT',base+'/protection',{...policy,beforeOpen:[]},owner);
+  assert.equal((await f.request('POST',base+'/pulls',{title:'Ambiguous draft',head:'topic',draft:true},owner)).status,400);
+  for(const mode of ['read','open']){await fault(mode);const response=await f.request('POST',base+'/pulls/drafts',{title:'Old receiver',head:'topic'},owner);assert.equal(response.status,503);assert.equal((await f.json('GET',base+'/pulls',undefined,owner)).pulls.length,0);}await fault('none');
+  assert.equal((await f.request('POST',base+'/pulls/drafts',{title:'Denied reader draft',head:'topic'},reader)).status,403);
+  assert.equal((await f.request('POST',base+'/pulls/drafts',{title:'Foreign origin draft',head:'topic'},{...owner,Origin:'https://elsewhere.invalid'})).status,403);
+  assert.notEqual((await cli(['create','--title','Denied scope','--head','topic','--draft'],read.token)).code,0);
+  const created=await cli(['create','--title','A draft pull request','--head','topic','--draft']);assert.equal(created.code,0,created.stderr);assert.equal(JSON.parse(created.stdout).pull.draft,true);
+  const initial=await view();assert.equal(initial.pull.state,'open');assert.equal(initial.pull.draftRevision,0);assert.equal(initial.pullReadiness,'storage-v1');assert.equal(initial.reviewGate.ready,false);assert.match(initial.reviewGate.error,/Draft/);
+  const metadataResponse=await f.request('GET',base+'/pulls/1',undefined,owner);assert.equal(metadataResponse.headers.get('cache-control'),'private, no-store');await metadataResponse.body?.cancel();
+  const body=(revision:number,draft=false)=>({draft,revision,commit:head,anchor:initial.pull.anchor});
+  const change=(revision:number,draft=false,cookie:any=owner)=>f.request('POST',base+'/pulls/1/readiness',body(revision,draft),{...cookie,'If-Match':`"pull-readiness-${revision}"`});
+  assert.equal((await f.request('POST',base+'/pulls/1/readiness',body(0),owner)).status,428);assert.equal((await change(0,false,reader)).status,403);
+  assert.equal((await f.request('POST',base+'/pulls/1/readiness',body(0),{...owner,Origin:'https://elsewhere.invalid','If-Match':'"pull-readiness-0"'})).status,403);
+  assert.equal((await f.request('POST',base+'/pulls/1/readiness',{...body(0),actor:'forged'},{...owner,'If-Match':'"pull-readiness-0"'})).status,400);
+  await fault('edit');assert.equal((await change(0)).status,503);await fault('none');assert.equal((await view()).pull.draft,true);
+  const baseBefore=initial.branches.find((b:any)=>b.name==='main').commit;
+  for(const method of ['fast-forward','merge','squash','rebase']){const response=await f.request('POST',base+'/pulls/1/merge',{commit:head,anchor:initial.pull.anchor,method,targetBase:baseBefore},owner);assert.equal(response.status,409);assert.match(JSON.stringify(await response.json()),/Draft/);}
+  assert.notEqual((await f.request('POST','/fixture/direct-reviewed-merge',{trunk,number:1,actor:'codegraff:owner'})).status,200);assert.equal((await view()).branches.find((b:any)=>b.name==='main').commit,baseBefore);
+  await f.json('POST',base+'/pulls/1/reviews',{commit:head,anchor:initial.pull.anchor,verdict:'APPROVE',body:'Reviewed while draft'},writer);
+  const reviews=(await view()).reviews;
+  const races=await Promise.all([change(0),change(0)]);assert.deepEqual(races.map(r=>r.status).sort(),[200,412]);assert.equal((await view()).pull.draft,false);
+  assert.equal((await cli(['ready','1','--undo'])).code,0);assert.equal((await view()).pull.draft,true);assert.equal((await view()).pull.draftRevision,2);assert.deepEqual((await view()).reviews,reviews);
+  await f.restart();assert.equal((await view()).pull.draft,true);assert.equal((await change(0)).status,412);
+  const recovery=recoveryFixture(f),checkpoint=await recovery.checkpoint();await recovery.loseApplicationStorage();assert.notEqual((await f.request('GET',base+'/pulls/1',undefined,owner)).status,200);await checkpoint.restore();
+  assert.equal((await view()).pull.draft,true);assert.equal((await view()).pull.draftRevision,2);assert.equal((await change(0)).status,412);
+  await f.json('POST',base+'/archive',{archived:true,revision:0,confirmation:trunk},owner);assert.equal((await change(2)).status,403);await f.json('POST',base+'/archive',{archived:false,revision:1,confirmation:trunk},owner);
+  await f.json('DELETE','/api/cli/credentials/'+grant.id,undefined,owner);
+  const direct={number:1,...body(2),actor:{id:'codegraff:owner',name:'Owner',via:{kind:'cli',credentialId:grant.id}}};
+  assert.notEqual((await f.request('POST','/fixture/pull-readiness',{trunk,input:direct})).status,200);assert.equal((await view()).pull.draft,true);
+  assert.notEqual((await f.request('POST','/fixture/pull-readiness',{trunk,input:{...direct,actor:{id:'codegraff:reader',name:'Reader'}}})).status,200);
+  assert.equal((await change(2)).status,200);const ready=await view();assert.equal(ready.reviewGate.ready,true);assert.equal(ready.pull.draft,false);
+  await f.json('POST',base+'/pulls/1/merge',{commit:head,anchor:initial.pull.anchor},owner);assert.equal((await view()).pull.state,'merged');assert.equal((await change(3,true)).status,409);
+  // Generic clients use a scoped API credential without agent registration;
+  // optional registered agents retain their separate native credential boundary.
+  await git('checkout','other');await writeFile(join(source,'README.md'),'Agent candidate\n');await git('add','.');await git('commit','-m','Agent candidate');const agentHead=await git('rev-parse','HEAD');await git('push',remote,'other');
+  const legacy=await f.json('POST','/api/tokens',{trunk,label:'Unsupported legacy fixture'},owner);
+  assert.equal((await f.request('POST',base+'/pulls/drafts',{title:'Legacy denied',head:'other'},{Authorization:'Basic '+btoa('generic-client:'+legacy.token)})).status,401);await f.json('DELETE','/api/tokens/'+legacy.id,undefined,owner);
+  const generic=await f.json('POST',base+'/cli-credentials',{label:'Generic API client',scopes:['read','pulls:write'],days:1},owner),genericHeaders={Authorization:'Bearer '+generic.token};
+  const genericCreated=await f.json('POST',gateway+'/pulls/drafts',{title:'Agent-free API draft',head:'other'},genericHeaders);assert.equal(genericCreated.pulls[0].draft,true);
+  const genericView=await f.json('GET',base+'/pulls/2',undefined,owner);
+  assert.equal((await f.request('POST',gateway+'/pulls/2/readiness',{draft:false,revision:0,commit:agentHead,anchor:genericView.pull.anchor},{...genericHeaders,'If-Match':'"pull-readiness-0"'})).status,200);
+  const writerUndo={draft:true,revision:1,commit:agentHead,anchor:genericView.pull.anchor};assert.equal((await f.request('POST',base+'/pulls/2/readiness',writerUndo,{...writer,'If-Match':'"pull-readiness-1"'})).status,200);
+  await f.json('PATCH',base+'/collaborators',{userId:'codegraff:writer',role:'reader'},owner);
+  assert.notEqual((await f.request('POST','/fixture/pull-readiness',{trunk,input:{number:2,...writerUndo,draft:false,revision:2,actor:{id:'codegraff:writer',name:'Writer'}}})).status,200);
+  await f.json('PATCH',base+'/collaborators',{userId:'codegraff:writer',role:'writer'},owner);
+  await f.json('DELETE','/api/cli/credentials/'+generic.id,undefined,owner);await f.json('POST',base+'/pulls/2/close',{},owner);
+  await f.json('POST',base+'/agents',{handle:'generic-client',type:'Any API client'},owner);
+  const agent=await f.json('POST',base+'/agents/generic-client/token',{},owner),agentHeaders={Authorization:'Basic '+btoa('generic-client:'+agent.token)};
+  const agentCreated=await f.json('POST',base+'/pulls/drafts',{title:'Registered generic API draft',head:'other'},agentHeaders);assert.equal(agentCreated.pulls[0].draft,true);assert.ok(!JSON.stringify(agentCreated).includes(agent.token));
+  const agentView=await f.json('GET',base+'/pulls/3',undefined,owner),agentBody={draft:false,revision:0,commit:agentHead,anchor:agentView.pull.anchor};
+  assert.equal((await f.request('POST',base+'/pulls/3/readiness',agentBody,{...agentHeaders,'If-Match':'"pull-readiness-0"'})).status,200);
+  await f.json('DELETE','/api/tokens/'+agent.id,undefined,owner);
+  assert.notEqual((await f.request('POST','/fixture/pull-readiness',{trunk,input:{number:3,...agentBody,draft:true,revision:1,actor:{id:'codegraff:owner',name:'Owner',authorization:agentHeaders.Authorization}}})).status,200);
+  await f.json('POST',base+'/pulls/3/close',{},owner);
+  const audit=(await f.json('GET',base+'/repository/audit?kind=reviews',undefined,owner)).events;assert.ok(audit.some((event:any)=>event.pullReadiness?.draft===true&&event.via?.credentialId===grant.id));assert.ok(audit.some((event:any)=>event.pullReadiness?.draft===false));assert.ok(!JSON.stringify(audit).includes(grant.token));
+  const clone=join(f.dir,'clone');await git('clone',remote,clone);await exec('git',['-C',clone,'fsck','--strict']);assert.equal((await exec('git',['-C',clone,'rev-parse','HEAD'])).stdout.trim(),head);
+  await f.json('DELETE','/api/cli/credentials/'+read.id,undefined,owner);await f.json('DELETE','/api/tokens/'+key.id,undefined,owner);
+  console.log('PASS: '+(process.argv.includes('--distribution')?'exact release artifact':process.argv.includes('--bundle')?'bundled':'source')+' draft PR creation/ready/undo over real Worker/Git; unchanged pre-PR staging gate, scoped CLI/current writer and agent-agnostic API checks, old receiver refusal, exact diff/revision races, final direct merge denial, preserved reviews, archive/restart, cold DO/D1/R2 loss and verified restore, revocation, audit, compliant protected merge and clone/fsck. No production mutations.');
+}finally{await f.close();}
