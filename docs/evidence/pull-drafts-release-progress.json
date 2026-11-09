@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T04:17:21.153098+00:00",
+  "scope": "Frozen draft PR release preparation; Linux pending and production unchanged",
+  "sourceCommit": "44613fb04f78b20393a33f37eaedcc8c48ed41b1",
+  "sourcePushedAndRemoteMatched": true,
+  "sourceSecretScans": {
+    "staged": "passed",
+    "historyCommits": 129,
+    "history": "passed"
+  },
+  "localApiCases": 565,
+  "localCliCases": 107,
+  "mac": {
+    "outcome": "passed",
+    "frozenFiles": 1286,
+    "builtFiles": 1482,
+    "retainedPublishedReleases": 21,
+    "candidateCLI": {
+      "format": 1,
+      "version": "0.4.22",
+      "path": "/nh/releases/0.4.22/nh.mjs",
+      "bytes": 103226,
+      "sha256": "30d7cb952fba35ced89bfe3fd2c93ec5897a440c6ff1a28fb20dab041b5e1b34"
+    },
+    "workerDryRun": "passed",
+    "configuredControlKeysAbsent": true,
+    "checkedFilesForConfiguredKeys": 2768
+  },
+  "linux": {
+    "outcome": "in progress",
+    "sourceCommit": "44613fb04f78b20393a33f37eaedcc8c48ed41b1",
+    "lastProviderObservation": "2026-11-09T04:16:42.087Z",
+    "providerState": "started",
+    "completedGates": [],
+    "restarted": false,
+    "cleanupConfirmed": false
+  },
+  "productionBefore": {
+    "checkedAt": "2026-11-09T04:14:17.714Z",
+    "main": "64bda897-a8ba-4834-a98c-7b68c380a33f",
+    "vault": "0dbd5e74-5c41-428f-bc6a-2e8d3ecaef48",
+    "cli": {
+      "format": 1,
+      "version": "0.4.21",
+      "path": "/nh/releases/0.4.21/nh.mjs",
+      "bytes": 101486,
+      "sha256": "b7b663508a22af420f74ec4caaf16690c9fefb5ba49b2405459bd5452df5885e"
+    },
+    "normalBindings": 27,
+    "workerFirst": true,
+    "subrequests": 50000
+  },
+  "productionTrafficChanged": false,
+  "candidateWorkerUploaded": false,
+  "cliCandidatePublished": false,
+  "remaining": [
+    "Full frozen Linux acceptance and independent sandbox cleanup",
+    "Disposable normal/held Worker delivery and cleanup",
+    "Fresh authenticated repository preservation baseline; browser transport is unavailable",
+    "Production binding/Vault preservation, staged normal/held versions and rollout",
+    "Hosted draft create/ready/undo/close acceptance",
+    "Existing Actions activation, Meld live staging/cutover and operational readiness gates"
+  ]
+}
