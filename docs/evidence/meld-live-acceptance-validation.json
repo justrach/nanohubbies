@@ -1,0 +1,66 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T02:15:40.013456+00:00",
+  "scope": "Local controller and guest-wrapper tests with synthetic credentials and mocked provider/service boundaries; real Git preparation of the reviewed existing staging suite, without executing live services",
+  "sourceFiles": {
+    "tools/codegraff-actions.mjs": "8fc64c36a069edca87bf80894247e781e89cc53f5d627dbdb7e39ce9bb0160f5",
+    "tools/meld-live-suite.mjs": "6c6f166ad9adad7e2a3a171a567af2660cac6a5e6bf7cae0a1a843ac0f5f9002",
+    "tools/meld-live-acceptance.mjs": "219a45f0d5376e3ff4121670994c51fff78fac01c805642ae8622c96f990427c",
+    "tools/meld-native-staging-adapter.mjs": "956ce3c019ffb1cadd7e0cf02b68a917ea18152cad0a08d66dac0ad6220a74ce",
+    "tools/check-operator-bindings.mjs": "c31cba388976da68315e3e23939cb55dd6a92798939fb2dff8328c2c0d8c74c3"
+  },
+  "checks": {
+    "apiUnit": {
+      "passed": 544,
+      "failed": 0,
+      "skipped": 0
+    },
+    "apiPinnedTsrs": "passed",
+    "operatorPinnedTsrs": {
+      "files": 23,
+      "bindingsChecked": true,
+      "fullTypeCheck": false
+    },
+    "guestWrapper": {
+      "executedLocally": true,
+      "serviceProcess": "synthetic stub",
+      "realServiceCalls": 0,
+      "fixedCommandVerified": true,
+      "environmentControlKeysAbsent": true,
+      "childOutputSuppressed": true,
+      "multilineTimingReportVerified": true
+    },
+    "markdownLinks": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "preparedActualSuite": {
+    "sourceCommit": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "snapshotCommit": "edd192e483c1a9711fb375b659c629f6c896fdfa",
+    "fileCount": 1976,
+    "runtimeBytes": 24529896,
+    "bundleBytes": 10226417,
+    "bundleSha256": "f8139070956e39b895de2d559790545f616121e7b59765afbc790d11c796b317",
+    "manifestSha256": "5cf8b30fb19f9e19f6614b8183171be46e08e7797b8886efe20a5bff0219ca54"
+  },
+  "preparedBundleCompleteHistoryVerified": true,
+  "logHashes": {
+    "api-unit.log": {
+      "bytes": 84866,
+      "sha256": "6cc639a9d6a83c6063453134e321244a4f34854be17545c4b80135d28245aade"
+    },
+    "api-check.log": {
+      "bytes": 3883,
+      "sha256": "4cfae46bf6d529ad46cf4f84edd2788bc5fb26ff45c4907b0edc8dee1ac238c5"
+    }
+  },
+  "newAcceptanceCloudExecution": false,
+  "realServiceAcceptance": false,
+  "stagingDeployed": false,
+  "schemaMutations": 0,
+  "remaining": [
+    "Scoped staging live-test credential reference",
+    "Staging schema compatibility via authorized owner workflow",
+    "Operator review/configuration and coordinated exact-candidate deployment",
+    "Real-service execution and hosted acceptance"
+  ]
+}

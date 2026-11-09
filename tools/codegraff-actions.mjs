@@ -291,13 +291,18 @@ export async function sandboxJob({
   maxSourceBundleBytes,
   sourceTransferConcurrency,
   buildArtifact,
+  controllerInput = false,
+  onStarted,
 }) {
+  // Direct trusted-controller hooks only. Workflow/config dispatch does not
+  // forward these options; a candidate cannot request a credential mount.
+  if(typeof controllerInput!=='boolean'||onStarted!==undefined&&typeof onStarted!=='function'||controllerInput&&typeof onStarted!=='function')throw Error('Controller input requires a trusted startup function');
   if(buildArtifact!==undefined&&!buildArtifactPolicies([buildArtifact]).has(job.name))throw Error('Build artifact policy does not match this job');
   const transferPolicy=sourceTransferPolicy({maxSourceBundleBytes,sourceTransferConcurrency});
   if(!bundle?.length||bundle.length>transferPolicy.maxSourceBundleBytes)throw Error('Candidate bundle exceeds the configured runner source limit or is empty');
   const sourceBundle={bytes:bundle.length,sha256:createHash('sha256').update(bundle).digest('hex'),transferConcurrency:transferPolicy.sourceTransferConcurrency};
   const selected=toolchain(image,imageSnapshot,imageArchive,imageDownload,imageRegistry);
-  const provenance={...(selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),sourceBundle};
+  const provenance={...(selected.registry?{image,registryProvider:'cloudflare'}:selected.download?{image,imageDownload:{sha256:selected.download.sha256,bytes:selected.download.bytes}}:selected.snapshot?{image,imageSnapshot,...(imageArchive?{imageArchive}:{})}:{}),sourceBundle,...(controllerInput?{controllerInput:true}:{})};
   if(!["none", "bridge"].includes(network))throw Error("Use an explicit network policy");
   const deadline = Math.min(now() + job.timeoutMs, run.leaseUntil - 30000);
   const observation = (read, label, beforeRetry, recoveryDeadline) => observeSandbox(read,
@@ -414,6 +419,7 @@ export async function sandboxJob({
       `(cd ${quote(transfer)} && while IFS= read -r part; do cat "$part" || exit 1; done < selected-paths) > /workspace/nanohub/source.bundle && printf '%s  %s\\n' ${quote(sourceBundle.sha256)} /workspace/nanohub/source.bundle | sha256sum -c - && git clone --no-checkout /workspace/nanohub/source.bundle /workspace/nanohub/source && git -C /workspace/nanohub/source checkout --detach ${quote(run.head)} && test "$(git -C /workspace/nanohub/source rev-parse HEAD)" = ${quote(run.head)}`,
     );
     if(buildArtifact)await client.exec(sandbox,'mkdir -m 700 /workspace/nanohub/build-outputs && chown 1000:1000 /workspace/nanohub/build-outputs');
+    if(controllerInput)await client.exec(sandbox,'mkdir -m 700 /workspace/nanohub/controller-input && chown 1000:1000 /workspace/nanohub/controller-input');
     // /tmp is tmpfs and disappears on exit. Preserve only the selected output
     // on this job's VM before PID 1 exits; read it only after Docker stops it.
     const preserve=buildArtifact?`\n/bin/rm -rf -- /nanohub-output/selected\n/bin/cp -R --no-dereference -- ${quote(buildArtifact.directory)} /nanohub-output/selected\n`:'';
@@ -436,12 +442,19 @@ export async function sandboxJob({
       GITHUB_REPOSITORY: repository,
       GITHUB_WORKSPACE: "/tmp/work",
     };
-    const command = `docker run --detach ${selected.registry||selected.snapshot||selected.download?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g ${buildArtifact?'--mount type=bind,src=/workspace/nanohub/build-outputs,dst=/nanohub-output ':''}--mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
+    const command = `docker run --detach ${selected.registry||selected.snapshot||selected.download?'--pull=never ':''}--name ${name} --cap-drop=ALL --security-opt=no-new-privileges --network=${network} --memory=8g --cpus=4 --pids-limit=512 --user=1000:1000 --tmpfs /tmp:rw,exec,size=8g ${controllerInput?'--mount type=bind,src=/workspace/nanohub/controller-input,dst=/nanohub-input,readonly ':''}${buildArtifact?'--mount type=bind,src=/workspace/nanohub/build-outputs,dst=/nanohub-output ':''}--mount type=bind,src=/workspace/nanohub/source,dst=/source,readonly --mount type=bind,src=/workspace/nanohub/job.sh,dst=/job.sh,readonly ${Object.entries(
       variables,
     )
       .map(([k, v]) => `--env ${quote(k + "=" + v)}`)
       .join(" ")} ${quote(image)} bash /job.sh`;
     await client.exec(sandbox, command);
+    if(onStarted) {
+      await requireActive();
+      try{await onStarted(Object.freeze({sandbox,container:name,inputDirectory:controllerInput?'/workspace/nanohub/controller-input':null,deadline,active}));}
+      catch(error){throw Object.assign(Error('Trusted job startup failed'),{code:['ci_cancelled','job_deadline'].includes(error?.code)?error.code:'trusted_startup_failed'});}
+      if(now()>=deadline)throw Object.assign(Error('Job timed out during trusted startup'),{code:'job_deadline'});
+      await requireActive();
+    }
     let completed = false,
       lastLeaseCheck = 0,
       cancelled = false;

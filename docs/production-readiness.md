@@ -6,7 +6,16 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
-The latest [complete native package run](evidence/meld-native-package-validation.md)
+The latest [integration run](evidence/meld-native-integration-validation.md)
+passes 40 policy/guard tests, 4,304 unit/package cases, 477 browser cases, the
+production build and canonical 42.0 MB artifact handoff. Its 205 unit/package
+and 73 browser skips are not verified behavior. Read-only uploader preparation
+accepts the inspected staging ancestry; no upload or deployment was performed.
+The [isolated live-acceptance controller](meld-live-acceptance.md) is implemented
+with local tests, but still needs the staging test credential reference and
+coordinated real-service execution after schema compatibility is resolved.
+
+The earlier [complete PR-head package run](evidence/meld-native-package-validation.md)
 passes 40 policy/guard tests, 4,254 unit/package cases, 471 browser cases, the
 production build and canonical 41.7 MB artifact handoff. Its 205 unit/package
 and 73 browser skips are not verified behavior. PR creation still refuses missing
@@ -47,8 +56,8 @@ A [private integration proposal](evidence/meld-integration-proposal-validation.m
 now preserves both histories and reconciles the migration journal without changing
 SQL bytes or timestamps. Its source snapshot matches the integrated schema, but
 a read-only diagnostic found staging lacks `assets.color_grid`. No migration was
-applied. Integration CI, schema compatibility, owner review and live acceptance
-remain open.
+applied. Integration CI now passes; schema compatibility, owner review,
+coordinated staging deployment and live acceptance remain open.
 
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs

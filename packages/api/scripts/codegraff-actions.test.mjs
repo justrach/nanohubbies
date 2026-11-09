@@ -93,6 +93,31 @@ function mockClient({
     },
   };
 }
+test('trusted startup receives a readonly input mount after launch without placing input bytes in source or arguments',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nh-trusted-input-')),client=mockClient(),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0],secret='testtesttesttest';let started=0;
+ try{
+  const result=await sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',controllerInput:true,onStarted:async context=>{
+   started++;assert.ok(Object.isFrozen(context));assert.equal(context.inputDirectory,'/workspace/nanohub/controller-input');assert.equal(context.container,'nanohub-job');assert.equal(await context.active(),true);assert.equal(client.calls.filter(c=>c.command?.startsWith('docker run')).length,1);assert.equal(client.calls.filter(c=>c.command?.startsWith('docker inspect')).length,0);await client.upload(context.sandbox,context.inputDirectory+'/live.json',Buffer.from(secret));
+  }});
+  assert.equal(result.state,'success');assert.equal(started,1);const launch=client.calls.find(c=>c.command?.startsWith('docker run')).command;assert.ok(launch.includes('dst=/nanohub-input,readonly'));assert.ok(!launch.includes(secret));assert.ok(client.uploads.filter(u=>u.path.endsWith('/job.sh')||u.path.includes('/source')).every(u=>!u.bytes.includes(secret)));assert.equal(JSON.parse(await readFile(join(dir,'check-test.sandbox.json'),'utf8')).controllerInput,true);assert.ok(!(await readFile(join(dir,'check-test.log'),'utf8')).includes(secret));
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('startup errors are scrubbed and revocation or expiry cannot become a passing job',async()=>{
+ for(const mode of ['exception','revoked','expired']){
+  const dir=await mkdtemp(join(tmpdir(),'nh-trusted-start-deny-')),client=mockClient(),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];let live=true,time=Date.now();
+  try{const result=await sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',repository:'alice/repo',controllerInput:true,active:async()=>live,now:()=>time,onStarted:async context=>{if(mode==='exception')throw Error('testtesttesttest');if(mode==='revoked')live=false;if(mode==='expired')time=context.deadline+1;}});assert.equal(result.state,mode==='exception'?'failure':mode==='revoked'?'cancelled':'timed_out');assert.ok(!(await readFile(join(dir,'check-test.log'),'utf8')).includes('testtesttesttest'));assert.equal(client.calls.filter(c=>c.destroy).length,1);assert.equal(client.calls.filter(c=>c.command?.startsWith('docker inspect')).length,0);}
+  finally{await rm(dir,{recursive:true,force:true});}
+ }
+});
+
+test('a workflow job cannot enable controller input and malformed controller hooks fail before allocation',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'nh-controller-input-config-')),job=parseWorkflow(workflow,'.github/workflows/check.yml','feature')[0];
+ try{
+  for(const options of [{controllerInput:true},{controllerInput:'true',onStarted:()=>{}},{onStarted:'candidate-code'}]){const client=mockClient();await assert.rejects(sandboxJob({client,job,run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/',...options}),/trusted startup function/);assert.equal(client.calls.length,0);}
+  const client=mockClient();await sandboxJob({client,job:{...job,controllerInput:true,onStarted:'candidate-code'},run,bundle:Buffer.from('bundle'),image,artifacts:dir,artifactOrigin:'https://logs.invalid/'});assert.ok(!client.calls.find(c=>c.command?.startsWith('docker run')).command.includes('/nanohub-input'));
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
 test('lost status, log and lease observations recover on the same job without relaunching it',async()=>{
  for(const phase of ['status','logs','lease']) {
   const dir=await mkdtemp(join(tmpdir(),'nanohub-cg-observe-'));

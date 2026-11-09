@@ -25,6 +25,9 @@ const operators = [
   "tools/meld-stage-ancestry.mjs",
   "tools/meld-worker-upload.mjs",
   "tools/meld-native-staging-adapter.mjs",
+  "tools/meld-live-suite.mjs",
+  "tools/meld-live-acceptance.mjs",
+  "tools/codegraff-actions.mjs",
   "tools/source-transfer.mjs",
 ];
 // --noResolve does not follow @types/node's reference graph. Supply the Node

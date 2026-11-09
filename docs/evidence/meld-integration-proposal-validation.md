@@ -27,7 +27,9 @@ therefore does not yet have the required staging schema. No application rows wer
 read and no database mutation or migration was performed. Shared-database
 migration is outside the currently authorized scope.
 
-Independent CI for this integrated candidate, schema compatibility, owner review,
-coordinated staging deployment and real-service acceptance remain required.
+Fresh [integration CI](meld-native-integration-validation.md) now passes through
+the isolated native runner, including canonical package verification and
+read-only uploader preparation. Schema compatibility, owner review, coordinated
+staging deployment and real-service acceptance remain required.
 The private database patch and schema details remain available locally for review;
 they have not been pushed to Meld or treated as approval to deploy.

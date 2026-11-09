@@ -24,7 +24,7 @@ test('native staging adapter requires real acceptance configuration before uploa
  const adapter=f.make(),versions=[];
  const result=await stagingGate(adapter,f.context,async url=>{versions.push(String(url));return Response.json({buildId:f.context.run.head.slice(0,7)});});
  assert.equal(result.head,f.context.run.head);assert.equal(result.observedBuildId,f.context.run.head.slice(0,7));assert.equal(result.acceptance[0].realService,true);assert.equal(versions.length,2);
- assert.deepEqual(f.calls,['load-acceptance','prepare','upload','promote','observe','accept']);
+ assert.deepEqual(f.calls,['load-acceptance','prepare','upload','promote','observe','accept','observe']);
  await assert.rejects(adapter.dispatch(f.context),/already dispatched/);await assert.rejects(adapter.wait('foreign-deployment',f.context.run.head),/exact acknowledged/);await assert.rejects(adapter.wait('deployment-1','c'.repeat(40)),/exact acknowledged/);
  await assert.rejects(adapter.accept({...f.context,run:{...f.context.run,attempt:2},deployRunId:'deployment-1'}),/same run/);
 }));
@@ -42,4 +42,34 @@ test('failed promotion, stale provider observations, mocked acceptance and a mov
  await fixture(async f=>{f.setObserved({...f.deployment,runId:'different'});await assert.rejects(stagingGate(f.make(),f.context,async()=>Response.json({buildId:f.context.run.head.slice(0,7)})),/changed before acceptance/);assert.ok(!f.calls.includes('accept'));});
  await fixture(async f=>{f.setAcceptance([{url:meldUploadTarget.origin,realService:false}]);await assert.rejects(stagingGate(f.make(),f.context,async()=>Response.json({buildId:f.context.run.head.slice(0,7)})),/Real-service/);});
  await fixture(async f=>{let reads=0;await assert.rejects(stagingGate(f.make(),f.context,async()=>Response.json({buildId:++reads===1?f.context.run.head.slice(0,7):'ccccccc'})),/version mismatch/);assert.equal(reads,2);});
+});
+
+
+test('acceptance preflight refuses unavailable configuration before any upload and scrubs resolver errors',async()=>{
+ for(const mode of ['success','failed','malformed'])await fixture(async f=>{
+  const dependencies={...f.dependencies,loadAcceptance:async()=>({accept:async()=>[],preflight:mode==='malformed'?true:async c=>{f.calls.push('preflight');assert.equal(c.run,f.context.run);if(mode==='failed')throw Error('testtesttesttest');}})};
+  const adapter=createMeldNativeStagingAdapter(f.options,dependencies);
+  if(mode==='success'){await adapter.dispatch(f.context);assert.deepEqual(f.calls,['preflight','prepare','upload','promote']);}
+  else{await assert.rejects(adapter.dispatch(f.context),error=>/preflight/.test(error.message)&&!error.message.includes('testtesttesttest'));assert.ok(!f.calls.includes('prepare'));assert.ok(!f.calls.includes('upload'));}
+ });
+});
+
+test('a deployment changed during acceptance cannot pass even with an unchanged candidate build ID',async()=>{
+ for(const patch of [{runId:'new-deployment'},{versionId:'new-version'},{candidate:'c'.repeat(40)},{kind:'checks'},{state:'failed'}])await fixture(async f=>{
+  const dependencies={...f.dependencies,loadAcceptance:async()=>({accept:async()=>{f.setObserved({...f.deployment,...patch});return [{url:meldUploadTarget.origin+'/real-service-evidence',realService:true}];}})};
+  await assert.rejects(stagingGate(createMeldNativeStagingAdapter(f.options,dependencies),f.context,async()=>Response.json({buildId:f.context.run.head.slice(0,7)})),/changed during acceptance/);
+  assert.equal(f.calls.filter(call=>call==='observe').length,2);
+ });
+});
+
+test('revoked authority during acceptance and missing version acknowledgements cannot pass',async()=>{
+ await fixture(async f=>{
+  f.context.authorizeDeployment=async()=>{throw Error('Authorization revoked');};
+  await assert.rejects(stagingGate(f.make(),f.context,async()=>Response.json({buildId:f.context.run.head.slice(0,7)})),/Authorization revoked/);
+  assert.equal(f.calls.filter(call=>call==='observe').length,1);
+ });
+ await fixture(async f=>{
+  const adapter=createMeldNativeStagingAdapter(f.options,{...f.dependencies,promote:async()=>({...f.deployment,versionId:undefined})});
+  await assert.rejects(adapter.dispatch(f.context),/exact staging deployment/);assert.ok(!f.calls.includes('accept'));
+ });
 });

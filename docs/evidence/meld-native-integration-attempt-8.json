@@ -1,0 +1,118 @@
+{
+  "format": 1,
+  "scope": "Full isolated integration-candidate CI and canonical package handoff through a local Nanohub fixture with real Codegraff execution; no hosted runner activation or live staging deployment",
+  "startedAt": "2026-11-09T01:36:06.709Z",
+  "finishedAt": "2026-11-09T02:08:37.608Z",
+  "nanohubSource": "51a4665fe6d40affb4b0f46b9f25f0d95de577b6",
+  "integrationProposal": "b66b12d23b6c20154d2b952e7ddfc3ca308a460d",
+  "acceptedWorkflowCommit": "7680a39af48403d5e758a2cf634630542204f601",
+  "candidate": "82b0536e248ea2cddaa5ac1d75406c97635d07a9",
+  "nativeRunId": "348f667d-4d3f-49b5-80fc-1e06148ad40e",
+  "nativeHarnessPassed": true,
+  "import": {
+    "verified": true,
+    "objects": 19848,
+    "uploadedObjects": 19848,
+    "refs": 1,
+    "fsck": "strict",
+    "resumed": false,
+    "scope": "committed branches and tags only; external LFS and submodules rejected"
+  },
+  "toolchain": {
+    "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/meld-ci@sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+    "registryProvider": "cloudflare",
+    "network": "none",
+    "maxSourceBundleBytes": 536870912,
+    "sourceTransferConcurrency": 4
+  },
+  "tests": {
+    "policyAndGuard": {
+      "passed": 40,
+      "failed": 0
+    },
+    "unitAndPackage": {
+      "apiPassed": 426,
+      "webPassed": 2341,
+      "extensionPassed": 1537,
+      "passed": 4304,
+      "skipped": 205
+    },
+    "browser": {
+      "passed": 477,
+      "skipped": 73,
+      "elapsed": "10.7m"
+    },
+    "pinnedTsrs": "passed",
+    "productionBundle": "passed",
+    "wranglerDryRun": "passed"
+  },
+  "package": {
+    "manifestSha256": "33095e2554329bead02a70e0b3bc7529a863088a481559f0479c684fb3f5769c",
+    "profile": "meld-staging-v1",
+    "head": "82b0536e248ea2cddaa5ac1d75406c97635d07a9",
+    "mainModule": "modules/worker.js",
+    "moduleCount": 4,
+    "assetFiles": 315,
+    "bytes": 42019817,
+    "wrapperVerifiedAgainstCommit": true,
+    "totalBytes": 42020970,
+    "fileCount": 320,
+    "descriptorSha256": "fd8f818f2b4b912881d418481106b81744c409a759cb422b2233b19c3fb009a4",
+    "canonicalConsumerAccepted": true
+  },
+  "checks": {
+    "importCredentialRevoked": true,
+    "revokedImportRejected": true,
+    "fixtureBootstrapRunHasNoSuccess": true,
+    "protectedMainWritesRejected": true,
+    "gitCredentialRevokedBeforeCi": true,
+    "revokedGitRejected": true,
+    "prBlockedBeforeCi": true,
+    "privateLogDelivered": true,
+    "anonymousLogDenied": true,
+    "prStillRequiresStaging": true,
+    "retryInvalidatesOlderPass": true,
+    "runnerRevoked": true,
+    "revokedRunnerRejected": true,
+    "fixtureClosed": true,
+    "originalSourceRefsUnchanged": true
+  },
+  "log": {
+    "private": true,
+    "bytes": 353810,
+    "sha256": "3950bcd766bbe1eebb3f43865ec4fbb886b1334aaad4af4c0bbd302e6fb3bfa8"
+  },
+  "finalTail": {
+    "bytes": 16482,
+    "sha256": "f0fda14287b4d170cc6d4033d00b8b1a882e175af926c45d62b51c1e93fc9790"
+  },
+  "providerCleanup": {
+    "state": "destroyed",
+    "independentRead": true
+  },
+  "cleanupErrors": [],
+  "readOnlyUploadPreparation": {
+    "observedAt": "2026-11-09T02:09:22.003Z",
+    "previouslyInspectedStagingBaselineAt": "2026-11-09T01:02:34.859Z",
+    "stagingCommit": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "ancestryAccepted": true,
+    "manifestSha256": "33095e2554329bead02a70e0b3bc7529a863088a481559f0479c684fb3f5769c",
+    "assetManifestSha256": "811abebd7235ee8b8055d4c6384d660abc36efba027f2dbbbab5db9818cbe774",
+    "deployableAssetCount": 314,
+    "moduleCount": 4,
+    "providerMutations": 0,
+    "liveAuthorityGranted": false
+  },
+  "latestFixtureAttempt": "Intentionally queued a newer attempt after success to verify older results are invalidated; fixture then revoked and closed",
+  "hostedNanohub": false,
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "originalMeldRefsWritten": false,
+  "remaining": [
+    "Owner review of private integration proposal",
+    "Staging schema compatibility: assets.color_grid absent in read-only diagnostic; no migration authorized or performed",
+    "Live-test credential reference and approved real-service execution",
+    "Coordinated staging deployment, exact provider/version checks and real-service acceptance",
+    "Actual repository cutover and operational release gates"
+  ]
+}
