@@ -1,0 +1,130 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T02:25:24.554953+00:00",
+  "scope": "Real Codegraff component execution proving trusted readonly input and ordinary-job mount absence; local composed staging-gate and bounded version-read tests. No real Meld application-service acceptance or hosted Nanohub activation",
+  "cloudSourceRevision": "f36bfa80dbd05ac1d190261d87217de1cd27f0b3",
+  "startedAt": "2026-11-09T02:19:01.907Z",
+  "finishedAt": "2026-11-09T02:21:57.697Z",
+  "image": "registry.cloudflare.com/d87222df6f3f663e802014f8eb5a274e/meld-ci@sha256:96603e8cce96b886a0e7088afd8d0e736e02116ebad6b717f549c00698ded5ae",
+  "network": "none",
+  "credentialAccountScope": "Existing Meld sandbox account for isolated component verification; not activation of the intended Nanohub Actions account",
+  "cloudChecks": {
+    "separateDisposableVMs": 2,
+    "syntheticInputOnly": true,
+    "inputAbsentUntilReady": true,
+    "readonlyMountWriteDenied": true,
+    "inputUid": 1000,
+    "inputMode": "0400",
+    "ordinaryInputMountAbsent": true,
+    "guestControlEnvironmentAbsent": true,
+    "dockerSocketAbsent": true,
+    "sourceAndJobScriptReadonly": true,
+    "inputValueAbsentFromGitSourceShellArgumentsAndLogs": true,
+    "bothVMsIndependentlyConfirmedDestroyed": true
+  },
+  "lanes": [
+    {
+      "lane": "input",
+      "runId": "c3c78d11-0584-4798-9572-39ae1cc36a22",
+      "startedAt": "2026-11-09T02:19:02.229Z",
+      "finishedAt": "2026-11-09T02:20:32.203Z",
+      "passed": true,
+      "inputDelivered": true,
+      "providerCleanup": {
+        "state": "destroyed",
+        "independentRead": true
+      },
+      "log": {
+        "bytes": 147,
+        "sha256": "95038dc7877fcc9a6c58f5116f5b22edc2fce3f84cd2eefb59b82362a996aa1f"
+      }
+    },
+    {
+      "lane": "ordinary",
+      "runId": "3425ce44-58e2-4362-9524-d470b983dd06",
+      "startedAt": "2026-11-09T02:20:32.205Z",
+      "finishedAt": "2026-11-09T02:21:57.696Z",
+      "passed": true,
+      "inputDelivered": false,
+      "providerCleanup": {
+        "state": "destroyed",
+        "independentRead": true
+      },
+      "log": {
+        "bytes": 110,
+        "sha256": "c5bb7a7f9f0f9a184ca1a796dc62286e4fb74502419a96b491dc0e1f027c5baf"
+      }
+    }
+  ],
+  "privateHarnessSha256": "9362fa6b8d0b948457a74f03c3f5308c2c446e8e152ddc7683678bbe06f27a43",
+  "privateProbeSourceSha256": "c341bdc9b41198c80d43cb5ae4f17926c01a86b3a798284bba19c8df7fc73153",
+  "localChecks": {
+    "apiUnit": {
+      "passed": 550,
+      "failed": 0,
+      "skipped": 0
+    },
+    "apiPinnedTsrs": "passed",
+    "operatorPinnedTsrs": {
+      "files": 23,
+      "bindingsChecked": true,
+      "fullTypeCheck": false
+    },
+    "composedGate": {
+      "providerAndServices": "mocked",
+      "preflightBeforeUpload": true,
+      "adapterOwnProviderVerifierUsed": true,
+      "sameBuildDifferentProviderVersionRejectedBeforeInput": true,
+      "providerMovementAfterTestingRejected": true,
+      "providerMovementAfterEvidencePublicationRejected": true
+    },
+    "versionResponse": {
+      "maxBytes": 8192,
+      "redirectPolicy": "error",
+      "exactPrefixAndFullShaValidated": true,
+      "serverAndTransportTextExcludedFromErrors": true,
+      "streamCancellationVerified": true
+    }
+  },
+  "localSourceFiles": {
+    "tools/ci-runner.mjs": "da93e0b8cd25c28e60f48a027fe0c1dd7cd6d8db46d633136a76207eaa3c791a",
+    "packages/api/scripts/ci-runner.test.mjs": "88a2db1eb755c4fa5681a2f160b59cb468b6af0f422d4d575916d8c4a06908b2",
+    "packages/api/scripts/meld-live-acceptance.test.mjs": "aa2d921d4fe763fe65d0dc8809880232521db37bc4431e6839b9909c953012a4"
+  },
+  "privateLogHashes": {
+    "api-unit.log": {
+      "bytes": 85760,
+      "sha256": "ffa744be9b402c415949541aa0bb17db9638d76954bb333561fdd6d2a9328d70"
+    },
+    "api-check.log": {
+      "bytes": 3883,
+      "sha256": "4cfae46bf6d529ad46cf4f84edd2788bc5fb26ff45c4907b0edc8dee1ac238c5"
+    },
+    "focused.log": {
+      "bytes": 4373,
+      "sha256": "eba73408f47686689ec857d6798d0d13cecca84b7bb72edf313f9c08f553075e"
+    }
+  },
+  "hostedNanohub": false,
+  "applicationServiceRequests": 0,
+  "stagingDeployed": false,
+  "productionDeployed": false,
+  "schemaMutations": 0,
+  "persistentCredentialsCreated": 0,
+  "remaining": [
+    "Scoped staging test credential reference",
+    "Schema compatibility through the authorized owner workflow",
+    "Coordinated exact-candidate staging deployment and real-service acceptance",
+    "Intended Nanohub Actions account activation and operational release gates"
+  ],
+  "liveVersionReaderCompatibility": {
+    "checkedAt": "2026-11-09T02:26:11.542Z",
+    "scope": "Anonymous read-only compatibility check of the bounded version reader against existing Meld staging; no deployment or real-service acceptance",
+    "origin": "https://staging.meld.space",
+    "expectedFullSourceFromPriorInspection": "194a45ea41ba031f2ab6eaa117d666cf33ec53ed",
+    "prefixLength": 7,
+    "freshProviderIdentityVerified": false,
+    "providerMutations": 0,
+    "prefixMatched": true
+  }
+}

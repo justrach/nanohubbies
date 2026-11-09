@@ -29,12 +29,23 @@ export function runProcess(command, args, options={}) {
   });
 }
 export async function verifyVersion(origin, candidate, fetcher=fetch, prefixLength=40) {
-  const response=await fetcher(new URL('/api/version',origin),{headers:{'Cache-Control':'no-cache'},cache:'no-store',signal:AbortSignal.timeout(20_000)});
-  if(!response.ok)throw Error(`Staging version endpoint failed: ${response.status}`);
-  const body=await response.json();
-  const version=body.buildId ?? body.build_id ?? body.sha;
   if(!Number.isInteger(prefixLength)||prefixLength<7||prefixLength>40)throw Error('Invalid version ID prefix length');
-  if(version!==candidate.slice(0,prefixLength))throw Error(`Staging moved or version mismatch: expected ${candidate}, got ${version}`);
+  if(typeof candidate!=='string'||!/^[a-f0-9]{40}$/.test(candidate))throw Error('A full immutable candidate SHA is required');
+  let url;
+  try{url=new URL('/api/version',origin);if(url.username||url.password||url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw Error();}catch{throw Error('Use an HTTPS staging origin or explicit local test origin');}
+  let response;
+  try{response=await fetcher(url,{headers:{'Cache-Control':'no-cache'},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(20_000)});}catch{throw Error('Staging version endpoint is unavailable');}
+  if(!response.ok||response.redirected){await response.body?.cancel().catch(()=>{});throw Error('Staging version endpoint failed');}
+  // This endpoint runs candidate code. Bound the body and never copy response
+  // values or JSON/stream exception text into the trusted controller's logs.
+  let reader,body;
+  try{
+    reader=response.body?.getReader();if(!reader)throw Error();const chunks=[];let size=0;
+    for(;;){const {done,value}=await reader.read();if(done)break;if((size+=value.length)>8192)throw Error();chunks.push(value);}
+    body=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!body||typeof body!=='object'||Array.isArray(body))throw Error();
+  }catch{throw Error('Invalid or oversized staging version response');}finally{await reader?.cancel().catch(()=>{});}
+  const version=body.buildId ?? body.build_id ?? body.sha;
+  if(version!==candidate.slice(0,prefixLength))throw Error(`Staging moved or version mismatch for ${candidate}`);
   return candidate;
 }
 export async function stagingGate(adapter, context, fetcher=fetch) {

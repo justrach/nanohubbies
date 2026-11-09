@@ -8,6 +8,10 @@ The [validation receipt](evidence/meld-live-acceptance-validation.json) records
 binding check. A functional wrapper test executes its command/report logic with
 synthetic services. The actual reviewed staging suite also prepares and verifies
 as a 1,976-file, 10,226,417-byte Git bundle; that suite has not been executed live.
+The subsequent [cloud boundary probe](evidence/controller-input-cloud-validation.md)
+verifies the trusted read-only mount and its absence from ordinary jobs in two
+real disposable VMs. Local adapter/factory composition and bounded version-read
+checks bring the API suite to 550 passing cases; application services remain unrun.
 
 The operator prepares an independently reviewed full Git commit with
 `prepareMeldLiveSuite({source, commit, output})` from `tools/meld-live-suite.mjs`.
@@ -42,6 +46,8 @@ the reviewed suite, not candidate application code. Frozen offline installation
 finishes before the controller delivers the staging test token through a
 read-only input mount. The controller checks current server authorization,
 exact provider deployment and public version before delivery and after testing.
+Version reads reject redirects and oversized bodies, and never echo endpoint
+content into controller errors.
 The token never enters Git objects, shell arguments, Docker environment flags or
 published logs. Normal candidate workflow dispatch cannot enable this channel.
 The reviewed test child receives the scoped test token in its own environment;

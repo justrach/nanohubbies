@@ -26,6 +26,10 @@ is read-only before reading only `information_schema.columns`. Staging contains
 therefore does not yet have the required staging schema. No application rows were
 read and no database mutation or migration was performed. Shared-database
 migration is outside the currently authorized scope.
+The later [read-only migration-ledger inspection](meld-staging-migration-preflight.md)
+also finds an unmatched historical row and an unrecorded Telegram migration whose
+column already exists. Owner reconciliation is required before running the
+standard migrator; adding only the missing column would leave history unresolved.
 
 Fresh [integration CI](meld-native-integration-validation.md) now passes through
 the isolated native runner, including canonical package verification and

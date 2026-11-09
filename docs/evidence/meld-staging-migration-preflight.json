@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T02:30:40.868Z",
+  "scope": "Read-only schema/migration metadata on the configured staging Hyperdrive target plus Git-object-only history comparison; no application rows or schema/history writes",
+  "sourceCommit": "b66b12d23b6c20154d2b952e7ddfc3ca308a460d",
+  "targetMatchedExistingStagingHyperdrive": true,
+  "productionOriginMetadataCompared": true,
+  "exactProductionOriginTupleShared": false,
+  "physicalDatabaseIsolationProven": false,
+  "readOnlyTransaction": true,
+  "columns": {
+    "users.telegram_ai_replies": {
+      "exists": true,
+      "type": "boolean",
+      "nullable": false,
+      "default": "true"
+    },
+    "assets.color_grid": {
+      "exists": false
+    }
+  },
+  "ledger": {
+    "schema": "drizzle",
+    "table": "__drizzle_migrations",
+    "rows": 49,
+    "matchedSourceRows": 48,
+    "unmatchedRows": 1,
+    "latestRecordedMillis": 1793036240190,
+    "pendingByTimestamp": [
+      {
+        "tag": "0048_telegram_ai_replies",
+        "when": 1793113411890
+      },
+      {
+        "tag": "0049_black_stone_men",
+        "when": 1793948932134
+      }
+    ],
+    "telegramCommittedSqlHashRecorded": false
+  },
+  "historyComparison": {
+    "historicalSqlBlobsChecked": 50,
+    "historicalBytesChecked": 57060,
+    "unmatchedLedgerHashesFound": 0,
+    "scope": "Migration SQL reachable from the inspected main/staging histories; not every upstream branch or another application repository"
+  },
+  "automaticOwnerMigrationReady": false,
+  "requiredBeforeMutation": [
+    "Owner-approved target and reconciliation record for the existing ledger/schema discrepancy",
+    "Preserve existing journal entries and applied history; do not mark migrations applied merely to suppress duplicate-column failures",
+    "Review an exact additive color_grid migration through the owner workflow after reconciliation",
+    "Refresh target/schema/history observations before any approved write"
+  ],
+  "sourceReferences": [
+    {
+      "url": "https://github.com/yourmeld/meld2/pull/203",
+      "observed": true,
+      "context": "PR body describes conflicting migration 0048 branches and a staging-only cherry-pick exception avoiding a database migration"
+    },
+    {
+      "url": "https://github.com/yourmeld/meld2/pull/205",
+      "observed": true,
+      "context": "PR body explicitly leaves main/staging migration reconciliation for separate work"
+    }
+  ],
+  "privateInspectionScriptSha256": "179d75fe485797cea9a1fd7fe614ccdb07e85046155a7f92fccdfbca8cf89aa7",
+  "providerMutations": 0,
+  "databaseMutations": 0,
+  "applicationRowsRead": false,
+  "stagingDeployed": false,
+  "originalMeldRefsWritten": false
+}

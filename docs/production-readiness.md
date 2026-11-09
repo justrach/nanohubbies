@@ -14,6 +14,12 @@ accepts the inspected staging ancestry; no upload or deployment was performed.
 The [isolated live-acceptance controller](meld-live-acceptance.md) is implemented
 with local tests, but still needs the staging test credential reference and
 coordinated real-service execution after schema compatibility is resolved.
+The [two-VM synthetic input probe](evidence/controller-input-cloud-validation.md)
+now verifies the trusted read-only channel and ordinary-job mount absence, with
+independent destruction of both VMs. Local checks pass 550 API cases, including
+composed deployment-movement checks and bounded, non-redirecting version reads.
+This still does not activate the intended Nanohub account or execute Meld's live
+application services.
 
 The earlier [complete PR-head package run](evidence/meld-native-package-validation.md)
 passes 40 policy/guard tests, 4,254 unit/package cases, 471 browser cases, the
@@ -58,6 +64,10 @@ SQL bytes or timestamps. Its source snapshot matches the integrated schema, but
 a read-only diagnostic found staging lacks `assets.color_grid`. No migration was
 applied. Integration CI now passes; schema compatibility, owner review,
 coordinated staging deployment and live acceptance remain open.
+The [fresh migration preflight](evidence/meld-staging-migration-preflight.md) also
+finds a journal/schema discrepancy: the Telegram column exists, but its committed
+migration is unrecorded, and one ledger entry is unmatched. Owner reconciliation
+is required before the ordinary migrator can safely apply the missing column.
 
 The [private artifact handoff](evidence/build-artifacts-validation.md) separately
 passes a real two-VM component probe on `e206a92`: selected binary/empty outputs

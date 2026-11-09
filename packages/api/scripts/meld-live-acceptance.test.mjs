@@ -8,6 +8,8 @@ import {createHash} from 'node:crypto';
 import {prepareMeldLiveSuite} from '../../../tools/meld-live-suite.mjs';
 import {createMeldLiveAcceptance} from '../../../tools/meld-live-acceptance.mjs';
 import {meldUploadTarget} from '../../../tools/meld-worker-upload.mjs';
+import {createMeldNativeStagingAdapter} from '../../../tools/meld-native-staging-adapter.mjs';
+import {stagingGate} from '../../../tools/ci-runner.mjs';
 
 const token='testtesttesttest',digest=value=>createHash('sha256').update(value).digest('hex');
 const marker='NANOHUB_MELD_LIVE_REPORT ';
@@ -109,4 +111,41 @@ test('the actual guest wrapper consumes multiline timings, runs the fixed comman
  }};
  const result=await createMeldLiveAcceptance(f.options,dependencies).accept(f.context);assert.equal(result[0].realService,true);
  const evidence=await readFile(join(f.context.artifacts,'meld-live.log'),'utf8');assert.ok(!evidence.includes('private.invalid'));assert.ok(!evidence.includes(token));
+}));
+
+test('native adapter and acceptance factory compose through the whole staging gate using its exact provider verifier',async()=>fixture(async f=>{
+ const module=join(f.directory,'acceptance-module.mjs');await writeFile(module,'// Trusted module loaded through the test dependency boundary');
+ const controller=f.make(),providerCalls=[];let preflight=false;
+ const deployment={runId:f.context.deployRunId,versionId:'version-1',candidate:f.context.run.head,state:'success',kind:'deployment',deployed:true};
+ const adapter=createMeldNativeStagingAdapter({profile:{...meldUploadTarget},credential:async()=>token,acceptanceModule:module},{
+  loadAcceptance:async()=>({preflight:async context=>{await controller.preflight(context);preflight=true;},accept:controller.accept}),
+  prepare:async()=>{assert.equal(preflight,true);assert.equal(f.jobs,0);providerCalls.push('prepare');return {};},
+  upload:async()=>{providerCalls.push('upload');return {};},promote:async()=>{providerCalls.push('promote');return deployment;},observe:async()=>{providerCalls.push('observe');return deployment;},
+ });
+ const result=await stagingGate(adapter,f.context,f.options.fetcher);
+ assert.equal(result.head,f.context.run.head);assert.equal(result.acceptance[0].realService,true);assert.equal(f.jobs,1);assert.equal(f.versions.length,5);
+ assert.equal(f.providerReads,0,'The adapter must replace the caller verifier with its own acknowledged provider identity');
+ assert.deepEqual(providerCalls,['prepare','upload','promote',...Array(5).fill('observe')]);
+}));
+
+test('composed staging gate refuses metadata-only movement before delivery, after testing and after evidence publication',async()=>{
+ for(const when of ['before-input','after-job','after-publication'])await fixture(async f=>{
+  const module=join(f.directory,'acceptance-module.mjs');await writeFile(module,'// Trusted test boundary');const controller=f.make();let observations=0;
+  const deployment={runId:f.context.deployRunId,versionId:'version-1',candidate:f.context.run.head,state:'success',kind:'deployment',deployed:true};
+  const adapter=createMeldNativeStagingAdapter({profile:{...meldUploadTarget},credential:async()=>token,acceptanceModule:module},{
+   loadAcceptance:async()=>controller,prepare:async()=>({}),upload:async()=>({}),promote:async()=>deployment,
+   observe:async()=>{observations++;const moved=when==='before-input'?f.commands.some(command=>command.startsWith('docker exec')):when==='after-job'?f.uploads.length>0:observations>=5;return moved?{...deployment,versionId:'new-settings-version'}:deployment;},
+  });
+  await assert.rejects(stagingGate(adapter,f.context,f.options.fetcher),/Trusted real-service acceptance failed|changed during acceptance/);
+  assert.equal(f.jobs,1);assert.equal(f.uploads.length,when==='before-input'?0:1);assert.equal(f.providerReads,0);
+  if(when==='after-publication')assert.equal(JSON.parse(await readFile(join(f.context.artifacts,'meld-live.log'),'utf8')).report.state,'success');
+  else await assert.rejects(readFile(join(f.context.artifacts,'meld-live.log')),{code:'ENOENT'});
+ });
+});
+
+test('composed preflight blocks missing test credentials before package preparation or provider writes',async()=>fixture(async f=>{
+ const module=join(f.directory,'acceptance-module.mjs');await writeFile(module,'// Trusted test boundary');f.options.credential=async()=>{throw Error(token);};const controller=f.make();
+ const mutation=async()=>{assert.fail('No package preparation, upload or promotion before acceptance configuration');};
+ const adapter=createMeldNativeStagingAdapter({profile:{...meldUploadTarget},credential:async()=>token,acceptanceModule:module},{loadAcceptance:async()=>controller,prepare:mutation,upload:mutation,promote:mutation});
+ await assert.rejects(stagingGate(adapter,f.context,f.options.fetcher),error=>/acceptance preflight failed/.test(error.message)&&!error.message.includes(token));assert.equal(f.jobs,0);assert.deepEqual(await readdir(f.context.artifacts),[]);
 }));
