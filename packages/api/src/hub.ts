@@ -5,6 +5,7 @@ import { DurableObject } from "cloudflare:workers";
 import type { AbuseLimits } from "./abuse";
 import { TeamStore, type TeamBinding, type IdentityProof } from "./team/store";
 import { Admission } from "./hub/admission";
+import {reserveNamedRepository,type NamedAdmission} from './hub/repository-admission';
 import { ReleaseStore } from "./releases/store";
 import type { ReleaseCommand } from "./releases/types";
 import {SigningKeys} from "./signing/store";
@@ -102,6 +103,8 @@ export class Hub extends DurableObject<Env> {
   repositoryAddress(id: string) { return new Namespaces(this.sql).byId(id); }
   resolveRepository(namespace: string, name: string) { return new Namespaces(this.sql).resolve(namespace,name); }
   reserveRepository(namespace: string, name: string, actor: string, existingId?:string) { return this.ctx.storage.transactionSync(() => {if(existingId)assertRepositoryWritable(this.sql,existingId);const repo=new Namespaces(this.sql).reserve(namespace,name,actor,existingId);assertRepositoryWritable(this.sql,repo.id);return repo;}); }
+  repositoryCreationConfiguration(){return {namedAdmission:'v1' as const};}
+  reserveRepositoryCreation(namespace:string,name:string,actor:string,policy:NamedAdmission){return reserveNamedRepository(this.ctx.storage,this.sql,this.admission,namespace,name,actor,policy);}
   renameRepository(id:string,name:string,actor:string) { return this.ctx.storage.transactionSync(() => {assertRepositoryWritable(this.sql,id);return new Namespaces(this.sql).rename(id,name,actor);}); }
   collaboratorRole(trunk: string, userId: string) { return new Collaborators(this.sql).role(trunk,userId); }
   rulesetActor(trunk:string,actor:string) {

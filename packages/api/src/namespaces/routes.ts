@@ -3,8 +3,9 @@ import { createTrunk } from "../creation";
 import { requireTeam, sameOrigin } from "../team/access";
 import { TeamError } from "../team/provider";
 import type { RepositoryAddress } from "./store";
-import {creationBody} from "../abuse";
+import {abuseLimits,clientKey,creationBody,limited} from "../abuse";
 import {newRefName} from "../repository/ref-name";
+import type {NamedAdmission} from '../hub/repository-admission';
 export function repositoryURLs(origin: string, repo: RepositoryAddress) {
   return {
     ...repo,
@@ -71,9 +72,21 @@ export async function namespacedAPI(
     const body=await creationBody<{defaultBranch?:string}>(request,4096);
     if(Object.keys(body).some(key=>key!=="defaultBranch"))throw Error("New repositories accept an initial defaultBranch only");
     if(body.defaultBranch!==undefined){if(typeof body.defaultBranch!=="string")throw Error("Choose a valid initial default branch name");newRefName(`refs/heads/${body.defaultBranch}`);}
-    const repo = await hub.reserveRepository(namespace, name, user.id);
-    // Reserve the address before dispatching initialization. On a lost reply,
-    // retain it, so retries cannot create an unrelated repository behind it.
+    // Older receivers cannot atomically reserve the address and quota. Stop
+    // before either write instead of falling back during a rolling upgrade.
+    const updating=()=>({response:Response.json({error:'Repository creation is updating; try again shortly'},{status:503,headers:{'Retry-After':'5','Cache-Control':'no-store'}})});
+    let ready=false;try{ready=(await hub.repositoryCreationConfiguration()).namedAdmission==='v1';}catch{}
+    if(!ready)return updating();
+    const limits=abuseLimits(env,url);let policy:NamedAdmission=null;
+    if(limits){const creator=await clientKey(request),rate=await env.HUB.get(env.HUB.idFromName(`rate:${creator}`)).takeRate('creation',limits.creations,3_600_000);if(!rate.ok)return {response:limited('trunk creation rate limit reached',rate.retryAfter)};policy={creator,limits};}
+    const reservation=await hub.reserveRepositoryCreation(namespace,name,user.id,policy);
+    if(!reservation||reservation.ok!==true){
+      if(reservation?.ok!==false||![409,429,503].includes(reservation.status)||typeof reservation.error!=='string'||reservation.error.length>200)return updating();
+      return {response:Response.json({error:reservation.error},{status:reservation.status,headers:{'Retry-After':'60','Cache-Control':'no-store'}})};
+    }
+    const repo=reservation.repository;
+    if(!repo||!/^repo-[a-f0-9]{32}$/.test(repo.id)||repo.namespace!==namespace.toLowerCase()||repo.name!==name.toLowerCase()||!Number.isSafeInteger(repo.created)||limits&&!/^[a-f0-9-]{36}$/.test(reservation.ticket??'')||!limits&&reservation.ticket!==null)return updating();
+    // Once admission succeeds, unknown outcomes retain the exact address/ID.
     const headers = new Headers(request.headers);
     headers.delete("content-length");
     headers.set("content-type", "application/json");
@@ -84,6 +97,7 @@ export async function namespacedAPI(
       repo.id,
       user,
       false,
+      {ticket:reservation.ticket},
     );
     if (!response.ok) return { response };
     return {

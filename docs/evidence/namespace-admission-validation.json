@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "checkedAt": "2026-11-09T03:11:23.658847+00:00",
+  "scope": "Pinned before-source reproduction and fixed-source local real Worker/SQLite/D1/R2/Git acceptance; no production runtime rollout or hosted mutation acceptance",
+  "baseSource": "08f99ac4060de60f2927affaa959107e6d5310bd",
+  "before": {
+    "checkedAt": "2026-11-09T03:09:50.295Z",
+    "source": "08f99ac4060de60f2927affaa959107e6d5310bd",
+    "scope": "Pinned pre-fix real local Worker/SQLite/D1/R2 reproduction; no hosted mutations",
+    "passed": true,
+    "quotaResponse": 429,
+    "addressRetainedAfterDefiniteRefusal": true,
+    "repositoryNotInitialized": true,
+    "sameNameRetryStatus": 400,
+    "sameNameBlocked": true
+  },
+  "fixedChecks": {
+    "apiUnitPassed": 554,
+    "apiUnitFailed": 0,
+    "apiUnitSkipped": 0,
+    "hostingSuite": "passed, including real Git namespaces/capacity and new admission smoke",
+    "abuseSuite": "passed with quota limits unchanged",
+    "workspacePinnedTsrs": {
+      "tasks": 3,
+      "successful": 3,
+      "cached": 0
+    },
+    "operatorBindingCheck": {
+      "files": 23,
+      "passed": true,
+      "fullTypeCheck": false
+    },
+    "realWorkerScenarios": [
+      "owner quota refusal with same-name retry after freeing fixture capacity",
+      "IP quota refusal with same-name retry after freeing fixture capacity",
+      "deployment quota refusal with same-name retry after freeing fixture capacity",
+      "creation rate refusal leaves no address",
+      "concurrent creation admits one and rolls back the refused address",
+      "old receiver stops before reservation",
+      "missing receiver stops before reservation",
+      "malformed refusal/success responses stop before initialization",
+      "lost admission acknowledgement retains address and held quota",
+      "lost initialization acknowledgement retains address and held quota",
+      "lost completed HTTP acknowledgement preserves initialized canonical identity",
+      "forged admission fields and wrong namespace owner denied"
+    ]
+  },
+  "sourceFiles": {
+    "packages/api/src/creation.ts": "dfa02389e2eb7925a30f4f5676e2b1f89e7a68f1c9bafee441d21ebc15ec63fd",
+    "packages/api/src/hub.ts": "d393b972581fef5593185e10b1058045468eb3dc4278b8a7d752b2c9d3ba17de",
+    "packages/api/src/hub/admission.ts": "7a5914afd813ae7b0b3f3fdc91639c0defb6732d405b326b0a4b6422d08e68f3",
+    "packages/api/src/hub/repository-admission.ts": "5d5c3b8053a58a3f98b6f453d9fa46fdc32021d1d4a31fce7cd4b661707dad45",
+    "packages/api/src/namespaces/routes.ts": "c3f017835412dded6ad955da5e73053b5daeefc553187a64d27c58cc4ec110b7",
+    "packages/api/scripts/namespace-admission.test.mjs": "f62d5ecdc1793ff1f923b509e1255c45b2c44cf8b47e9bd0789ce95727e27d1e",
+    "packages/api/scripts/smoke-namespace-admission.ts": "23f11ac6a8c49ced96fb8c7696ff3cfaaab8fd2fb2ded55280c47b433ee89bbe",
+    "packages/api/scripts/team/worker.ts": "d60ece9297c1eb355d59f4e5629f925a3388fc00ef3fd807d92edcfcec170532",
+    "packages/api/package.json": "f79d9573e371634be4e5649a4f775b67ee9fb4214efd28eeb86fc364dd95cd48"
+  },
+  "privateLogHashes": {
+    "unit.log": {
+      "bytes": 86543,
+      "sha256": "b593dd15a6c7a118ae05f1f485cc04f84c94be41f9838512cef7111db634e80c"
+    },
+    "hosting.log": {
+      "bytes": 13257,
+      "sha256": "4e0bee8ee52c21ba8d5a79055e0156a5ba4f46fd53048d663b623080578a296f"
+    },
+    "abuse.log": {
+      "bytes": 1330,
+      "sha256": "f870a95c73037d022ee5bbf3a5ce126d67111044644677580b801899110eb8f1"
+    },
+    "check.log": {
+      "bytes": 10504,
+      "sha256": "3f1efae729736bf70e43bb673decd4c02c10baffeecf3d4633056956f4472480"
+    },
+    "namespace-admission.log": {
+      "bytes": 287,
+      "sha256": "b47627ecb6aa708cc2f7eff5e1434ec021401d251f85f6a5d63f5f996c12efde"
+    }
+  },
+  "quotaPolicyChanged": false,
+  "productionDeployed": false,
+  "legacyOrphanCleanupPerformed": false,
+  "remaining": [
+    "Frozen Linux and Mac production build/delivery acceptance before rollout",
+    "Production hosted authorization smoke awaits browser-tool action-time credential confirmation",
+    "Pre-existing uncertain/orphaned reservations are not automatically removed",
+    "Meld schema reconciliation/live credential/cutover and operational release gates remain open"
+  ]
+}

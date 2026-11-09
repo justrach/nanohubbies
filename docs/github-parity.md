@@ -10,6 +10,11 @@ Nanohub is a standalone private Git host with repository membership, PRs, protec
 
 ## Current coverage
 
+A [repository-creation correction](evidence/namespace-admission-validation.md)
+now atomically reserves the owner/repo address with capacity, allowing same-name
+retry after definitive quota refusal while retaining uncertain initialization.
+It passes local Worker/Git and pinned-tsrs checks; production rollout remains open.
+
 | Capability | Implemented behavior | Remaining differences |
 | --- | --- | --- |
 | Repository storage | Standard Git objects and immutable IDs; UTF-8 branch/tag names with a full-ref byte bound, annotated/lightweight tags, binary files, executable modes and symlinks; atomic compare-and-swap and native `git push --atomic` negotiation; up to 10,000 atomic initial creations with independent empty-state fencing, ordinary updates capped at 100; [actual complete Meld graph verified locally](evidence/initial-import-validation.md) | HTTP transport only; heads/tags only; non-UTF-8 ref bytes, LFS and submodules rejected; [pinned hosted full-graph acceptance passes](evidence/hosted-import-validation.md); application CI/staging and cutover remain open; see [name contract](git-ref-names.md) |

@@ -9,12 +9,14 @@ import { TEMPLATE_ISSUES, TEMPLATES } from "./templates";
 /** Both entry points reserve capacity before any GitHub download, seed
  *  objects, or Artifacts repository is created. All deployed Workers share
  *  the Hub's durable, atomic quota check; localhost keeps its old workflow. */
-export async function createTrunk(request: Request, env: Env, url: URL, trunk: string, user: User | null, importing: boolean): Promise<Response> {
+export async function createTrunk(request: Request, env: Env, url: URL, trunk: string, user: User | null, importing: boolean, reserved?:{ticket:string|null}): Promise<Response> {
   const limits = abuseLimits(env, url);
   const hub = env.HUB.get(env.HUB.idFromName("hub"));
   const owner = user?.id ?? null;
-  let ticket: string | null = null;
-  if (limits) {
+  // Only trusted callers supply a ticket obtained atomically with the address.
+  // Request JSON cannot choose this path or skip a quota/rate check.
+  let ticket: string | null = reserved?.ticket??null;
+  if (limits&&!reserved) {
     const creator = await clientKey(request);
     const guard = env.HUB.get(env.HUB.idFromName(`rate:${creator}`));
     const rate = await guard.takeRate("creation", limits.creations, 3_600_000);

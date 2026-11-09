@@ -12,6 +12,7 @@ let dropNextDeploymentAcknowledgement=false;
 let dropImportAcknowledgement:string|null=null;
 let dropNextSecretGrantAcknowledgement=false;
 let dropNextBranchRenameAcknowledgement=false;
+let repositoryCreationFault:string|null=null;
 let vaultAuthorityRace:{trunk:string;actor:string;owner:string;credentialId?:string;role?:'reader'|'writer'}|null=null;
 let workloadAuthorityRace:{trunk:string;actor:string;owner:string}|null=null;
 const importPosts={objects:0,refs:0};
@@ -153,6 +154,25 @@ export class Room extends ProductionRoom {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    if(url.pathname==='/fixture/repository-creation-fault'){
+      const {mode}=await request.json<{mode:string|null}>();if(mode!==null&&!['old','missing','malformed','malformed-success','lost-admission','lost-init','lost-http'].includes(mode))return new Response('Unknown fixture mode',{status:400});repositoryCreationFault=mode;return Response.json({armed:mode});
+    }
+    if(repositoryCreationFault&&request.method==='POST'&&/^\/api\/repos\/[^/]+\/[^/]+$/.test(url.pathname)){
+      const mode=repositoryCreationFault;
+      const wrap=(binding:any,method:string,override:any)=>new Proxy(binding,{get(target,key){
+        if(key==='get')return(...ids:any[])=>{const stub=target.get(...ids);return new Proxy(stub,{get(object,member){if(member===method)return(...args:any[])=>override((...values:any[])=>object[member](...values),args);const value=Reflect.get(object,member);return typeof value==='function'? (...values:any[])=>object[member](...values):value;}});};
+        const value=Reflect.get(target,key);return typeof value==='function'? (...values:any[])=>target[key](...values):value;
+      }});
+      const wrapped=new Proxy(env,{get(target,key){
+        if(key==='HUB'&&['old','missing'].includes(mode))return wrap(env.HUB,'repositoryCreationConfiguration',async()=>{if(mode==='missing')throw Error('Synthetic missing receiver');return {namedAdmission:'legacy'};});
+        if(key==='HUB'&&['malformed','malformed-success'].includes(mode))return wrap(env.HUB,'reserveRepositoryCreation',async()=>mode==='malformed'?{}:{ok:true,repository:{id:'wrong'},ticket:null});
+        if(key==='HUB'&&mode==='lost-admission')return wrap(env.HUB,'reserveRepositoryCreation',async(invoke:any,args:any[])=>{const result=await invoke(...args);if(result.ok)throw Error('Synthetic lost admission acknowledgement');return result;});
+        if(key==='SEQUENCER'&&mode==='lost-init')return wrap(env.SEQUENCER,'initRepository',async(invoke:any,args:any[])=>{await invoke(...args);throw Error('Synthetic lost initialization acknowledgement');});
+        return Reflect.get(target,key);
+      }});
+      const response=await api.fetch(request,wrapped);
+      if(mode==='lost-http'&&response.ok){await response.body?.cancel();return Response.json({error:'Synthetic lost repository acknowledgement'},{status:503});}return response;
+    }
     if(url.pathname==='/fixture/branch-rename-fault'){
       const body=await request.json<{trunk:string;missingRead?:boolean;missingWrite?:boolean;late?:boolean;legacy?:{branch:string;commit:string;tree:string}}>();
       return Response.json(await (env.SEQUENCER.get(env.SEQUENCER.idFromName(body.trunk)) as unknown as {branchRenameFault:(input:typeof body)=>Promise<unknown>}).branchRenameFault(body));

@@ -6,6 +6,14 @@ The acceptance evidence below determines release readiness; the percentage is
 an informal assessment. Primary-host cutover for important repositories remains
 pending the original migration and CI/staging acceptance.
 
+A [named-repository admission fix](evidence/namespace-admission-validation.md)
+addresses a failure found while preparing hosted authorization acceptance:
+definitive quota refusals no longer consume the requested address. It preserves
+quota limits and uncertain reservations, passes 554 API cases plus real hosting
+and abuse checks, and still requires frozen release/production rollout. The
+hosted authorization procedure is locally validated; its scoped browser-issued
+credential is prepared but has not been issued.
+
 The latest [integration run](evidence/meld-native-integration-validation.md)
 passes 40 policy/guard tests, 4,304 unit/package cases, 477 browser cases, the
 production build and canonical 42.0 MB artifact handoff. Its 205 unit/package

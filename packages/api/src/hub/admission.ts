@@ -22,23 +22,27 @@ export class Admission {
   }
 
   reserve(name: string, owner: string | null, creator: string, limits: AbuseLimits): AdmissionResult {
-    return this.storage.transactionSync(() => {
-      if (this.sql.exec("SELECT 1 FROM trunks WHERE name = ? UNION ALL SELECT 1 FROM admissions WHERE name = ?", name, name).toArray().length) {
-        return { ok: false, status: 409, error: "trunk already exists or is being created" };
-      }
-      if (this.count("SELECT count(*) AS n FROM trunks") + this.count("SELECT count(*) AS n FROM admissions") >= limits.total) {
-        return { ok: false, status: 503, error: "deployment trunk capacity reached" };
-      }
-      if (owner && this.count("SELECT count(*) AS n FROM trunks WHERE owner = ?", owner) + this.count("SELECT count(*) AS n FROM admissions WHERE owner = ?", owner) >= limits.owner) {
-        return { ok: false, status: 429, error: "your trunk quota is reached" };
-      }
-      if (this.count("SELECT count(*) AS n FROM trunks WHERE admission_ip = ?", creator) + this.count("SELECT count(*) AS n FROM admissions WHERE creator = ?", creator) >= limits.ip) {
-        return { ok: false, status: 429, error: "this address's trunk quota is reached" };
-      }
-      const ticket = crypto.randomUUID();
-      this.sql.exec("INSERT INTO admissions (name, ticket, owner, creator) VALUES (?, ?, ?, ?)", name, ticket, owner, creator);
-      return { ok: true, ticket };
-    });
+    return this.storage.transactionSync(() => this.reserveInTransaction(name,owner,creator,limits));
+  }
+
+  /** The caller owns the Hub transaction when another reservation must commit
+   * or roll back with admission. Never invoke outside that transaction. */
+  reserveInTransaction(name: string, owner: string | null, creator: string, limits: AbuseLimits): AdmissionResult {
+    if (this.sql.exec("SELECT 1 FROM trunks WHERE name = ? UNION ALL SELECT 1 FROM admissions WHERE name = ?", name, name).toArray().length) {
+      return { ok: false, status: 409, error: "trunk already exists or is being created" };
+    }
+    if (this.count("SELECT count(*) AS n FROM trunks") + this.count("SELECT count(*) AS n FROM admissions") >= limits.total) {
+      return { ok: false, status: 503, error: "deployment trunk capacity reached" };
+    }
+    if (owner && this.count("SELECT count(*) AS n FROM trunks WHERE owner = ?", owner) + this.count("SELECT count(*) AS n FROM admissions WHERE owner = ?", owner) >= limits.owner) {
+      return { ok: false, status: 429, error: "your trunk quota is reached" };
+    }
+    if (this.count("SELECT count(*) AS n FROM trunks WHERE admission_ip = ?", creator) + this.count("SELECT count(*) AS n FROM admissions WHERE creator = ?", creator) >= limits.ip) {
+      return { ok: false, status: 429, error: "this address's trunk quota is reached" };
+    }
+    const ticket = crypto.randomUUID();
+    this.sql.exec("INSERT INTO admissions (name, ticket, owner, creator) VALUES (?, ?, ?, ?)", name, ticket, owner, creator);
+    return { ok: true, ticket };
   }
 
   complete(t: TrunkInfo, ticket: string) {
