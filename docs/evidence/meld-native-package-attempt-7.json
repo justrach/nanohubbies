@@ -24,8 +24,7 @@
     "registryProvider": "cloudflare",
     "network": "none",
     "maxSourceBundleBytes": 536870912,
-    "sourceTransferConcurrency": 4,
-    "sandboxAccessProbeId": "cnd_66be60d41ecbf034c781cdff60f585dc11adeb09"
+    "sourceTransferConcurrency": 4
   },
   "tests": {
     "policyAndGuard": {
